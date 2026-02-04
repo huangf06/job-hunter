@@ -1,0 +1,90 @@
+# LinkedIn Job Search Configuration
+# ==================================
+# Define multiple search profiles with boolean query combinations
+
+defaults:
+  location: "Netherlands"
+  date_posted: "r604800"     # Past week (r86400 = 24 hours, r604800 = week)
+  workplace_type: "2,3"      # 2=Remote, 3=On-site, 1=Hybrid
+  sort_by: "DD"              # DD=Date, R=Relevance
+  max_jobs: 30
+
+# Search profiles
+profiles:
+  # Profile 1: ML/AI/Data (Boolean search)
+  ml_data:
+    name: "ML & Data Engineering"
+    enabled: true
+    priority: 1
+    queries:
+      - keywords: '"Machine Learning" OR "Deep Learning" OR "Computer Vision" OR "NLP" OR "Data Engineer" OR "MLOps" OR "AI Engineer" OR "LLM"'
+        description: "ML/Data combined search"
+
+  # Profile 2: Backend/Software Engineering (Boolean search)
+  backend_data:
+    name: "Backend Engineering"
+    enabled: true
+    priority: 2
+    queries:
+      - keywords: '"Python Developer" OR "Backend Engineer" OR "Software Engineer" OR "Full Stack Engineer"'
+        description: "Backend combined search"
+
+  # Profile 3: Quant/Trading (Boolean search)
+  quant:
+    name: "Quantitative & Trading"
+    enabled: true
+    priority: 1
+    queries:
+      - keywords: '"Quantitative Researcher" OR "Quantitative Developer" OR "Quantitative Analyst" OR "Algorithmic Trading" OR "Quant Trader"'
+        description: "Quant combined search"
+
+  # Profile 4: Quick test (single keyword for testing)
+  quick_test:
+    name: "Quick Test"
+    enabled: false
+    priority: 99
+    queries:
+      - keywords: "data engineer"
+        description: "Quick test search"
+    max_jobs_override: 10
+
+# Company blacklist (recruiting agencies, outsourcing, etc.)
+company_blacklist:
+  - "Hays"
+  - "Randstad"
+  - "Michael Page"
+  - "Robert Half"
+  - "Brunel"
+  - "Experis"
+
+# Title blacklist keywords (exclude irrelevant positions)
+title_blacklist:
+  - "intern"
+  - "internship"
+  - "student"
+  - "trainee"
+  - "werkstudent"
+
+# Priority rules (for sorting results)
+priority_rules:
+  high:
+    title_contains:
+      - "senior"
+      - "lead"
+      - "staff"
+      - "principal"
+      - "quant"
+      - "machine learning"
+      - "ai engineer"
+    company_contains:
+      - "Optiver"
+      - "Flow Traders"
+      - "IMC"
+      - "Booking"
+      - "Adyen"
+      - "ASML"
+  low:
+    title_contains:
+      - "junior"
+      - "entry"
+      - "graduate"

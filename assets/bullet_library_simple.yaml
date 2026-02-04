@@ -1,0 +1,190 @@
+# =============================================================================
+# SIMPLIFIED BULLET LIBRARY for Resume Generator v4
+# Clean YAML - No complex nested structures
+# =============================================================================
+
+personal_info:
+  name: "Fei Huang"
+  email: "huangf06@gmail.com"
+  phone: "+31 645 038 614"
+  location: "Amsterdam, Netherlands"
+  linkedin: "https://linkedin.com/in/huangf06"
+  github: "https://github.com/huangf06"
+
+education:
+  master:
+    school: "Vrije Universiteit Amsterdam, The Netherlands"
+    location: "Amsterdam"
+    degree: "M.Sc. in Artificial Intelligence (GPA: 8.2/10)"
+    date: "Sep 2023 – Aug 2025"
+    note: "Thesis: Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments"
+  bachelor:
+    school: "Tsinghua University, China"
+    location: "Beijing"
+    degree: "B.Eng. in Industrial Engineering"
+    date: "Sep 2006 – Jul 2010"
+  certification: "Databricks Certified Data Engineer Professional (Feb 2026)"
+
+# =============================================================================
+# WORK EXPERIENCE BULLETS
+# Each bullet has content, tags for filtering, and role_fit for matching
+# =============================================================================
+
+experiences:
+  - company: "GLP Technology"
+    location: "Shanghai, China"
+    period: "Jul 2017 – Aug 2019"
+    titles:
+      default: "Data Scientist & Team Lead"
+      data_engineer: "Data Engineer & Team Lead"
+      data_scientist: "Data Scientist & Team Lead"
+      quant: "Quantitative Risk Analyst"
+    bullets:
+      - content: "Joined as founding data team member at fintech startup; built credit scoring engine from scratch including data pipelines, feature engineering, and model deployment using logistic regression and scorecard methodology."
+        role_fit: [data_scientist, data_engineer, data_analyst]
+        tech: [python, sql, logistic_regression]
+        domain: [fintech, credit_risk]
+        
+      - content: "Led PySpark workflow implementation to process large-scale datasets, reducing processing time and enabling daily risk reporting."
+        role_fit: [data_engineer, data_scientist]
+        tech: [pyspark, spark]
+        domain: [fintech]
+        
+      - content: "Developed automated anomaly detection systems to monitor loan portfolio health and identify early warning signals for delinquency."
+        role_fit: [data_scientist, data_analyst]
+        tech: [python, sql]
+        domain: [fintech, risk]
+        
+      - content: "Engineered automated data pipelines using Python and SQL; integrated payment gateway APIs and coordinated collection operations."
+        role_fit: [data_engineer]
+        tech: [python, sql, etl]
+        domain: [fintech, operations]
+        
+      - content: "Operated as cross-functional generalist in early-stage startup: bridged risk modeling, operations, and technical implementation."
+        role_fit: [data_scientist, data_analyst]
+        tech: []
+        domain: [startup]
+
+  - company: "Baiquan Investment"
+    location: "Beijing, China"
+    period: "Jul 2015 – Jun 2017"
+    titles:
+      default: "Quantitative Researcher"
+      quant: "Quantitative Researcher"
+      data_scientist: "Quantitative Analyst"
+      data_engineer: "Quantitative Developer"
+    bullets:
+      - content: "Developed multi-factor alpha research pipeline for equity markets using Fama-MacBeth regression; identified and validated statistically significant factors including value, momentum, and event-driven signals."
+        role_fit: [quant, data_scientist]
+        tech: [python, statistics]
+        domain: [finance, trading]
+        
+      - content: "Engineered R-Breaker intraday strategy for CSI futures that achieved 14.6% annualized return in live trading."
+        role_fit: [quant]
+        tech: [python, time_series]
+        domain: [trading, futures]
+        
+      - content: "Built automated ETL pipeline to ingest daily market data from vendors with data quality validation supporting downstream trading operations."
+        role_fit: [data_engineer, quant]
+        tech: [python, etl]
+        domain: [finance]
+        
+      - content: "Engineered high-performance factor computation engine using vectorized Pandas/NumPy operations; reduced calculation time for technical indicators across 3000+ stocks."
+        role_fit: [data_engineer, quant]
+        tech: [python, pandas, numpy]
+        domain: [finance]
+        
+      - content: "Developed the underlying event-driven backtesting infrastructure that supported strategy simulation and performance reporting."
+        role_fit: [data_engineer, software_engineer]
+        tech: [python]
+        domain: [finance, simulation]
+
+  - company: "Ele.me (acquired by Alibaba)"
+    location: "Shanghai, China"
+    period: "Sep 2013 – Jul 2015"
+    titles:
+      default: "Data Analyst"
+      data_analyst: "Data Analyst"
+      data_scientist: "Data Analyst"
+    bullets:
+      - content: "Queried and processed large-scale user data from Hadoop cluster using Hive SQL; generated reports and dashboards to support business decision-making."
+        role_fit: [data_analyst, data_engineer]
+        tech: [sql, hadoop, hive]
+        domain: [ecommerce]
+        
+      - content: "Built user profiling and classification model for marketing campaigns that doubled recall rate of churned customer targeting through A/B testing."
+        role_fit: [data_scientist, data_analyst]
+        tech: [python, ab_testing]
+        domain: [ecommerce, marketing]
+
+# =============================================================================
+# PROJECTS
+# =============================================================================
+
+projects:
+  - id: "financial_data_lakehouse"
+    name: "Financial Data Lakehouse (Databricks/Spark)"
+    date: "Oct 2025 – Present"
+    bullets:
+      - content: "Architected resilient lakehouse using Auto Loader and Structured Streaming; pipelines handle schema evolution automatically for continuous crypto market data ingestion."
+        role_fit: [data_engineer]
+        tech: [databricks, pyspark]
+        
+      - content: "Engineered data quality framework via fault injection testing; validated quarantine pattern to isolate malformed records without disrupting production."
+        role_fit: [data_engineer]
+        tech: [databricks, data_quality]
+        
+      - content: "Optimized Delta Lake storage via Z-ordering and compaction to reduce query latency."
+        role_fit: [data_engineer]
+        tech: [databricks, delta_lake]
+
+  - id: "thesis_uncertainty"
+    name: "M.Sc. Thesis: Uncertainty Quantification in Deep RL"
+    date: "Feb 2025 – Aug 2025"
+    bullets:
+      - content: "Built evaluation framework for uncertainty quantification in deep RL: implemented calibration metrics (ACE, CRPS, coverage) and evaluated model reliability under distribution shifts."
+        role_fit: [quant, data_scientist, ml_engineer]
+        tech: [python, pytorch, rl]
+        
+      - content: "Developed calibration methods including temperature scaling and bias correction to improve model reliability under uncertainty."
+        role_fit: [quant, data_scientist]
+        tech: [ml, statistics]
+
+  - id: "expedia_ranking"
+    name: "Expedia Hotel Recommendation System"
+    date: "Sep 2024 – Dec 2024"
+    bullets:
+      - content: "Built learning-to-rank models (XGBoost, LightGBM LambdaRank) on 4.9M records; achieved NDCG@5 = 0.392; engineered temporal and behavioral features."
+        role_fit: [data_scientist, ml_engineer]
+        tech: [xgboost, lightgbm, python]
+
+# =============================================================================
+# SKILLS
+# =============================================================================
+
+skills:
+  - category: "Languages"
+    skills_list: "Python (pandas, NumPy, PyTorch, scikit-learn), SQL, Bash"
+    
+  - category: "Data Infrastructure"
+    skills_list: "Databricks, PySpark, Delta Lake, Apache Airflow, Kafka, Hive"
+    
+  - category: "Cloud & DevOps"
+    skills_list: "AWS, Azure, GCP, Docker, CI/CD, Terraform, Git"
+    
+  - category: "ML & Statistics"
+    skills_list: "XGBoost, LightGBM, Time Series Analysis, A/B Testing, Statistical Modeling"
+
+languages:
+  - name: "English"
+    level: "Fluent"
+  - name: "Mandarin"
+    level: "Native"
+  - name: "Dutch"
+    level: "Conversational"
+
+# =============================================================================
+# CAREER NOTE
+# =============================================================================
+
+career_note: "Career Note: 2019–2023 included independent investing, language learning (English, German), and graduate preparation."

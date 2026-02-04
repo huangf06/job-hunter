@@ -1,0 +1,153 @@
+# =============================================================================
+# 硬性筛选规则配置
+# =============================================================================
+# 规则按顺序执行，匹配任一规则即被拒绝
+# 支持正则表达式
+# =============================================================================
+
+hard_reject_rules:
+  # 规则1: 荷兰语要求
+  dutch_required:
+    enabled: true
+    priority: 1
+    patterns:
+      - "dutch\\s*(required|mandatory|essential|native|fluent)"
+      - "nederlands\\s*(verplicht|vereist|moeder.*taal|vloeiend)"
+      - "fluency\\s+in\\s+dutch"
+      - "dutch\\s*language\\s*proficiency"
+    description: "职位要求荷兰语能力"
+    
+  # 规则2: 经验年限过高
+  experience_too_high:
+    enabled: true
+    priority: 2
+    max_years: 8
+    patterns:
+      - "(10|15|20)\\+?\\s*years?\\s*(of\\s*)?experience"
+      - "minimum\\s*(8|9)\\+?\\s*years"
+      - "senior.*with\\s*\\d{2}\\+?\\s*years"
+    description: "要求经验年限超过阈值"
+    
+  # 规则3: 高级管理职位
+  senior_management:
+    enabled: true
+    priority: 3
+    patterns:
+      - "\\b(principal|staff|director|vp|vice president|head of|cto|cio|chief)\\b"
+      - "\\bsenior\\b.*\\b(manager|director|lead|architect)\\b"
+      - "\\b(lead|senior)\\b.*\\b(engineer|scientist)\\b.*\\b(manager|director)\\b"
+    description: "高级管理或架构师职位"
+    exceptions:  # 例外情况
+      - "senior data analyst"  # 这个可以接受
+      - "senior analyst"
+    
+  # 规则4: 非目标技术栈
+  wrong_tech_stack:
+    enabled: true
+    priority: 4
+    patterns:
+      - "\\b(frontend|backend|fullstack|devops|sre|security)\\b"
+      - "\\b(android|ios|mobile)\\s*(developer|engineer)"
+      - "\\b(frontend|ui|ux)\\s*(developer|designer)"
+      - "\\b(web|front-end|back-end)\\s*(developer|engineer)"
+    description: "非目标技术栈职位"
+    
+  # 规则5: 地点限制
+  location_restricted:
+    enabled: true
+    priority: 5
+    patterns:
+      - "(onsite|on-site|office).*(only|mandatory|required)"
+      - "no\\s*(relocation|visa|sponsorship)"
+      - "must\\s*be\\s*located\\s*in"
+      - "local\\s*candidates\\s*only"
+    description: "地点限制过于严格"
+    exceptions:
+      - "hybrid"  # hybrid可以接受
+      - "flexible"
+
+# =============================================================================
+# 软性筛选规则 (用于评分，不直接拒绝)
+# =============================================================================
+
+soft_filter_rules:
+  # 加分项
+  positive_indicators:
+    visa_sponsorship:
+      patterns:
+        - "visa\\s*sponsor"
+        - "relocation\\s*assistance"
+        - "sponsorship\\s*available"
+        - "kmv"
+        - "highly\\s*skilled\\s*migrant"
+      weight: 2.0
+      
+    junior_friendly:
+      patterns:
+        - "junior"
+        - "entry\\s*level"
+        - "graduate"
+        - "0-3\\s*years"
+        - "1-3\\s*years"
+        - "early\\s*career"
+      weight: 1.5
+      
+    target_company:
+      companies:
+        - "picnic"
+        - "adyen"
+        - "booking.com"
+        - "ing"
+        - "abn amro"
+        - "rabobank"
+        - "asml"
+        - "philips"
+        - "tomtom"
+        - "coolblue"
+        - "bol.com"
+        - "optiver"
+        - "imc"
+        - "flow traders"
+        - "shell"
+      weight: 1.5
+      
+    relevant_keywords:
+      patterns:
+        - "machine\\s*learning"
+        - "ml\\s*engineer"
+        - "data\\s*scientist"
+        - "ai\\s*engineer"
+        - "deep\\s*learning"
+        - "python"
+        - "pytorch"
+        - "tensorflow"
+        - "quantitative"
+        - "quant"
+      weight: 1.0
+
+  # 减分项
+  negative_indicators:
+    mid_senior_level:
+      patterns:
+        - "5\\+\\s*years"
+        - "6\\+\\s*years"
+        - "7\\+\\s*years"
+        - "senior\\b(?!\\s*analyst)"  # 排除senior analyst
+      weight: -1.0
+      
+    specific_requirements:
+      patterns:
+        - "german\\s*required"
+        - "french\\s*required"
+        - "spanish\\s*required"
+      weight: -2.0
+
+# =============================================================================
+# 配置元数据
+# =============================================================================
+
+metadata:
+  version: "1.0.0"
+  last_updated: "2026-02-03"
+  author: "Fei Huang"
+  description: "Job filtering configuration"

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ name }} - Resume</title>
+    <style>
+:root {
+    --primary-color: #1a1a1a;
+    --secondary-color: #4a4a4a;
+    --accent-color: #2c5282;
+    --border-color: #1a1a1a;
+    --text-main: #1a1a1a;
+    --text-muted: #555555;
+    --link-color: #2c5282;
+    --bg-color: white;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@page { size: A4; margin: 0.55in; }
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    color: var(--text-main);
+    max-width: 8.27in;
+    margin: 0 auto;
+    padding: 0.55in;
+    background: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 12pt;
+    padding-bottom: 10pt;
+    border-bottom: 2pt solid var(--border-color);
+}
+
+.name {
+    font-size: 24pt;
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 1pt;
+    margin-bottom: 5pt;
+}
+
+.contact-row {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.contact-row a { color: var(--link-color); text-decoration: none; }
+.contact-divider { color: var(--text-muted); margin: 0 5pt; }
+
+.bio {
+    font-size: 10pt;
+    line-height: 1.4;
+    color: var(--text-main);
+    margin-bottom: 12pt;
+    text-align: left;
+}
+
+.section { margin-bottom: 12pt; }
+
+.section-title {
+    font-size: 11pt;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    margin-bottom: 8pt;
+    padding-bottom: 2pt;
+    border-bottom: 1.5pt solid var(--border-color);
+}
+
+.education-item { margin-bottom: 8pt; }
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1pt;
+}
+.edu-school { font-weight: bold; font-size: 10.5pt; color: var(--primary-color); }
+.edu-location { font-size: 9.5pt; color: var(--text-muted); font-style: italic; }
+.edu-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+.edu-degree { font-style: italic; font-size: 10pt; color: var(--text-main); }
+.edu-date { font-size: 9.5pt; color: var(--text-muted); font-style: italic; }
+.edu-note { font-size: 9.5pt; color: var(--text-muted); margin-top: 1pt; font-style: italic; }
+
+.experience-item { margin-bottom: 10pt; }
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1pt;
+}
+.exp-company { font-weight: bold; font-size: 10.5pt; color: var(--primary-color); }
+.exp-location { font-size: 9.5pt; color: var(--text-muted); font-style: italic; }
+.exp-subheader {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4pt;
+}
+.exp-title { font-style: italic; font-size: 10pt; color: var(--text-main); }
+.exp-date { font-size: 9.5pt; color: var(--text-muted); font-style: italic; }
+.exp-bullets {
+    list-style: disc;
+    padding-left: 14pt;
+    margin: 0;
+}
+.exp-bullets li {
+    font-size: 9.5pt;
+    line-height: 1.35;
+    color: var(--text-main);
+    margin-bottom: 2pt;
+    text-align: left;
+}
+.career-note {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 4pt;
+    padding-left: 14pt;
+}
+
+.project-item { margin-bottom: 8pt; }
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2pt;
+}
+.project-name { font-weight: bold; font-size: 10.5pt; color: var(--primary-color); }
+.project-date { font-size: 9.5pt; color: var(--text-muted); font-style: italic; }
+.project-bullets {
+    list-style: disc;
+    padding-left: 14pt;
+    margin: 0;
+}
+.project-bullets li {
+    font-size: 9.5pt;
+    line-height: 1.35;
+    color: var(--text-main);
+    margin-bottom: 2pt;
+}
+
+.skills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4pt;
+    font-size: 9.5pt;
+}
+.skill-row {
+    display: flex;
+    align-items: baseline;
+    line-height: 1.4;
+}
+.skill-category {
+    font-weight: bold;
+    color: var(--primary-color);
+    min-width: 85pt;
+    flex-shrink: 0;
+}
+.skill-items { color: var(--text-main); flex: 1; }
+.skill-items a { color: var(--link-color); text-decoration: none; }
+
+.languages-row {
+    font-size: 9.5pt;
+    color: var(--text-main);
+}
+.language-item { display: inline; }
+.language-name { font-weight: bold; }
+.language-level { color: var(--text-muted); font-style: italic; }
+.language-divider { color: var(--text-muted); margin: 0 6pt; }
+
+@media print {
+    body { padding: 0; max-width: none; }
+    .section, .experience-item, .education-item { break-inside: avoid; }
+    a { text-decoration: none; color: var(--text-main); }
+    a[href]:after { content: ""; }
+}
+</style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <h1 class="name">{{ name }}</h1>
+        <div class="contact-row">
+            {{ location }}
+            <span class="contact-divider">|</span>
+            <a href="tel:{{ phone }}">{{ phone }}</a>
+            <span class="contact-divider">|</span>
+            <a href="mailto:{{ email }}">{{ email }}</a>
+        </div>
+        <div class="contact-row">
+            <a href="{{ linkedin }}">{{ linkedin_display }}</a>
+            <span class="contact-divider">|</span>
+            <a href="{{ github }}">{{ github_display }}</a>
+            <span class="contact-divider">|</span>
+            <a href="https://feithink.substack.com">feithink.substack.com</a>
+        </div>
+    </header>
+
+    <!-- BIO -->
+    <div class="bio">{{ bio }}</div>
+
+    <!-- EDUCATION -->
+    <section class="section">
+        <h2 class="section-title">Education</h2>
+        <div class="education-item">
+            <div class="edu-header">
+                <span class="edu-school">{{ edu_master_school }}</span>
+                <span class="edu-location">{{ edu_master_location }}</span>
+            </div>
+            <div class="edu-details">
+                <span class="edu-degree">{{ edu_master_degree }}</span>
+                <span class="edu-date">{{ edu_master_date }}</span>
+            </div>
+            <div class="edu-note">{{ edu_master_note }}</div>
+        </div>
+        <div class="education-item">
+            <div class="edu-header">
+                <span class="edu-school">{{ edu_bachelor_school }}</span>
+                <span class="edu-location">{{ edu_bachelor_location }}</span>
+            </div>
+            <div class="edu-details">
+                <span class="edu-degree">{{ edu_bachelor_degree }}</span>
+                <span class="edu-date">{{ edu_bachelor_date }}</span>
+            </div>
+        </div>
+        {% if certification %}
+        <div class="education-item">
+            <div class="edu-details">
+                <span class="edu-degree"><strong>Certification:</strong> {{ certification }}</span>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- PROFESSIONAL EXPERIENCE -->
+    <section class="section">
+        <h2 class="section-title">Professional Experience</h2>
+        {% for exp in experiences %}
+        <div class="experience-item">
+            <div class="exp-header">
+                <span class="exp-company">{{ exp.company }}</span>
+                <span class="exp-location">{{ exp.location }}</span>
+            </div>
+            <div class="exp-subheader">
+                <span class="exp-title">{{ exp.title }}</span>
+                <span class="exp-date">{{ exp.date }}</span>
+            </div>
+            <ul class="exp-bullets">
+                {% for bullet in exp.bullets %}
+                <li>{{ bullet }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+        {% if career_note %}
+        <div class="career-note">{{ career_note }}</div>
+        {% endif %}
+    </section>
+
+    <!-- PROJECTS -->
+    {% if projects %}
+    <section class="section">
+        <h2 class="section-title">Projects</h2>
+        {% for proj in projects %}
+        <div class="project-item">
+            <div class="project-header">
+                <span class="project-name">{{ proj.name }}</span>
+                <span class="project-date">{{ proj.date }}</span>
+            </div>
+            <ul class="project-bullets">
+                {% for bullet in proj.bullets %}
+                <li>{{ bullet }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- TECHNICAL SKILLS -->
+    <section class="section">
+        <h2 class="section-title">Technical Skills</h2>
+        <div class="skills-list">
+            {% for skill in skills %}
+            <div class="skill-row">
+                <span class="skill-category">{{ skill.category }}:</span>
+                <span class="skill-items">{{ skill.skills_list }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- INTERESTS -->
+    <section class="section">
+        <h2 class="section-title">Interests</h2>
+        <div class="skills-list">
+            <div class="skill-row">
+                <span class="skill-category">Interests:</span>
+                <span class="skill-items">Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing</span>
+            </div>
+            <div class="skill-row">
+                <span class="skill-category">Blog:</span>
+                <span class="skill-items"><a href="https://huangf06.github.io/FeiThink/en/">huangf06.github.io/FeiThink/en/</a></span>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

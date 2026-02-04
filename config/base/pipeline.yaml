@@ -1,0 +1,250 @@
+# =============================================================================
+# 流程配置
+# =============================================================================
+# 控制整个求职流程的参数
+# =============================================================================
+
+# =============================================================================
+# 爬虫配置
+# =============================================================================
+
+crawler:
+  # 启用的数据源
+  sources:
+    - name: "linkedin"
+      enabled: true
+      priority: 1
+      config:
+        search_terms:
+          - "data scientist"
+          - "machine learning engineer"
+          - "data engineer"
+          - "quantitative researcher"
+        location: "Netherlands"
+        max_jobs_per_search: 25
+        filters:
+          time_range: "r86400"  # 过去24小时
+          easy_apply_only: true
+          
+    - name: "indeed"
+      enabled: false  # 暂未实现
+      priority: 2
+      
+    - name: "iamexpat"
+      enabled: true
+      priority: 2
+      config:
+        search_terms:
+          - "data scientist"
+          - "machine learning engineer"
+          - "data engineer"
+        location: "Netherlands"
+        max_jobs_per_search: 15
+  
+  # 爬虫行为配置
+  behavior:
+    # 请求间隔 (秒)
+    request_delay: 2
+    
+    # 最大重试次数
+    max_retries: 3
+    
+    # 超时设置 (秒)
+    timeout: 30
+    
+    # 是否使用无头模式
+    headless: true
+
+# =============================================================================
+# 处理流程配置
+# =============================================================================
+
+pipeline:
+  # 每日最大处理职位数
+  daily_max_jobs: 20
+  
+  # 处理顺序
+  stages:
+    - name: "crawl"
+      enabled: true
+      
+    - name: "filter"
+      enabled: true
+      
+    - name: "score"
+      enabled: true
+      
+    - name: "generate_resume"
+      enabled: true
+      
+    - name: "track"
+      enabled: true
+  
+  # 错误处理
+  error_handling:
+    # 遇到错误时是否继续
+    continue_on_error: true
+    
+    # 最大错误数后停止
+    max_errors_before_stop: 5
+    
+    # 错误重试策略
+    retry_policy:
+      max_retries: 3
+      backoff_factor: 2
+
+# =============================================================================
+# 调度配置
+# =============================================================================
+
+scheduler:
+  # 是否启用自动调度
+  enabled: false
+  
+  # 运行时间 (cron表达式)
+  schedule: "0 9 * * *"  # 每天上午9点
+  
+  # 时区
+  timezone: "Europe/Amsterdam"
+
+# =============================================================================
+# 通知配置
+# =============================================================================
+
+notifications:
+  enabled: true
+  
+  # 通知渠道
+  channels:
+    - type: "discord"
+      enabled: true
+      webhook_url: "${DISCORD_WEBHOOK_URL}"  # 从环境变量读取
+      events:
+        - "daily_summary"
+        - "high_priority_job"
+        - "error"
+        
+    - type: "email"
+      enabled: false
+      smtp_host: "${SMTP_HOST}"
+      smtp_port: 587
+      username: "${SMTP_USERNAME}"
+      password: "${SMTP_PASSWORD}"
+      to: "${NOTIFICATION_EMAIL}"
+      events:
+        - "weekly_report"
+  
+  # 通知内容配置
+  content:
+    daily_summary:
+      include_stats: true
+      include_new_jobs: true
+      max_jobs_in_summary: 10
+      
+    high_priority_job:
+      min_score: 8.0
+      include_resume_preview: true
+
+# =============================================================================
+# 数据存储配置
+# =============================================================================
+
+storage:
+  # 数据目录
+  data_dir: "data"
+  
+  # 输出目录
+  output_dir: "output/resumes"
+  
+  # 备份配置
+  backup:
+    enabled: true
+    # 保留天数
+    retention_days: 30
+    # 备份目录
+    backup_dir: "data/backups"
+  
+  # 数据保留策略
+  retention:
+    # 原始职位数据保留天数
+    raw_jobs_days: 90
+    
+    # 生成的简历保留天数
+    generated_resumes_days: 365
+    
+    # 处理结果保留天数
+    results_days: 365
+
+# =============================================================================
+# 日志配置
+# =============================================================================
+
+logging:
+  # 日志级别
+  level: "INFO"  # DEBUG | INFO | WARNING | ERROR
+  
+  # 日志输出
+  outputs:
+    - type: "console"
+      enabled: true
+      
+    - type: "file"
+      enabled: true
+      path: "logs/job_hunter.log"
+      max_size: "10MB"
+      backup_count: 5
+  
+  # 结构化日志
+  structured: true
+  
+  # 包含的字段
+  fields:
+    - timestamp
+    - level
+    - module
+    - message
+    - job_id
+    - context
+
+# =============================================================================
+# 实验配置
+# =============================================================================
+
+experiments:
+  # 是否启用实验框架
+  enabled: true
+  
+  # 实验数据存储
+  data_dir: "data/experiments"
+  
+  # 默认实验参数
+  defaults:
+    min_sample_size: 50
+    max_duration_days: 30
+    confidence_level: 0.95
+
+# =============================================================================
+# 性能配置
+# =============================================================================
+
+performance:
+  # 并发数
+  concurrency:
+    crawler: 1  # 爬虫并发 (建议1，避免被封)
+    processor: 3  # 处理并发
+  
+  # 批处理大小
+  batch_size: 10
+  
+  # 内存限制
+  memory_limit_mb: 512
+
+# =============================================================================
+# 配置元数据
+# =============================================================================
+
+metadata:
+  version: "1.0.0"
+  last_updated: "2026-02-03"
+  author: "Fei Huang"
+  description: "Pipeline configuration"

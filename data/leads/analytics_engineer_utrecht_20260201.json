@@ -1,0 +1,56 @@
+{
+  "id": "3KtRuSgRFpP2RgKcfFinku",
+  "title": "Analytics Engineer - Financial Reporting (TEMP)",
+  "company": "Independent Recruiters (Agency)",
+  "location": "Utrecht",
+  "language": "English",
+  "salary": "EUR 7000-8000 gross/month",
+  "type": "Temporary (5 months)",
+  "hours": "32-40 hours/week",
+  "posted": "January 28, 2026",
+  "url": "https://www.iamexpat.nl/career/jobs-netherlands/it-technology-positions/analytics-engineer-financial-reporting-temp/3KtRuSgRFpP2RgKcfFinku",
+  "source": "IamExpat",
+  "scraped_at": "2026-02-01T18:00:00Z",
+  
+  "description": "As senior Analytics Engineer you will help set up the DBT infrastructure and build the core data models needed for accurate, auditable financial licensing reporting.",
+  
+  "responsibilities": [
+    "Design and maintain DBT models for financial licensing reporting",
+    "Set up DBT project structure and workflows, ensure data quality, documentation, and traceability",
+    "Translate regulatory requirements into scalable data models",
+    "Collaborate with reporting experts and data engineers",
+    "Work with modern tools (dbt, SQL, Python, Airflow, GIT, CI/CD)"
+  ],
+  
+  "tech_stack": ["DBT", "SQL", "Python", "Airflow", "GIT", "CI/CD"],
+  
+  "notes": {
+    "pros": [
+      "Good salary (7-8k/month)",
+      "Modern tech stack (DBT, Python, Airflow)",
+      "English-speaking environment",
+      "Utrecht - close to Amsterdam"
+    ],
+    "cons": [
+      "Temporary position (5 months only)",
+      "Senior level - may require more experience",
+      "Through recruitment agency",
+      "Freelance not an option"
+    ]
+  },
+  
+  "match_analysis": {
+    "score": 7.5,
+    "matching_skills": ["Python", "SQL", "Data Engineering", "CI/CD"],
+    "missing_skills": ["DBT (can learn)", "Airflow (similar to PySpark)"],
+    "recommendation": "MAYBE - Good tech match but temporary and senior level"
+  },
+  
+  "similar_jobs": [
+    "Data Valorization Team leader (R&D Food)",
+    "Director Data",
+    "Solution Architect",
+    "Frontend Developer - Interim",
+    "Product Data Analyst - Temporary"
+  ]
+}

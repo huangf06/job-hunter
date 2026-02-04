@@ -1,0 +1,160 @@
+# =============================================================================
+# 实验配置示例: Summary长度测试
+# =============================================================================
+# 测试不同summary长度对回复率的影响
+# =============================================================================
+
+experiment:
+  # 实验基本信息
+  id: "exp_001"
+  name: "summary_length_test"
+  description: "测试不同summary长度对回复率的影响"
+  hypothesis: "较长的summary(400字符)比较短的summary(200字符)能获得更高的回复率"
+  created_at: "2026-02-03"
+  created_by: "Fei Huang"
+  
+  # 实验状态
+  status: "draft"  # draft | running | paused | completed
+  
+  # 分组策略
+  variants:
+    - id: "control"
+      name: "short_summary"
+      description: "简洁版summary，约200字符"
+      weight: 0.5  # 50%流量
+      config:
+        resume:
+          summary:
+            max_length: 200
+            style: "concise"
+            min_length: 150
+      
+    - id: "treatment"
+      name: "long_summary"
+      description: "详细版summary，约400字符"
+      weight: 0.5  # 50%流量
+      config:
+        resume:
+          summary:
+            max_length: 400
+            style: "detailed"
+            min_length: 300
+  
+  # 分流策略
+  assignment:
+    # 分流方法
+    method: "hash"  # hash | random | round_robin
+    
+    # 分流键 (用于hash方法)
+    hash_key: "job_id"
+    
+    # 确保同一职位始终进入同一组
+    sticky: true
+  
+  # 成功指标 (主要指标只能有一个)
+  metrics:
+    primary:
+      name: "response_rate"
+      description: "收到回复的比例"
+      calculation: "responses / applications"
+      min_improvement: 0.05  # 至少5%的提升才算成功
+    
+    secondary:
+      - name: "interview_rate"
+        description: "获得面试的比例"
+        calculation: "interviews / applications"
+        
+      - name: "time_to_response"
+        description: "平均回复时间(天)"
+        calculation: "avg(response_date - application_date)"
+        target: "decrease"  # 希望减少
+        
+      - name: "resume_generation_time"
+        description: "简历生成平均时间"
+        calculation: "avg(generation_duration_ms)"
+  
+  # 实验参数
+  parameters:
+    # 最小样本量
+    min_sample_size: 100
+    
+    # 每组最小样本量
+    min_sample_per_variant: 50
+    
+    # 最大实验天数
+    max_duration_days: 30
+    
+    # 置信水平
+    confidence_level: 0.95
+    
+    # 统计功效
+    statistical_power: 0.8
+  
+  # 停止条件 (满足任一即停止)
+  stop_conditions:
+    - type: "sample_size"
+      description: "达到最小样本量"
+      
+    - type: "duration"
+      description: "达到最大实验天数"
+      
+    - type: "significant_result"
+      description: "结果达到统计显著性"
+      min_confidence: 0.95
+      
+    - type: "manual"
+      description: "手动停止"
+  
+  # 预警配置
+  alerts:
+    - type: "sample_imbalance"
+      threshold: 0.6  # 如果某组占比超过60%，发出警告
+      
+    - type: "low_conversion"
+      description: "转化率异常低"
+      threshold: 0.01  # 如果回复率低于1%
+  
+  # 实验报告配置
+  reporting:
+    # 自动生成报告
+    auto_generate: true
+    
+    # 报告频率
+    frequency: "weekly"  # daily | weekly
+    
+    # 报告内容
+    include:
+      - sample_size
+      - metric_comparison
+      - statistical_significance
+      - confidence_intervals
+      - recommendations
+
+# =============================================================================
+# 实验运行记录 (自动更新)
+# =============================================================================
+
+execution:
+  started_at: null
+  completed_at: null
+  
+  # 当前样本量
+  current_sample_size:
+    control: 0
+    treatment: 0
+  
+  # 当前指标值
+  current_metrics:
+    control:
+      response_rate: null
+      interview_rate: null
+    treatment:
+      response_rate: null
+      interview_rate: null
+  
+  # 统计结果
+  statistical_results:
+    p_value: null
+    confidence_interval: null
+    is_significant: null
+    winner: null
