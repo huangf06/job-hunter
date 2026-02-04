@@ -1,0 +1,276 @@
+# =============================================================================
+# RESUME GENERATION CONFIGURATION
+# 简历生成配置 - 知识沉淀
+# =============================================================================
+# 此文件记录简历生成的最佳实践和参数配置
+# 更新此文件以优化生成效果
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. 角色配置 (Role Configurations)
+# -----------------------------------------------------------------------------
+# 每个目标角色都有特定的配置：
+# - bio_template: 摘要模板
+# - title_mapping: 公司title映射
+# - skill_adjustments: 技能列表调整
+# - bullet_selection: bullet选择偏好
+# -----------------------------------------------------------------------------
+
+roles:
+  data_engineer:
+    name: "Data Engineer"
+    bio_template:
+      core: "Data Engineer with expertise in building scalable data platforms and ETL pipelines"
+      skills: "Python, PySpark, Databricks, and cloud technologies"
+      highlight: "Hands-on experience designing data infrastructure and optimizing pipeline performance"
+    
+    # 各公司经历对应的职位名称
+    title_mapping:
+      glp_technology: "Data Engineer & Risk Lead"
+      baiquan_investment: "Quantitative Developer"
+      eleme: "Data Analyst"
+    
+    # 技能列表调整
+    skill_adjustments:
+      ML_&_Statistics: "Data Modeling, ETL Design, Pipeline Orchestration, XGBoost, LightGBM"
+    
+    # Bullet选择权重（影响排序）
+    bullet_weights:
+      data_engineering: 3.0
+      data_pipelines: 3.0
+      pyspark: 2.5
+      python: 2.0
+      sql: 2.0
+      fintech: 1.5
+
+  ml_engineer:
+    name: "Machine Learning Engineer"
+    bio_template:
+      core: "Machine Learning Engineer with strong foundation in ML pipeline development and model deployment"
+      skills: "Python, PyTorch, and MLOps tools"
+      highlight: "Experience building end-to-end ML systems from research to production"
+    
+    title_mapping:
+      glp_technology: "ML Engineer & Team Lead"
+      baiquan_investment: "Quantitative Researcher"
+      eleme: "Data Analyst"
+    
+    skill_adjustments:
+      ML_&_Statistics: "Deep Learning, Model Deployment, MLOps, PyTorch, TensorFlow"
+    
+    bullet_weights:
+      ml: 3.0
+      deep_learning: 2.5
+      pytorch: 2.5
+      python: 2.0
+      production: 2.0
+
+  data_scientist:
+    name: "Data Scientist"
+    bio_template:
+      core: "Data Scientist with expertise in statistical modeling and machine learning"
+      skills: "Python, statistical analysis, and ML frameworks"
+      highlight: "Track record of translating complex data into actionable business insights"
+    
+    title_mapping:
+      glp_technology: "Data Scientist & Team Lead"
+      baiquan_investment: "Quantitative Analyst"
+      eleme: "Data Analyst"
+    
+    skill_adjustments:
+      ML_&_Statistics: "Statistical Modeling, A/B Testing, Causal Inference, XGBoost, LightGBM"
+    
+    bullet_weights:
+      statistics: 3.0
+      ml: 2.5
+      ab_testing: 2.5
+      python: 2.0
+      business_impact: 2.0
+
+  quant:
+    name: "Quantitative Researcher"
+    bio_template:
+      core: "Quantitative Researcher with deep expertise in systematic trading strategies and alpha research"
+      skills: "Python, statistical modeling, and backtesting frameworks"
+      highlight: "Hands-on experience developing and deploying quantitative trading strategies"
+    
+    title_mapping:
+      glp_technology: "Quantitative Risk Analyst"
+      baiquan_investment: "Quantitative Researcher"
+      eleme: "Data Analyst"
+    
+    skill_adjustments:
+      ML_&_Statistics: "Statistical Modeling, Backtesting, Factor Research, Time Series Analysis, XGBoost, LightGBM"
+    
+    bullet_weights:
+      quant: 3.0
+      trading: 3.0
+      backtesting: 2.5
+      statistics: 2.5
+      python: 2.0
+
+  data_analyst:
+    name: "Data Analyst"
+    bio_template:
+      core: "Data Analyst with strong analytical skills and business acumen"
+      skills: "SQL, Python, and data visualization"
+      highlight: "Experience driving data-informed decision making across organizations"
+    
+    title_mapping:
+      glp_technology: "Data Analyst & Risk Lead"
+      baiquan_investment: "Quantitative Analyst"
+      eleme: "Data Analyst"
+    
+    skill_adjustments:
+      ML_&_Statistics: "Statistical Analysis, A/B Testing, Data Visualization, Excel, Tableau"
+    
+    bullet_weights:
+      data_analysis: 3.0
+      sql: 2.5
+      business_acumen: 2.5
+      python: 2.0
+      visualization: 2.0
+
+# -----------------------------------------------------------------------------
+# 2. 关键词映射 (Keyword Mappings)
+# -----------------------------------------------------------------------------
+# 用于从 JD 提取关键词
+# -----------------------------------------------------------------------------
+
+keyword_mappings:
+  # 编程语言
+  python: ["python"]
+  sql: ["sql", "hive", "spark sql", "postgresql", "mysql"]
+  pyspark: ["pyspark", "spark", "apache spark"]
+  
+  # 工具和平台
+  databricks: ["databricks"]
+  aws: ["aws", "amazon web services", "s3", "ec2", "lambda"]
+  azure: ["azure", "microsoft azure"]
+  gcp: ["gcp", "google cloud", "google cloud platform"]
+  docker: ["docker", "containerization", "container"]
+  kubernetes: ["kubernetes", "k8s"]
+  airflow: ["airflow", "apache airflow"]
+  kafka: ["kafka", "apache kafka"]
+  
+  # ML/AI
+  ml: ["machine learning", "ml", "modeling", "predictive modeling"]
+  deep_learning: ["deep learning", "neural networks", "pytorch", "tensorflow", "keras"]
+  statistics: ["statistics", "statistical", "a/b testing", "hypothesis testing", "significance testing"]
+  
+  # 领域
+  quant: ["quantitative", "quant", "trading", "finance", "financial"]
+  data_engineering: ["data engineering", "etl", "pipeline", "data warehouse", "data lake"]
+  credit_risk: ["credit risk", "risk modeling", "scoring", "risk assessment"]
+  nlp: ["nlp", "natural language processing", "llm", "large language model", "transformer"]
+
+# -----------------------------------------------------------------------------
+# 3. 公司特定配置 (Company-Specific Configurations)
+# -----------------------------------------------------------------------------
+# 针对特定公司的定制配置
+# -----------------------------------------------------------------------------
+
+company_configs:
+  # 量化交易公司
+  optiver:
+    role_override: "quant"
+    emphasis: ["low_latency", "market_making", "high_frequency"]
+    
+  imc:
+    role_override: "quant"
+    emphasis: ["algorithmic_trading", "market_microstructure"]
+    
+  flow_traders:
+    role_override: "quant"
+    emphasis: ["etfs", "market_making", "electronic_trading"]
+  
+  # 科技公司
+  picnic:
+    emphasis: ["python", "aws", "startup_culture"]
+    
+  booking_com:
+    emphasis: ["personalization", "recommendation", "scale"]
+    
+  adyen:
+    emphasis: ["fintech", "payments", "real_time"]
+
+# -----------------------------------------------------------------------------
+# 4. 生成参数 (Generation Parameters)
+# -----------------------------------------------------------------------------
+
+generation:
+  # 每段经历最多显示几个 bullets
+  max_bullets_per_experience: 3
+  
+  # 是否包含项目经历
+  include_projects: true
+  
+  # 是否包含 career note
+  include_career_note: true
+  
+  # 项目选择数量
+  max_projects: 3
+  
+  # 每个项目最多几个 bullets
+  max_bullets_per_project: 2
+  
+  # Bio 最大长度
+  bio_max_length: 300
+
+# -----------------------------------------------------------------------------
+# 5. 模板样式配置 (Template Style Config)
+# -----------------------------------------------------------------------------
+
+template_style:
+  # 字体
+  font_family: "Georgia, 'Times New Roman', serif"
+  font_size: "10pt"
+  
+  # 边距
+  margin: "0.55in"
+  
+  # 页面大小
+  page_size: "A4"
+  
+  # 行高
+  line_height: 1.35
+  
+  # Section 间距
+  section_spacing: "12pt"
+  
+  # 颜色
+  primary_color: "#1a1a1a"
+  text_muted: "#555555"
+  accent_color: "#2c5282"
+
+# -----------------------------------------------------------------------------
+# 6. 历史优化记录 (Optimization History)
+# -----------------------------------------------------------------------------
+# 记录每次调整的原因和效果
+# -----------------------------------------------------------------------------
+
+optimization_history:
+  - date: "2026-02-03"
+    changes:
+      - "修复 Bio 中 Databricks 重复问题"
+      - "将 hands-on 改为 Hands-on"
+      - "精简 Jinja2 模板，移除多余空行"
+    result: "简历更紧凑，Bio 更流畅"
+    
+  - date: "2026-02-03"
+    changes:
+      - "初始版本 Toni-style 模板"
+      - "实现智能 bullet 选择算法"
+      - "添加角色定制功能"
+    result: "基础功能完成"
+
+# -----------------------------------------------------------------------------
+# 7. 待优化项 (TODO)
+# -----------------------------------------------------------------------------
+
+todo:
+  - "添加更多项目到 bullet library"
+  - "优化 bullet 选择算法（考虑关键词密度）"
+  - "添加 A/B 测试功能（比较不同版本效果）"
+  - "集成 LinkedIn 自动抓取 JD"
+  - "添加简历效果追踪（面试转化率）"

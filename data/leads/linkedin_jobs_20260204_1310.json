@@ -1,0 +1,62 @@
+{
+  "source": "linkedin",
+  "scraped_at": "2026-02-04T13:10:54.457788",
+  "total": 5,
+  "jobs": [
+    {
+      "id": "3",
+      "title": "Data Engineer",
+      "company": "Talpa Network",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/data-engineer-at-talpa-network-4368280612?position=1&pageNum=0&refId=wJfu0a8kmX8GSjv%2Fg7LIOQ%3D%3D&trackingId=RgUGA6ae%2Bkii8K9VkaK9DA%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-04T13:10:29.144415",
+      "description": "Vacancy: Data Engineer\n\nAre you passionate about working with state-of-the-art cloud technologies? Do you get energized by determining the best way to unlock, transform, deploy, and release data from a wide variety of data sources, making it 100% ready for use by our data analysts? And do you also have the skills to write robust and high-quality code to implement these scalable data pipelines? If you answered yes to all three, then look no further! We are looking for you!\n\n\n\n\nWhat you will do:\n\nYou will be part of the DataOps team within the Digital Infrastructure department of Talpa Network. All requests from the business, regarding new data features and services, are handled by the DataOps team: a central team that facilitates all the different brands within Talpa Network. The data platform managed by the DataOps team is a combination of off- the-shelf and in-house components. This therefore requires you to have a good understanding of data operations in general, and of the data platform architecture within Talpa in particular. This will allow you to be proactive in meetings with the Technical Product Owner Data (TPOD) and the Lead Solution Architect Data (LSAD) to design, build, and implement solutions for various business challenges that we face on a daily basis. Think of implementing new data source connections and integrations or advising our Strategy and Insights department on the best practices for setting up infrastructure for various data- driven projects.\n\n\n\n\nYour daily responsibilities:\n\nDesign, build, and maintain batch and real-time data pipelines in production.\nAutomate the implementation and execution of data workflows such as ETL (data ingestion), data aggregation, and data synchronization.\nMaintain and optimize the data infrastructure required for accurate extraction, transformation, and loading of data from a wide range of data sources.\nBuild, maintain, and implement data products for analysis on AWS.\nUtilize manual and automated checks to ensure ",
+      "has_easy_apply": false
+    },
+    {
+      "id": "3",
+      "title": "Data Engineer - QuantumBlack, AI by McKinsey",
+      "company": "QuantumBlack, AI by McKinsey",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/data-engineer-quantumblack-ai-by-mckinsey-at-quantumblack-ai-by-mckinsey-4219661251?position=2&pageNum=0&refId=wJfu0a8kmX8GSjv%2Fg7LIOQ%3D%3D&trackingId=M%2FwkNbzOtIZA4Jt4v8CRmw%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-04T13:10:29.174801",
+      "description": "Who You'll Work With\n\nDriving lasting impact and building long-term capabilities with our clients is not easy work. You are the kind of person who thrives in a high performance/high reward culture - doing hard things, picking yourself up when you stumble, and having the resilience to try another way forward.\n\nIn return for your drive, determination, and curiosity, we'll provide the resources, mentorship, and opportunities you need to become a stronger leader faster than you ever thought possible. Your colleagues—at all levels—will invest deeply in your development, just as much as they invest in delivering exceptional results for clients. Every day, you'll receive apprenticeship, coaching, and exposure that will accelerate your growth in ways you won’t find anywhere else.\n\nWhen you join us, you will have:\n\n\nContinuous learning: Our learning and apprenticeship culture, backed by structured programs, is all about helping you grow while creating an environment where feedback is clear, actionable, and focused on your development. The real magic happens when you take the input from others to heart and embrace the fast-paced learning experience, owning your journey.\nA voice that matters: From day one, we value your ideas and contributions. You’ll make a tangible impact by offering innovative ideas and practical solutions, all while upholding our unwavering commitment to ethics and integrity. We not only encourage diverse perspectives, but they are critical in driving us toward the best possible outcomes.\nGlobal community: With colleagues across 65+ countries and over 100 different nationalities, our firm’s diversity fuels creativity and helps us come up with the best solutions for our clients. Plus, you’ll have the opportunity to learn from exceptional colleagues with diverse backgrounds and experiences.\nWorld-class benefits: On top of a competitive salary (based on your location, experience, and skills), we provide a comprehensive benefits package to enable holistic well",
+      "has_easy_apply": false
+    },
+    {
+      "id": "3",
+      "title": "Data Engineer",
+      "company": "Doghouse Recruitment",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/data-engineer-at-doghouse-recruitment-4368286379?position=3&pageNum=0&refId=wJfu0a8kmX8GSjv%2Fg7LIOQ%3D%3D&trackingId=mnrjf8iCdxeYmJVh4j2E7Q%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-04T13:10:29.194488",
+      "description": "Looking for Data Engineer for one of the biggest media companies in the Netherlands!\n\n\n\n\nWithin the DataOps team, you play a key role in facilitating business requests for new data features. As a member of this team that supports various business units, you manage the core AWS data platform, data pipelines and take part in new data solutions. You will be involved in designing, building, and maintaining both batch and real-time data pipelines in a production environment.\n\n\n\n\nThe team consist of 6 people distributed over two countries. The team in the Dutch office is in the lead and harbors the more Senior people, including the tech lead.\n\n\n\n\nWhat we are looking for:\n\n2+ years of data engineering experience\nExperience in designing and implementing ETL pipelines in a production environment.\nStrong Python and SQL skills\nExperience with AWS or other Public Clouds\n\n\n\n\nIf you don’t tick al the boxes, don’t hesitate to apply. With the right mindset, there is a lot to learn and the team considers ‘less perfect’ candidates (humans) as well!\n\n\n\n\nSalary: up to 80k\n\nLocation: Hilversum\n\nShow more ",
+      "has_easy_apply": false
+    },
+    {
+      "id": "3",
+      "title": "Data Engineer",
+      "company": "Doghouse Recruitment",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/data-engineer-at-doghouse-recruitment-4368287350?position=4&pageNum=0&refId=wJfu0a8kmX8GSjv%2Fg7LIOQ%3D%3D&trackingId=KHYCsH5mYONi7UxJjdYOBA%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-04T13:10:29.227834",
+      "description": "Vacancy: Data Engineer | Video-on-demand\n\n\n\n\nTech: AWS | Kafka | Lambda | SQL | Python\n\n\n\n\nOur client is one of the dominant platforms in the Netherlands for on demand video content. They also provide radio, podcasts and broadcasting replays. With a huge diversity in content and a fast-growing user base platform, they collect big masses of data, which gives valuable insights for themselves as well as for customers.\n\n\n\n\nYou will be part of the centralized data team which is part of the Digital Infrastructure Department. A central team that facilitates all the different brands within this Media company. This team is receiving data from all the different sources and reconstructing this in an efficient and usable way, leveraging their AWS and Kafka combined set-up to do so. The platform they use is highly automated and they work with a variety of automation tools and use different coding languages (for API’s and/or building small automation on the platform).\n\n\n\n\nWe are looking for a data engineer who brings:\n\n\n\n\n2+ years of experience with Cloud-based data platform (AWS preferred)\nExperience with ETL and tools as Kafka, Spark etc.\nKnown with Lambda.\nExperience working with SQL and NoSQL databases.\n\n\n\n\nAre you interested to work in an environment with huge loads of data, where scalability, real-time processing, up-time and security are of essence? This might be the team for you!\n\n\n\n\nLocation: Utrecht Area\n\nSalary: up to 90k\n\nShow more ",
+      "has_easy_apply": false
+    },
+    {
+      "id": "3",
+      "title": "Data Engineer - Contract",
+      "company": "iO Associates",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/data-engineer-contract-at-io-associates-4368269120?position=5&pageNum=0&refId=wJfu0a8kmX8GSjv%2Fg7LIOQ%3D%3D&trackingId=Tz7SA2PyEI%2BAEflVvtx6jQ%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-04T13:10:29.261193",
+      "description": "Data Engineer\n\nContract\n\n€50-60 per hour (Ltd Company)\n\n17th March Start Date\n\n9 Months Initial Contract\n\nThe Hague/Fully On-site\n\nNATO Secret Clearance\n\nWe are seeking a skilled Data Engineer to design, build, and maintain scalable data pipelines and architectures that support analytics, data science, and AI initiatives. In this role, you will collaborate with data analysts, data scientists, and business stakeholders to transform diverse data sources into reliable, secure, and high-quality data products.\n\nWhat You'll Do\n\nDesign and maintain data pipelines, data lakes, and data platforms\nSupport batch and near-real-time data processing workflows\nEnsure data quality, security, availability, and performance\nMonitor, optimize, and troubleshoot data pipelines and systems\nApply best practices in software development, testing, and deployment\n\nWhat You Bring\n\nBachelor's degree in Computer Science, Data Science, Engineering, or a related field (or equivalent professional experience)\nStrong knowledge of data engineering concepts (ETL/ELT, data warehousing, data governance)\nExperience with cloud platforms (AWS, Azure, or Google Cloud)\nProficiency in Python\nExperience with containerization and orchestration tools (Docker, Kubernetes)\nFamiliarity with CI/CD, version control, and modern software development practices\nUnderstanding of data security and compliance best practices\n\nIf this role is of interest, apply to the link for consideration. Please note, the deadline for this role is Tuesday 10th February.\n\nShow more ",
+      "has_easy_apply": false
+    }
+  ]
+}

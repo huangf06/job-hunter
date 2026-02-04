@@ -1,0 +1,140 @@
+# =============================================================================
+# 爬虫平台配置 - 优化版
+# =============================================================================
+# 简化搜索词，降低反爬风险
+# =============================================================================
+
+platforms:
+  # ============================================================================
+  # LinkedIn - 优化搜索策略
+  # ============================================================================
+  linkedin:
+    enabled: true
+    priority: 1
+    
+    # 搜索策略 - 简化版（避免复杂布尔语法）
+    search:
+      # 策略1: 量化职位
+      - name: "quant"
+        term: "quantitative researcher"
+        location: "Netherlands"
+        max_jobs: 8
+        
+      # 策略2: 机器学习
+      - name: "ml"
+        term: "machine learning engineer"
+        location: "Netherlands"
+        max_jobs: 8
+        
+      # 策略3: 数据工程
+      - name: "data"
+        term: "data engineer"
+        location: "Netherlands"
+        max_jobs: 8
+        
+      # 策略4: Python数据
+      - name: "python"
+        term: "python data"
+        location: "Netherlands"
+        max_jobs: 8
+        
+      # 策略5: AI工程师
+      - name: "ai"
+        term: "ai engineer"
+        location: "Netherlands"
+        max_jobs: 8
+      
+    # 全局设置
+    location: "Netherlands"
+    
+    # 筛选器
+    filters:
+      time_range: "r86400"      # 过去24小时
+      easy_apply_only: true
+      
+    # 行为配置 - 保守设置
+    behavior:
+      request_delay: 3          # 请求间隔(秒) - 增加延迟
+      strategy_delay: 30        # 策略间隔(秒) - 策略间等待
+      max_retries: 3
+      timeout: 30
+      scroll_count: 2
+      headless: false           # 显示浏览器（更像真人）
+  
+  # ============================================================================
+  # IamExpat - 外籍人士平台
+  # ============================================================================
+  iamexpat:
+    enabled: true
+    priority: 2
+    
+    search:
+      - name: "data_jobs"
+        term: "data"
+        location: "Netherlands"
+        max_jobs: 10
+        
+      - name: "ml_jobs"
+        term: "machine learning"
+        location: "Netherlands"
+        max_jobs: 10
+    
+    filters:
+      english_speaking: true
+    
+    behavior:
+      request_delay: 3
+      strategy_delay: 20
+      max_retries: 3
+      timeout: 30
+      headless: false
+
+# =============================================================================
+# 全局配置
+# =============================================================================
+
+global:
+  # 每日限制 - 保守设置
+  daily_limits:
+    max_total_jobs: 50        # 每日最大职位数
+    max_per_platform: 40      # 每平台最大职位数
+  
+  # 去重
+  deduplication:
+    enabled: true
+    key_fields:
+      - "title"
+      - "company"
+    similarity_threshold: 0.9
+  
+  # 数据保留
+  retention:
+    raw_data_days: 30
+    processed_data_days: 90
+  
+  # 并发控制 - 严格限制
+  concurrency:
+    max_concurrent_platforms: 1
+    delay_between_platforms: 60  # 平台间间隔60秒
+
+# =============================================================================
+# 调度配置 - 最佳爬取时间
+# =============================================================================
+
+scheduler:
+  recommended_times:
+    - "09:00"    # 上午9点（欧洲工作时间开始）
+    - "14:00"    # 下午2点（职位更新高峰）
+  avoid_times:
+    - "22:00-08:00"  # 夜间（更新少，易被封）
+    - "weekend"      # 周末
+
+# =============================================================================
+# 配置元数据
+# =============================================================================
+
+metadata:
+  version: "2.0.0"
+  last_updated: "2026-02-03"
+  author: "Fei Huang"
+  description: "Optimized crawler configuration - conservative approach"

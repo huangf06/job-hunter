@@ -1,0 +1,216 @@
+{
+  "source": "LinkedIn",
+  "search": "data engineer",
+  "location": "Netherlands",
+  "filters": {
+    "date_posted": "Past 24 hours",
+    "workplace_type": [
+      "Hybrid",
+      "On-site"
+    ]
+  },
+  "scraped_at": "2026-02-04T15:15:15.046032",
+  "total_jobs": 25,
+  "jobs": [
+    {
+      "title": "Python Tech Lead  Python Tech Lead with verification",
+      "company": "Quantum Machines",
+      "location": "Delft, South Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4325602697/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:52.504993"
+    },
+    {
+      "title": "Cloud Engineer (Relocation to the Netherlands)Cloud Engineer (Relocation to the Netherlands)",
+      "company": "Xccelerated | Part of Xebia",
+      "location": "Eindhoven Area (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4367228700/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:53.570028"
+    },
+    {
+      "title": "Lead Java Developer  Lead Java Developer with verification",
+      "company": "Fitexa",
+      "location": "Utrecht, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4368719860/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:53.628013"
+    },
+    {
+      "title": "Power Platform Developer (with AI skills)  Power Platform Developer (with AI skills) with verification",
+      "company": "Fugro",
+      "location": "Nootdorp, South Holland, Netherlands (Remote)",
+      "url": "https://www.linkedin.com/jobs/view/4368737240/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:53.685227"
+    },
+    {
+      "title": "Linux Kernel Engineer  Linux Kernel Engineer with verification",
+      "company": "Canonical",
+      "location": "EMEA (Remote)",
+      "url": "https://www.linkedin.com/jobs/view/4286647491/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:53.748471"
+    },
+    {
+      "title": "Systems Engineer NL  Systems Engineer NL with verification",
+      "company": "Capgemini Engineering",
+      "location": "Utrecht, Utrecht, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4338763948/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:53.800498"
+    },
+    {
+      "title": "Senior Site Reliability Engineer (Remote from Netherlands)Senior Site Reliability Engineer (Remote from Netherlands)",
+      "company": "Jobgether",
+      "location": "Netherlands (Remote)",
+      "url": "https://www.linkedin.com/jobs/view/4369088810/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:53.862661"
+    },
+    {
+      "title": "Senior Dotnet Developer  Senior Dotnet Developer with verification",
+      "company": "Wipro",
+      "location": "The Hague, South Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4359513111/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:56.576376"
+    },
+    {
+      "title": "Senior Software Solutions Engineer (m/v/x)*  Senior Software Solutions Engineer (m/v/x)* with verification",
+      "company": "Tagueri AG",
+      "location": "Hengelo, Overijssel, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4192135725/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:56.623367"
+    },
+    {
+      "title": "Data Engineer  Data Engineer with verification",
+      "company": "WeTravel",
+      "location": "Amsterdam Area (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4369087594/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:56.664838"
+    },
+    {
+      "title": "SIEM Security Engineer  SIEM Security Engineer with verification",
+      "company": "Accenture",
+      "location": "Amsterdam, North Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4358082964/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:56.711393"
+    },
+    {
+      "title": "Senior Data EngineerSenior Data Engineer",
+      "company": "Full Orbit",
+      "location": "Haarlem, North Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4368305638/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:56.758394"
+    },
+    {
+      "title": "Data EngineerData Engineer",
+      "company": "Online Payment Platform",
+      "location": "Delft, South Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4368734200/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:14:56.804550"
+    },
+    {
+      "title": "Application Engineer  Application Engineer with verification",
+      "company": "ATS Global",
+      "location": "Eindhoven, North Brabant, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4369091541/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:02.487376"
+    },
+    {
+      "title": "Full Stack EngineerFull Stack Engineer",
+      "company": "Foxtek",
+      "location": "Amsterdam, North Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4368720599/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:02.528368"
+    },
+    {
+      "title": "Java Developer ATAJava Developer ATA",
+      "company": "SkillRecruit",
+      "location": "Amsterdam, North Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4358032961/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.517419"
+    },
+    {
+      "title": "Backend Developer (Kotlin/Java, Kafka) - Supply Chain Planning  Backend Developer (Kotlin/Java, Kafka) - Supply Chain Planning with verification",
+      "company": "Albert Heijn",
+      "location": "Amsterdam Area (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4369099315/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.559393"
+    },
+    {
+      "title": "Release Engineer - MetaMaskRelease Engineer - MetaMask",
+      "company": "Consensys",
+      "location": "EMEA (Remote)",
+      "url": "https://www.linkedin.com/jobs/view/4321852124/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.606575"
+    },
+    {
+      "title": "Principal ML Systems Engineer | GCP · MLOps · Applied ML | B2B · EU Remote | €80K - €100K  Principal ML Systems Engineer | GCP · MLOps · Applied ML | B2B · EU Remote | €80K - €100K with verification",
+      "company": "Joppy",
+      "location": "European Union (Remote)",
+      "url": "https://www.linkedin.com/jobs/view/4368723457/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.648826"
+    },
+    {
+      "title": "DevOps EngineerDevOps Engineer",
+      "company": "Virtusa",
+      "location": "Utrecht, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4358882844/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.696416"
+    },
+    {
+      "title": "Engineer I - Software  Engineer I - Software with verification",
+      "company": "TomTom",
+      "location": "Amsterdam, North Holland, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4368719461/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.738683"
+    },
+    {
+      "title": "AI Engineer  AI Engineer with verification",
+      "company": "Royal Terberg Group",
+      "location": "Houten, Utrecht, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4346182717/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.780951"
+    },
+    {
+      "title": "Senior Flutter DeveloperSenior Flutter Developer",
+      "company": "Ciklo Talent",
+      "location": "European Union (Remote)",
+      "url": "https://www.linkedin.com/jobs/view/4368726249/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.827743"
+    },
+    {
+      "title": "System Engineer  System Engineer with verification",
+      "company": "iO",
+      "location": "Den Bosch, North Brabant, Netherlands (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4346063976/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.874840"
+    },
+    {
+      "title": "(Junior) DevOps Engineer(Junior) DevOps Engineer",
+      "company": "Elevation Partners",
+      "location": "Breda-Tilburg Area (Hybrid)",
+      "url": "https://www.linkedin.com/jobs/view/4369076925/",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T15:15:05.917256"
+    }
+  ]
+}

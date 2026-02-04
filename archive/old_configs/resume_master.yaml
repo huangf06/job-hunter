@@ -1,0 +1,86 @@
+# Resume Master Configuration
+# Universal template for Fei Huang
+# Last updated: 2026-02-04
+
+personal_info:
+  name: "Fei Huang"
+  location: "Amsterdam, Netherlands"
+  phone: "+31 645 038 614"
+  email: "huangf06@gmail.com"
+  linkedin: "https://linkedin.com/in/huangf06"
+  github: "https://github.com/huangf06"
+  blog:
+    curated: "https://huangf06.github.io/FeiThink/en/"      # 精选集 (GitHub Pages)
+    full: "https://feithink.substack.com/"                   # 完整博客 (Substack)
+
+# Universal template settings
+template:
+  name: "toni_single_column"
+  version: "2.0"
+  font_family: "Georgia, 'Times New Roman', serif"
+  font_size: "10pt"
+  page_margin: "0.55in"
+  
+  colors:
+    primary: "#1a1a1a"
+    secondary: "#4a4a4a"
+    accent: "#2c5282"
+    border: "#1a1a1a"
+    text_main: "#1a1a1a"
+    text_muted: "#555555"
+    link: "#2c5282"
+
+# Skills layout
+skills:
+  layout: "single_column"  # One category per row
+  separator: ":"           # Single colon
+  
+  categories:
+    - name: "Programming"
+      items: "Python (pandas, NumPy, PyTorch, scikit-learn), SQL, Bash"
+    - name: "Data Infrastructure"
+      items: "Databricks, PySpark, Delta Lake, Apache Airflow, Kafka, Hive"
+    - name: "Cloud & DevOps"
+      items: "AWS, Azure, GCP, Docker, CI/CD, Terraform, Git"
+    - name: "ML & Statistics"
+      items: "XGBoost, LightGBM, Time Series Analysis, A/B Testing, Statistical Modeling"
+
+# Interests section
+interests:
+  description: "Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing"
+  # Writing style assessment based on blog content:
+  # - Analytical: Breaking down complex ideas systematically
+  # - Critical: Examining assumptions and questioning norms
+  # - Reflective: Personal engagement with philosophical texts
+  # 
+  # Your writing is primarily ANALYTICAL - you dissect philosophical concepts,
+  # examine logical structures, and build arguments methodically.
+  # It also has CRITICAL elements when you challenge cultural norms.
+  
+  blog_placement: "footer"  # Place blog link at bottom with interests
+  blog_display: "curated"   # Show GitHub Pages (curated) as primary link
+
+# Experience layout (best practice)
+experience:
+  format: "standard"  # Company | Location (line 1), Title | Date (line 2)
+  # This is the most readable and professional format
+
+# Output paths
+output:
+  html_template: "templates/resume_master.html"
+  pdf_dir: "output/"
+  
+# Job-specific overrides (for future use)
+jobs:
+  picnic:
+    company: "Picnic"
+    role: "data_engineer"
+    keywords:
+      - Python
+      - PySpark
+      - Databricks
+      - SQL
+      - AWS
+      - data pipelines
+      - ETL
+      - Delta Lake

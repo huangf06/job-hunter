@@ -1,0 +1,79 @@
+{
+  "source": "LinkedIn",
+  "search": "data engineer",
+  "location": "Netherlands",
+  "filters": {
+    "date_posted": "Past 24 hours",
+    "workplace_type": [
+      "Hybrid",
+      "On-site"
+    ]
+  },
+  "scraped_at": "2026-02-04T14:12:22.298072",
+  "total_jobs": 7,
+  "jobs": [
+    {
+      "title": "Systems Engineer NL",
+      "company": "Systems Engineer NL with verification",
+      "location": "",
+      "url": "https://www.linkedin.com/jobs/view/4338763948/?eBP=NON_CHARGEABLE_CHANNEL&refId=jACyKjsVPJWCaskaTLsD4w%3D%3D&trackingId=H%2BvzIlfdAp8jZnk6o8FLjA%3D%3D&trk=flagship3_search_srp_jobs",
+      "posted_date": "",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T14:12:00.818008"
+    },
+    {
+      "title": "Engineer I - Software",
+      "company": "Engineer I - Software with verification",
+      "location": "",
+      "url": "https://www.linkedin.com/jobs/view/4368719461/?eBP=NON_CHARGEABLE_CHANNEL&refId=jACyKjsVPJWCaskaTLsD4w%3D%3D&trackingId=4eZ6BJiIUKj7znPN3cLuJg%3D%3D&trk=flagship3_search_srp_jobs",
+      "posted_date": "",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T14:12:00.849916"
+    },
+    {
+      "title": "AI Engineer",
+      "company": "AI Engineer with verification",
+      "location": "",
+      "url": "https://www.linkedin.com/jobs/view/4346182717/?eBP=NON_CHARGEABLE_CHANNEL&refId=jACyKjsVPJWCaskaTLsD4w%3D%3D&trackingId=2uzgHZnX2B1RU9PSJmjBGw%3D%3D&trk=flagship3_search_srp_jobs",
+      "posted_date": "2026-02-04",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T14:12:00.882007"
+    },
+    {
+      "title": "IT Software Project Engineer",
+      "company": "IT Software Project Engineer with verification",
+      "location": "",
+      "url": "https://www.linkedin.com/jobs/view/4348117310/?eBP=NON_CHARGEABLE_CHANNEL&refId=jACyKjsVPJWCaskaTLsD4w%3D%3D&trackingId=lZtglZaicu314gFP%2FX4d2A%3D%3D&trk=flagship3_search_srp_jobs",
+      "posted_date": "2026-02-04",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T14:12:00.913368"
+    },
+    {
+      "title": "Lead Front-end developer",
+      "company": "Lead Front-end developer with verification",
+      "location": "",
+      "url": "https://www.linkedin.com/jobs/view/4204275526/?eBP=NON_CHARGEABLE_CHANNEL&refId=jACyKjsVPJWCaskaTLsD4w%3D%3D&trackingId=vmGxNb9nSeYIVDlexGv%2BgA%3D%3D&trk=flagship3_search_srp_jobs",
+      "posted_date": "2026-02-04",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T14:12:00.944714"
+    },
+    {
+      "title": "AI Consultant",
+      "company": "AI Consultant with verification",
+      "location": "",
+      "url": "https://www.linkedin.com/jobs/view/4369064891/?eBP=NON_CHARGEABLE_CHANNEL&refId=jACyKjsVPJWCaskaTLsD4w%3D%3D&trackingId=ctai6vnHY8CZktDbUOcLSw%3D%3D&trk=flagship3_search_srp_jobs",
+      "posted_date": "2026-02-04",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T14:12:00.976770"
+    },
+    {
+      "title": "Full Stack Engineer",
+      "company": "Full Stack Engineer",
+      "location": "",
+      "url": "https://www.linkedin.com/jobs/view/4369063797/?eBP=NON_CHARGEABLE_CHANNEL&refId=jACyKjsVPJWCaskaTLsD4w%3D%3D&trackingId=M%2Fkzp4asoLudrkII39NtnQ%3D%3D&trk=flagship3_search_srp_jobs",
+      "posted_date": "2026-02-04",
+      "source": "LinkedIn",
+      "scraped_at": "2026-02-04T14:12:01.008133"
+    }
+  ]
+}

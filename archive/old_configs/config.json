@@ -1,0 +1,130 @@
+{
+  "project": "job-hunter",
+  "version": "1.0.0",
+  "created": "2026-02-01",
+  "updated": "2026-02-03",
+  "description": "Unified job hunting automation system for Netherlands",
+
+  "core_goal": "找到可以 sponsor visa 的职位，2.5年后获得荷兰永居/护照",
+
+  "assets": {
+    "bullet_library": "assets/bullet_library.yaml",
+    "personal_info": "assets/personal_info.yaml",
+    "resume_template": "templates/resume.html"
+  },
+
+  "data": {
+    "job_tracker": "data/job_tracker.json",
+    "applications": "data/applications.json",
+    "history_dir": "data/history"
+  },
+
+  "targets": {
+    "platforms": [
+      {"name": "LinkedIn", "priority": 1, "url": "https://linkedin.com/jobs", "notes": "荷兰最主流，可筛选 sponsor"},
+      {"name": "IamExpat Jobs", "priority": 1, "url": "https://www.iamexpat.nl/career/jobs-netherlands", "notes": "专门面向外籍人士"},
+      {"name": "Indeed NL", "priority": 2, "url": "https://nl.indeed.com", "notes": "职位量大"},
+      {"name": "Together Abroad", "priority": 2, "url": "https://www.togetherabroad.nl", "notes": "外籍友好"},
+      {"name": "Undutchables", "priority": 2, "url": "https://undutchables.nl", "notes": "外籍招聘中介"},
+      {"name": "Glassdoor", "priority": 3, "url": "https://glassdoor.com", "notes": "有公司评价"},
+      {"name": "Magnet.me", "priority": 3, "url": "https://magnet.me", "notes": "毕业生友好"}
+    ],
+    "job_types": [
+      "ML Engineer",
+      "AI Engineer",
+      "Data Scientist",
+      "Data Analyst",
+      "Data Engineer",
+      "Quant Researcher",
+      "Quant Analyst",
+      "Quant Trader"
+    ],
+    "locations": ["Netherlands", "Amsterdam", "Rotterdam", "Utrecht", "The Hague", "Eindhoven"],
+    "keywords": [
+      "machine learning", "deep learning", "python", "pytorch", "tensorflow",
+      "data science", "data engineering", "ETL", "pipeline",
+      "quantitative", "trading", "fintech", "NLP", "LLM"
+    ]
+  },
+
+  "target_companies": {
+    "tech": ["Booking.com", "TomTom", "Picnic", "Coolblue", "bol.com"],
+    "fintech": ["Adyen", "Mollie"],
+    "banking": ["ING", "ABN AMRO", "Rabobank"],
+    "quant": ["Optiver", "IMC", "Flow Traders", "DRW", "Citadel"],
+    "industrial": ["ASML", "Philips", "Shell"]
+  },
+
+  "automation": {
+    "daily_limit": 50,
+    "delay_between_applications_ms": 5000,
+    "working_hours": {
+      "start": "09:00",
+      "end": "22:00",
+      "timezone": "Europe/Amsterdam"
+    }
+  },
+
+  "filters": {
+    "exclude_companies": [],
+    "require_visa_sponsor": true,
+    "remote_acceptable": true,
+    "min_experience_years": 0,
+    "max_experience_years": 5
+  },
+
+  "scoring": {
+    "thresholds": {
+      "auto_apply": 7.5,
+      "apply_now": 8.0,
+      "high_priority": 6.0,
+      "consider": 4.0,
+      "skip": 0
+    }
+  },
+
+  "auto_apply": {
+    "enabled": true,
+    "score_threshold": 6.0,
+    "daily_limit": 10,
+    "delay_ms": 30000,
+    "platforms": {
+      "linkedin_easy_apply": {
+        "enabled": true,
+        "mode": "full_auto"
+      },
+      "greenhouse": {
+        "enabled": true,
+        "mode": "semi_auto"
+      },
+      "lever": {
+        "enabled": true,
+        "mode": "semi_auto"
+      },
+      "email": {
+        "enabled": true,
+        "mode": "full_auto"
+      }
+    },
+    "blacklist": {
+      "companies": [],
+      "titles_containing": ["senior", "lead", "principal", "staff"],
+      "min_years_experience": 4
+    },
+    "personal_info": {
+      "first_name": "Fei",
+      "last_name": "Huang",
+      "email": "huangf06@gmail.com",
+      "phone": "+31612345678",
+      "location": "Amsterdam, Netherlands",
+      "linkedin": "https://linkedin.com/in/huangf06",
+      "portfolio": "https://github.com/huangf06",
+      "visa_status": "Search Year Visa - no sponsorship required for 1 year"
+    }
+  },
+
+  "output": {
+    "resumes_dir": "output",
+    "naming_convention": "Fei_Huang_{Role}_{Company}.pdf"
+  }
+}

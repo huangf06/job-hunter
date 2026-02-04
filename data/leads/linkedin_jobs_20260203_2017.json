@@ -1,0 +1,40 @@
+{
+  "source": "linkedin",
+  "scraped_at": "2026-02-03T20:17:18.597306",
+  "total": 3,
+  "jobs": [
+    {
+      "id": "3",
+      "title": "Data Engineer",
+      "company": "Xccelerated | Part of Xebia",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/data-engineer-at-xccelerated-part-of-xebia-4351614328?position=1&pageNum=0&refId=gl7w9ML5dOwQhwdrnfMjZg%3D%3D&trackingId=hBD2538FbgLj44CmXerweA%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-03T20:17:02.948496",
+      "description": "Medior Data Engineer – Utrecht (Hybrid)\n\n\n\n\nAre you passionate about building scalable data solutions in the cloud? Do you want to work on a modern data platform from scratch while sharpening your skills with top-level training?\n\nAt Xccelerated, we’re looking for Data Engineers to help build a state-of-the-art Data Platform in Google Cloud Platform. You’ll join forces with experienced consultants and get over 60 days of tailored training to maximize your growth and impact.\n\n\n\n\n💡 Why Join Us?\n\n✔ Help design, build and maintain a modern Data Platform from scratch on Google Cloud Platform\n\n✔ Collaborate with engineering and analytics teams to build scalable pipelines and deploy models\n\n✔ Receive over 60 days of in-depth technical training and project support from our Tech Leads\n\n✔ After one year, transition to a direct contract with the client organization\n\n\n\n\n🚀 What You’ll Be Doing\n\nAs a Data Engineer at Xccelerated, you’ll be part of a team building the foundation for data-driven decision making.\n\n🔹 Build and maintain scalable data pipelines and infrastructure on GCP\n\n🔹 Develop components of the data platform that enable analytics and machine learning use cases\n\n🔹 Ensure robust integration between systems and data models\n\n🔹 Collaborate with engineering and analytics teams to align architecture and implementation\n\n\n\n\n👨 💻 Who You Are\n\nYou’re a hands-on engineer with a strong can-do mentality. You enjoy solving challenges and learning by doing.\n\n✅ Bachelor’s or Master’s degree in Computer Science, Cloud Computing, or related field\n\n✅ 1–4 years of experience as a Data Engineer\n\n✅ Skilled in Python and familiar with at least one public cloud (GCP, AWS, or Azure)\n\n✅ Experience with modern data tooling like Databricks, Spark, or Airflow\n\n✅ Proactive, eager to learn, and focused on impact\n\n\n\n\n🎁 What We Offer\n\nAt Xccelerated, we don’t just offer a job—we offer a launchpad for your career in Data & Cloud.\n\n💰 Competitive salary – we value your skills and experience\n\n🛫 25 vacati",
+      "has_easy_apply": false
+    },
+    {
+      "id": "3",
+      "title": "Data Engineer",
+      "company": "DiscoverIT Recruitment",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/data-engineer-at-discoverit-recruitment-4357577788?position=2&pageNum=0&refId=gl7w9ML5dOwQhwdrnfMjZg%3D%3D&trackingId=G1sdU7n79qzvHHsdsJYzmw%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-03T20:17:02.980326",
+      "description": "Voor een klant van ons uit Utrecht zoeken wij een interim Data Engineer die wordt ingezet binnen het Data & Analytics team. De focus ligt op het ontwerpen, bouwen en onderhouden van robuuste data pipelines en datamodellen binnen een moderne data-architectuur.\n\n\n\n\nJouw verantwoordelijkheden:\n\nOntwikkelen en optimaliseren van data pipelines en ETL-processen\nOntwerpen en onderhouden van dimensionele datamodellen\nImplementeren van Type 2 Slowly Changing Dimensions\nOptimaliseren van queries en data pipelines voor performance en schaalbaarheid\nSamenwerken met data-analisten en architecten om datamodellen aan te scherpen\nDoorvoeren van wijzigingen in bestaande modellen en datasets\nBorgen van datakwaliteit, betrouwbaarheid en herleidbaarheid\nWerken volgens Agile/Scrum principes en CI/CD-processen\nActieve bijdrage leveren binnen een multidisciplinair data team\n\n\n\n\nProfiel:\n\nHBO werk- en denkniveau (IT / data-gericht)\nAantoonbare ervaring als Data Engineer\nSterke kennis van SQL en ervaring met DBT\nErvaring met cloud data platforms (bij voorkeur Snowflake)\nErvaring met dimensionele datamodellen en incrementeel laden\nErvaring met performance-optimalisatie van data pipelines\nErvaring met Agile/Scrum en CI/CD\nProfessionele beheersing van de Nederlandse taal\n\n\n\n\nExtra informatie:\n\nInzet: 40 uur per week\nLocatie: Amersfoort / Hybride (2 dagen per week op kantoor)\nTarief: Marktconform\nDuur: tot en met 31 december 2026 (met optie tot verlenging)\nContractvorm: Detachering (geen zzp, geen doorleenconstructies)\nScreening: VOG verplicht\nShow more ",
+      "has_easy_apply": false
+    },
+    {
+      "id": "3",
+      "title": "Senior Data Engineer",
+      "company": "Olivi.Growth",
+      "location": "",
+      "url": "https://nl.linkedin.com/jobs/view/senior-data-engineer-at-olivi-growth-4368622199?position=3&pageNum=0&refId=gl7w9ML5dOwQhwdrnfMjZg%3D%3D&trackingId=1UyA5%2FP7Yw8oshaGX5cwDw%3D%3D",
+      "source": "linkedin",
+      "scraped_at": "2026-02-03T20:17:02.997980",
+      "description": "Our client\n\nFor our client, a fast-growing ISP and Network Provider based in Utrecht, we are looking for a Senior Data Engineer to strengthen their enthusiastic in-house development team. The organization is making significant investments in its data platform, fully leveraging the Microsoft Azure ecosystem. A future-proof, scalable data architecture is central to their continued growth and innovation.\n\n\n\n\nThe Role\n\nAs a Senior Data Engineer, you will play a key role in designing, building, and operating a modern data platform that fuels business intelligence and decision-making. This is a hands-on position with real architectural impact: you’ll help shape the data landscape while ensuring reliability, performance, and accessibility. Your deep expertise in Azure and data engineering best practices will be essential to success.\n\n\n\n\nTasks & responsibilities\n\nDesign, build, and maintain scalable data pipelines and ELT/ETL processes using Azure Data Factory, Databricks, and related tools;\nDevelop and optimize data models, data warehouses, and data lakes to support analytics, reporting, and BI use cases;\nIngest and integrate data from a wide range of sources, including databases, APIs, and external data feeds;\nTransform raw data into clean, structured, analytics-ready datasets;\nCollaborate closely with data analysts and reporting specialists to ensure high-quality, reliable data for Power BI dashboards;\nImplement, monitor, and improve data quality, governance, and validation processes;\nTroubleshoot complex data issues and provide technical leadership and guidance within the team.\n\n\n\n\nYour Profile\n\nAt least 5 years of hands-on experience in a data engineering role;\nStrong, proven experience with Microsoft Azure, including Azure Data Factory, Azure SQL Database, and related Azure data services;\nExperience with Azure Databricks for large-scale data processing and transformation;\nSolid background in building and maintaining ELT pipelines, data warehouses, and data lakes;\nStro",
+      "has_easy_apply": false
+    }
+  ]
+}

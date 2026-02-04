@@ -1,0 +1,15 @@
+{
+  "source": "LinkedIn",
+  "search": "data engineer",
+  "location": "Netherlands",
+  "filters": {
+    "date_posted": "Past 24 hours",
+    "workplace_type": [
+      "Hybrid",
+      "On-site"
+    ]
+  },
+  "scraped_at": "2026-02-04T14:10:16.690542",
+  "total_jobs": 0,
+  "jobs": []
+}

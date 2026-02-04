@@ -1,0 +1,386 @@
+# =============================================================================
+# ROLE TEMPLATES CONFIGURATION
+# 岗位路由与模板配置 - 知识沉淀
+# =============================================================================
+# 此文件定义四大岗位的角色识别、模板匹配和内容定制规则
+# 更新此文件以优化路由准确性
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. 角色分类器配置 (Role Classifier)
+# -----------------------------------------------------------------------------
+
+role_classifier:
+  # 关键词权重表 - 用于自动识别岗位类型
+  keyword_weights:
+    # ML Engineer 关键词
+    ml_engineer:
+      "machine learning": 10
+      "ml engineer": 10
+      "deep learning": 10
+      "pytorch": 8
+      "tensorflow": 8
+      "mlops": 10
+      "production ml": 10
+      "model deployment": 9
+      "model serving": 9
+      "ci/cd": 7
+      "docker": 6
+      "kubernetes": 6
+      "feature engineering": 7
+      "recommendation": 6
+      "ranking": 6
+      
+    # Data Engineer 关键词
+    data_engineer:
+      "data engineer": 10
+      "data pipeline": 10
+      "etl": 10
+      "apache spark": 9
+      "pyspark": 9
+      "databricks": 10
+      "data warehouse": 9
+      "data lake": 9
+      "delta lake": 8
+      "airflow": 8
+      "kafka": 7
+      "data infrastructure": 10
+      "data modeling": 7
+      "dbt": 7
+      
+    # Data Scientist 关键词
+    data_scientist:
+      "data scientist": 10
+      "statistics": 10
+      "statistical": 9
+      "a/b testing": 10
+      "hypothesis testing": 9
+      "causal inference": 9
+      "analytics": 8
+      "insights": 8
+      "experimentation": 8
+      "regression": 7
+      "classification": 7
+      "clustering": 7
+      "business intelligence": 7
+      "tableau": 5
+      "power bi": 5
+      
+    # Quant Researcher 关键词
+    quant:
+      "quantitative": 10
+      "quant": 10
+      "trading": 10
+      "trader": 10
+      "hedge fund": 10
+      "alpha research": 10
+      "factor research": 10
+      "backtesting": 10
+      "sharpe ratio": 9
+      "market making": 9
+      "algorithmic trading": 10
+      "high frequency": 9
+      "portfolio optimization": 9
+      "risk model": 7
+      "derivatives": 8
+      
+  # 特殊规则
+  special_rules:
+    # 强制角色覆盖 (公司特定)
+    company_override:
+      optiver: "quant"
+      imc: "quant"
+      "flow traders": "quant"
+      "drw": "quant"
+      citadel: "quant"
+      "jump trading": "quant"
+      "jane street": "quant"
+      "two sigma": "quant"
+      
+    # 标题关键词强制匹配
+    title_override:
+      - pattern: "(?i)quantitative.*researcher"
+        role: "quant"
+      - pattern: "(?i)machine learning.*engineer"
+        role: "ml_engineer"
+      - pattern: "(?i)data.*engineer"
+        role: "data_engineer"
+      - pattern: "(?i)data.*scientist"
+        role: "data_scientist"
+        
+    # 排除规则 (降权)
+    exclude_patterns:
+      - pattern: "(?i)dutch.*required"
+        reduce_roles: ["quant"]
+        reduction: 5
+      - pattern: "(?i)senior.*principal"
+        reduce_roles: ["data_engineer", "data_scientist"]
+        reduction: 3
+
+# -----------------------------------------------------------------------------
+# 2. 模板配置 (Template Configuration)
+# -----------------------------------------------------------------------------
+
+templates:
+  ml_engineer:
+    file: "templates/ml_engineer.html"
+    description: "MLOps-focused, production ML experience"
+    
+    # 经历顺序 (公司代码)
+    experience_order: ["glp", "trading", "baiquan", "eleme"]
+    
+    # 经历标题映射
+    title_mapping:
+      glp: "Senior ML Engineer & Team Lead"
+      trading: "Quantitative Developer & Researcher"
+      baiquan: "Quantitative Developer"
+      eleme: "Data Analyst"
+      
+    # 每段经历最大 bullets
+    max_bullets_per_exp: 4
+    
+    # 项目选择 (从 bullet_library.yaml 中选择)
+    project_selection:
+      - "genai_text_generation"
+      - "thesis_ml_monitoring"
+      
+    # 技能结构
+    skills_structure:
+      - category: "ML/AI"
+        items: "Python (scikit-learn, XGBoost, PyTorch), Spark, SQL; LLMs/Transformers, prompt engineering"
+      - category: "MLOps"
+        items: "Model validation (PSI, KS, calibration), drift detection, experiment tracking; MLflow"
+      - category: "Cloud & Engineering"
+        items: "AWS (EC2, S3), Docker, Git, CI/CD, unit testing, Linux/Bash"
+      - category: "Leadership"
+        items: "Team mentoring, knowledge transfer, code review, cross-functional collaboration"
+        
+    # Bio 模板
+    bio_template:
+      core: "Machine Learning Engineer with strong foundation in ML pipeline development and model deployment"
+      skills: "Python, PyTorch, and MLOps tools"
+      highlight: "Experience building end-to-end ML systems from research to production"
+      
+    # 高亮关键词 (用于 bullet 排序)
+    highlight_keywords:
+      - "production"
+      - "deployment"
+      - "monitoring"
+      - "ci/cd"
+      - "docker"
+      - "kubernetes"
+      - "mlops"
+      - "pipeline"
+
+  data_engineer:
+    file: "templates/data_engineer.html"
+    description: "Data infrastructure-focused, ETL and pipeline experience"
+    
+    experience_order: ["glp", "baiquan", "eleme"]
+    
+    title_mapping:
+      glp: "Data Engineer & Team Lead"
+      baiquan: "Quantitative Developer"
+      eleme: "Data Analyst"
+      
+    max_bullets_per_exp: 3
+    
+    project_selection:
+      - "financial_data_lakehouse"
+      - "expedia_pipeline"
+      
+    skills_structure:
+      - category: "Languages"
+        items: "Python (pandas, NumPy, PyTorch), SQL, Bash"
+      - category: "Data Infrastructure"
+        items: "Databricks, PySpark, Delta Lake, Hive, Apache Airflow, Docker"
+      - category: "Cloud & Tools"
+        items: "AWS, GCP, Azure, Git, Linux, CI/CD"
+      - category: "Certifications"
+        items: "Databricks Certified Data Engineer Professional"
+        
+    bio_template:
+      core: "Data Engineer with expertise in building scalable data platforms and ETL pipelines"
+      skills: "Python, PySpark, Databricks, and cloud technologies"
+      highlight: "Hands-on experience designing data infrastructure and optimizing pipeline performance"
+      
+    highlight_keywords:
+      - "databricks"
+      - "spark"
+      - "etl"
+      - "pipeline"
+      - "data lake"
+      - "delta lake"
+      - "airflow"
+      - "kafka"
+
+  data_scientist:
+    file: "templates/data_scientist.html"
+    description: "Balanced ML + Stats + Analytics, research and insights focus"
+    
+    experience_order: ["glp", "baiquan", "eleme", "henan"]
+    
+    title_mapping:
+      glp: "Data Scientist & Team Lead"
+      baiquan: "Quantitative Researcher"
+      eleme: "Data Analyst"
+      henan: "Supply Chain Analyst"
+      
+    max_bullets_per_exp: 3
+    
+    project_selection:
+      - "thesis_uncertainty"
+      - "expedia_ranking"
+      - "har_sensor"
+      
+    skills_structure:
+      - category: "Programming"
+        items: "Python (pandas, NumPy, scikit-learn, PyTorch), SQL, Java"
+      - category: "MLOps"
+        items: "Databricks, GCP (Airflow), AWS, PySpark; Docker, Kubernetes, CI/CD"
+      - category: "Machine Learning"
+        items: "Learning-to-rank, ensemble methods (XGBoost, LightGBM), time-series analysis"
+      - category: "Deep Learning"
+        items: "Deep reinforcement learning, LSTM, CNN, Transformers/LLM"
+      - category: "Analytics"
+        items: "A/B testing, statistical modeling, data visualization (Tableau, Power BI)"
+        
+    bio_template:
+      core: "Data Scientist with expertise in statistical modeling and machine learning"
+      skills: "Python, statistical analysis, and ML frameworks"
+      highlight: "Track record of translating complex data into actionable business insights"
+      
+    highlight_keywords:
+      - "statistics"
+      - "a/b testing"
+      - "insights"
+      - "modeling"
+      - "analysis"
+      - "forecasting"
+      - "regression"
+      - "classification"
+
+  quant:
+    file: "templates/quant.html"
+    description: "Quantitative trading-focused, math and finance background"
+    
+    experience_order: ["baiquan", "glp", "eleme", "henan"]
+    
+    title_mapping:
+      baiquan: "Quantitative Researcher"
+      glp: "Quantitative Risk Analyst"
+      eleme: "Data Analyst"
+      henan: "Business Operations Supervisor"
+      
+    max_bullets_per_exp: 3
+    
+    project_selection:
+      - "r_breaker_strategy"
+      - "factor_research"
+      
+    skills_structure:
+      - category: "Quantitative Methods"
+        items: "Factor modeling (IC/IR, Fama-MacBeth), backtesting (walk-forward, purged CV), Monte Carlo simulation"
+      - category: "Programming"
+        items: "Python (Pandas, NumPy, Scikit-learn, PyTorch), SQL, Bash, Git"
+      - category: "Machine Learning"
+        items: "Gradient Boosting (XGBoost/LightGBM), Deep Learning, Reinforcement Learning"
+      - category: "Mathematics"
+        items: "Probability & Statistics, Linear Algebra, Convex Optimization, Stochastic Processes"
+        
+    bio_template:
+      core: "Quantitative Researcher with deep expertise in systematic trading strategies and alpha research"
+      skills: "Python, statistical modeling, and backtesting frameworks"
+      highlight: "Hands-on experience developing and deploying quantitative trading strategies"
+      
+    highlight_keywords:
+      - "backtesting"
+      - "alpha"
+      - "sharpe"
+      - "factor"
+      - "trading"
+      - "strategy"
+      - "returns"
+      - "risk"
+
+# -----------------------------------------------------------------------------
+# 3. Bullet 评分配置 (Bullet Scoring)
+# -----------------------------------------------------------------------------
+
+bullet_scoring:
+  # 角色匹配权重
+  role_match_weight: 5.0
+  
+  # 关键词匹配权重 (每个匹配词)
+  keyword_match_weight: 0.5
+  keyword_max_bonus: 3.0
+  
+  # 技术栈匹配权重
+  tech_match_weight: 0.5
+  tech_max_bonus: 2.0
+  
+  # 公司特定 boost
+  company_boosts:
+    # 量化公司偏好特定技术
+    optiver:
+      "low latency": 2.0
+      "c++": 2.0
+    
+    imc:
+      "market microstructure": 2.0
+      
+    # 科技公司偏好
+    picnic:
+      "python": 1.5
+      "aws": 1.5
+      
+    booking_com:
+      "recommendation": 2.0
+      "personalization": 2.0
+
+# -----------------------------------------------------------------------------
+# 4. 生成参数 (Generation Parameters)
+# -----------------------------------------------------------------------------
+
+generation:
+  # Bio 最大长度
+  bio_max_length: 300
+  
+  # 项目选择数量
+  max_projects: 2
+  
+  # 每个项目最大 bullets
+  max_bullets_per_project: 2
+  
+  # 页面边距
+  margin: "0.55in"
+  
+  # 字体大小
+  font_size: "10pt"
+  
+  # 行高
+  line_height: 1.35
+
+# -----------------------------------------------------------------------------
+# 5. 历史优化记录 (Optimization History)
+# -----------------------------------------------------------------------------
+
+optimization_history:
+  - date: "2026-02-04"
+    version: "4.2"
+    changes:
+      - "创建角色分类器系统"
+      - "定义四大岗位差异化模板"
+      - "实现关键词权重表"
+      - "添加公司特定覆盖规则"
+    result: "系统化岗位路由，提升简历匹配度"
+
+# -----------------------------------------------------------------------------
+# 6. TODO (待优化)
+# -----------------------------------------------------------------------------
+
+todo:
+  - "添加更多公司特定配置"
+  - "实现 A/B 测试框架比较不同版本"
+  - "添加简历效果追踪（面试转化率）"
+  - "优化关键词权重基于实际投递反馈"

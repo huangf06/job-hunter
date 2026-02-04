@@ -1,0 +1,102 @@
+# Resume Configuration for Fei Huang - Picnic Data Engineer
+# Generated: 2026-02-04
+# Template: Toni Single Column (09)
+
+personal_info:
+  name: "Fei Huang"
+  location: "Amsterdam, Netherlands"
+  phone: "+31 645 038 614"
+  email: "huangf06@gmail.com"
+  linkedin: "https://linkedin.com/in/huangf06"
+  github: "https://github.com/huangf06"
+  blog: null  # Add blog URL here if desired
+
+target_role: "data_engineer"
+company: "Picnic"
+
+job_description:
+  title: "Data Engineer"
+  company: "Picnic"
+  keywords:
+    - Python
+    - PySpark
+    - Databricks
+    - SQL
+    - AWS
+    - data pipelines
+    - ETL
+    - Delta Lake
+    - data warehousing
+
+resume_settings:
+  max_bullets_per_exp: 3
+  template: "toni_single_column"
+  font_family: "Georgia, 'Times New Roman', serif"
+  font_size: "10pt"
+  page_margin: "0.55in"
+  
+style_config:
+  primary_color: "#1a1a1a"
+  secondary_color: "#4a4a4a"
+  accent_color: "#2c5282"
+  border_color: "#1a1a1a"
+  text_main: "#1a1a1a"
+  text_muted: "#555555"
+  link_color: "#2c5282"
+
+skills_layout:
+  type: "single_column"  # Options: single_column, two_column, grid
+  format: "category_per_row"  # Each skill category on its own row
+  separator: ":"  # Single colon after category name
+  
+  categories:
+    - name: "Programming"
+      items: "Python (pandas, NumPy, PyTorch, scikit-learn), SQL, Bash"
+    - name: "Data Infrastructure"
+      items: "Databricks, PySpark, Delta Lake, Apache Airflow, Kafka, Hive"
+    - name: "Cloud & DevOps"
+      items: "AWS, Azure, GCP, Docker, CI/CD, Terraform, Git"
+    - name: "ML & Statistics"
+      items: "XGBoost, LightGBM, Time Series Analysis, A/B Testing, Statistical Modeling"
+
+experience_layout:
+  # Best practice: Company/Location on same line (left/right)
+  # Title/Date on second line (left/right)
+  # This creates clear visual hierarchy
+  format: "standard"  # Company | Location (line 1), Title | Date (line 2)
+
+languages:
+  - name: "English"
+    level: "Fluent"
+  - name: "Mandarin"
+    level: "Native"
+  - name: "Dutch"
+    level: "Conversational"
+
+# Optional sections
+interests: null  # Add interests here if desired, e.g.:
+  # - "Quantitative trading"
+  # - "Open source contributions"
+  # - "Technical blogging"
+
+# Output paths
+output:
+  html_template: "templates/resume_master.html"
+  pdf_final: "output/Fei_Huang_picnic_final.pdf"
+  variations_dir: "output/picnic_style_variations/"
+
+# Version history
+versions:
+  - id: "09"
+    name: "toni_single_column"
+    description: "Georgia font, single column skills, clean layout"
+    selected: true
+  - id: "01"
+    name: "toni_classic"
+    description: "Original Toni style"
+  - id: "02"
+    name: "modern_minimal"
+    description: "Inter font, modern look"
+  - id: "08"
+    name: "toni_optimized"
+    description: "Toni with two-column skills"
