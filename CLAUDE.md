@@ -1,77 +1,116 @@
-# Job Hunter - OpenClaw 执行指南
+# Job Hunter v2.0 - 执行指南
 
 ## 项目概述
 
-自动化求职系统：爬取职位 → 筛选评分 → 生成定制简历 → 追踪申请
+自动化求职系统：爬取职位 → 硬规则筛选 → 规则评分 → AI 分析 → 生成定制简历 → 追踪申请
+
+### v2.0 架构 (2026-02-05)
+
+```
+┌──────────┐    ┌──────────────┐    ┌──────────────┐
+│  Scrape  │───▶│ Hard Filter  │───▶│ Rule PreScore│
+│  (jobs)  │    │  (v2.0)      │    │   (v2.0)     │
+└──────────┘    └──────────────┘    └──────────────┘
+                      │                   │
+                 rejected             rule_score >= 3.0
+                      ▼                   ▼
+                 ┌─────────┐      ┌──────────────────────────────┐
+                 │  SKIP   │      │  AI Analyzer (Claude Opus)   │
+                 └─────────┘      │  - 评分 (skill_match, etc)   │
+                                  │  - 输出 tailored resume JSON  │
+                                  └──────────────────────────────┘
+                                             │
+                                             ▼ ai_score >= 5.0
+                                  ┌──────────────────────────────┐
+                                  │  Resume Renderer (Jinja2)    │
+                                  │  - 填充 base_template.html   │
+                                  │  - 生成 HTML + PDF            │
+                                  └──────────────────────────────┘
+                                             │
+                                             ▼
+                                  ┌──────────────────────────────┐
+                                  │  output/Fei_Huang_*.pdf      │
+                                  └──────────────────────────────┘
+```
 
 ## 核心命令
 
 ### 1. 爬取 LinkedIn 职位
 ```bash
-cd workspace/job-hunter
 python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db --cdp
 ```
 - `--profile`: 搜索配置 (ml_data, backend_data, quant)
 - `--save-to-db`: 保存到 SQLite 数据库
-- `--no-json`: 不保存 JSON 文件（仅数据库）
-- `--cdp`: 连接已有浏览器 (需要 Chrome 在端口 9222 运行)
-- 不加 `--cdp`: 自动启动新浏览器
-
-配置文件: `config/search_profiles.yaml`
+- `--cdp`: 连接已有浏览器 (Chrome 端口 9222)
 
 ### 2. 处理职位流水线
 ```bash
+# 完整流程 (导入 → 筛选 → 规则评分)
 python scripts/job_pipeline.py --process
-```
-- `--import-only`: 只导入不处理
-- `--ready`: 查看待申请职位
-- `--stats`: 查看统计信息
-- `--mark-applied JOB_ID`: 标记已申请
 
-### 3. 生成单份简历
-```bash
-python job_hunter_v42.py --job "职位标题|职位描述|公司名"
-```
-示例:
-```bash
-python job_hunter_v42.py --job "ML Engineer|PyTorch Docker AWS|Picnic"
-python job_hunter_v42.py --job "Data Engineer|Spark Databricks ETL|ABN AMRO"
+# 分步执行
+python scripts/job_pipeline.py --import-only   # 只导入
+python scripts/job_pipeline.py --filter        # 只筛选
+python scripts/job_pipeline.py --score         # 只规则评分
 ```
 
-### 4. 测试角色分类器
+### 3. AI 分析与简历生成 (新)
 ```bash
-python job_hunter_v42.py --test
+# AI 分析高分职位 (调用 Claude Opus)
+python scripts/job_pipeline.py --ai-analyze
+
+# 为 AI 高分职位生成简历
+python scripts/job_pipeline.py --generate
+
+# 分析单个职位
+python scripts/job_pipeline.py --analyze-job JOB_ID
 ```
 
-## 文件结构 (精简后)
+可选参数:
+- `--min-score N`: 最低分数阈值
+- `--limit N`: 最大处理数量 (默认 50)
+
+### 4. 查看状态
+```bash
+python scripts/job_pipeline.py --stats         # 漏斗统计
+python scripts/job_pipeline.py --ready         # 待申请职位
+python scripts/job_pipeline.py --mark-applied JOB_ID  # 标记已申请
+```
+
+## 文件结构
 
 ```
 job-hunter/
-├── job_hunter_v42.py           # 主控制器
-├── role_classifier.py          # 角色分类器
-├── content_engine.py           # 内容引擎
-│
-├── scripts/                    # 核心脚本 (4个)
-│   ├── linkedin_scraper_v6.py      # LinkedIn爬虫 (含数据库集成)
-│   ├── playwright_scraper.py       # 多平台爬虫
-│   ├── job_pipeline.py             # 主流水线
-│   └── job_parser.py               # JD解析器
+├── scripts/                    # 核心脚本
+│   ├── job_pipeline.py             # 主流水线 (统一入口)
+│   ├── ai_analyzer.py              # AI 分析器 (Claude Opus)
+│   ├── resume_renderer.py          # 简历渲染器 (Jinja2 + Playwright)
+│   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫
+│   ├── job_parser.py               # JD 解析器
+│   └── playwright_scraper.py       # 多平台爬虫
 │
 ├── config/
-│   ├── role_templates.yaml     # 角色模板 (核心配置)
+│   ├── ai_config.yaml          # AI 配置 (模型、阈值、prompt)
 │   ├── search_profiles.yaml    # 搜索配置
-│   ├── linkedin_cookies.json   # LinkedIn登录凭证 (勿提交)
+│   ├── role_templates.yaml     # 角色模板
 │   └── base/                   # 基础配置
+│       ├── filters.yaml            # 硬规则 v2.0
+│       └── scoring.yaml            # 评分规则 v2.0
 │
 ├── src/db/
 │   └── job_db.py               # SQLite 数据库模块
 │
+├── templates/
+│   ├── base_template.html      # 主模板 (Jinja2)
+│   └── resume_master.html      # 完整参考简历
+│
+├── assets/
+│   └── bullet_library.yaml     # 已验证的经历库 (核心)
+│
 ├── data/
 │   ├── jobs.db                 # SQLite 数据库
-│   └── leads/                  # 爬取的原始数据
+│   └── inbox/                  # 待导入 JSON
 │
-├── templates/                  # HTML简历模板
-├── assets/                     # 内容库
 ├── output/                     # 生成的简历
 └── archive/                    # 归档的旧代码
 ```
@@ -79,10 +118,17 @@ job-hunter/
 ## 数据库结构
 
 SQLite 数据库 `data/jobs.db`:
-- `jobs` 表: 所有爬取的职位
-- 字段: url, title, company, location, description, scraped_at, status
 
-查看数据库:
+| 表名 | 用途 |
+|------|------|
+| `jobs` | 所有爬取的职位 |
+| `filter_results` | 硬规则筛选结果 |
+| `ai_scores` | 规则评分结果 |
+| `job_analysis` | AI 分析结果 + 定制简历 JSON |
+| `resumes` | 生成的简历记录 |
+| `applications` | 申请状态跟踪 |
+
+查看统计:
 ```python
 from src.db.job_db import JobDatabase
 db = JobDatabase()
@@ -91,7 +137,7 @@ print(db.get_funnel_stats())
 
 ## 日常工作流
 
-1. **每日爬取** (建议早上运行):
+1. **每日爬取** (建议早上):
    ```bash
    python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db
    ```
@@ -101,29 +147,48 @@ print(db.get_funnel_stats())
    python scripts/job_pipeline.py --process
    ```
 
-3. **查看待申请**:
+3. **AI 分析高分职位** (消耗 token):
+   ```bash
+   python scripts/job_pipeline.py --ai-analyze --limit 10
+   ```
+
+4. **生成简历**:
+   ```bash
+   python scripts/job_pipeline.py --generate
+   ```
+
+5. **查看待申请**:
    ```bash
    python scripts/job_pipeline.py --ready
    ```
 
-4. **生成简历** (选中的职位):
-   ```bash
-   python job_hunter_v42.py --job "职位信息"
-   ```
+## 配置说明
+
+### AI 配置 (`config/ai_config.yaml`)
+- `models.analyzer`: Claude Opus 用于智能分析
+- `thresholds.rule_score_for_ai`: 进入 AI 分析的最低规则分 (默认 3.0)
+- `thresholds.ai_score_generate_resume`: 生成简历的最低 AI 分 (默认 5.0)
+- `budget.daily_limit`: 每日 token 预算
+
+### 评分阈值 (`config/base/scoring.yaml`)
+- `apply_now`: >= 7.0 (高优先级)
+- `apply`: >= 5.5 (正常申请)
+- `maybe`: >= 4.0 (待定)
+- `skip`: < 4.0 (跳过)
 
 ## 注意事项
 
-- LinkedIn cookies 在 `config/linkedin_cookies.json`，首次运行会提示手动登录
-- 数据文件 (*.db, *.json) 不要提交到 git
-- 归档代码在 `archive/` 目录，如需恢复可从那里找
-- 爬虫使用 Playwright，需要 `playwright install chromium`
+- LinkedIn cookies 在 `config/linkedin_cookies.json`
+- 数据文件 (*.db, *.json) 不提交到 git
+- AI 分析消耗 token，注意预算控制
+- 归档代码在 `archive/deprecated_v41/`
+- Playwright PDF 需要: `playwright install chromium`
 
-## 角色分类
+## 归档内容 (v41 → v2.0)
 
-系统支持4种角色，自动根据JD关键词分类:
-- **ml_engineer**: Machine Learning, Deep Learning, PyTorch, TensorFlow
-- **data_engineer**: Spark, Databricks, ETL, Data Pipeline
-- **data_scientist**: Statistics, A/B Testing, Analytics
-- **quant**: Quantitative, Trading, Risk, Alpha
-
-配置在 `config/role_templates.yaml`
+以下组件已归档到 `archive/deprecated_v41/`:
+- `role_classifier.py` → 被 AI Analyzer 替代
+- `content_engine.py` → 被 AI Analyzer 替代
+- `job_hunter_v42.py` → 功能迁移到 job_pipeline.py
+- `templates/ml_engineer.html` 等 → 合并到 base_template.html
+- `assets/bullet_library_simple.yaml` → 使用完整版

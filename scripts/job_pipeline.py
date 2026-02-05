@@ -795,6 +795,8 @@ class JobPipeline:
         print(f"Total scraped:    {stats.get('total_scraped', 0)}")
         print(f"Passed filter:    {stats.get('passed_filter', 0)}")
         print(f"High score (>=6): {stats.get('scored_high', 0)}")
+        print(f"AI analyzed:      {stats.get('ai_analyzed', 0)}")
+        print(f"AI high (>=5):    {stats.get('ai_scored_high', 0)}")
         print(f"Resume generated: {stats.get('resume_generated', 0)}")
         print(f"Applied:          {stats.get('applied', 0)}")
 
@@ -813,6 +815,103 @@ class JobPipeline:
             print(f"{i:2}. [{job['score']:.1f}] {job['title'][:45]} @ {job['company'][:25]}")
             print(f"    ID: {job['id']}")
 
+    # ==================== AI Analysis & Resume Generation ====================
+
+    def ai_analyze_jobs(self, min_rule_score: float = None, limit: int = 50,
+                        model: str = None) -> int:
+        """AI 分析通过预筛选的职位"""
+        try:
+            from ai_analyzer import AIAnalyzer
+        except ImportError:
+            # Try alternative import path
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "ai_analyzer", PROJECT_ROOT / "scripts" / "ai_analyzer.py"
+            )
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            AIAnalyzer = module.AIAnalyzer
+
+        analyzer = AIAnalyzer(model_override=model)
+        return analyzer.analyze_batch(min_rule_score=min_rule_score, limit=limit)
+
+    def generate_resumes(self, min_ai_score: float = None, limit: int = 50) -> int:
+        """为高分职位生成简历"""
+        try:
+            from resume_renderer import ResumeRenderer
+        except ImportError:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "resume_renderer", PROJECT_ROOT / "scripts" / "resume_renderer.py"
+            )
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            ResumeRenderer = module.ResumeRenderer
+
+        renderer = ResumeRenderer()
+        return renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
+
+    def analyze_single_job(self, job_id: str, model: str = None):
+        """分析单个职位"""
+        try:
+            from ai_analyzer import AIAnalyzer
+        except ImportError:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "ai_analyzer", PROJECT_ROOT / "scripts" / "ai_analyzer.py"
+            )
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            AIAnalyzer = module.AIAnalyzer
+
+        analyzer = AIAnalyzer(model_override=model)
+        result = analyzer.analyze_single(job_id)
+        if result:
+            print(f"\nTailored Resume Preview:")
+            tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
+            if 'bio' in tailored:
+                print(f"  Bio: {tailored['bio'][:100]}...")
+            if 'experiences' in tailored:
+                print(f"  Experiences: {len(tailored['experiences'])} selected")
+        return result
+
+    def process_all(self):
+        """Run full processing pipeline (including AI analysis and resume generation)"""
+        print("=" * 70)
+        print("Job Hunter Pipeline v2.0 (with AI Analysis)")
+        print("=" * 70)
+
+        imported = self.import_inbox()
+        passed, rejected = self.filter_jobs()
+        scored = self.score_jobs()
+
+        print("\n" + "-" * 70)
+        print("Stage 1 Complete: imported {}, filtered {}/{}, scored {}".format(
+            imported, passed, passed+rejected, scored))
+        print("-" * 70)
+
+        # AI Analysis (optional - only if high-score jobs exist)
+        jobs_for_ai = self.db.get_jobs_needing_analysis(min_rule_score=3.0, limit=10)
+        if jobs_for_ai:
+            print(f"\nFound {len(jobs_for_ai)} jobs ready for AI analysis")
+            user_input = input("Run AI analysis? (y/n, default: n): ").strip().lower()
+            if user_input == 'y':
+                analyzed = self.ai_analyze_jobs(limit=10)
+                print(f"AI analyzed: {analyzed} jobs")
+
+                # Resume generation
+                jobs_for_resume = self.db.get_analyzed_jobs_for_resume(min_ai_score=5.0, limit=10)
+                if jobs_for_resume:
+                    print(f"\nFound {len(jobs_for_resume)} jobs ready for resume generation")
+                    user_input = input("Generate resumes? (y/n, default: n): ").strip().lower()
+                    if user_input == 'y':
+                        generated = self.generate_resumes(limit=10)
+                        print(f"Resumes generated: {generated}")
+
+        print("\n" + "=" * 70)
+        self.show_stats()
+        print("=" * 70)
+
 
 def main():
     """主函数"""
@@ -829,6 +928,21 @@ def main():
     parser.add_argument('--mark-applied', type=str, help='Mark job as applied')
     parser.add_argument('--reprocess', action='store_true',
                         help='Clear old filter/score results and reprocess all jobs with new rules')
+
+    # New AI-powered commands
+    parser.add_argument('--ai-analyze', action='store_true',
+                        help='Run AI analysis on scored jobs')
+    parser.add_argument('--generate', action='store_true',
+                        help='Generate resumes for AI-analyzed jobs')
+    parser.add_argument('--analyze-job', type=str,
+                        help='Analyze a single job by ID')
+    parser.add_argument('--min-score', type=float, default=None,
+                        help='Minimum score threshold for AI commands')
+    parser.add_argument('--limit', type=int, default=50,
+                        help='Max jobs to process')
+    parser.add_argument('--model', type=str, default=None,
+                        choices=['opus', 'kimi'],
+                        help='AI model: opus (Claude) or kimi')
 
     args = parser.parse_args()
 
@@ -852,7 +966,8 @@ def main():
         return
 
     # 新版数据库流水线
-    if args.process or args.import_only or args.filter or args.score or args.ready:
+    if args.process or args.import_only or args.filter or args.score or args.ready \
+       or args.ai_analyze or args.generate or args.analyze_job:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
             sys.exit(1)
@@ -868,6 +983,13 @@ def main():
             pipeline.score_jobs()
         elif args.ready:
             pipeline.show_ready()
+        elif args.ai_analyze:
+            pipeline.ai_analyze_jobs(min_rule_score=args.min_score, limit=args.limit,
+                                     model=args.model)
+        elif args.generate:
+            pipeline.generate_resumes(min_ai_score=args.min_score, limit=args.limit)
+        elif args.analyze_job:
+            pipeline.analyze_single_job(args.analyze_job, model=args.model)
         return
 
     # 旧版 JSON 分析 (兼容)
@@ -912,17 +1034,30 @@ def main():
             tracker.mark_applied(args.mark_applied)
         return
 
-    # 帮助信息
-    print("Job Pipeline - 命令:")
-    print("  --process          执行完整流水线 (数据库)")
-    print("  --import-only      只导入 inbox")
-    print("  --filter           只执行筛选")
-    print("  --score            只执行评分")
-    print("  --ready            显示待申请职位")
-    print("  --stats            显示统计信息")
-    print("  --reprocess        清除旧结果，用新规则重新处理所有职位")
-    print("  --mark-applied ID  标记已申请")
-    print("  --analyze FILE     分析 JSON 文件 (旧版)")
+    # Help message
+    print("Job Pipeline v2.0 - Commands:")
+    print()
+    print("  Basic:")
+    print("  --process          Run full pipeline (import/filter/score)")
+    print("  --import-only      Only import from inbox")
+    print("  --filter           Only run hard filter")
+    print("  --score            Only run rule-based scoring")
+    print("  --ready            Show ready-to-apply jobs")
+    print("  --stats            Show funnel stats")
+    print("  --reprocess        Clear and reprocess all jobs")
+    print("  --mark-applied ID  Mark job as applied")
+    print()
+    print("  AI-powered:")
+    print("  --ai-analyze       AI analysis on scored jobs")
+    print("  --generate         Generate resumes for AI high-score jobs")
+    print("  --analyze-job ID   Analyze a single job")
+    print()
+    print("  Options:")
+    print("  --min-score N      Minimum score threshold")
+    print("  --limit N          Max jobs to process (default 50)")
+    print()
+    print("  Legacy:")
+    print("  --analyze FILE     Analyze JSON file")
 
 
 if __name__ == "__main__":

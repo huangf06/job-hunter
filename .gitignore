@@ -1,0 +1,39 @@
+# Secrets
+.env
+config/linkedin_cookies.json
+config/credentials.json
+
+# Data
+data/jobs.db
+data/*.json
+data/leads/
+data/archive/
+data/inbox/
+data/backups/
+data/experiments/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output (generated resumes - keep in git if desired)
+# output/
+
+# Logs
+logs/
+*.log

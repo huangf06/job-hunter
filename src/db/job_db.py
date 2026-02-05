@@ -87,6 +87,21 @@ class Application:
     notes: str = ""
 
 
+@dataclass
+class AnalysisResult:
+    """AI 分析结果 (评分 + 简历定制)"""
+    job_id: str
+    ai_score: float = 0.0
+    skill_match: float = 0.0
+    experience_fit: float = 0.0
+    growth_potential: float = 0.0
+    recommendation: str = ""
+    reasoning: str = ""
+    tailored_resume: str = ""  # JSON
+    model: str = ""
+    tokens_used: int = 0
+
+
 class JobDatabase:
     """职位数据库操作类"""
 
@@ -183,6 +198,28 @@ class JobDatabase:
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- AI 分析表 (整合评分 + 简历定制)
+    CREATE TABLE IF NOT EXISTS job_analysis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id TEXT NOT NULL UNIQUE REFERENCES jobs(id),
+
+        -- AI 评分
+        ai_score REAL,
+        skill_match REAL,
+        experience_fit REAL,
+        growth_potential REAL,
+        recommendation TEXT,
+        reasoning TEXT,
+
+        -- 定制简历 (JSON)
+        tailored_resume TEXT,
+
+        -- 元数据
+        model TEXT,
+        tokens_used INTEGER,
+        analyzed_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- 索引
     CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company);
     CREATE INDEX IF NOT EXISTS idx_jobs_source ON jobs(source);
@@ -192,6 +229,8 @@ class JobDatabase:
     CREATE INDEX IF NOT EXISTS idx_scores_score ON ai_scores(score);
     CREATE INDEX IF NOT EXISTS idx_scores_recommendation ON ai_scores(recommendation);
     CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
+    CREATE INDEX IF NOT EXISTS idx_job_analysis_score ON job_analysis(ai_score);
+    CREATE INDEX IF NOT EXISTS idx_job_analysis_recommendation ON job_analysis(recommendation);
     """
 
     # 视图定义
@@ -247,6 +286,8 @@ class JobDatabase:
         COUNT(DISTINCT j.id) as total_scraped,
         COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
         COUNT(DISTINCT CASE WHEN s.score >= 6.0 THEN j.id END) as scored_high,
+        COUNT(DISTINCT CASE WHEN an.id IS NOT NULL THEN j.id END) as ai_analyzed,
+        COUNT(DISTINCT CASE WHEN an.ai_score >= 5.0 THEN j.id END) as ai_scored_high,
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
         COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
         COUNT(DISTINCT CASE WHEN a.status = 'interview' THEN j.id END) as interview,
@@ -254,6 +295,7 @@ class JobDatabase:
     FROM jobs j
     LEFT JOIN filter_results f ON j.id = f.job_id
     LEFT JOIN ai_scores s ON j.id = s.job_id
+    LEFT JOIN job_analysis an ON j.id = an.job_id
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id;
     """
@@ -268,6 +310,13 @@ class JobDatabase:
         """初始化数据库结构"""
         with self._get_conn() as conn:
             conn.executescript(self.SCHEMA)
+            # Drop and recreate views to ensure they're up-to-date
+            conn.executescript("""
+                DROP VIEW IF EXISTS v_pending_jobs;
+                DROP VIEW IF EXISTS v_high_score_jobs;
+                DROP VIEW IF EXISTS v_ready_to_apply;
+                DROP VIEW IF EXISTS v_funnel_stats;
+            """)
             conn.executescript(self.VIEWS)
 
     @contextmanager
@@ -484,6 +533,74 @@ class JobDatabase:
             return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Application 操作 ====================
+
+    # ==================== Analysis 操作 (AI 分析 + 简历定制) ====================
+
+    def save_analysis(self, result: AnalysisResult):
+        """保存 AI 分析结果"""
+        with self._get_conn() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO job_analysis
+                (job_id, ai_score, skill_match, experience_fit, growth_potential,
+                 recommendation, reasoning, tailored_resume, model, tokens_used, analyzed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (result.job_id, result.ai_score, result.skill_match,
+                  result.experience_fit, result.growth_potential,
+                  result.recommendation, result.reasoning,
+                  result.tailored_resume, result.model, result.tokens_used,
+                  datetime.now().isoformat()))
+
+    def get_analysis(self, job_id: str) -> Optional[Dict]:
+        """获取 AI 分析结果"""
+        with self._get_conn() as conn:
+            cursor = conn.execute(
+                "SELECT * FROM job_analysis WHERE job_id = ?",
+                (job_id,)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def get_jobs_needing_analysis(self, min_rule_score: float = 3.0, limit: int = 50) -> List[Dict]:
+        """获取通过筛选、达到规则评分阈值、但未经 AI 分析的职位"""
+        with self._get_conn() as conn:
+            cursor = conn.execute("""
+                SELECT j.*, s.score as rule_score, s.recommendation as rule_recommendation
+                FROM jobs j
+                JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
+                JOIN ai_scores s ON j.id = s.job_id AND s.score >= ?
+                LEFT JOIN job_analysis a ON j.id = a.job_id
+                WHERE a.id IS NULL
+                ORDER BY s.score DESC
+                LIMIT ?
+            """, (min_rule_score, limit))
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_analyzed_jobs_for_resume(self, min_ai_score: float = 5.0, limit: int = 50) -> List[Dict]:
+        """获取 AI 评分达标但未生成简历的职位"""
+        with self._get_conn() as conn:
+            cursor = conn.execute("""
+                SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
+                       a.tailored_resume, a.reasoning
+                FROM jobs j
+                JOIN job_analysis a ON j.id = a.job_id AND a.ai_score >= ?
+                LEFT JOIN resumes r ON j.id = r.job_id
+                WHERE r.id IS NULL
+                ORDER BY a.ai_score DESC
+                LIMIT ?
+            """, (min_ai_score, limit))
+            return [dict(row) for row in cursor.fetchall()]
+
+    def clear_analyses(self, model: str = None) -> int:
+        """清除 AI 分析结果"""
+        with self._get_conn() as conn:
+            if model:
+                cursor = conn.execute(
+                    "DELETE FROM job_analysis WHERE model = ?", (model,))
+            else:
+                cursor = conn.execute("DELETE FROM job_analysis")
+            return cursor.rowcount
+
+    # ==================== Application 操作 (original) ====================
 
     def save_application(self, app: Application):
         """保存申请状态"""

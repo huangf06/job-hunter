@@ -1,0 +1,218 @@
+# =============================================================================
+# AI Configuration
+# =============================================================================
+# Controls AI-powered job analysis and resume generation
+# Created: 2026-02-05
+# =============================================================================
+
+# =============================================================================
+# Model Configuration
+# =============================================================================
+# API keys and base URLs are loaded from .env file.
+# See .env.example for required variables.
+# =============================================================================
+
+# Active model for job analysis (switch between "opus" and "kimi")
+active_model: "kimi"  # Change to "opus" when quota refreshes
+
+models:
+  # Claude Opus via proxy (slot 3: codesome.cn)
+  # Daily quota: 10MB
+  opus:
+    provider: "anthropic"
+    model: "anthropic/claude-opus-4-5"
+    max_tokens: 4096
+    temperature: 0.3
+    env_key: "ANTHROPIC_API_KEY"
+    env_url: "ANTHROPIC_BASE_URL"
+
+  # Kimi VIP (slot 5: kimi.com)
+  # Fallback when Opus quota exhausted
+  kimi:
+    provider: "openai"
+    model: "kimi-coding/k2p5"
+    max_tokens: 4096
+    temperature: 0.3
+    env_key: "KIMI_API_KEY"
+    env_url: "KIMI_BASE_URL"
+
+# =============================================================================
+# Scoring Thresholds
+# =============================================================================
+
+thresholds:
+  # Minimum rule-based score to trigger AI analysis
+  # Lower threshold = more jobs analyzed = more tokens used
+  rule_score_for_ai: 3.0
+
+  # AI score thresholds for actions
+  ai_score_generate_resume: 5.0  # >= 5.0: generate tailored resume
+  ai_score_apply_now: 7.0        # >= 7.0: mark as priority
+
+# =============================================================================
+# Token Budget
+# =============================================================================
+
+budget:
+  # Daily token limit (approximate)
+  daily_limit: 100000
+  warn_threshold: 80000
+
+  # Cost tracking
+  cost_per_1k_tokens:
+    claude_opus_input: 0.015
+    claude_opus_output: 0.075
+    claude_sonnet_input: 0.003
+    claude_sonnet_output: 0.015
+
+# =============================================================================
+# Resume Generation
+# =============================================================================
+
+resume:
+  # Template settings
+  template: "templates/base_template.html"
+  fallback: "templates/resume_master.html"
+  output_dir: "output"
+
+  # File naming
+  naming_pattern: "Fei_Huang_{company}_{timestamp}"
+  max_filename_length: 100
+
+  # PDF settings
+  pdf:
+    format: "A4"
+    margin:
+      top: "0.55in"
+      right: "0.55in"
+      bottom: "0.55in"
+      left: "0.55in"
+    print_background: true
+
+  # Candidate info (single source of truth from bullet_library.yaml)
+  candidate:
+    name: "Fei Huang"
+    email: "huangf06@gmail.com"
+    phone: "+31 645 038 614"
+    location: "Amsterdam, Netherlands"
+    linkedin: "https://www.linkedin.com/in/huangf06/"
+    github: "https://github.com/huangf06"
+    linkedin_display: "linkedin.com/in/huangf06"
+    github_display: "github.com/huangf06"
+
+# =============================================================================
+# AI Analysis Prompt Template
+# =============================================================================
+
+prompts:
+  # Main analysis prompt (variables: {master_resume}, {bullet_library}, {job_title}, {job_company}, {job_description})
+  analyzer: |
+    # Job Match Analysis & Resume Tailoring
+
+    You are an expert career advisor helping a job seeker tailor their resume.
+
+    ## Candidate Profile
+    Name: Fei Huang
+    Education: M.Sc. in Artificial Intelligence, VU Amsterdam (2023-2025)
+
+    Key Background:
+    - Senior ML Engineer & Team Lead at fintech (credit scoring, PySpark)
+    - Quantitative Researcher at hedge fund (alpha research, 14.6% annual return)
+    - Databricks Data Engineer Professional certification
+    - Experience: Python, PyTorch, Spark, SQL, MLOps
+
+    ## Master Resume Content
+    {master_resume}
+
+    ## Bullet Library (Verified Experience)
+    {bullet_library}
+
+    ## Target Job
+    Title: {job_title}
+    Company: {job_company}
+
+    Job Description:
+    {job_description}
+
+    ## Your Tasks
+
+    1. **Score the match (0-10)** for these dimensions:
+       - skill_match: How well candidate's skills align with requirements
+       - experience_fit: How relevant the work experience is
+       - growth_potential: Career growth opportunity at this role
+       - overall_score: Weighted average considering all factors
+
+    2. **Tailor the resume** by selecting the most relevant content:
+       - Write a targeted bio (2-3 sentences) mentioning the company
+       - Select 2-3 most relevant experiences (use exact bullets from library)
+       - Select 1-2 most relevant projects
+       - Prioritize skills mentioned in the JD
+
+    ## Output Format (JSON)
+
+    Respond with ONLY valid JSON (no markdown, no explanation):
+
+    {{
+      "scoring": {{
+        "overall_score": 7.5,
+        "skill_match": 8.0,
+        "experience_fit": 7.0,
+        "growth_potential": 7.5,
+        "recommendation": "APPLY",
+        "reasoning": "Strong Python/ML match. PySpark experience aligns with data pipeline requirements. Gap in Kubernetes experience but learnable."
+      }},
+      "tailored_resume": {{
+        "bio": "Machine Learning Engineer with expertise in building production ML systems and data pipelines. M.Sc. in AI from VU Amsterdam with thesis on Uncertainty Quantification in Deep RL. Experienced in PyTorch, PySpark, and credit scoring systems. Eager to contribute to [Company]'s ML initiatives.",
+        "experiences": [
+          {{
+            "company": "GLP Technology",
+            "location": "Shanghai, China",
+            "title": "Senior ML Engineer & Team Lead",
+            "date": "Jul. 2017 -- Aug. 2019",
+            "bullets": [
+              "Joined as founding data team member at fintech startup; built credit scoring engine from scratch including data pipelines, feature engineering, and model deployment using logistic regression and scorecard methodology.",
+              "Monitored loan portfolio performance and repayment behavior; developed anomaly detection reports to identify early warning signals for delinquency and credit risk.",
+              "Contributed to building PySpark data pipeline infrastructure; mentored junior data scientists."
+            ]
+          }}
+        ],
+        "projects": [
+          {{
+            "name": "MSc Thesis: Uncertainty Quantification in Deep RL",
+            "date": "2025",
+            "bullets": [
+              "Researched epistemic uncertainty estimation for improved exploration in reinforcement learning.",
+              "Implemented ensemble methods and dropout-based uncertainty in PyTorch."
+            ]
+          }}
+        ],
+        "skills": [
+          {{"category": "Languages", "skills_list": "Python, SQL, R"}},
+          {{"category": "ML/AI", "skills_list": "PyTorch, Scikit-learn, XGBoost, Hugging Face Transformers"}},
+          {{"category": "Data", "skills_list": "PySpark, Pandas, NumPy, Databricks, Delta Lake"}},
+          {{"category": "Tools", "skills_list": "Git, Docker, Linux, AWS"}}
+        ]
+      }}
+    }}
+
+    ## Important Rules
+
+    1. Use ONLY bullets from the provided bullet library - do not fabricate
+    2. Bio MUST mention the target company name
+    3. Scoring criteria:
+       - 8-10: Excellent match, should apply immediately
+       - 6-7: Good match, worth applying
+       - 4-5: Moderate match, apply if nothing better
+       - 1-3: Poor match, likely to be rejected
+    4. recommendation values: "APPLY_NOW" (>=7), "APPLY" (>=5), "MAYBE" (>=3), "SKIP" (<3)
+    5. Keep experiences to 2-3 max, bullets to 2-3 per experience
+
+# =============================================================================
+# Metadata
+# =============================================================================
+
+metadata:
+  version: "1.0.0"
+  created: "2026-02-05"
+  author: "Fei Huang"
+  description: "AI-powered job analysis and resume generation configuration"
