@@ -65,33 +65,38 @@ except ImportError:
 
 
 class JobAnalyzer:
-    """职位匹配度分析器"""
-    
-    # 目标关键词和权重
+    """职位匹配度分析器 (Legacy - 兼容旧版 JSON 分析)"""
+
+    # 目标关键词和权重 (与 scoring.yaml v2.0 保持一致)
     POSITIVE_KEYWORDS = {
-        "python": 1.5,
-        "machine learning": 2.0,
-        "ml engineer": 2.0,
-        "data scientist": 2.0,
-        "ai engineer": 2.0,
-        "deep learning": 1.5,
+        # 标题级别关键词 (高权重)
+        "machine learning": 2.5,
+        "ml engineer": 2.5,
+        "ai engineer": 2.5,
+        "data scientist": 2.5,
+        "deep learning": 2.5,
+        "data engineer": 2.0,
+        "quant": 2.5,
+        "quantitative": 2.5,
+        # 正文级别关键词
+        "python": 1.0,
         "pytorch": 1.0,
         "tensorflow": 1.0,
         "nlp": 1.0,
         "llm": 1.0,
         "sql": 0.5,
-        "quant": 2.0,
-        "quantitative": 1.5,
-        "trading": 1.5,
-        "junior": 1.0,
-        "entry level": 1.0,
-        "graduate": 0.5,
+        "spark": 1.0,
+        "pyspark": 1.0,
+        "trading": 1.0,
+        "junior": 1.5,
+        "entry level": 1.5,
+        "graduate": 1.0,
         "visa sponsor": 2.0,
         "relocation": 1.0,
         "sponsorship": 2.0,
         "kmv": 1.5,
     }
-    
+
     NEGATIVE_KEYWORDS = {
         "senior manager": -3.0,
         "director": -3.0,
@@ -106,56 +111,66 @@ class JobAnalyzer:
         "french required": -3.0,
         "principal": -2.0,
         "staff engineer": -1.5,
+        "5+ years": -0.5,
+        "6+ years": -1.0,
+        "7+ years": -1.0,
+        "senior": -0.5,
+        "lead": -1.5,
     }
-    
-    TARGET_COMPANIES = [
-        "picnic", "abn amro", "ing", "rabobank", "booking.com",
-        "adyen", "tomtom", "coolblue", "bol.com", "asml",
-        "philips", "shell", "bcg", "mcKinsey", "optiver",
-        "imc", "flow traders"
-    ]
-    
+
+    TARGET_COMPANIES = {
+        # Tier 1
+        "picnic": 2.0, "adyen": 2.0, "booking.com": 2.0,
+        "optiver": 2.0, "imc": 2.0, "flow traders": 2.0, "deepdesk": 2.0,
+        # Tier 2
+        "abn amro": 1.5, "ing": 1.5, "rabobank": 1.5, "asml": 1.5, "philips": 1.5,
+        # Tier 3
+        "tomtom": 1.0, "coolblue": 1.0, "bol.com": 1.0, "shell": 1.0, "kpn": 1.0,
+    }
+
     @classmethod
     def analyze(cls, job: Dict) -> Dict:
         """分析单个职位的匹配度"""
-        score = 5.0  # 基础分
+        score = 3.0  # 基础分 (v2.0: 从 5.0 降到 3.0)
         reasons = {"positive": [], "negative": []}
-        
+
         # 合并文本
-        text = f"{job.get('title', '')} {job.get('company', '')} {job.get('description', '')}".lower()
-        
+        title = job.get('title', '').lower()
+        text = f"{title} {job.get('company', '')} {job.get('description', '')}".lower()
+
         # 正面因素
         for keyword, points in cls.POSITIVE_KEYWORDS.items():
             if keyword in text:
                 score += points
                 reasons["positive"].append(f"{keyword} (+{points})")
-        
+
         # 负面因素
         for keyword, points in cls.NEGATIVE_KEYWORDS.items():
             if keyword in text:
                 score += points
                 reasons["negative"].append(f"{keyword} ({points})")
-        
+
         # 目标公司加分
         company = job.get('company', '').lower()
-        for target in cls.TARGET_COMPANIES:
+        for target, bonus in cls.TARGET_COMPANIES.items():
             if target in company:
-                score += 1.5
-                reasons["positive"].append(f"target company: {target} (+1.5)")
-        
+                score += bonus
+                reasons["positive"].append(f"target company: {target} (+{bonus})")
+                break
+
         # 限制分数范围
         score = max(0, min(10, score))
-        
-        # 推荐等级
-        if score >= 7.5:
+
+        # 推荐等级 (v2.0 阈值)
+        if score >= 7.0:
             recommendation = "APPLY_NOW"
-        elif score >= 6:
+        elif score >= 5.5:
             recommendation = "APPLY"
-        elif score >= 4:
+        elif score >= 4.0:
             recommendation = "MAYBE"
         else:
             recommendation = "SKIP"
-        
+
         return {
             "score": round(score, 1),
             "recommendation": recommendation,
@@ -451,36 +466,150 @@ class JobPipeline:
         return passed_count, rejected_count
 
     def _apply_filter(self, job: Dict) -> FilterResult:
-        """应用筛选规则"""
+        """应用筛选规则 v2.0
+
+        支持多种检测类型:
+        - word_count: 荷兰语词频检测
+        - title_check: 标题白名单/黑名单检查
+        - tech_stack: 技术栈检查 (标题 + 正文)
+        - regex: 正则表达式匹配
+        """
         job_id = job['id']
-        full_text = f"{job.get('title', '')} {job.get('company', '')} {job.get('description', '')} {job.get('location', '')}".lower()
+        title = job.get('title', '').lower()
+        description = job.get('description', '').lower()
+        company = job.get('company', '').lower()
+        location = job.get('location', '').lower()
+        full_text = f"{title} {company} {description} {location}"
 
         hard_rules = self.filter_config.get('hard_reject_rules', {})
-        for rule_name, rule_config in hard_rules.items():
+
+        # Sort rules by priority
+        sorted_rules = sorted(
+            hard_rules.items(),
+            key=lambda x: x[1].get('priority', 99)
+        )
+
+        for rule_name, rule_config in sorted_rules:
             if not rule_config.get('enabled', True):
                 continue
-            patterns = rule_config.get('patterns', [])
-            exceptions = rule_config.get('exceptions', [])
 
-            if any(exc.lower() in full_text for exc in exceptions):
-                continue
+            rule_type = rule_config.get('type', 'regex')
 
-            for pattern in patterns:
-                try:
-                    if re.search(pattern, full_text, re.IGNORECASE):
-                        return FilterResult(job_id=job_id, passed=False, reject_reason=rule_name)
-                except re.error:
+            # --- Dutch language word count detection ---
+            if rule_type == 'word_count':
+                indicators = rule_config.get('dutch_indicators', [])
+                threshold = rule_config.get('threshold', 8)
+                # Count how many Dutch indicator words appear in the text
+                # Use word boundary matching to avoid partial matches
+                count = 0
+                for word in indicators:
+                    # Use regex word boundary for accurate matching
+                    if re.search(r'\b' + re.escape(word) + r'\b', full_text):
+                        count += 1
+                if count >= threshold:
+                    return FilterResult(
+                        job_id=job_id, passed=False,
+                        reject_reason=rule_name,
+                        filter_version="2.0",
+                        matched_rules=json.dumps({"dutch_word_count": count})
+                    )
+
+            # --- Title-based role check ---
+            elif rule_type == 'title_check':
+                # First check reject patterns (blacklist has priority)
+                reject_patterns = rule_config.get('title_reject_patterns', [])
+                rejected = False
+                for pattern in reject_patterns:
+                    try:
+                        if re.search(pattern, title, re.IGNORECASE):
+                            return FilterResult(
+                                job_id=job_id, passed=False,
+                                reject_reason=rule_name,
+                                filter_version="2.0",
+                                matched_rules=json.dumps({"rejected_pattern": pattern})
+                            )
+                    except re.error:
+                        continue
+
+                # Then check whitelist - title must contain at least one target keyword
+                must_contain = rule_config.get('title_must_contain_one_of', [])
+                if must_contain:
+                    found = any(kw.lower() in title for kw in must_contain)
+                    if not found:
+                        return FilterResult(
+                            job_id=job_id, passed=False,
+                            reject_reason=rule_name,
+                            filter_version="2.0",
+                            matched_rules=json.dumps({"no_target_keyword_in_title": title})
+                        )
+
+            # --- Tech stack check (title + body) ---
+            elif rule_type == 'tech_stack':
+                exceptions = [e.lower() for e in rule_config.get('exceptions', [])]
+
+                # Skip if title contains an exception keyword (e.g., "data", "ml")
+                title_has_exception = any(exc in title for exc in exceptions)
+
+                if not title_has_exception:
+                    # Check title patterns
+                    title_patterns = rule_config.get('title_patterns', [])
+                    for pattern in title_patterns:
+                        try:
+                            if re.search(pattern, title, re.IGNORECASE):
+                                return FilterResult(
+                                    job_id=job_id, passed=False,
+                                    reject_reason=rule_name,
+                                    filter_version="2.0",
+                                    matched_rules=json.dumps({"title_pattern": pattern})
+                                )
+                        except re.error:
+                            continue
+
+                    # Check body irrelevant keyword count
+                    body_keywords = rule_config.get('body_irrelevant_keywords', [])
+                    body_threshold = rule_config.get('body_irrelevant_threshold', 5)
+                    body_count = sum(1 for kw in body_keywords if kw.lower() in description)
+                    if body_count >= body_threshold:
+                        return FilterResult(
+                            job_id=job_id, passed=False,
+                            reject_reason=rule_name,
+                            filter_version="2.0",
+                            matched_rules=json.dumps({"body_irrelevant_count": body_count})
+                        )
+
+            # --- Standard regex check ---
+            elif rule_type == 'regex':
+                patterns = rule_config.get('patterns', [])
+                exceptions = rule_config.get('exceptions', [])
+
+                # Check exceptions first
+                if any(exc.lower() in full_text for exc in exceptions):
                     continue
+
+                for pattern in patterns:
+                    try:
+                        if re.search(pattern, full_text, re.IGNORECASE):
+                            return FilterResult(
+                                job_id=job_id, passed=False,
+                                reject_reason=rule_name,
+                                filter_version="2.0",
+                                matched_rules=json.dumps({"pattern": pattern})
+                            )
+                    except re.error:
+                        continue
 
         # 公司黑名单
         search_profiles = self._load_config("search_profiles.yaml")
         company_blacklist = [c.lower() for c in search_profiles.get('company_blacklist', [])]
-        company = job.get('company', '').lower()
         for blacklisted in company_blacklist:
             if blacklisted in company:
-                return FilterResult(job_id=job_id, passed=False, reject_reason="company_blacklist")
+                return FilterResult(
+                    job_id=job_id, passed=False,
+                    reject_reason="company_blacklist",
+                    filter_version="2.0"
+                )
 
-        return FilterResult(job_id=job_id, passed=True)
+        return FilterResult(job_id=job_id, passed=True, filter_version="2.0")
 
     def score_jobs(self) -> int:
         """Score all unscored jobs"""
@@ -500,22 +629,110 @@ class JobPipeline:
         return len(unscored)
 
     def _calculate_score(self, job: Dict) -> ScoreResult:
-        """计算职位评分"""
-        job_id = job['id']
-        full_text = f"{job.get('title', '')} {job.get('company', '')} {job.get('description', '')}".lower()
+        """计算职位评分 v2.0
 
-        base_score = self.score_config.get('base_score', {}).get('starting_score', 5.0)
+        算法:
+        1. 基础分 3.0
+        2. 标题关键词匹配 (高权重，按类别只取一次)
+        3. 正文关键词匹配 (按类别，有上限)
+        4. 目标公司加分 (分层)
+        5. 非核心技术惩罚
+        6. 限制到 0-10 范围
+        """
+        job_id = job['id']
+        title = job.get('title', '').lower()
+        description = job.get('description', '').lower()
+        company = job.get('company', '').lower()
+        full_text = f"{title} {company} {description}"
+
+        base_score = self.score_config.get('base_score', {}).get('starting_score', 3.0)
         score = base_score
+        score_breakdown = {}
         matched_keywords = []
 
-        keyword_weights = self.score_config.get('rule_based_scoring', {}).get('keyword_weights', {})
-        for keyword, weight in keyword_weights.items():
-            if keyword.lower() in full_text:
-                score += weight
-                matched_keywords.append(keyword)
+        # === Title scoring ===
+        title_config = self.score_config.get('title_scoring', {})
 
+        # Positive title categories (only match once per category)
+        for category in ['core_ml_ai', 'data_engineering', 'quant']:
+            cat_config = title_config.get(category, {})
+            keywords = cat_config.get('keywords', [])
+            weight = cat_config.get('weight', 0)
+            for kw in keywords:
+                if kw.lower() in title:
+                    score += weight
+                    score_breakdown[f"title_{category}"] = weight
+                    matched_keywords.append(f"title:{kw}")
+                    break  # Only count once per category
+
+        # Negative title keywords
+        negative_title = title_config.get('negative_title', {})
+        for neg_name, neg_config in negative_title.items():
+            keywords = neg_config.get('keywords', [])
+            weight = neg_config.get('weight', 0)
+            for kw in keywords:
+                if kw.lower() in title:
+                    score += weight
+                    score_breakdown[f"title_neg_{neg_name}"] = weight
+                    matched_keywords.append(f"title_neg:{kw}")
+                    break  # Only count once per sub-category
+
+        # === Body scoring (capped per category) ===
+        body_config = self.score_config.get('body_scoring', {})
+        for category, cat_config in body_config.items():
+            if not isinstance(cat_config, dict):
+                continue
+
+            # Handle simple keyword list categories (python, ml_frameworks, etc.)
+            keywords = cat_config.get('keywords', [])
+            weight = cat_config.get('weight', 0)
+            max_total = cat_config.get('max_total', None)
+
+            if keywords:
+                cat_score = 0
+                for kw in keywords:
+                    if kw.lower() in full_text:
+                        cat_score += weight
+                        matched_keywords.append(kw)
+
+                # Apply cap
+                if max_total is not None:
+                    if max_total >= 0:
+                        cat_score = min(cat_score, max_total)
+                    else:
+                        cat_score = max(cat_score, max_total)
+
+                if cat_score != 0:
+                    score += cat_score
+                    score_breakdown[f"body_{category}"] = cat_score
+            else:
+                # Handle inline key-value categories (high_experience)
+                for kw, kw_config in cat_config.items():
+                    if isinstance(kw_config, dict) and 'weight' in kw_config:
+                        if kw.lower() in full_text:
+                            score += kw_config['weight']
+                            score_breakdown[f"body_{category}_{kw}"] = kw_config['weight']
+                            matched_keywords.append(kw)
+
+        # === Non-core tech penalty ===
+        penalty_config = self.score_config.get('non_core_tech_penalty', {})
+        if penalty_config:
+            non_core_kws = penalty_config.get('non_core_keywords', [])
+            core_kws = penalty_config.get('core_keywords', [])
+            threshold = penalty_config.get('threshold', 3)
+            min_core = penalty_config.get('min_core_keywords', 2)
+            penalty = penalty_config.get('penalty', -2.0)
+
+            non_core_count = sum(1 for kw in non_core_kws if kw.lower() in full_text)
+            core_count = sum(1 for kw in core_kws if kw.lower() in full_text)
+
+            if non_core_count >= threshold and core_count < min_core:
+                score += penalty
+                score_breakdown["non_core_penalty"] = penalty
+                matched_keywords.append(f"non_core_dominance({non_core_count}nc/{core_count}c)")
+
+        # === Target company bonus ===
         target_companies = self.score_config.get('target_companies', {})
-        company = job.get('company', '').lower()
         for tier, companies in [('tier_1', target_companies.get('tier_1', [])),
                                  ('tier_2', target_companies.get('tier_2', [])),
                                  ('tier_3', target_companies.get('tier_3', []))]:
@@ -523,22 +740,30 @@ class JobPipeline:
                 if target.lower() in company:
                     bonus = target_companies.get('bonus_scores', {}).get(tier, 0)
                     score += bonus
+                    score_breakdown[f"company_{tier}"] = bonus
                     matched_keywords.append(f"company:{target}")
                     break
+            else:
+                continue
+            break  # Only match one tier
 
+        # === Clamp score ===
         score = max(0.0, min(10.0, score))
+
+        # === Determine recommendation ===
         thresholds = self.score_config.get('thresholds', {})
-        if score >= thresholds.get('auto_apply', 8.5):
+        if score >= thresholds.get('apply_now', 7.0):
             recommendation = "APPLY_NOW"
-        elif score >= thresholds.get('high_priority', 7.5):
+        elif score >= thresholds.get('apply', 5.5):
             recommendation = "APPLY"
-        elif score >= thresholds.get('generate_resume', 6.0):
+        elif score >= thresholds.get('maybe', 4.0):
             recommendation = "MAYBE"
         else:
             recommendation = "SKIP"
 
         return ScoreResult(
-            job_id=job_id, score=score, model="rule_based",
+            job_id=job_id, score=round(score, 1), model="rule_based_v2",
+            score_breakdown=json.dumps(score_breakdown),
             matched_keywords=json.dumps(matched_keywords),
             recommendation=recommendation
         )
@@ -602,8 +827,29 @@ def main():
     parser.add_argument('--ready', action='store_true', help='Show ready to apply')
     parser.add_argument('--stats', action='store_true', help='Show stats')
     parser.add_argument('--mark-applied', type=str, help='Mark job as applied')
+    parser.add_argument('--reprocess', action='store_true',
+                        help='Clear old filter/score results and reprocess all jobs with new rules')
 
     args = parser.parse_args()
+
+    # 重新处理所有职位 (清除旧结果)
+    if args.reprocess:
+        if not DB_AVAILABLE:
+            print("错误: 数据库模块不可用")
+            sys.exit(1)
+
+        from src.db.job_db import JobDatabase
+        db = JobDatabase()
+        print("[Reprocess] Clearing old filter and score results...")
+        filter_count = db.clear_filter_results()
+        score_count = db.clear_scores()
+        print(f"  Cleared {filter_count} filter results, {score_count} score results")
+
+        pipeline = JobPipeline()
+        pipeline.filter_jobs()
+        pipeline.score_jobs()
+        pipeline.show_stats()
+        return
 
     # 新版数据库流水线
     if args.process or args.import_only or args.filter or args.score or args.ready:
@@ -674,6 +920,7 @@ def main():
     print("  --score            只执行评分")
     print("  --ready            显示待申请职位")
     print("  --stats            显示统计信息")
+    print("  --reprocess        清除旧结果，用新规则重新处理所有职位")
     print("  --mark-applied ID  标记已申请")
     print("  --analyze FILE     分析 JSON 文件 (旧版)")
 

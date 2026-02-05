@@ -600,6 +600,44 @@ class JobDatabase:
             """, (f'-{days} days',))
             return [dict(row) for row in cursor.fetchall()]
 
+    def clear_filter_results(self, filter_version: str = None) -> int:
+        """清除筛选结果，以便重新处理
+
+        Args:
+            filter_version: 如果指定，只清除该版本的结果；否则清除全部
+
+        Returns:
+            删除的记录数
+        """
+        with self._get_conn() as conn:
+            if filter_version:
+                cursor = conn.execute(
+                    "DELETE FROM filter_results WHERE filter_version = ?",
+                    (filter_version,)
+                )
+            else:
+                cursor = conn.execute("DELETE FROM filter_results")
+            return cursor.rowcount
+
+    def clear_scores(self, model: str = None) -> int:
+        """清除评分结果，以便重新处理
+
+        Args:
+            model: 如果指定，只清除该模型的结果；否则清除全部
+
+        Returns:
+            删除的记录数
+        """
+        with self._get_conn() as conn:
+            if model:
+                cursor = conn.execute(
+                    "DELETE FROM ai_scores WHERE model = ?",
+                    (model,)
+                )
+            else:
+                cursor = conn.execute("DELETE FROM ai_scores")
+            return cursor.rowcount
+
     # ==================== 批量操作 ====================
 
     def import_from_json(self, json_path: Path, profile: str = "", query: str = "") -> int:
