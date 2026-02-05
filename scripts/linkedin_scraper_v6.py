@@ -365,6 +365,16 @@ class LinkedInScraperV6:
         # Fetch JD for all jobs
         if fetch_jd and self.all_jobs:
             jobs_without_jd = [j for j in self.all_jobs if not j.get('description') and j.get('url')]
+
+            # 如果有数据库，过滤掉已有完整JD的职位
+            if jobs_without_jd and self.db:
+                urls = [j['url'] for j in jobs_without_jd]
+                urls_needing_jd = set(self.db.filter_urls_needing_jd(urls))
+                skipped_count = len(jobs_without_jd) - len(urls_needing_jd)
+                jobs_without_jd = [j for j in jobs_without_jd if j['url'] in urls_needing_jd]
+                if skipped_count > 0:
+                    print(f"  -> Skipped {skipped_count} jobs (JD already in DB)")
+
             if jobs_without_jd:
                 await self.fetch_job_descriptions(jobs_without_jd)
 

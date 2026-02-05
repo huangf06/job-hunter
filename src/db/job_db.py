@@ -300,6 +300,33 @@ class JobDatabase:
             cursor = conn.execute("SELECT 1 FROM jobs WHERE id = ?", (job_id,))
             return cursor.fetchone() is not None
 
+    def filter_urls_needing_jd(self, urls: List[str]) -> List[str]:
+        """批量过滤，返回需要抓取JD的URL列表
+
+        返回：不存在于数据库 或 存在但description为空 的URL
+        """
+        if not urls:
+            return []
+
+        # 生成 job_id -> url 的映射
+        url_to_id = {url: self.generate_job_id(url) for url in urls}
+        job_ids = list(url_to_id.values())
+
+        # 批量查询已有且JD完整的职位
+        placeholders = ','.join(['?'] * len(job_ids))
+        with self._get_conn() as conn:
+            cursor = conn.execute(
+                f"""SELECT id FROM jobs
+                    WHERE id IN ({placeholders})
+                    AND description IS NOT NULL
+                    AND description != ''""",
+                job_ids
+            )
+            complete_ids = {row[0] for row in cursor.fetchall()}
+
+        # 返回不在 complete_ids 中的 URL
+        return [url for url, job_id in url_to_id.items() if job_id not in complete_ids]
+
     def insert_job(self, job_data: Dict) -> str:
         """插入新职位"""
         url = job_data.get("url", "")
