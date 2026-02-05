@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd JD deduplication: skip fetching JDs already in database\n\n- Add filter_urls_needing_jd\\(\\) method for batch URL checking\n- Filter out jobs with complete JDs before fetching\n- Support re-fetching for jobs with empty descriptions\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(python scripts/job_pipeline.py:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(pip install:*)",
+      "Bash(claude plugins list:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nImprove job filtering and scoring rules \\(v2.0\\)\n\n- Add Dutch language detection \\(word-count based, threshold 8\\)\n- Add non-target role filter \\(title whitelist/blacklist\\)\n- Add freelance/ZZP detection\n- Add low compensation detection\n- Improve wrong_tech_stack \\(separate title vs body checks\\)\n- Lower base score to 3.0, add title-based scoring with category caps\n- Add tiered company bonuses \\(Tier 1: +2.0, Tier 2: +1.5, Tier 3: +1.0\\)\n- Add non-core tech penalty \\(-2.0\\)\n- Add --reprocess flag to clear old results and reprocess all jobs\n- Add clear_filter_results\\(\\) and clear_scores\\(\\) to job_db.py\n\nResults: 59/76 rejected \\(was 35\\), 17 passed with better precision\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
