@@ -1,61 +1,214 @@
 # =============================================================================
-# 硬性筛选规则配置
+# 硬性筛选规则配置 v2.0
 # =============================================================================
-# 规则按顺序执行，匹配任一规则即被拒绝
-# 支持正则表达式
+# 规则按 priority 顺序执行，匹配任一规则即被拒绝
+# 支持正则表达式和计数检测
 # =============================================================================
 
 hard_reject_rules:
-  # 规则1: 荷兰语要求
+  # 规则1: 荷兰语JD检测 (最高优先级)
+  dutch_language:
+    enabled: true
+    priority: 0
+    type: "word_count"  # 使用词频检测而非正则
+    description: "JD written primarily in Dutch"
+    dutch_indicators:
+      - "jij"
+      - "wij"
+      - "jouw"
+      - "onze"
+      - "voor"
+      - "binnen"
+      - "werken"
+      - "ervaring"
+      - "kennis"
+      - "verantwoordelijk"
+      - "samenwerken"
+      - "ontwikkeling"
+      - "oplossingen"
+      - "omgeving"
+      - "projecten"
+      - "systemen"
+      - "kwaliteit"
+      - "vacature"
+      - "functie"
+      - "afdeling"
+      - "organisatie"
+      - "werkzaamheden"
+      - "vereisten"
+      - "beschikbaar"
+    threshold: 8  # >= 8 Dutch words found = reject
+
+  # 规则2: 明确要求荷兰语能力
   dutch_required:
     enabled: true
     priority: 1
+    type: "regex"
     patterns:
       - "dutch\\s*(required|mandatory|essential|native|fluent)"
       - "nederlands\\s*(verplicht|vereist|moeder.*taal|vloeiend)"
       - "fluency\\s+in\\s+dutch"
       - "dutch\\s*language\\s*proficiency"
     description: "职位要求荷兰语能力"
-    
-  # 规则2: 经验年限过高
-  experience_too_high:
+
+  # 规则3: 非目标岗位类型 (仅检查标题)
+  non_target_role:
     enabled: true
     priority: 2
-    max_years: 8
-    patterns:
-      - "(10|15|20)\\+?\\s*years?\\s*(of\\s*)?experience"
-      - "minimum\\s*(8|9)\\+?\\s*years"
-      - "senior.*with\\s*\\d{2}\\+?\\s*years"
-    description: "要求经验年限超过阈值"
-    
-  # 规则3: 高级管理职位
-  senior_management:
-    enabled: true
-    priority: 3
-    patterns:
-      - "\\b(principal|staff|director|vp|vice president|head of|cto|cio|chief)\\b"
-      - "\\bsenior\\b.*\\b(manager|director|lead|architect)\\b"
-      - "\\b(lead|senior)\\b.*\\b(engineer|scientist)\\b.*\\b(manager|director)\\b"
-    description: "高级管理或架构师职位"
-    exceptions:  # 例外情况
-      - "senior data analyst"  # 这个可以接受
-      - "senior analyst"
-    
-  # 规则4: 非目标技术栈
+    type: "title_check"
+    description: "Job title doesn't match any target role category"
+    # 标题必须包含至少一个目标关键词 (否则被拒)
+    title_must_contain_one_of:
+      - "data"
+      - "machine learning"
+      - "ml "
+      - "ai "
+      - "artificial intelligence"
+      - "python"
+      - "quant"
+      - "analytics"
+      - "scientist"
+      - "research"
+      - "algorithm"
+      - "deep learning"
+      - "nlp"
+      - "llm"
+    # 标题包含以下任一关键词直接拒绝 (优先于上面的白名单)
+    title_reject_patterns:
+      - "\\bpolicy\\b"
+      - "\\bmarketing\\b"
+      - "\\bproduct\\s*manager\\b"
+      - "\\bsales\\b"
+      - "\\brecruiter\\b"
+      - "\\bhr\\b"
+      - "\\blegal\\b"
+      - "\\bfinance\\s*manager\\b"
+      - "\\baccountant\\b"
+      - "\\bcontrol\\s*software\\b"
+      - "\\bkernel\\b"
+      - "\\bembedded\\b"
+      - "\\bplc\\b"
+      - "\\bsystems?\\s*engineer\\b"
+      - "\\bsiem\\b"
+      - "\\bsecurity\\s*engineer\\b"
+      - "\\brelease\\s*engineer\\b"
+      - "\\bnetwork\\s*engineer\\b"
+
+  # 规则4: 非目标技术栈 (分标题和正文检查)
   wrong_tech_stack:
     enabled: true
+    priority: 3
+    type: "tech_stack"
+    description: "Primary tech stack doesn't match candidate skills"
+    # 标题中出现以下模式直接拒绝
+    title_patterns:
+      - "\\b(flutter|swift|kotlin|scala)\\s*(developer|engineer)\\b"
+      - "\\b(android|ios|mobile)\\s*(developer|engineer)\\b"
+      - "\\b(frontend|front-end|front end|ui/ux)\\s*(developer|engineer)\\b"
+      - "\\b(devops|sre|site reliability)\\s*(engineer)\\b"
+      - "\\bdotnet\\b|\\b\\.net\\b|\\bc#\\b"
+      - "\\bjava\\b(?!.*(?:script|data|ml|machine learning|ai))"
+      - "\\bruby\\b"
+      - "\\bfull\\s*stack\\b"
+      - "\\breact\\b.*\\b(developer|engineer)\\b"
+      - "\\bangular\\b.*\\b(developer|engineer)\\b"
+    # 正文中不相关技术栈关键词 (>= threshold 个则拒绝)
+    body_irrelevant_keywords:
+      - "react"
+      - "angular"
+      - "vue"
+      - "typescript"
+      - "node.js"
+      - "spring boot"
+      - "microservice"
+      - ".net"
+      - "c#"
+      - "ruby on rails"
+      - "graphql"
+      - "swift"
+      - "kotlin"
+    body_irrelevant_threshold: 5
+    # 如果标题也包含这些词，不拒绝 (例外)
+    exceptions:
+      - "data"
+      - "machine learning"
+      - "ml "
+      - "ai "
+      - "quant"
+      - "scientist"
+      - "research"
+      - "analytics"
+
+  # 规则5: 仅限自由职业/ZZP
+  freelance_zzp:
+    enabled: true
     priority: 4
+    type: "regex"
+    description: "Freelance or ZZP contract only"
     patterns:
-      - "\\b(frontend|backend|fullstack|devops|sre|security)\\b"
-      - "\\b(android|ios|mobile)\\s*(developer|engineer)"
-      - "\\b(frontend|ui|ux)\\s*(developer|designer)"
-      - "\\b(web|front-end|back-end)\\s*(developer|engineer)"
-    description: "非目标技术栈职位"
-    
-  # 规则5: 地点限制
-  location_restricted:
+      - "\\bzzp\\b"
+      - "\\bkvk\\s*registration\\s*required\\b"
+      - "\\bfreelance\\s*(only|contract|position)\\b"
+      - "\\b\\d+.*per\\s*(day|hour)\\b"
+      - "\\b/day\\b"
+      - "\\b/hour\\b"
+      - "\\bday\\s*rate\\b"
+    exceptions:
+      - "full-time"
+      - "permanent"
+      - "salary"
+
+  # 规则6: 极低薪酬
+  low_compensation:
     enabled: true
     priority: 5
+    type: "regex"
+    description: "Compensation far below market rate"
+    patterns:
+      - "\\$1[0-4]00.*per\\s*month"
+      - "\\$1500.*per\\s*month"
+      - "\\$2[0-5]00.*per\\s*month"
+      - "USD\\s*1[0-5]00"
+      - "1[0-4]00\\s*usd\\s*per\\s*month"
+
+  # 规则7: 经验年限过高
+  experience_too_high:
+    enabled: true
+    priority: 6
+    type: "regex"
+    max_years: 8
+    patterns:
+      - "(8|9|10|15|20)\\+?\\s*years?\\s*(of\\s*)?experience"
+      - "minimum\\s*(8|9|10)\\+?\\s*years"
+      - "senior.*with\\s*\\d{2}\\+?\\s*years"
+      - "at\\s*least\\s*(8|9|10)\\+?\\s*years"
+    description: "要求经验年限超过阈值"
+
+  # 规则8: 高级管理职位
+  senior_management:
+    enabled: true
+    priority: 7
+    type: "regex"
+    patterns:
+      - "\\b(principal|director|vp|vice president|head of|cto|cio|chief)\\b"
+      - "\\bsenior\\b.*\\b(manager|director)\\b"
+      - "\\b(lead|senior)\\b.*\\b(engineer|scientist)\\b.*\\b(manager|director)\\b"
+    description: "高级管理或架构师职位"
+    exceptions:
+      - "senior data analyst"
+      - "senior analyst"
+      - "senior data engineer"
+      - "senior data scientist"
+      - "senior ml engineer"
+      - "senior machine learning"
+      - "senior ai engineer"
+      - "senior research"
+
+  # 规则9: 地点限制
+  location_restricted:
+    enabled: true
+    priority: 8
+    type: "regex"
     patterns:
       - "(onsite|on-site|office).*(only|mandatory|required)"
       - "no\\s*(relocation|visa|sponsorship)"
@@ -63,7 +216,7 @@ hard_reject_rules:
       - "local\\s*candidates\\s*only"
     description: "地点限制过于严格"
     exceptions:
-      - "hybrid"  # hybrid可以接受
+      - "hybrid"
       - "flexible"
 
 # =============================================================================
@@ -81,7 +234,7 @@ soft_filter_rules:
         - "kmv"
         - "highly\\s*skilled\\s*migrant"
       weight: 2.0
-      
+
     junior_friendly:
       patterns:
         - "junior"
@@ -91,7 +244,7 @@ soft_filter_rules:
         - "1-3\\s*years"
         - "early\\s*career"
       weight: 1.5
-      
+
     target_company:
       companies:
         - "picnic"
@@ -110,7 +263,7 @@ soft_filter_rules:
         - "flow traders"
         - "shell"
       weight: 1.5
-      
+
     relevant_keywords:
       patterns:
         - "machine\\s*learning"
@@ -132,9 +285,9 @@ soft_filter_rules:
         - "5\\+\\s*years"
         - "6\\+\\s*years"
         - "7\\+\\s*years"
-        - "senior\\b(?!\\s*analyst)"  # 排除senior analyst
+        - "senior\\b(?!\\s*analyst)"
       weight: -1.0
-      
+
     specific_requirements:
       patterns:
         - "german\\s*required"
@@ -147,7 +300,7 @@ soft_filter_rules:
 # =============================================================================
 
 metadata:
-  version: "1.0.0"
-  last_updated: "2026-02-03"
+  version: "2.0.0"
+  last_updated: "2026-02-05"
   author: "Fei Huang"
-  description: "Job filtering configuration"
+  description: "Job filtering configuration - improved with Dutch detection, role filtering, tech stack checks"
