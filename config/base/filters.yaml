@@ -171,6 +171,22 @@ hard_reject_rules:
       - "USD\\s*1[0-5]00"
       - "1[0-4]00\\s*usd\\s*per\\s*month"
 
+  # 规则6.5: 特定技术栈年限要求过高
+  specific_tech_experience:
+    enabled: true
+    priority: 5.5
+    type: "regex"
+    description: "JD requires years of specific tech candidate cannot claim"
+    patterns:
+      - "(5|6|7|8|9|10)\\+?\\s*years?.{0,30}\\b(java|c\\+\\+|scala|ruby|\\.net)\\b"
+      - "\\b(java|c\\+\\+|scala|ruby|\\.net)\\b.{0,30}(5|6|7|8|9|10)\\+?\\s*years?"
+      - "(7|8|9|10)\\+?\\s*years?.{0,30}\\bazure\\b"
+      - "\\bazure\\b.{0,30}(7|8|9|10)\\+?\\s*years?"
+    exceptions:
+      - "python"
+      - "data"
+      - "machine learning"
+
   # 规则7: 经验年限过高
   experience_too_high:
     enabled: true

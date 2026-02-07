@@ -13,25 +13,24 @@
 # =============================================================================
 
 # Active model for job analysis (switch between "opus" and "kimi")
-active_model: "kimi"  # Change to "opus" when quota refreshes
+active_model: "opus"
 
 models:
-  # Claude Opus via proxy (slot 3: codesome.cn)
-  # Daily quota: 10MB
+  # Claude Opus via codesome.cn proxy (Account 1)
   opus:
     provider: "anthropic"
-    model: "anthropic/claude-opus-4-5"
-    max_tokens: 4096
+    model: "claude-opus-4-6"
+    max_tokens: 8192
     temperature: 0.3
     env_key: "ANTHROPIC_API_KEY"
     env_url: "ANTHROPIC_BASE_URL"
+    auth_type: "bearer"  # codesome.cn proxy requires Bearer auth
 
-  # Kimi VIP (slot 5: kimi.com)
-  # Fallback when Opus quota exhausted
+  # Kimi Coding - uses Anthropic SDK format (messages.create)
   kimi:
-    provider: "openai"
-    model: "kimi-coding/k2p5"
-    max_tokens: 4096
+    provider: "anthropic"
+    model: "k2p5"
+    max_tokens: 8192
     temperature: 0.3
     env_key: "KIMI_API_KEY"
     env_url: "KIMI_BASE_URL"
@@ -64,6 +63,52 @@ budget:
     claude_opus_output: 0.075
     claude_sonnet_input: 0.003
     claude_sonnet_output: 0.015
+
+# =============================================================================
+# Bullet Validation Settings
+# =============================================================================
+
+bullet_validation:
+  # Minimum AI bullet length (chars) to attempt prefix matching
+  prefix_min_length: 50
+  # Minimum length ratio for prefix match (ai_len / valid_len)
+  prefix_min_ratio: 0.3
+  # Minimum SequenceMatcher ratio for fuzzy matching
+  fuzzy_min_ratio: 0.7
+
+# =============================================================================
+# Prompt Construction Settings
+# =============================================================================
+
+prompt_settings:
+  # Max chars to include from master resume HTML (actual file ~16k chars)
+  master_resume_max_chars: 20000
+  # Max chars to include from job description (actual max ~8k chars)
+  job_description_max_chars: 10000
+
+  # Work experience sections to include in AI prompt (keys in bullet_library.yaml)
+  experience_keys:
+    - glp_technology
+    - baiquan_investment
+    - eleme
+    - henan_energy
+
+  # Project sections to include in AI prompt (keys in bullet_library.yaml)
+  project_keys:
+    - financial_data_lakehouse
+    - thesis_uq_rl
+    - nlp_projects
+    - expedia_recommendation
+    - ml4qs
+
+# =============================================================================
+# AI Recommendation Thresholds (used in AI prompt)
+# =============================================================================
+
+ai_recommendation_thresholds:
+  apply_now: 7
+  apply: 5
+  maybe: 3
 
 # =============================================================================
 # Resume Generation
@@ -99,13 +144,33 @@ resume:
     github: "https://github.com/huangf06"
     linkedin_display: "linkedin.com/in/huangf06"
     github_display: "github.com/huangf06"
+    blog_url: "https://huangf06.github.io/FeiThink/en/"
+
+  # Education details (rendered in template)
+  education:
+    master:
+      school: "Vrije Universiteit Amsterdam"
+      location: "Amsterdam, Netherlands"
+      degree: "M.Sc. in Artificial Intelligence"
+      date: "Sep. 2023 -- Aug. 2025"
+      gpa: "8.2/10"
+      coursework: "Data Mining (9.0), Deep Learning (9.5), Multi-Agent Systems (9.5), NLP (9.0)"
+      thesis: "Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments"
+    bachelor:
+      school: "Tsinghua University"
+      location: "Beijing, China"
+      degree: "B.Eng. in Industrial Engineering"
+      date: "Sep. 2006 -- Jul. 2010"
+      school_note: "Ranked #1 in China, top 20 globally"
+      thesis: "Design and Implementation of Web-based Collaborative Office System (Java/MVC/SQL Server)"
+    certification: "Databricks Certified Data Engineer Professional (2026)"
 
 # =============================================================================
 # AI Analysis Prompt Template
 # =============================================================================
 
 prompts:
-  # Main analysis prompt (variables: {master_resume}, {bullet_library}, {job_title}, {job_company}, {job_description})
+  # Main analysis prompt (variables: {bullet_library}, {job_title}, {job_company}, {job_description})
   analyzer: |
     # Job Match Analysis & Resume Tailoring
 
@@ -113,16 +178,16 @@ prompts:
 
     ## Candidate Profile
     Name: Fei Huang
-    Education: M.Sc. in Artificial Intelligence, VU Amsterdam (2023-2025)
+    Education: M.Sc. in Artificial Intelligence, VU Amsterdam (Graduated Aug 2025, GPA 8.2/10)
+    Bachelor: B.Eng. Industrial Engineering, Tsinghua University (Ranked #1 in China)
 
     Key Background:
-    - Senior ML Engineer & Team Lead at fintech (credit scoring, PySpark)
-    - Quantitative Researcher at hedge fund (alpha research, 14.6% annual return)
-    - Databricks Data Engineer Professional certification
-    - Experience: Python, PyTorch, Spark, SQL, MLOps
-
-    ## Master Resume Content
-    {master_resume}
+    - Recent M.Sc. AI graduate with thesis on Uncertainty Quantification in Deep RL
+    - Data Scientist & Team Lead at fintech (GLP Technology: credit scoring, PySpark pipelines)
+    - Quantitative Researcher at hedge fund (alpha research, live strategy deployment)
+    - Built Financial Data Lakehouse portfolio project (Databricks, Spark, AWS, Delta Lake)
+    - Databricks Certified Data Engineer Professional (2026)
+    - Skills: Python, PyTorch, Spark/PySpark, SQL, Delta Lake, AWS, Docker, Airflow
 
     ## Bullet Library (Verified Experience)
     {bullet_library}
@@ -143,10 +208,12 @@ prompts:
        - overall_score: Weighted average considering all factors
 
     2. **Tailor the resume** by selecting the most relevant content:
-       - Write a targeted bio (2-3 sentences) mentioning the company
-       - Select 2-3 most relevant experiences (use exact bullets from library)
-       - Select 1-2 most relevant projects
-       - Prioritize skills mentioned in the JD
+       - Bio: write 2-3 sentences if it adds value, or set to null
+       - MUST select 2-3 different work experiences from different companies
+       - Select 1-3 projects based on JD relevance
+       - Select bullets BY THEIR ID (shown in [square brackets] in the library above)
+       - Provide 4-6 skill categories from the allowed list
+       - Focus on RELEVANCE — include all bullets that match the JD, no artificial limits
 
     ## Output Format (JSON)
 
@@ -159,60 +226,167 @@ prompts:
         "experience_fit": 7.0,
         "growth_potential": 7.5,
         "recommendation": "APPLY",
-        "reasoning": "Strong Python/ML match. PySpark experience aligns with data pipeline requirements. Gap in Kubernetes experience but learnable."
+        "reasoning": "Strong Python/ML match. PySpark experience aligns with data pipeline requirements."
       }},
       "tailored_resume": {{
-        "bio": "Machine Learning Engineer with expertise in building production ML systems and data pipelines. M.Sc. in AI from VU Amsterdam with thesis on Uncertainty Quantification in Deep RL. Experienced in PyTorch, PySpark, and credit scoring systems. Eager to contribute to [Company]'s ML initiatives.",
+        "bio": {{
+          "role_title": "Data Engineer",
+          "years": 6,
+          "domain_claims": ["data_pipelines", "credit_risk"],
+          "include_education": true,
+          "include_certification": true,
+          "closer_id": "eager_company"
+        }},
         "experiences": [
           {{
             "company": "GLP Technology",
+            "company_note": null,
             "location": "Shanghai, China",
-            "title": "Senior ML Engineer & Team Lead",
+            "title": "Data Scientist & Team Lead",
             "date": "Jul. 2017 -- Aug. 2019",
-            "bullets": [
-              "Joined as founding data team member at fintech startup; built credit scoring engine from scratch including data pipelines, feature engineering, and model deployment using logistic regression and scorecard methodology.",
-              "Monitored loan portfolio performance and repayment behavior; developed anomaly detection reports to identify early warning signals for delinquency and credit risk.",
-              "Contributed to building PySpark data pipeline infrastructure; mentored junior data scientists."
-            ]
+            "bullets": ["glp_founding_member", "glp_portfolio_monitoring", "glp_pyspark"]
+          }},
+          {{
+            "company": "Baiquan Investment",
+            "company_note": null,
+            "location": "Beijing, China",
+            "title": "Quantitative Researcher",
+            "date": "Jul. 2015 -- Jun. 2017",
+            "bullets": ["bq_factor_research", "bq_de_factor_engine"]
+          }},
+          {{
+            "company": "Ele.me",
+            "company_note": "(acquired by Alibaba)",
+            "location": "Shanghai, China",
+            "title": "Data Analyst",
+            "date": "Sep. 2013 -- Jul. 2015",
+            "bullets": ["eleme_ab_testing"]
           }}
         ],
         "projects": [
           {{
-            "name": "MSc Thesis: Uncertainty Quantification in Deep RL",
-            "date": "2025",
-            "bullets": [
-              "Researched epistemic uncertainty estimation for improved exploration in reinforcement learning.",
-              "Implemented ensemble methods and dropout-based uncertainty in PyTorch."
-            ]
+            "name": "Financial Data Lakehouse (Databricks/Spark/AWS)",
+            "date": "Oct. 2025 -- Present",
+            "bullets": ["lakehouse_streaming", "lakehouse_quality"]
+          }},
+          {{
+            "name": "Expedia Hotel Recommendation System",
+            "date": "2024",
+            "bullets": ["expedia_ltr"]
           }}
         ],
         "skills": [
-          {{"category": "Languages", "skills_list": "Python, SQL, R"}},
-          {{"category": "ML/AI", "skills_list": "PyTorch, Scikit-learn, XGBoost, Hugging Face Transformers"}},
-          {{"category": "Data", "skills_list": "PySpark, Pandas, NumPy, Databricks, Delta Lake"}},
-          {{"category": "Tools", "skills_list": "Git, Docker, Linux, AWS"}}
+          {{"category": "Languages & Core", "skills_list": "Python (Expert), SQL (Expert), Bash"}},
+          {{"category": "Data Engineering", "skills_list": "PySpark, Delta Lake, Databricks, ETL/ELT, Schema Evolution"}},
+          {{"category": "Cloud & DevOps", "skills_list": "AWS (EMR, Glue, S3, Lambda), Docker, CI/CD, Airflow"}},
+          {{"category": "Databases", "skills_list": "PostgreSQL, MySQL, Hadoop, Hive"}},
+          {{"category": "ML/AI Frameworks", "skills_list": "XGBoost, LightGBM, PyTorch, Statistics, A/B Testing"}}
         ]
       }}
     }}
 
     ## Important Rules
 
-    1. Use ONLY bullets from the provided bullet library - do not fabricate
-    2. Bio MUST mention the target company name
-    3. Scoring criteria:
+    ### CONTENT SELECTION PRINCIPLE
+    Include ALL content that is relevant to the JD. Exclude content that doesn't strengthen the application.
+    The resume can be 1-2 pages — do NOT artificially cut content to fit 1 page.
+    Sections order: Education → Projects → Experience → Skills → Interests.
+    Education and Interests are static. You control: bio (optional), experiences, projects, skills.
+
+    ### BIO RULES (STRUCTURED FORMAT)
+    - Bio is a STRUCTURED OBJECT, not free text. The system assembles the final text.
+    - Set bio to null ONLY if no strong angle exists for this role.
+    - Select role_title from: "Data Engineer", "ML Engineer", "Machine Learning Engineer", "Data Scientist", "Quantitative Researcher", "AI Engineer"
+    - years: integer 4-6 (max 6)
+    - domain_claims: pick 1-2 IDs from this list ONLY:
+      "credit_risk" = credit scoring and risk analytics
+      "data_pipelines" = scalable data pipelines and ETL systems
+      "quant_research" = quantitative research and factor modeling
+      "anomaly_detection" = anomaly detection and monitoring systems
+      "ml_deployment" = ML model development and deployment
+      "data_analytics" = data analytics and business intelligence
+      "nlp_llm" = NLP and large language model applications
+      "deep_rl" = deep learning and reinforcement learning research
+    - include_education: true/false (include M.Sc. mention)
+    - include_certification: true/false (include Databricks cert)
+    - closer_id: "eager_company", "seeking_impact", or null
+    - DOMAIN HONESTY: Only select domain_claims relevant to the JD AND supported by actual experience.
+    {bio_constraints}
+
+    ### TITLE SELECTION
+    {title_context}
+
+    ### COMPANY_NOTE
+    - Ele.me: ALWAYS set company_note to "(acquired by Alibaba)"
+    - Other companies: set to null
+
+    ### BULLET DISTRIBUTION (GUIDANCE, NOT HARD LIMITS)
+    Include bullets based on JD relevance. Typical ranges:
+    - Most relevant experience: 2-4 bullets
+    - Second experience: 2-3 bullets
+    - Third experience (if included): 1-2 bullets
+    - Main project: 2-4 bullets (include all that are relevant)
+    - Second project: 1-2 bullets
+    - Third project (if relevant): 1 bullet
+
+    ### SKILLS FORMAT
+    - Provide 4-6 categories from this ALLOWED list ONLY:
+      "Languages & Core", "ML/AI Frameworks", "Data Engineering", "Cloud & DevOps",
+      "Databases", "Research Methods", "Risk Analytics", "Quantitative Methods",
+      "Analytics & BI", "NLP & GenAI"
+    - Do NOT invent category names outside this list
+    - Include proficiency levels for Languages (e.g., "Python (Expert)")
+    - Include specific cloud services (e.g., "AWS (EMR, Glue, S3, Lambda)")
+    - Prioritize skills mentioned in the JD
+    - Each category should have 3-6 items
+
+    ### SKILLS HONESTY RULE (ABSOLUTE)
+    {skill_context}
+
+    Do NOT:
+    - Use "Learning", "Willing to Learn", or "Familiar" qualifiers — these look weak
+    - Invent skill categories like "Change Management" or "Infrastructure as Code"
+    If the JD requires a skill the candidate lacks, simply omit it — do not fake it.
+
+    ### PROJECT SELECTION
+    - Select 1-3 projects based on JD relevance
+    - For Data Engineer roles: prioritize Financial Data Lakehouse
+    - For ML/DS roles: prioritize Thesis or Expedia
+    - For NLP/AI roles: prioritize NLP Projects or Thesis
+    - Include a third project only if it adds clearly different skills
+
+    ### BULLET SELECTION RULE (ABSOLUTE)
+    Select bullets BY THEIR ID — the string shown in [square brackets] in the library above.
+    In the JSON output, put ONLY the bullet ID string, NOT the full text.
+    The system will automatically look up the verified text from the library.
+
+    Example: "bullets": ["glp_founding_member", "glp_pyspark"]
+
+    Do NOT:
+    - Copy the bullet text into the JSON — use the ID only
+    - Invent new bullet IDs that don't exist in the library
+    - Modify bullet IDs (use them exactly as shown in square brackets)
+    Any unrecognized bullet ID will cause the resume to be REJECTED.
+
+    ### OTHER RULES
+    1. Use ONLY bullet IDs from the provided bullet library - do not fabricate
+    2. MUST include 2-3 different work experiences from different companies
+    3. Select bullets that best match the JD requirements
+    4. Include ALL relevant bullets for a position — do not cut for space
+    5. Scoring criteria:
        - 8-10: Excellent match, should apply immediately
        - 6-7: Good match, worth applying
        - 4-5: Moderate match, apply if nothing better
        - 1-3: Poor match, likely to be rejected
-    4. recommendation values: "APPLY_NOW" (>=7), "APPLY" (>=5), "MAYBE" (>=3), "SKIP" (<3)
-    5. Keep experiences to 2-3 max, bullets to 2-3 per experience
+    6. recommendation values: "APPLY_NOW" (>={apply_now_threshold}), "APPLY" (>={apply_threshold}), "MAYBE" (>={maybe_threshold}), "SKIP" (<{maybe_threshold})
 
 # =============================================================================
 # Metadata
 # =============================================================================
 
 metadata:
-  version: "1.0.0"
+  version: "2.0.0"
   created: "2026-02-05"
+  updated: "2026-02-07"
   author: "Fei Huang"
-  description: "AI-powered job analysis and resume generation configuration"
+  description: "AI-powered job analysis and resume generation configuration (v2: bullet-by-ID)"

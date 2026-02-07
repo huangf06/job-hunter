@@ -343,22 +343,30 @@ bullet_scoring:
 # -----------------------------------------------------------------------------
 
 generation:
-  # Bio 最大长度
-  bio_max_length: 300
-  
-  # 项目选择数量
-  max_projects: 2
-  
-  # 每个项目最大 bullets
-  max_bullets_per_project: 2
-  
-  # 页面边距
+  # -------------------------------------------------------------------------
+  # Content selection principle: RELEVANCE OVER COUNTING
+  # Include all bullets/projects that are relevant to the JD.
+  # Exclude everything that doesn't strengthen the application.
+  # Page length is a byproduct, not a constraint.
+  # -------------------------------------------------------------------------
+
+  # Bio: 2-3 sentences, tailored to the role. Null to omit.
+  bio_max_length: 400
+
+  # Soft guidance (NOT hard limits — AI should include more if relevant)
+  typical_projects: 2          # 1-3 based on relevance
+  typical_bullets_per_project: 2  # 1-4 based on relevance
+  typical_bullets_per_exp: 3      # 2-4 based on relevance
+
+  # Page constraint: NONE
+  # Auto-generated resumes should be 1-2 pages depending on content.
+  # For 10+ years experience with M.Sc. + projects, 1.5 pages is normal.
+  # Do NOT artificially cut content to fit 1 page.
+  page_limit: null
+
+  # Layout parameters (fixed)
   margin: "0.55in"
-  
-  # 字体大小
   font_size: "10pt"
-  
-  # 行高
   line_height: 1.35
 
 # -----------------------------------------------------------------------------
