@@ -5,7 +5,8 @@
       "WebSearch",
       "WebFetch(domain:platform.moonshot.ai)",
       "WebFetch(domain:gist.github.com)",
-      "WebFetch(domain:anyrouter.top)"
+      "WebFetch(domain:anyrouter.top)",
+      "Bash(git commit:*)"
     ]
   }
 }

@@ -3,7 +3,7 @@
 config/linkedin_cookies.json
 config/credentials.json
 
-# Data
+# Data (DB + scrape dumps)
 data/jobs.db
 data/*.json
 data/leads/
@@ -11,6 +11,10 @@ data/archive/
 data/inbox/
 data/backups/
 data/experiments/
+data/history/
+
+# Output (generated resumes)
+output/
 
 # Python
 __pycache__/
@@ -30,9 +34,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
-
-# Output (generated resumes - keep in git if desired)
-# output/
 
 # Logs
 logs/
