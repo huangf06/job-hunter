@@ -41,7 +41,6 @@ import yaml
 # 项目路径
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
-sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 DATA_DIR = PROJECT_ROOT / "data"
 LEADS_DIR = DATA_DIR / "leads"
@@ -768,26 +767,6 @@ class JobPipeline:
             recommendation=recommendation
         )
 
-    def process_all(self):
-        """Run full processing pipeline"""
-        print("=" * 70)
-        print("Job Hunter Pipeline")
-        print("=" * 70)
-
-        imported = self.import_inbox()
-        passed, rejected = self.filter_jobs()
-        scored = self.score_jobs()
-
-        print("\n" + "=" * 70)
-        print(f"Done: imported {imported}, filtered {passed}/{passed+rejected}, scored {scored}")
-        print("=" * 70)
-
-        ready = self.db.get_ready_to_apply()
-        if ready:
-            print(f"\nReady to apply ({len(ready)}):")
-            for job in ready[:10]:
-                print(f"  [{job['score']:.1f}] {job['title'][:40]} @ {job['company'][:20]}")
-
     def show_stats(self):
         """Show statistics"""
         stats = self.db.get_funnel_stats()
@@ -821,12 +800,12 @@ class JobPipeline:
                         model: str = None) -> int:
         """AI 分析通过预筛选的职位"""
         try:
-            from ai_analyzer import AIAnalyzer
+            from src.ai_analyzer import AIAnalyzer
         except ImportError:
             # Try alternative import path
             import importlib.util
             spec = importlib.util.spec_from_file_location(
-                "ai_analyzer", PROJECT_ROOT / "scripts" / "ai_analyzer.py"
+                "ai_analyzer", PROJECT_ROOT / "src" / "ai_analyzer.py"
             )
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
@@ -838,11 +817,11 @@ class JobPipeline:
     def generate_resumes(self, min_ai_score: float = None, limit: int = 50) -> int:
         """为高分职位生成简历"""
         try:
-            from resume_renderer import ResumeRenderer
+            from src.resume_renderer import ResumeRenderer
         except ImportError:
             import importlib.util
             spec = importlib.util.spec_from_file_location(
-                "resume_renderer", PROJECT_ROOT / "scripts" / "resume_renderer.py"
+                "resume_renderer", PROJECT_ROOT / "src" / "resume_renderer.py"
             )
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
@@ -854,11 +833,11 @@ class JobPipeline:
     def analyze_single_job(self, job_id: str, model: str = None):
         """分析单个职位"""
         try:
-            from ai_analyzer import AIAnalyzer
+            from src.ai_analyzer import AIAnalyzer
         except ImportError:
             import importlib.util
             spec = importlib.util.spec_from_file_location(
-                "ai_analyzer", PROJECT_ROOT / "scripts" / "ai_analyzer.py"
+                "ai_analyzer", PROJECT_ROOT / "src" / "ai_analyzer.py"
             )
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
@@ -869,8 +848,10 @@ class JobPipeline:
         if result:
             print(f"\nTailored Resume Preview:")
             tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
-            if 'bio' in tailored:
+            if tailored.get('bio'):
                 print(f"  Bio: {tailored['bio'][:100]}...")
+            else:
+                print(f"  Bio: (omitted)")
             if 'experiences' in tailored:
                 print(f"  Experiences: {len(tailored['experiences'])} selected")
         return result

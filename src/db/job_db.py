@@ -241,44 +241,45 @@ class JobDatabase:
         j.*,
         f.passed as filter_passed,
         f.reject_reason,
-        s.score,
-        s.recommendation,
+        s.score as rule_score,
+        s.recommendation as rule_recommendation,
+        an.ai_score,
+        an.recommendation as ai_recommendation,
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
     LEFT JOIN filter_results f ON j.id = f.job_id
     LEFT JOIN ai_scores s ON j.id = s.job_id
+    LEFT JOIN job_analysis an ON j.id = an.job_id
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
     WHERE a.id IS NULL OR a.status = 'pending';
 
-    -- 高分职位视图
+    -- 高分职位视图 (基于 AI 分析)
     CREATE VIEW IF NOT EXISTS v_high_score_jobs AS
     SELECT
         j.id, j.title, j.company, j.location, j.url,
-        s.score, s.recommendation, s.matched_keywords,
+        an.ai_score as score, an.recommendation,
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
-    JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
-    JOIN ai_scores s ON j.id = s.job_id AND s.score >= 7.0
+    JOIN job_analysis an ON j.id = an.job_id AND an.ai_score >= 7.0
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
-    ORDER BY s.score DESC;
+    ORDER BY an.ai_score DESC;
 
     -- 待申请职位视图 (已生成简历但未申请)
     CREATE VIEW IF NOT EXISTS v_ready_to_apply AS
     SELECT
         j.id, j.title, j.company, j.location, j.url,
-        s.score, s.recommendation,
+        an.ai_score as score, an.recommendation,
         r.pdf_path as resume_path
     FROM jobs j
-    JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
-    JOIN ai_scores s ON j.id = s.job_id AND s.score >= 6.0
+    JOIN job_analysis an ON j.id = an.job_id
     JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL
     LEFT JOIN applications a ON j.id = a.job_id
     WHERE a.id IS NULL
-    ORDER BY s.score DESC;
+    ORDER BY an.ai_score DESC;
 
     -- 申请漏斗统计视图
     CREATE VIEW IF NOT EXISTS v_funnel_stats AS
@@ -332,6 +333,14 @@ class JobDatabase:
             raise
         finally:
             conn.close()
+
+    def execute(self, sql: str, params: tuple = ()) -> list:
+        """执行 SQL 并返回结果行（用于 ad-hoc 查询和数据修改）"""
+        with self._get_conn() as conn:
+            cur = conn.execute(sql, params)
+            if cur.description:
+                return [dict(row) for row in cur.fetchall()]
+            return []
 
     # ==================== Job 操作 ====================
 

@@ -82,6 +82,8 @@ certifications:
 # WORK EXPERIENCE
 # =============================================================================
 
+work_experience:
+
   # ---------------------------------------------------------------------------
   # GLP TECHNOLOGY / JUNZHENG FINTECH (Jul 2017 - Aug 2019)
   # ---------------------------------------------------------------------------
@@ -95,33 +97,29 @@ certifications:
     location: "Shanghai, China"
     period: "Jul. 2017 -- Aug. 2019"
 
-    # Verified title - was employee then team lead with 1 report
     titles:
-      default: "Data Analyst / Risk Operations Lead"
-      data_scientist: "Data Analyst & Risk Operations Lead"
-      risk_analyst: "Credit Risk Analyst & Operations Lead"
+      default: "Data Scientist & Team Lead"
 
     verified_bullets:
 
-      # VERIFIED: Phase 1 - Risk Model Building
+      # VERIFIED: Phase 1 - Risk Model Building (强动词版)
       - id: glp_founding_member
-        content: "Joined as founding data team member at fintech startup; built credit scoring engine from scratch including data pipelines, feature engineering, and model deployment using logistic regression and scorecard methodology."
+        content: "As founding data team member, owned end-to-end development of credit scoring infrastructure: data pipelines in Python/SQL, feature engineering, model development & deployment, and portfolio monitoring."
         verified: true
         can_defend:
           - "Was employee #1 on data team"
           - "Built data pipelines and feature engineering"
           - "Used logistic regression and credit scorecards"
           - "Did deployment work"
-        notes: "Core model based on expert rules brought by colleagues, but I did implementation work"
         tags:
-          role_fit: [data_scientist, data_analyst, risk_analyst]
+          role_fit: [data_scientist, data_analyst, risk_analyst, data_engineer]
           tech_stack: [python, sql, logistic_regression, scorecard]
           skill_type: [technical, business_impact]
           domain: [fintech, credit_risk]
 
-      # VERIFIED: Phase 2 - Portfolio Monitoring
+      # VERIFIED: Phase 2 - Portfolio Monitoring (强动词版)
       - id: glp_portfolio_monitoring
-        content: "Monitored loan portfolio performance and repayment behavior; developed anomaly detection reports to identify early warning signals for delinquency and credit risk."
+        content: "Developed anomaly detection reports to monitor loan performance and identify warning signals for delinquency; collaborated with analysts and business teams to translate requirements into alerting pipelines."
         verified: true
         can_defend:
           - "Did monitor repayment status"
@@ -133,46 +131,43 @@ certifications:
           skill_type: [technical, business_impact]
           domain: [fintech, credit_risk]
 
-      # VERIFIED: Phase 2 - Payment & Collections (BACKUP)
-      - id: glp_payment_collections
-        content: "Integrated payment gateway APIs to ensure smooth repayment processing; coordinated collection operations and designed tiered collection policies based on delinquency severity."
-        verified: true
-        can_defend:
-          - "Did payment API integration work"
-          - "Coordinated with collection teams"
-          - "Helped design collection policies"
-        use_when: "JD mentions payment systems, collections, or operations"
-        tags:
-          role_fit: [data_analyst, risk_analyst]
-          skill_type: [technical, business_impact]
-          domain: [fintech, operations]
-
-      # VERIFIED: Cross-functional Role
-      - id: glp_generalist
-        content: "Operated as cross-functional generalist in early-stage startup: bridged risk modeling, operations, and technical implementation; collaborated with product, legal, and external vendors."
-        verified: true
-        can_defend:
-          - "Did wear many hats"
-          - "Worked across departments"
-          - "Dealt with vendors and legal"
-        use_when: "JD emphasizes startup experience or cross-functional collaboration"
-        tags:
-          role_fit: [data_scientist, data_analyst]
-          skill_type: [leadership, business_impact]
-          domain: [fintech, startup]
-
-      # VERIFIED: PySpark data pipeline
+      # VERIFIED: PySpark data pipeline (强动词版)
       - id: glp_pyspark
-        content: "Contributed to building PySpark data pipeline infrastructure; mentored junior data scientists."
+        content: "Led ETL pipeline design in PySpark, defining business logic for consumer credit risk data extraction and transformation; mentored junior analyst on scalable data processing."
         verified: true
-        verified_date: "2026-01-16"
+        verified_date: "2026-02-06"
         can_defend:
-          - "Did work with PySpark"
+          - "Led/owned ETL business logic design"
+          - "Defined data extraction and transformation rules"
           - "Did mentor junior analyst"
         tags:
           role_fit: [data_scientist, data_engineer]
           tech_stack: [pyspark, python]
           domain: [fintech]
+
+      # VERIFIED: Data Engineer 角度 (新增)
+      - id: glp_data_engineer
+        content: "Built automated monitoring systems for loan portfolio data quality and anomaly detection; collaborated with analysts and business teams to translate requirements into alerting pipelines and data-driven insights."
+        verified: true
+        can_defend:
+          - "Did build monitoring"
+          - "Did work with business teams"
+        tags:
+          role_fit: [data_engineer, data_analyst]
+          tech_stack: [python, sql]
+          domain: [fintech]
+
+      # VERIFIED: Data compliance and reporting
+      - id: glp_data_compliance
+        content: "Established data quality checks and compliance reporting for consumer lending portfolio; ensured regulatory alignment of credit decisioning outputs."
+        verified: true
+        can_defend:
+          - "Did build data quality checks"
+          - "Did work on compliance reporting"
+        tags:
+          role_fit: [data_engineer, risk_analyst]
+          tech_stack: [python, sql]
+          domain: [fintech, compliance]
 
     # Things explicitly NOT claiming:
     # not_claiming:
@@ -394,6 +389,18 @@ certifications:
           tech_stack: [python, sql]
           domain: [finance]
 
+      # VERIFIED: Data quality for market data
+      - id: bq_data_quality
+        content: "Implemented data validation checks for market data feeds, detecting and handling stock splits, suspensions, and vendor data gaps to ensure research pipeline integrity."
+        verified: true
+        can_defend:
+          - "Did validate incoming data"
+          - "Did handle corporate actions"
+        tags:
+          role_fit: [data_engineer, quant_developer]
+          tech_stack: [python, pandas]
+          domain: [finance, data_quality]
+
     # Context for this period
     context_notes: |
       - Baiquan was a quant hedge fund doing multi-factor equity + index futures hedging
@@ -535,31 +542,8 @@ certifications:
 
     verified_bullets:
 
-      - id: eleme_sql_reporting
-        content: "Queried and analyzed data from Hadoop using SQL; generated reports and dashboards to support business decision-making."
-        verified: true
-        can_defend:
-          - "Did use SQL on Hadoop"
-          - "Did create reports"
-          - "Did support business needs"
-        tags:
-          role_fit: [data_analyst, data_scientist]
-          tech_stack: [sql, hadoop]
-          domain: [ecommerce]
-
-      - id: eleme_python_tableau
-        content: "Learned and applied Python and Tableau for data analysis and visualization; beginning of transition to technical data career."
-        verified: true
-        can_defend:
-          - "Did learn Python here"
-          - "Did learn Tableau here"
-        notes: "This was where technical skills started"
-        tags:
-          role_fit: [data_analyst]
-          tech_stack: [python, tableau]
-
       - id: eleme_ab_testing
-        content: "Built user profiling and classification model for marketing campaigns, doubling the recall rate of lost customers through A/B testing."
+        content: "Built user profiling and classification model for marketing campaigns, doubling the recall rate of lost customers through A/B testing; analyzed large-scale data via Hadoop supporting business decision-making in fast-growing e-commerce."
         verified: true
         verified_date: "2026-01-16"
         can_defend:
@@ -568,8 +552,20 @@ certifications:
           - "2x recall rate is accurate"
         tags:
           role_fit: [data_analyst, data_scientist]
-          tech_stack: [python, ab_testing, statistics]
+          tech_stack: [python, ab_testing, statistics, hadoop]
           domain: [ecommerce, marketing]
+
+      - id: eleme_sql_reporting
+        content: "Queried and processed large-scale user data from Hadoop cluster using Hive SQL; optimized complex queries and built automated reporting pipelines to support business decision-making."
+        verified: true
+        can_defend:
+          - "Did use SQL on Hadoop"
+          - "Did create reports"
+          - "Did support business needs"
+        tags:
+          role_fit: [data_analyst, data_scientist, data_engineer]
+          tech_stack: [sql, hadoop, hive]
+          domain: [ecommerce]
 
     resume_strategy: |
       - Original resume shows Sep 2013 - Jul 2015 (borrowed time from Henan Energy)
@@ -598,7 +594,7 @@ projects:
     verified_bullets:
 
       - id: thesis_uq_framework
-        content: "Built evaluation framework for uncertainty quantification in deep RL: implemented calibration metrics (ACE, CRPS, coverage) and evaluated model reliability under distribution shifts."
+        content: "Built a novel evaluation framework for Deep RL agents to quantify predictive uncertainty under distributional shifts."
         verified: true
         can_defend:
           - "Completed thesis in Aug 2025"
@@ -608,7 +604,7 @@ projects:
           tech_stack: [python, pytorch, rl, statistics]
 
       - id: thesis_calibration
-        content: "Developed calibration methods including temperature scaling and bias correction to improve model reliability under uncertainty."
+        content: "Applied temperature scaling and Bayesian methods to calibrate agent confidence and improve prediction reliability."
         verified: true
         tags:
           role_fit: [quant, data_scientist]
@@ -660,7 +656,7 @@ projects:
     verified_bullets:
 
       - id: expedia_ltr
-        content: "Built learning-to-rank models (XGBoost, LightGBM LambdaRank) on 4.9M records; achieved NDCG@5 = 0.392; engineered temporal and behavioral features."
+        content: "Built learning-to-rank models (XGBoost+SVD, LightGBM) on 4.9M records; engineered temporal and behavioral features for ranking optimization; achieved NDCG@5 = 0.392, ranked top 5% on Kaggle."
         verified: true
         can_defend:
           - "Did build these models"
@@ -683,7 +679,7 @@ projects:
     verified_bullets:
 
       - id: ml4qs_pipeline
-        content: "Built end-to-end ML pipeline for smartphone IMU sensor data (accelerometer, gyroscope); processed 60K+ time-series data points; achieved 65% accuracy with LightGBM and Optuna hyperparameter tuning."
+        content: "Built ML pipeline for IMU sensor data (accelerometer, gyroscope); implemented Kalman Filter for noise reduction; engineered 600+ features, achieved 65% accuracy with LightGBM and Optuna hyperparameter tuning."
         verified: true
         can_defend:
           - "Did build this pipeline"
@@ -739,6 +735,72 @@ projects:
           tech_stack: [statistics]
 
     use_for: "Robotics roles, optimization roles, research positions"
+
+  # ---------------------------------------------------------------------------
+  # FINANCIAL DATA LAKEHOUSE (Oct 2025 - Present)
+  # ---------------------------------------------------------------------------
+  # Personal portfolio project demonstrating Databricks/Spark/AWS skills
+  # Featured prominently on Swisscom resume (interview obtained Jan 2026)
+  # ---------------------------------------------------------------------------
+  financial_data_lakehouse:
+    title: "Financial Data Lakehouse (Databricks/Spark/AWS)"
+    institution: "Personal Portfolio Project"
+    period: "Oct. 2025 -- Present"
+    status: "ongoing"
+
+    verified_bullets:
+
+      - id: lakehouse_streaming
+        content: "Architected a resilient data lakehouse using Databricks Auto Loader and Structured Streaming for high-throughput market feeds; implemented schema evolution to handle upstream data changes."
+        verified: true
+        verified_date: "2026-01-19"
+        can_defend:
+          - "Built working Databricks lakehouse pipeline"
+          - "Used Auto Loader and Structured Streaming"
+          - "Implemented schema evolution handling"
+        tags:
+          role_fit: [data_engineer, ml_engineer, data_platform_engineer]
+          tech_stack: [databricks, spark, structured_streaming, auto_loader, delta_lake]
+          domain: [finance, data_engineering]
+
+      - id: lakehouse_quality
+        content: "Engineered data quality framework via fault injection testing; validated a quarantine pattern to isolate malformed records (schema violations, corrupt data) using Medallion Architecture (Bronze/Silver/Gold)."
+        verified: true
+        verified_date: "2026-01-19"
+        can_defend:
+          - "Built data quality framework"
+          - "Used Medallion Architecture"
+          - "Implemented quarantine pattern for bad data"
+        tags:
+          role_fit: [data_engineer, data_platform_engineer]
+          tech_stack: [delta_lake, medallion_architecture, data_quality]
+          domain: [finance, data_engineering]
+
+      - id: lakehouse_optimization
+        content: "Optimized Delta Lake storage via Z-ordering and compaction, reducing query latency for downstream analysis."
+        verified: true
+        verified_date: "2026-01-19"
+        can_defend:
+          - "Applied Z-ordering optimization"
+          - "Ran compaction on Delta tables"
+        tags:
+          role_fit: [data_engineer]
+          tech_stack: [delta_lake, performance_optimization]
+          domain: [data_engineering]
+
+      - id: lakehouse_orchestration
+        content: "Integrated Airflow for orchestration and Docker for consistent deployment across environments."
+        verified: true
+        verified_date: "2026-01-19"
+        can_defend:
+          - "Used Airflow for pipeline orchestration"
+          - "Dockerized the application"
+        tags:
+          role_fit: [data_engineer, ml_engineer]
+          tech_stack: [airflow, docker]
+          domain: [data_engineering, devops]
+
+    use_for: "Data Engineer roles, ML Engineer roles, Big Data roles, Platform roles"
 
   # ---------------------------------------------------------------------------
   # B.Eng. THESIS: Web-based Collaborative Office System (2010)
@@ -1169,7 +1231,7 @@ skills:
       - "Existentialism"
 
     personal_philosophy:
-      core_creed: "Never follow blindly" (free will)
+      core_creed: "Never follow blindly (free will)"
       central_questions:
         - "Does the sublime exist?"
         - "How should one live?"
@@ -1200,9 +1262,9 @@ skills:
 
     application_usage:
       when_to_mention:
-        - "Cultural fit" questions
-        - "Tell us about yourself" sections
-        - "Fun fact" or personal info fields
+        - "Cultural fit questions"
+        - "Tell us about yourself sections"
+        - "Fun fact or personal info fields"
         - Roles emphasizing human-centered design
         - Companies with strong values/mission
 
@@ -1635,3 +1697,174 @@ work_authorization:
     - "10 months of guaranteed work authorization from Jan 2026"
     - "HSM visa processing typically takes 2-4 weeks"
     - "Employer must be registered as recognized sponsor (most tech companies are)"
+
+# =============================================================================
+# SKILL TIERS — Three-level skill classification for resume generation
+# =============================================================================
+# verified: Skills the candidate demonstrably has
+# transferable: Skills that can be claimed when JD mentions them (with basis)
+# excluded: Skills the candidate cannot claim
+# =============================================================================
+
+skill_tiers:
+  verified:
+    languages: ["Python (Expert)", "SQL (Expert)", "Bash"]
+    data_engineering: ["PySpark", "Delta Lake", "Databricks", "ETL/ELT",
+                       "Auto Loader", "Structured Streaming", "Schema Evolution",
+                       "Medallion Architecture"]
+    cloud: ["AWS (EMR, Glue, S3, Lambda)", "Docker", "Airflow", "CI/CD", "Git"]
+    databases: ["PostgreSQL", "MySQL", "Hadoop", "Hive"]
+    ml: ["Pandas", "NumPy", "PyTorch", "XGBoost", "LightGBM",
+         "scikit-learn", "Statistics", "A/B Testing", "Time-Series Analysis"]
+    certifications: ["Databricks Certified Data Engineer Professional (2026)"]
+  transferable:
+    - skill: "Azure (Data Factory, ADLS)"
+      basis: "AWS experience transferable"
+      write_when: "JD mentions Azure"
+    - skill: "Kafka"
+      basis: "Understands message queues, Structured Streaming experience"
+      write_when: "JD mentions Kafka or event streaming"
+    - skill: "Terraform"
+      basis: "IaC concepts, Docker/CI/CD experience"
+      write_when: "JD mentions IaC or Terraform"
+    - skill: "TypeScript"
+      basis: "Python strong, JS concepts understood"
+      write_when: "JD mentions TypeScript but not as primary"
+    - skill: "Scala"
+      basis: "PySpark experience, Spark native language"
+      write_when: "JD mentions Scala for Spark"
+    - skill: "GCP (BigQuery, Dataflow)"
+      basis: "Cloud experience transferable"
+      write_when: "JD mentions GCP"
+    - skill: "Kubernetes"
+      basis: "Docker experience, container orchestration concepts"
+      write_when: "JD mentions K8s or Kubernetes"
+    - skill: "dbt"
+      basis: "SQL expert, data transformation concepts"
+      write_when: "JD mentions dbt"
+    - skill: "MLflow"
+      basis: "Databricks certification covers MLflow"
+      write_when: "JD mentions experiment tracking or MLflow"
+  excluded: ["C/C++", "Java", "Ruby", "Swift", "Kotlin", ".NET/C#",
+             "React", "Angular", "Vue", "Flutter", "PHP"]
+
+# =============================================================================
+# ALLOWED SKILL CATEGORIES — Whitelist for resume skill section headers
+# =============================================================================
+# AI must pick category names from this list ONLY.
+# This prevents invented categories like "Fraud & Risk Analytics".
+# =============================================================================
+
+allowed_skill_categories:
+  - "Languages & Core"
+  - "ML/AI Frameworks"
+  - "Data Engineering"
+  - "Cloud & DevOps"
+  - "Databases"
+  - "Research Methods"
+  - "Risk Analytics"
+  - "Quantitative Methods"
+  - "Analytics & BI"
+  - "NLP & GenAI"
+
+# =============================================================================
+# TITLE OPTIONS — Constrained title choices per company
+# =============================================================================
+
+title_options:
+  glp_technology:
+    default: "Data Scientist & Team Lead"
+    data_engineer: "Data Engineer & Team Lead"
+    data_scientist: "Data Scientist & Team Lead"
+    ml_engineer: "ML Engineer & Team Lead"
+    risk_analyst: "Credit Risk Analyst & Team Lead"
+  baiquan_investment:
+    default: "Quantitative Researcher"
+    data_engineer: "Quantitative Developer"
+    data_scientist: "Quantitative Analyst"
+    quant: "Quantitative Researcher"
+  eleme:
+    default: "Data Analyst"
+  henan_energy:
+    default: "Business Supervisor"
+    data_analyst: "Business Analyst"
+
+# =============================================================================
+# BIO CONSTRAINTS — Rules for AI-generated bio text
+# =============================================================================
+
+bio_constraints:
+  max_years_claim: 6
+  years_claim_scope: "working with data systems"
+  banned_phrases:
+    - "deep expertise"
+    - "extensive experience"
+    - "proven track record"
+    - "cutting-edge"
+    - "world-class"
+    - "industry-leading"
+  extra_rules:
+    - "Do NOT describe specific projects in the bio — the Projects section handles that. Bio should summarize overall profile (years, domain, core tech stack, certification)."
+  replacements:
+    "deep expertise": "hands-on experience"
+    "extensive experience": "experience"
+    "proven track record": "track record"
+    "cutting-edge": "modern"
+  required_elements:
+    data_engineer: ["Databricks", "data pipeline"]
+    ml_engineer: ["M.Sc. in AI", "VU Amsterdam"]
+    data_scientist: ["statistical", "machine learning"]
+    quant: ["quantitative", "factor"]
+
+# =============================================================================
+# BIO BUILDER — Structured bio generation (v2.0)
+# =============================================================================
+# AI selects component IDs → system assembles verified text deterministically.
+# Eliminates fabricated domain claims (e.g., "fraud detection", "graph-based").
+# =============================================================================
+
+bio_builder:
+  # Opening role titles AI can pick (must match candidate's actual scope)
+  allowed_titles:
+    - "Data Engineer"
+    - "ML Engineer"
+    - "Machine Learning Engineer"
+    - "Data Scientist"
+    - "Quantitative Researcher"
+    - "AI Engineer"
+
+  # Domain claims — ONLY these phrases can appear in the bio
+  # Each must be supportable by actual bullet library content
+  domain_claims:
+    credit_risk:
+      text: "credit scoring and risk analytics"
+      basis: "GLP Technology — credit scoring infrastructure"
+    data_pipelines:
+      text: "scalable data pipelines and ETL systems"
+      basis: "GLP PySpark pipelines + Financial Data Lakehouse"
+    quant_research:
+      text: "quantitative research and factor modeling"
+      basis: "Baiquan Investment — Fama-MacBeth, alpha research"
+    anomaly_detection:
+      text: "anomaly detection and monitoring systems"
+      basis: "GLP — anomaly detection reports, portfolio monitoring"
+    ml_deployment:
+      text: "ML model development and deployment"
+      basis: "GLP — end-to-end credit scoring models"
+    data_analytics:
+      text: "data analytics and business intelligence"
+      basis: "Ele.me — user profiling, A/B testing, Hadoop analytics"
+    nlp_llm:
+      text: "NLP and large language model applications"
+      basis: "NLP projects — sentiment analysis, BERT, text generation"
+    deep_rl:
+      text: "deep learning and reinforcement learning research"
+      basis: "MSc thesis — uncertainty quantification in deep RL"
+
+  # Closer options — optional final sentence
+  closer_options:
+    eager_company:
+      text: "Eager to bring these skills to {company}."
+    seeking_impact:
+      text: "Looking forward to delivering data-driven impact at {company}."
+    null: null  # No closer

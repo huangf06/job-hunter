@@ -81,13 +81,20 @@ python scripts/job_pipeline.py --mark-applied JOB_ID  # 标记已申请
 
 ```
 job-hunter/
-├── scripts/                    # 核心脚本
+├── scripts/                    # CLI 入口
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
-│   ├── ai_analyzer.py              # AI 分析器 (Claude Opus)
-│   ├── resume_renderer.py          # 简历渲染器 (Jinja2 + Playwright)
 │   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫
 │   ├── job_parser.py               # JD 解析器
 │   └── playwright_scraper.py       # 多平台爬虫
+│
+├── src/                        # 可复用模块
+│   ├── __init__.py
+│   ├── ai_analyzer.py              # AI 分析器 (Claude Opus)
+│   ├── resume_renderer.py          # 简历渲染器 (Jinja2 + Playwright)
+│   ├── resume_validator.py         # 简历验证器 (v3.0)
+│   └── db/
+│       ├── __init__.py
+│       └── job_db.py               # SQLite 数据库模块
 │
 ├── config/
 │   ├── ai_config.yaml          # AI 配置 (模型、阈值、prompt)
@@ -96,9 +103,6 @@ job-hunter/
 │   └── base/                   # 基础配置
 │       ├── filters.yaml            # 硬规则 v2.0
 │       └── scoring.yaml            # 评分规则 v2.0
-│
-├── src/db/
-│   └── job_db.py               # SQLite 数据库模块
 │
 ├── templates/
 │   ├── base_template.html      # 主模板 (Jinja2)
