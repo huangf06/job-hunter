@@ -867,8 +867,8 @@ def main():
             print("错误: 数据库模块不可用")
             sys.exit(1)
 
-        from src.db.job_db import JobDatabase
-        db = JobDatabase()
+        from src.db.job_db import JobDatabase as _JDB
+        db = _JDB()
         print("[Reprocess] Clearing old filter and score results...")
         filter_count = db.clear_filter_results()
         score_count = db.clear_scores()
@@ -911,8 +911,24 @@ def main():
             pipeline.show_stats()
         elif args.mark_applied:
             db = JobDatabase()
-            db.update_application_status(args.mark_applied, "applied", applied_at=datetime.now().isoformat())
-            print(f"已标记为申请: {args.mark_applied}")
+            job_id = args.mark_applied
+            db.update_application_status(job_id, "applied", applied_at=datetime.now().isoformat())
+            # Archive the ready_to_send folder
+            resume = db.get_resume(job_id)
+            if resume and resume.get('submit_dir'):
+                submit_dir = Path(resume['submit_dir'])
+                if submit_dir.exists():
+                    applied_dir = submit_dir.parent / "_applied"
+                    applied_dir.mkdir(parents=True, exist_ok=True)
+                    dest = applied_dir / submit_dir.name
+                    import shutil
+                    shutil.move(str(submit_dir), str(dest))
+                    print(f"[Applied] {job_id}")
+                    print(f"  -> Archived: _applied/{submit_dir.name}/")
+                else:
+                    print(f"[Applied] {job_id} (submit folder not found)")
+            else:
+                print(f"[Applied] {job_id}")
         return
 
     # 旧版 JSON 分析 (已废弃)
