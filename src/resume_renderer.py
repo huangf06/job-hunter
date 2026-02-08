@@ -198,13 +198,19 @@ class ResumeRenderer:
                 return None
 
         # Generate output paths
+        candidate_name = self._safe_filename(self.candidate.get('name', 'Resume'))
         company_safe = self._safe_filename(job.get('company', 'unknown'))[:20].rstrip('_')
         job_id_short = job.get('id', 'unknown')[:8]
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        base_name = f"Fei_Huang_{company_safe}_{job_id_short}_{timestamp}"
 
-        html_path = self.output_dir / f"{base_name}.html"
-        pdf_path = self.output_dir / f"{base_name}.pdf"
+        # Internal tracking name (unique, keeps history)
+        tracking_name = f"{candidate_name}_{company_safe}_{job_id_short}_{timestamp}"
+        # Clean submission name (professional, ready to send)
+        submit_name = f"{candidate_name}_Resume"
+
+        html_path = self.output_dir / f"{tracking_name}.html"
+        pdf_path = self.output_dir / f"{tracking_name}.pdf"
+        submit_pdf_path = self.output_dir / f"{submit_name}.pdf"
 
         # Save HTML
         with open(html_path, 'w', encoding='utf-8') as f:
@@ -214,8 +220,12 @@ class ResumeRenderer:
         pdf_success = self._html_to_pdf(html_path, pdf_path)
 
         if pdf_success:
+            # Copy to submission-ready filename (overwrites previous — always latest)
+            import shutil
+            shutil.copy2(pdf_path, submit_pdf_path)
             print(f"  -> HTML: {html_path.name}")
             print(f"  -> PDF:  {pdf_path.name}")
+            print(f"  -> Send: {submit_pdf_path.name}")
         else:
             print(f"  -> HTML: {html_path.name} (PDF generation failed)")
 
