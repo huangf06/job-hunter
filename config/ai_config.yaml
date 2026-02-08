@@ -126,7 +126,7 @@ resume:
   career_note: "Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation."
 
   # Interests line (rendered at bottom of resume)
-  interests: "Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing"
+  interests: "Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing"
 
   # Candidate contact info (used by resume renderer)
   candidate:
@@ -138,8 +138,8 @@ resume:
     github: "https://github.com/huangf06"
     linkedin_display: "linkedin.com/in/huangf06"
     github_display: "github.com/huangf06"
-    blog_url: "https://huangf06.github.io/FeiThink/en/"
-    blog_display: "huangf06.github.io/FeiThink/en/"
+    blog_url: "https://feithink.substack.com/"
+    blog_display: "feithink.substack.com"
 
   # Education details (rendered in template)
   education:
@@ -341,6 +341,7 @@ prompts:
     - For ML/DS roles: prioritize Thesis or Expedia
     - For NLP/AI roles: prioritize NLP Projects or Thesis
     - Include a third project only if it adds clearly different skills
+    - THESIS RULE: When including thesis_uq_rl, ALWAYS include thesis_noise_paradox (the original discovery) — do NOT only include thesis_uq_framework (measurement-only looks weak)
 
     ### BULLET SELECTION RULE (ABSOLUTE)
     Select bullets BY THEIR ID — the string shown in [square brackets] in the library above.
