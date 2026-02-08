@@ -489,7 +489,7 @@ skill_tiers:
     data_engineering: ["PySpark", "Delta Lake", "Databricks", "ETL/ELT",
                        "Auto Loader", "Structured Streaming", "Schema Evolution",
                        "Medallion Architecture"]
-    cloud: ["AWS (EMR, Glue, S3, Lambda)", "Docker", "Airflow", "CI/CD", "Git"]
+    cloud: ["AWS", "Docker", "Airflow", "CI/CD", "Git"]
     databases: ["PostgreSQL", "MySQL", "Hadoop", "Hive"]
     ml: ["Pandas", "NumPy", "PyTorch", "PyTorch Geometric", "XGBoost", "LightGBM",
          "scikit-learn", "Statistics", "A/B Testing", "Time-Series Analysis"]
