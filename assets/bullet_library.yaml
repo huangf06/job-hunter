@@ -493,6 +493,11 @@ skill_tiers:
     databases: ["PostgreSQL", "MySQL", "Hadoop", "Hive"]
     ml: ["Pandas", "NumPy", "PyTorch", "PyTorch Geometric", "XGBoost", "LightGBM",
          "scikit-learn", "Statistics", "A/B Testing", "Time-Series Analysis"]
+    research: ["Experiment Design", "Experimental Design", "Statistical Testing",
+               "Benchmarking", "Hyperparameter Tuning", "Bayesian Methods",
+               "Calibration Analysis", "Uncertainty Quantification", "Technical Writing"]
+    nlp_genai: ["Hugging Face Transformers", "GPT-2", "LLM APIs", "LLM APIs (Claude)",
+                "Prompt Engineering", "Fine-Tuning", "XTTS v2", "Text Generation"]
     certifications: ["Databricks Certified Data Engineer Professional (2026)"]
   transferable:
     - skill: "Azure (Data Factory, ADLS)"

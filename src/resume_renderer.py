@@ -207,10 +207,17 @@ class ResumeRenderer:
 
         # Internal tracking name (unique, keeps history)
         tracking_name = f"{candidate_name}_{company_safe}_{job_id_short}_{timestamp}"
-        # Submission-ready: ready_to_send/<date_Company>/Fei_Huang_Resume.pdf
+        # Submission-ready: ready_to_send/<date_Company[_NN]>/Fei_Huang_Resume.pdf
         submit_name = f"{candidate_name}_Resume"
         date_prefix = datetime.now().strftime("%Y%m%d")
-        submit_dir = self.ready_dir / f"{date_prefix}_{company_safe}"
+        base_folder = f"{date_prefix}_{company_safe}"
+        submit_dir = self.ready_dir / base_folder
+        # If folder already has a PDF (different job, same company+date), use _02, _03, ...
+        if (submit_dir / f"{submit_name}.pdf").exists():
+            for seq in range(2, 100):
+                submit_dir = self.ready_dir / f"{base_folder}_{seq:02d}"
+                if not (submit_dir / f"{submit_name}.pdf").exists():
+                    break
         submit_dir.mkdir(parents=True, exist_ok=True)
 
         html_path = self.output_dir / f"{tracking_name}.html"
@@ -229,7 +236,7 @@ class ResumeRenderer:
             shutil.copy2(pdf_path, submit_pdf_path)
             print(f"  -> HTML: {html_path.name}")
             print(f"  -> PDF:  {pdf_path.name}")
-            print(f"  -> Send: ready_to_send/{date_prefix}_{company_safe}/{submit_name}.pdf")
+            print(f"  -> Send: ready_to_send/{submit_dir.name}/{submit_name}.pdf")
         else:
             print(f"  -> HTML: {html_path.name} (PDF generation failed)")
 
@@ -239,7 +246,8 @@ class ResumeRenderer:
             role_type=self._detect_role_type(job),
             template_version="ai_v1",
             html_path=str(html_path),
-            pdf_path=str(pdf_path) if pdf_success else ''
+            pdf_path=str(pdf_path) if pdf_success else '',
+            submit_dir=str(submit_dir) if pdf_success else ''
         )
         self.db.save_resume(resume_record)
 

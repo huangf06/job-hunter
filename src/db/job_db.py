@@ -73,6 +73,7 @@ class Resume:
     template_version: str = "1.0"
     html_path: str = ""
     pdf_path: str = ""
+    submit_dir: str = ""
 
 
 @dataclass
@@ -159,6 +160,7 @@ class JobDatabase:
         template_version TEXT,
         html_path TEXT,
         pdf_path TEXT,
+        submit_dir TEXT,
         generated_at TEXT DEFAULT (datetime('now', 'localtime')),
         UNIQUE(job_id, role_type)
     );
@@ -328,6 +330,14 @@ class JobDatabase:
                 statement = statement.strip()
                 if statement:
                     conn.execute(statement)
+            # Migrations: add columns that may not exist in older databases
+            self._migrate(conn)
+
+    def _migrate(self, conn):
+        """Add columns introduced after initial schema."""
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(resumes)").fetchall()}
+        if 'submit_dir' not in existing:
+            conn.execute("ALTER TABLE resumes ADD COLUMN submit_dir TEXT")
 
     @contextmanager
     def _get_conn(self) -> Generator[sqlite3.Connection, None, None]:
@@ -542,10 +552,11 @@ class JobDatabase:
         with self._get_conn() as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO resumes
-                (job_id, role_type, template_version, html_path, pdf_path, generated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (job_id, role_type, template_version, html_path, pdf_path, submit_dir, generated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (resume.job_id, resume.role_type, resume.template_version,
-                  resume.html_path, resume.pdf_path, datetime.now().isoformat()))
+                  resume.html_path, resume.pdf_path, resume.submit_dir,
+                  datetime.now().isoformat()))
 
     def get_resume(self, job_id: str) -> Optional[Dict]:
         """获取简历记录"""
