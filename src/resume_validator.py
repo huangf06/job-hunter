@@ -26,6 +26,43 @@ from src import TRANSFERABLE_SKIP_WORDS
 PROJECT_ROOT = Path(__file__).parent.parent
 
 
+def _split_skills_respecting_parens(skills_str: str) -> List[str]:
+    """Split comma-separated skills string, but don't split inside parentheses.
+
+    E.g. "Python, AWS (EMR, Glue, S3), Docker" -> ["Python", "AWS (EMR, Glue, S3)", "Docker"]
+    Also splits on '/' for compound skills like "ETL/ELT", but not inside parens.
+    """
+    result = []
+    depth = 0
+    current = []
+    for ch in skills_str:
+        if ch == '(':
+            depth += 1
+            current.append(ch)
+        elif ch == ')':
+            depth = max(0, depth - 1)
+            current.append(ch)
+        elif ch == ',' and depth == 0:
+            token = ''.join(current).strip()
+            if token:
+                # Split on slash outside parens for compound skills like "ETL/ELT"
+                for part in token.split('/'):
+                    part = part.strip()
+                    if part:
+                        result.append(part)
+            current = []
+        else:
+            current.append(ch)
+    # Last token
+    token = ''.join(current).strip()
+    if token:
+        for part in token.split('/'):
+            part = part.strip()
+            if part:
+                result.append(part)
+    return result
+
+
 @dataclass
 class ValidationResult:
     passed: bool
@@ -269,8 +306,9 @@ class ResumeValidator:
             if not isinstance(skills_str, str):
                 errors.append(f"Skill group '{skill_group.get('category', '?')}': skills_list must be a string, got {type(skills_str).__name__}")
                 continue
-            # Parse individual skills from comma-separated string (also split on slash for compound skills)
-            individual_skills = [s.strip() for part in skills_str.split(',') for s in part.split('/')]
+            # Parse individual skills from comma-separated string (respect parentheses)
+            # Also split on slash for compound skills, but not inside parentheses
+            individual_skills = _split_skills_respecting_parens(skills_str)
             for skill in individual_skills:
                 skill_clean = skill.strip()
                 if not skill_clean:
@@ -306,8 +344,8 @@ class ResumeValidator:
             skills_str = skill_group.get('skills_list', '')
             if not isinstance(skills_str, str):
                 continue
-            # Split on comma and slash for consistency with _validate_skills
-            individual_skills = [s.strip() for part in skills_str.split(',') for s in part.split('/')]
+            # Split respecting parentheses, consistent with _validate_skills
+            individual_skills = _split_skills_respecting_parens(skills_str)
             for skill in individual_skills:
                 skill_clean = skill.strip()
                 if not skill_clean:

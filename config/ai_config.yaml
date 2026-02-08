@@ -54,8 +54,8 @@ thresholds:
 
 budget:
   # Daily token limit (approximate)
-  daily_limit: 100000
-  warn_threshold: 80000
+  daily_limit: 10000000
+  warn_threshold: 8000000
 
   # Cost tracking (matches configured models)
   cost_per_1k_tokens:

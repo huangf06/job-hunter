@@ -732,6 +732,7 @@ class LinkedInScraperV6:
         title = title.strip().replace("\n", " ")
         title = re.sub(r'\s*with verification\s*$', '', title, flags=re.IGNORECASE)
 
+        # Handle whitespace-separated duplicates: "Foo Bar  Foo Bar"
         parts = re.split(r'\s{2,}', title)
         if len(parts) >= 2:
             first_part = parts[0].strip()
@@ -739,6 +740,22 @@ class LinkedInScraperV6:
 
             if second_part and second_part == first_part:
                 title = first_part
+
+        # Handle concatenated duplicates (no separator):
+        # "Senior Data EngineerSenior Data Engineer" or "Data Engineer (senior)Data Engineer"
+        length = len(title)
+        if length >= 10:
+            mid = length // 2
+            for pos in range(max(4, mid - 5), min(length - 3, mid + 6)):
+                first = title[:pos]
+                second = title[pos:]
+                if first == second:
+                    title = first
+                    break
+                # Second half is prefix of first (shorter variant repeat)
+                if len(second) >= 5 and first.startswith(second):
+                    title = first
+                    break
 
         title = re.sub(r'\s+', ' ', title).strip()
 
