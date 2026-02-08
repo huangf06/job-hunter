@@ -501,7 +501,7 @@ class AIAnalyzer:
             parts.append(edu_text)
 
         # Certification
-        if bio_spec.get('include_certification', False):
+        if bio_spec.get('include_certification', True):
             cert = self.config.get('resume', {}).get('education', {}).get('certification', 'Databricks Certified Data Engineer Professional (2026)')
             # Strip year suffix if present for cleaner bio
             cert_clean = re.sub(r'\s*\(\d{4}\)\s*$', '', cert)

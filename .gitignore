@@ -15,6 +15,7 @@ data/history/
 
 # Output (generated resumes)
 output/
+ready_to_send/
 
 # Python
 __pycache__/

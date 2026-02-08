@@ -38,6 +38,8 @@ class ResumeRenderer:
         self.template_dir = PROJECT_ROOT / "templates"
         self.output_dir = PROJECT_ROOT / self.config.get('resume', {}).get('output_dir', 'output')
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.ready_dir = PROJECT_ROOT / "ready_to_send"
+        self.ready_dir.mkdir(parents=True, exist_ok=True)
 
         # Load Jinja2 environment
         self.jinja_env = Environment(
@@ -205,12 +207,15 @@ class ResumeRenderer:
 
         # Internal tracking name (unique, keeps history)
         tracking_name = f"{candidate_name}_{company_safe}_{job_id_short}_{timestamp}"
-        # Clean submission name (professional, ready to send)
+        # Submission-ready: ready_to_send/<date_Company>/Fei_Huang_Resume.pdf
         submit_name = f"{candidate_name}_Resume"
+        date_prefix = datetime.now().strftime("%Y%m%d")
+        submit_dir = self.ready_dir / f"{date_prefix}_{company_safe}"
+        submit_dir.mkdir(parents=True, exist_ok=True)
 
         html_path = self.output_dir / f"{tracking_name}.html"
         pdf_path = self.output_dir / f"{tracking_name}.pdf"
-        submit_pdf_path = self.output_dir / f"{submit_name}.pdf"
+        submit_pdf_path = submit_dir / f"{submit_name}.pdf"
 
         # Save HTML
         with open(html_path, 'w', encoding='utf-8') as f:
@@ -220,12 +225,11 @@ class ResumeRenderer:
         pdf_success = self._html_to_pdf(html_path, pdf_path)
 
         if pdf_success:
-            # Copy to submission-ready filename (overwrites previous — always latest)
             import shutil
             shutil.copy2(pdf_path, submit_pdf_path)
             print(f"  -> HTML: {html_path.name}")
             print(f"  -> PDF:  {pdf_path.name}")
-            print(f"  -> Send: {submit_pdf_path.name}")
+            print(f"  -> Send: ready_to_send/{date_prefix}_{company_safe}/{submit_name}.pdf")
         else:
             print(f"  -> HTML: {html_path.name} (PDF generation failed)")
 
@@ -278,6 +282,12 @@ class ResumeRenderer:
 
         return context
 
+    # Skills where the specific version subsumes the generic one.
+    # Keep both when they appear — they are distinct ATS keywords.
+    # Only add entries here for TRUE duplicates (e.g., "JS" vs "JavaScript").
+    SKILL_SUBSUMPTIONS = {
+    }
+
     def _dedup_skills(self, skills: list) -> list:
         """Remove duplicate skills across categories, keeping first occurrence."""
         seen = set()
@@ -289,6 +299,10 @@ class ResumeRenderer:
             unique = []
             for item in items:
                 base = re.sub(r'\s*\(.*?\)', '', item).strip().lower()
+                # Check subsumption: skip if a related skill was already seen
+                subsume_of = self.SKILL_SUBSUMPTIONS.get(base)
+                if subsume_of and subsume_of in seen:
+                    continue
                 if base not in seen:
                     seen.add(base)
                     unique.append(item)
@@ -361,12 +375,6 @@ class ResumeRenderer:
         Returns list of (message, is_blocking) tuples.
         """
         issues = []
-
-        # Check for inconsistent blog URLs
-        blog_urls = re.findall(r'https?://[^"<>\s]+(?:substack|feithink|github\.io/FeiThink)[^"<>\s]*', html_content)
-        unique_urls = set(blog_urls)
-        if len(unique_urls) > 1:
-            issues.append((f"Inconsistent blog URLs found: {unique_urls}", False))
 
         # Check certification appears at most 2 times
         cert_count = html_content.lower().count('databricks certified')

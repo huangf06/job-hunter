@@ -486,7 +486,7 @@ work_authorization:
 skill_tiers:
   verified:
     languages: ["Python (Expert)", "SQL (Expert)", "Bash"]
-    data_engineering: ["PySpark", "Delta Lake", "Databricks", "ETL/ELT",
+    data_engineering: ["PySpark", "Spark", "Delta Lake", "Databricks", "ETL/ELT",
                        "Auto Loader", "Structured Streaming", "Schema Evolution",
                        "Medallion Architecture"]
     cloud: ["AWS", "Docker", "Airflow", "CI/CD", "Git"]
