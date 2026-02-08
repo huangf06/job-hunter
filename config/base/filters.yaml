@@ -61,8 +61,8 @@ hard_reject_rules:
     title_must_contain_one_of:
       - "data"
       - "machine learning"
-      - "ml "
-      - "ai "
+      - "ml"
+      - "ai"
       - "artificial intelligence"
       - "python"
       - "quant"
@@ -132,8 +132,8 @@ hard_reject_rules:
     exceptions:
       - "data"
       - "machine learning"
-      - "ml "
-      - "ai "
+      - "ml"
+      - "ai"
       - "quant"
       - "scientist"
       - "research"
@@ -149,9 +149,7 @@ hard_reject_rules:
       - "\\bzzp\\b"
       - "\\bkvk\\s*registration\\s*required\\b"
       - "\\bfreelance\\s*(only|contract|position)\\b"
-      - "\\b\\d+.*per\\s*(day|hour)\\b"
-      - "\\b/day\\b"
-      - "\\b/hour\\b"
+      - "\\b\\d+\\s*(?:euro|eur|\\$|usd).{0,15}per\\s*(day|hour)\\b"
       - "\\bday\\s*rate\\b"
     exceptions:
       - "full-time"
@@ -170,6 +168,9 @@ hard_reject_rules:
       - "\\$2[0-5]00.*per\\s*month"
       - "USD\\s*1[0-5]00"
       - "1[0-4]00\\s*usd\\s*per\\s*month"
+      - "€\\s*1[0-4]00.*per\\s*month"
+      - "EUR\\s*1[0-5]00.*per\\s*month"
+      - "1[0-4]00\\s*eur\\s*per\\s*month"
 
   # 规则6.5: 特定技术栈年限要求过高
   specific_tech_experience:
@@ -199,17 +200,22 @@ hard_reject_rules:
       - "senior.*with\\s*\\d{2}\\+?\\s*years"
       - "at\\s*least\\s*(8|9|10)\\+?\\s*years"
     description: "要求经验年限超过阈值"
+    exceptions:
+      - "python"
+      - "data"
+      - "machine learning"
+      - "data science"
 
-  # 规则8: 高级管理职位
+  # 规则8: 高级管理职位 (title-only check to avoid false-rejecting mid-level roles)
   senior_management:
     enabled: true
     priority: 7
-    type: "regex"
-    patterns:
+    type: "title_check"
+    description: "高级管理或架构师职位"
+    title_reject_patterns:
       - "\\b(principal|director|vp|vice president|head of|cto|cio|chief)\\b"
       - "\\bsenior\\b.*\\b(manager|director)\\b"
       - "\\b(lead|senior)\\b.*\\b(engineer|scientist)\\b.*\\b(manager|director)\\b"
-    description: "高级管理或架构师职位"
     exceptions:
       - "senior data analyst"
       - "senior analyst"
@@ -226,7 +232,7 @@ hard_reject_rules:
     priority: 8
     type: "regex"
     patterns:
-      - "(onsite|on-site|office).*(only|mandatory|required)"
+      - "(onsite|on-site|office).{0,30}(only|mandatory|required)"
       - "no\\s*(relocation|visa|sponsorship)"
       - "must\\s*be\\s*located\\s*in"
       - "local\\s*candidates\\s*only"
@@ -239,77 +245,8 @@ hard_reject_rules:
 # 软性筛选规则 (用于评分，不直接拒绝)
 # =============================================================================
 
-soft_filter_rules:
-  # 加分项
-  positive_indicators:
-    visa_sponsorship:
-      patterns:
-        - "visa\\s*sponsor"
-        - "relocation\\s*assistance"
-        - "sponsorship\\s*available"
-        - "kmv"
-        - "highly\\s*skilled\\s*migrant"
-      weight: 2.0
-
-    junior_friendly:
-      patterns:
-        - "junior"
-        - "entry\\s*level"
-        - "graduate"
-        - "0-3\\s*years"
-        - "1-3\\s*years"
-        - "early\\s*career"
-      weight: 1.5
-
-    target_company:
-      companies:
-        - "picnic"
-        - "adyen"
-        - "booking.com"
-        - "ing"
-        - "abn amro"
-        - "rabobank"
-        - "asml"
-        - "philips"
-        - "tomtom"
-        - "coolblue"
-        - "bol.com"
-        - "optiver"
-        - "imc"
-        - "flow traders"
-        - "shell"
-      weight: 1.5
-
-    relevant_keywords:
-      patterns:
-        - "machine\\s*learning"
-        - "ml\\s*engineer"
-        - "data\\s*scientist"
-        - "ai\\s*engineer"
-        - "deep\\s*learning"
-        - "python"
-        - "pytorch"
-        - "tensorflow"
-        - "quantitative"
-        - "quant"
-      weight: 1.0
-
-  # 减分项
-  negative_indicators:
-    mid_senior_level:
-      patterns:
-        - "5\\+\\s*years"
-        - "6\\+\\s*years"
-        - "7\\+\\s*years"
-        - "senior\\b(?!\\s*analyst)"
-      weight: -1.0
-
-    specific_requirements:
-      patterns:
-        - "german\\s*required"
-        - "french\\s*required"
-        - "spanish\\s*required"
-      weight: -2.0
+# NOTE: soft_filter_rules removed in v2.0 — equivalent logic now lives in scoring.yaml
+#       (body_scoring: visa_sponsorship, junior_friendly, target_companies, etc.)
 
 # =============================================================================
 # 配置元数据

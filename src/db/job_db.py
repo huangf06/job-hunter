@@ -111,7 +111,7 @@ class JobDatabase:
     CREATE TABLE IF NOT EXISTS jobs (
         id TEXT PRIMARY KEY,
         source TEXT NOT NULL,
-        source_id TEXT,
+        source_id TEXT,  -- reserved, not currently populated
         url TEXT UNIQUE NOT NULL,
         title TEXT NOT NULL,
         company TEXT NOT NULL,
@@ -122,7 +122,7 @@ class JobDatabase:
         search_profile TEXT,
         search_query TEXT,
         raw_data TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
 
     -- 筛选结果表
@@ -133,7 +133,7 @@ class JobDatabase:
         filter_version TEXT,
         reject_reason TEXT,
         matched_rules TEXT,
-        processed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        processed_at TEXT DEFAULT (datetime('now', 'localtime')),
         UNIQUE(job_id, filter_version)
     );
 
@@ -147,7 +147,7 @@ class JobDatabase:
         matched_keywords TEXT,
         analysis TEXT,
         recommendation TEXT,
-        scored_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        scored_at TEXT DEFAULT (datetime('now', 'localtime')),
         UNIQUE(job_id, model)
     );
 
@@ -159,7 +159,7 @@ class JobDatabase:
         template_version TEXT,
         html_path TEXT,
         pdf_path TEXT,
-        generated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        generated_at TEXT DEFAULT (datetime('now', 'localtime')),
         UNIQUE(job_id, role_type)
     );
 
@@ -173,11 +173,11 @@ class JobDatabase:
         interview_at TEXT,
         outcome TEXT,
         notes TEXT,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT (datetime('now', 'localtime')),
         UNIQUE(job_id)
     );
 
-    -- 反馈记录表
+    -- 反馈记录表 (UNUSED — reserved for future application outcome tracking)
     CREATE TABLE IF NOT EXISTS feedback (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         job_id TEXT NOT NULL REFERENCES jobs(id),
@@ -186,16 +186,16 @@ class JobDatabase:
         rejection_stage TEXT,
         rejection_reason TEXT,
         notes TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
 
-    -- 配置快照表
+    -- 配置快照表 (UNUSED — reserved for future config versioning)
     CREATE TABLE IF NOT EXISTS config_snapshots (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id TEXT NOT NULL,
         config_type TEXT NOT NULL,
         config_data TEXT NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
 
     -- AI 分析表 (整合评分 + 简历定制)
@@ -217,7 +217,7 @@ class JobDatabase:
         -- 元数据
         model TEXT,
         tokens_used INTEGER,
-        analyzed_at TEXT DEFAULT CURRENT_TIMESTAMP
+        analyzed_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
 
     -- 索引
@@ -263,7 +263,7 @@ class JobDatabase:
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
-    JOIN job_analysis an ON j.id = an.job_id AND an.ai_score >= 7.0
+    JOIN job_analysis an ON j.id = an.job_id AND an.ai_score >= 7.0 AND an.tailored_resume != '{}'  -- SYNC: matches ai_config.yaml thresholds.ai_score_apply_now
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
     ORDER BY an.ai_score DESC;
@@ -276,7 +276,7 @@ class JobDatabase:
         r.pdf_path as resume_path
     FROM jobs j
     JOIN job_analysis an ON j.id = an.job_id
-    JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL
+    JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
     LEFT JOIN applications a ON j.id = a.job_id
     WHERE a.id IS NULL
     ORDER BY an.ai_score DESC;
@@ -286,9 +286,9 @@ class JobDatabase:
     SELECT
         COUNT(DISTINCT j.id) as total_scraped,
         COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
-        COUNT(DISTINCT CASE WHEN s.score >= 6.0 THEN j.id END) as scored_high,
+        COUNT(DISTINCT CASE WHEN s.score >= 5.5 THEN j.id END) as scored_high,  -- SYNC: matches scoring.yaml thresholds.apply
         COUNT(DISTINCT CASE WHEN an.id IS NOT NULL THEN j.id END) as ai_analyzed,
-        COUNT(DISTINCT CASE WHEN an.ai_score >= 5.0 THEN j.id END) as ai_scored_high,
+        COUNT(DISTINCT CASE WHEN an.ai_score >= 5.0 THEN j.id END) as ai_scored_high,  -- SYNC: matches ai_config.yaml thresholds.ai_score_generate_resume
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
         COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
         COUNT(DISTINCT CASE WHEN a.status = 'interview' THEN j.id END) as interview,
@@ -310,22 +310,34 @@ class JobDatabase:
     def _init_db(self):
         """初始化数据库结构"""
         with self._get_conn() as conn:
-            conn.executescript(self.SCHEMA)
+            # Use individual execute() calls instead of executescript() so that
+            # _get_conn's commit/rollback transaction control works correctly.
+            # (executescript() implicitly commits, defeating rollback on error.)
+            # WARNING: This split assumes no semicolons appear inside SQL string
+            # literals or comments. Keep SCHEMA clean of embedded semicolons.
+            for statement in self.SCHEMA.split(';'):
+                statement = statement.strip()
+                if statement:
+                    conn.execute(statement)
             # Drop and recreate views to ensure they're up-to-date
-            conn.executescript("""
-                DROP VIEW IF EXISTS v_pending_jobs;
-                DROP VIEW IF EXISTS v_high_score_jobs;
-                DROP VIEW IF EXISTS v_ready_to_apply;
-                DROP VIEW IF EXISTS v_funnel_stats;
-            """)
-            conn.executescript(self.VIEWS)
+            conn.execute("DROP VIEW IF EXISTS v_pending_jobs")
+            conn.execute("DROP VIEW IF EXISTS v_high_score_jobs")
+            conn.execute("DROP VIEW IF EXISTS v_ready_to_apply")
+            conn.execute("DROP VIEW IF EXISTS v_funnel_stats")
+            for statement in self.VIEWS.split(';'):
+                statement = statement.strip()
+                if statement:
+                    conn.execute(statement)
 
     @contextmanager
     def _get_conn(self) -> Generator[sqlite3.Connection, None, None]:
         """获取数据库连接"""
         conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
         try:
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
+            conn.execute("PRAGMA foreign_keys=ON")
             yield conn
             conn.commit()
         except Exception:
@@ -347,8 +359,10 @@ class JobDatabase:
     @staticmethod
     def generate_job_id(url: str) -> str:
         """根据 URL 生成唯一 ID"""
-        # 清理 URL，移除查询参数
-        clean_url = url.split('?')[0].rstrip('/')
+        if not url:
+            raise ValueError("Cannot generate job_id: URL is empty")
+        # 清理 URL，移除查询参数和片段
+        clean_url = url.split('?')[0].split('#')[0].rstrip('/')
         return hashlib.md5(clean_url.encode()).hexdigest()[:12]
 
     def job_exists(self, url: str) -> bool:
@@ -366,36 +380,51 @@ class JobDatabase:
         if not urls:
             return []
 
+        # Filter out empty URLs to prevent ValueError in generate_job_id
+        urls = [u for u in urls if u]
+        if not urls:
+            return []
+
         # 生成 job_id -> url 的映射
         url_to_id = {url: self.generate_job_id(url) for url in urls}
         job_ids = list(url_to_id.values())
 
-        # 批量查询已有且JD完整的职位
-        placeholders = ','.join(['?'] * len(job_ids))
+        # 批量查询已有且JD完整的职位 (chunk to avoid SQLite variable limit)
+        complete_ids = set()
+        CHUNK_SIZE = 900
         with self._get_conn() as conn:
-            cursor = conn.execute(
-                f"""SELECT id FROM jobs
-                    WHERE id IN ({placeholders})
-                    AND description IS NOT NULL
-                    AND description != ''""",
-                job_ids
-            )
-            complete_ids = {row[0] for row in cursor.fetchall()}
+            for i in range(0, len(job_ids), CHUNK_SIZE):
+                chunk = job_ids[i:i+CHUNK_SIZE]
+                placeholders = ','.join(['?'] * len(chunk))
+                cursor = conn.execute(
+                    f"""SELECT id FROM jobs
+                        WHERE id IN ({placeholders})
+                        AND description IS NOT NULL
+                        AND description != ''""",
+                    chunk
+                )
+                complete_ids.update(row[0] for row in cursor.fetchall())
 
         # 返回不在 complete_ids 中的 URL
         return [url for url, job_id in url_to_id.items() if job_id not in complete_ids]
 
-    def insert_job(self, job_data: Dict) -> str:
+    def insert_job(self, job_data: Dict) -> tuple:
         """插入新职位"""
         url = job_data.get("url", "")
         job_id = self.generate_job_id(url)
+
+        title = job_data.get("title", "")
+        company = job_data.get("company", "")
+        if not title.strip() or not company.strip():
+            print(f"  [WARN] Skipping job with empty title or company: {url[:60]}")
+            return job_id, False
 
         job = Job(
             id=job_id,
             source=job_data.get("source", "unknown"),
             url=url,
-            title=job_data.get("title", ""),
-            company=job_data.get("company", ""),
+            title=title,
+            company=company,
             location=job_data.get("location", ""),
             description=job_data.get("description", ""),
             posted_date=job_data.get("posted_date", ""),
@@ -406,7 +435,7 @@ class JobDatabase:
         )
 
         with self._get_conn() as conn:
-            conn.execute("""
+            cursor = conn.execute("""
                 INSERT OR IGNORE INTO jobs
                 (id, source, url, title, company, location, description,
                  posted_date, scraped_at, search_profile, search_query, raw_data)
@@ -414,8 +443,9 @@ class JobDatabase:
             """, (job.id, job.source, job.url, job.title, job.company,
                   job.location, job.description, job.posted_date, job.scraped_at,
                   job.search_profile, job.search_query, job.raw_data))
+            was_inserted = cursor.rowcount > 0
 
-        return job_id
+        return job_id, was_inserted
 
     def get_job(self, job_id: str) -> Optional[Dict]:
         """获取职位详情"""
@@ -527,20 +557,6 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_jobs_without_resume(self, min_score: float = 6.0, limit: int = 100) -> List[Dict]:
-        """获取高分但未生成简历的职位"""
-        with self._get_conn() as conn:
-            cursor = conn.execute("""
-                SELECT j.*, s.score, s.recommendation FROM jobs j
-                JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
-                JOIN ai_scores s ON j.id = s.job_id AND s.score >= ?
-                LEFT JOIN resumes r ON j.id = r.job_id
-                WHERE r.id IS NULL
-                ORDER BY s.score DESC
-                LIMIT ?
-            """, (min_score, limit))
-            return [dict(row) for row in cursor.fetchall()]
-
     # ==================== Application 操作 ====================
 
     # ==================== Analysis 操作 (AI 分析 + 简历定制) ====================
@@ -585,7 +601,7 @@ class JobDatabase:
             return [dict(row) for row in cursor.fetchall()]
 
     def get_analyzed_jobs_for_resume(self, min_ai_score: float = 5.0, limit: int = 50) -> List[Dict]:
-        """获取 AI 评分达标但未生成简历的职位"""
+        """获取 AI 评分达标但未生成简历的职位 (or PDF generation previously failed)"""
         with self._get_conn() as conn:
             cursor = conn.execute("""
                 SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
@@ -593,7 +609,9 @@ class JobDatabase:
                 FROM jobs j
                 JOIN job_analysis a ON j.id = a.job_id AND a.ai_score >= ?
                 LEFT JOIN resumes r ON j.id = r.job_id
-                WHERE r.id IS NULL
+                WHERE (r.id IS NULL OR (r.pdf_path IS NULL OR r.pdf_path = ''))
+                  AND a.tailored_resume IS NOT NULL
+                  AND a.tailored_resume != '{}'
                 ORDER BY a.ai_score DESC
                 LIMIT ?
             """, (min_ai_score, limit))
@@ -623,29 +641,38 @@ class JobDatabase:
 
     def update_application_status(self, job_id: str, status: str, **kwargs):
         """更新申请状态"""
+        VALID_STATUSES = {'pending', 'applied', 'rejected', 'interview', 'offer'}
+        if status not in VALID_STATUSES:
+            raise ValueError(f"Invalid status '{status}', must be one of {sorted(VALID_STATUSES)}")
+        ALLOWED_COLS = ('applied_at', 'response_at', 'interview_at', 'outcome', 'notes')
         with self._get_conn() as conn:
             # 先检查是否存在
             cursor = conn.execute("SELECT * FROM applications WHERE job_id = ?", (job_id,))
             existing = cursor.fetchone()
 
             if existing:
-                # 更新
-                updates = ["status = ?", "updated_at = ?"]
-                values = [status, datetime.now().isoformat()]
+                # 更新: iterate over known columns, not arbitrary kwargs
+                set_clauses = ["status = ?", "updated_at = ?"]
+                params = [status, datetime.now().isoformat()]
 
-                for key, value in kwargs.items():
-                    if key in ['applied_at', 'response_at', 'interview_at', 'outcome', 'notes']:
-                        updates.append(f"{key} = ?")
-                        values.append(value)
+                for col in ALLOWED_COLS:
+                    if col in kwargs:
+                        set_clauses.append(f"{col} = ?")
+                        params.append(kwargs[col])
 
-                values.append(job_id)
-                conn.execute(f"""
-                    UPDATE applications SET {', '.join(updates)} WHERE job_id = ?
-                """, values)
+                params.append(job_id)
+                sql = "UPDATE applications SET " + ", ".join(set_clauses) + " WHERE job_id = ?"
+                conn.execute(sql, params)
             else:
-                # 插入
-                app = Application(job_id=job_id, status=status, **kwargs)
-                self.save_application(app)
+                # 插入 (inline to avoid nested _get_conn)
+                conn.execute("""
+                    INSERT OR REPLACE INTO applications
+                    (job_id, status, applied_at, response_at, interview_at, outcome, notes, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (job_id, status, kwargs.get('applied_at', ''),
+                      kwargs.get('response_at', ''), kwargs.get('interview_at', ''),
+                      kwargs.get('outcome', ''), kwargs.get('notes', ''),
+                      datetime.now().isoformat()))
 
     def get_application(self, job_id: str) -> Optional[Dict]:
         """获取申请状态"""
@@ -676,7 +703,7 @@ class JobDatabase:
                 SELECT
                     reject_reason,
                     COUNT(*) as count,
-                    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM filter_results WHERE passed = 0), 1) as percentage
+                    ROUND(COUNT(*) * 100.0 / MAX((SELECT COUNT(*) FROM filter_results WHERE passed = 0), 1), 1) as percentage
                 FROM filter_results
                 WHERE passed = 0 AND reject_reason IS NOT NULL AND reject_reason != ''
                 GROUP BY reject_reason
@@ -694,10 +721,12 @@ class JobDatabase:
                     COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
                     COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
                     COUNT(DISTINCT CASE WHEN a.status IN ('interview', 'offer') THEN j.id END) as positive_response,
-                    AVG(s.score) as avg_score
+                    AVG(s.score) as avg_rule_score,
+                    AVG(an.ai_score) as avg_ai_score
                 FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
                 LEFT JOIN ai_scores s ON j.id = s.job_id
+                LEFT JOIN job_analysis an ON j.id = an.job_id
                 LEFT JOIN applications a ON j.id = a.job_id
                 GROUP BY j.company
                 HAVING total_jobs >= 2
@@ -714,17 +743,27 @@ class JobDatabase:
                     DATE(j.scraped_at) as date,
                     COUNT(DISTINCT j.id) as scraped,
                     COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed,
-                    COUNT(DISTINCT CASE WHEN s.score >= 6.0 THEN j.id END) as high_score,
+                    COUNT(DISTINCT CASE WHEN s.score >= 5.5 THEN j.id END) as high_score,  -- SYNC: matches scoring.yaml thresholds.apply
                     COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated
                 FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
                 LEFT JOIN ai_scores s ON j.id = s.job_id
                 LEFT JOIN resumes r ON j.id = r.job_id
-                WHERE j.scraped_at >= DATE('now', ?)
+                WHERE j.scraped_at >= DATE('now', 'localtime', ?)
                 GROUP BY DATE(j.scraped_at)
                 ORDER BY date DESC
             """, (f'-{days} days',))
             return [dict(row) for row in cursor.fetchall()]
+
+    def get_daily_token_usage(self) -> int:
+        """Get total tokens used today across all AI analyses."""
+        with self._get_conn() as conn:
+            row = conn.execute("""
+                SELECT COALESCE(SUM(tokens_used), 0) as today_tokens
+                FROM job_analysis
+                WHERE DATE(analyzed_at) = DATE('now', 'localtime')
+            """).fetchone()
+            return row['today_tokens'] if row else 0
 
     def clear_filter_results(self, filter_version: str = None) -> int:
         """清除筛选结果，以便重新处理
@@ -767,21 +806,61 @@ class JobDatabase:
     # ==================== 批量操作 ====================
 
     def import_from_json(self, json_path: Path, profile: str = "", query: str = "") -> int:
-        """从 JSON 文件导入职位"""
+        """从 JSON 文件导入职位 (single connection for entire batch)"""
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-        jobs = data.get("jobs", [])
-        if not jobs and isinstance(data, list):
+        if isinstance(data, list):
             jobs = data
+            meta_profile = ""
+            meta_search = ""
+        else:
+            jobs = data.get("jobs", [])
+            meta_profile = data.get("profile", "")
+            meta_search = data.get("search", "")
 
         imported = 0
-        for job_data in jobs:
-            if not self.job_exists(job_data.get("url", "")):
-                job_data["search_profile"] = profile or data.get("profile", "")
-                job_data["search_query"] = query or data.get("search", "")
-                self.insert_job(job_data)
-                imported += 1
+        with self._get_conn() as conn:
+            for job_data in jobs:
+                url = job_data.get("url", "")
+                if not url:
+                    continue
+                title = job_data.get("title", "")
+                company = job_data.get("company", "")
+                if not title.strip() or not company.strip():
+                    continue
+                job_data["search_profile"] = profile or meta_profile
+                job_data["search_query"] = query or meta_search
+                try:
+                    job_id = self.generate_job_id(url)
+                    job = Job(
+                        id=job_id,
+                        source=job_data.get("source", "unknown"),
+                        url=url,
+                        title=job_data.get("title", ""),
+                        company=job_data.get("company", ""),
+                        location=job_data.get("location", ""),
+                        description=job_data.get("description", ""),
+                        posted_date=job_data.get("posted_date", ""),
+                        scraped_at=job_data.get("scraped_at", datetime.now().isoformat()),
+                        search_profile=job_data.get("search_profile", ""),
+                        search_query=job_data.get("search_query", ""),
+                        raw_data=json.dumps(job_data, ensure_ascii=False)
+                    )
+                    cursor = conn.execute("""
+                        INSERT OR IGNORE INTO jobs
+                        (id, source, url, title, company, location, description,
+                         posted_date, scraped_at, search_profile, search_query, raw_data)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (job.id, job.source, job.url, job.title, job.company,
+                          job.location, job.description, job.posted_date, job.scraped_at,
+                          job.search_profile, job.search_query, job.raw_data))
+                    if cursor.rowcount > 0:
+                        imported += 1
+                except Exception as e:
+                    import sqlite3 as _sqlite3
+                    severity = "WARN" if isinstance(e, _sqlite3.IntegrityError) else "ERROR"
+                    print(f"  [{severity}] Failed to import job {url[:60]}: {e}")
 
         return imported
 
@@ -847,7 +926,7 @@ def main():
         print("\n=== 漏斗统计 ===")
         print(f"总抓取: {stats.get('total_scraped', 0)}")
         print(f"通过筛选: {stats.get('passed_filter', 0)}")
-        print(f"高分 (>=6): {stats.get('scored_high', 0)}")
+        print(f"高分 (>=5.5): {stats.get('scored_high', 0)}")
         print(f"已生成简历: {stats.get('resume_generated', 0)}")
         print(f"已申请: {stats.get('applied', 0)}")
         print(f"面试: {stats.get('interview', 0)}")

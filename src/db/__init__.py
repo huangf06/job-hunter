@@ -7,6 +7,7 @@ from .job_db import (
     Job,
     FilterResult,
     ScoreResult,
+    AnalysisResult,
     Resume,
     Application,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "Job",
     "FilterResult",
     "ScoreResult",
+    "AnalysisResult",
     "Resume",
     "Application",
 ]

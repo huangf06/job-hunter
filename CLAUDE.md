@@ -40,7 +40,7 @@
 python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db --cdp
 ```
 - `--profile`: 搜索配置 (ml_data, backend_data, quant)
-- `--save-to-db`: 保存到 SQLite 数据库
+- `--save-to-db`: 保存到 SQLite 数据库 (默认不保存)
 - `--cdp`: 连接已有浏览器 (Chrome 端口 9222)
 
 ### 2. 处理职位流水线
@@ -84,8 +84,7 @@ job-hunter/
 ├── scripts/                    # CLI 入口
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
 │   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫
-│   ├── job_parser.py               # JD 解析器
-│   └── playwright_scraper.py       # 多平台爬虫
+│   └── job_parser.py               # JD 解析器
 │
 ├── src/                        # 可复用模块
 │   ├── __init__.py
@@ -99,7 +98,6 @@ job-hunter/
 ├── config/
 │   ├── ai_config.yaml          # AI 配置 (模型、阈值、prompt)
 │   ├── search_profiles.yaml    # 搜索配置
-│   ├── role_templates.yaml     # 角色模板
 │   └── base/                   # 基础配置
 │       ├── filters.yaml            # 硬规则 v2.0
 │       └── scoring.yaml            # 评分规则 v2.0
