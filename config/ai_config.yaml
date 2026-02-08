@@ -297,7 +297,8 @@ prompts:
       {bio_domain_claims_list}
     - include_education: true/false (include M.Sc. mention)
     - include_certification: true/false (include Databricks cert)
-    - closer_id: "eager_company", "seeking_impact", or null
+    - closer_id: "eager_company", "seeking_impact", "generic", or null
+      IMPORTANT: If the company is a staffing/recruitment agency (e.g., Hays, Randstad, TMC, Keystone, Jobgether, Amaris, Robert Half, etc.), use "generic" — do NOT name the agency since the resume will be forwarded to the actual hiring company.
     - DOMAIN HONESTY: Only select domain_claims relevant to the JD AND supported by actual experience.
     {bio_constraints}
 

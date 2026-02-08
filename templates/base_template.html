@@ -326,17 +326,21 @@ body {
         </div>
     </section>
 
-    <!-- INTERESTS -->
+    <!-- ADDITIONAL -->
     <section class="section">
-        <h2 class="section-title">Interests</h2>
+        <h2 class="section-title">Additional</h2>
         <div class="skills-list">
             <div class="skill-row">
+                <span class="skill-category">Languages:</span>
+                <span class="skill-items">{{ languages | default('English (Fluent), Mandarin (Native), Dutch (Conversational)') }}</span>
+            </div>
+            <div class="skill-row">
                 <span class="skill-category">Interests:</span>
-                <span class="skill-items">{{ interests | default('Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing') }}</span>
+                <span class="skill-items">{{ interests | default('Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing') }}</span>
             </div>
             <div class="skill-row">
                 <span class="skill-category">Blog:</span>
-                <span class="skill-items"><a href="{{ blog_url }}">{{ blog_display | default('huangf06.github.io/FeiThink/en/') }}</a></span>
+                <span class="skill-items"><a href="https://huangf06.github.io/FeiThink/en/">huangf06.github.io/FeiThink/en/</a></span>
             </div>
         </div>
     </section>

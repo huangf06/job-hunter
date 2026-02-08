@@ -116,7 +116,7 @@ work_experience:
     verified_bullets:
 
       - id: glp_founding_member
-        content: "Spearheaded credit scoring infrastructure as the first data hire at a consumer lending startup — owned the full ML lifecycle from data ingestion through feature engineering, model deployment (logistic regression scorecards), and portfolio monitoring, enabling automated credit decisions."
+        content: "Spearheaded credit scoring infrastructure as the first data hire at a consumer lending startup — owned the full ML lifecycle from data ingestion through feature engineering, model training and deployment, and portfolio monitoring, enabling automated credit decisions."
 
       - id: glp_portfolio_monitoring
         content: "Built portfolio risk monitoring system tracking delinquency rates, repayment trends, and early warning indicators across the consumer loan book; insights directly informed collection strategy adjustments, reducing exposure to deteriorating segments."
@@ -179,16 +179,16 @@ work_experience:
     verified_bullets:
 
       - id: bq_de_pipeline
-        content: "Built automated market data ingestion pipeline integrating multiple vendor feeds (Wind, Tushare) for 3,000+ A-share securities; implemented corporate action adjustments (splits, dividends, suspensions) ensuring clean inputs for downstream factor research."
+        content: "Built automated market data ingestion pipeline integrating multiple vendor feeds for 3,000+ securities; implemented corporate action adjustments (splits, dividends, suspensions) ensuring clean inputs for downstream factor research."
 
       - id: bq_de_factor_engine
-        content: "Engineered high-performance factor computation engine using vectorized NumPy/Pandas operations, computing technical and fundamental indicators across 3,000+ stocks daily — enabling rapid iteration cycles in alpha research."
+        content: "Engineered high-performance factor computation engine using vectorized NumPy/Pandas operations, computing technical and fundamental indicators across the full equity universe daily — enabling rapid iteration cycles in alpha research."
 
       - id: bq_de_backtest_infra
         content: "Architected event-driven backtesting framework supporting strategy simulation, walk-forward validation, and performance attribution — adopted as core research infrastructure by the investment team."
 
       - id: bq_factor_research
-        content: "Built systematic alpha research pipeline covering 3,000+ A-share equities; applied Fama-MacBeth regression to validate multi-factor models (value, momentum, money flow, event-driven) — validated factors integrated into the fund's live portfolio."
+        content: "Built systematic alpha research pipeline applying Fama-MacBeth regression to validate multi-factor models (value, momentum, money flow, event-driven) — validated factors integrated into the fund's live portfolio."
 
       - id: bq_futures_strategy
         content: "Developed and deployed R-Breaker intraday trading strategy for CSI index futures from research through live production — achieved 14.6% annualized return with real capital."
@@ -261,7 +261,7 @@ work_experience:
         content: "Optimized complex SQL queries on Hadoop/Hive for cross-functional stakeholders, cutting reporting turnaround time by 30%."
 
       - id: eleme_user_segmentation
-        content: "Engineered K-means clustering pipeline on Hadoop/Hive to segment millions of users by behavioral patterns (order frequency, recency, category preferences); delivered actionable customer profiles adopted by product and marketing teams for personalized campaign targeting."
+        content: "Engineered K-means clustering pipeline on Hadoop/Hive to segment millions of users by behavioral patterns; delivered actionable customer profiles adopted by product and marketing teams for personalized campaign targeting."
 
 # =============================================================================
 # PROJECTS
@@ -273,14 +273,14 @@ projects:
   # M.Sc. THESIS: Uncertainty Quantification in Deep RL
   # ---------------------------------------------------------------------------
   thesis_uq_rl:
-    title: "RL-UQ-Bench: Uncertainty Quantification Benchmark for Deep RL"
+    title: "Uncertainty Quantification Benchmark for Deep RL"
     institution: "VU Amsterdam"
     period: "Feb. 2025 -- Aug. 2025"
 
     verified_bullets:
 
       - id: thesis_uq_framework
-        content: "Developed RL-UQ-Bench, a benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN superiority with 31% lower CRPS (p < 0.001) over ensemble and dropout baselines."
+        content: "Developed a benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN superiority with 31% lower CRPS (p < 0.001) over ensemble and dropout baselines."
 
       - id: thesis_noise_paradox
         content: "Discovered a 'noise paradox' where moderate observation noise unexpectedly improves ensemble-based uncertainty estimates; designed 6-stage reproducible evaluation pipeline with automated calibration benchmarking across multiple RL environments."
@@ -644,4 +644,6 @@ bio_builder:
       text: "Eager to bring these skills to {company}."
     seeking_impact:
       text: "Looking forward to delivering data-driven impact at {company}."
+    generic:
+      text: "Eager to contribute to a team where data engineering and ML drive real business impact."
     # closer_id: null means no closer (handled in code, no YAML entry needed)

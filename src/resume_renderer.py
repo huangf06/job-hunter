@@ -76,8 +76,8 @@ class ResumeRenderer:
             'github': self.candidate.get('github', 'https://github.com/huangf06'),
             'linkedin_display': self.candidate.get('linkedin_display', 'linkedin.com/in/huangf06'),
             'github_display': self.candidate.get('github_display', 'github.com/huangf06'),
-            'blog_url': self.candidate.get('blog_url', 'https://huangf06.github.io/FeiThink/en/'),
-            'blog_display': self.candidate.get('blog_display', 'huangf06.github.io/FeiThink/en/'),
+            'blog_url': self.candidate.get('blog_url', 'https://feithink.substack.com/'),
+            'blog_display': self.candidate.get('blog_display', 'feithink.substack.com'),
 
             # Education - Master
             'edu_master_school': master.get('school', 'Vrije Universiteit Amsterdam'),
@@ -100,11 +100,15 @@ class ResumeRenderer:
 
             # Career note (for gap explanation)
             'career_note': self.config.get('resume', {}).get('career_note',
-                'Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation.'),
+                'Career Note: 2019–2023 included independent investing, language learning, and graduate preparation.'),
 
             # Interests
             'interests': self.config.get('resume', {}).get('interests',
-                'Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing'),
+                'Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing'),
+
+            # Languages (human languages, separate from technical skills)
+            'languages': self.config.get('resume', {}).get('languages',
+                'English (Fluent), Mandarin (Native), Dutch (Conversational)'),
         }
 
     def render_resume(self, job_id: str) -> Optional[Dict[str, str]]:
