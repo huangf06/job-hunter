@@ -21,6 +21,8 @@ from typing import Dict, List, Optional, Tuple
 
 import yaml
 
+from src import TRANSFERABLE_SKIP_WORDS
+
 PROJECT_ROOT = Path(__file__).parent.parent
 
 
@@ -36,16 +38,20 @@ class ResumeValidator:
     """Post-generation validator for AI-tailored resume JSON."""
 
     def __init__(self, bullet_library_path: Optional[Path] = None):
+        self._library_loaded = False
         lib_path = bullet_library_path or PROJECT_ROOT / "assets" / "bullet_library.yaml"
         self._load_config(lib_path)
 
     def _load_config(self, lib_path: Path):
         """Load skill_tiers, title_options, bio_constraints, allowed categories from bullet_library.yaml."""
         if not lib_path.exists():
+            print(f"[CRITICAL] bullet_library.yaml not found at {lib_path} — ALL validation gates disabled!")
+            print(f"[CRITICAL] Resumes will pass without title, skill, or category checks.")
             self._skill_tiers = {}
             self._title_options = {}
             self._bio_constraints = {}
             self._allowed_categories = []
+            self._library_loaded = False
             return
 
         with open(lib_path, 'r', encoding='utf-8') as f:
@@ -55,6 +61,7 @@ class ResumeValidator:
         self._title_options = data.get('title_options', {})
         self._bio_constraints = data.get('bio_constraints', {})
         self._allowed_categories = data.get('allowed_skill_categories', [])
+        self._library_loaded = True
 
     def validate(self, tailored: dict, job: dict) -> ValidationResult:
         """Run all validations on tailored resume JSON.
@@ -71,6 +78,11 @@ class ResumeValidator:
         fixes = {}
         jd_text = job.get('description', '') or ''
 
+        # If bullet_library was not loaded, reject all resumes
+        if not getattr(self, '_library_loaded', True):
+            errors.append("bullet_library.yaml not found — cannot validate resume")
+            return ValidationResult(passed=False, errors=errors)
+
         # 1. Bio validation
         bio = tailored.get('bio')
         if bio and isinstance(bio, str):
@@ -79,13 +91,15 @@ class ResumeValidator:
                 tailored['bio'] = fixed_bio
                 fixes['bio'] = fixed_bio
             warnings.extend(bio_warnings)
+        elif bio and not isinstance(bio, str):
+            warnings.append(f"Bio is {type(bio).__name__}, expected string — bio validation skipped")
 
         # 2. Title validation (BLOCKING)
-        title_errors = self._validate_titles(tailored.get('experiences', []))
+        title_errors = self._validate_titles(tailored.get('experiences') or [])
         errors.extend(title_errors)
 
         # 3. Skills validation (items)
-        skills_list = tailored.get('skills', [])
+        skills_list = tailored.get('skills') or []
         skill_errors, skill_warnings = self._validate_skills(skills_list, jd_text)
         errors.extend(skill_errors)
         warnings.extend(skill_warnings)
@@ -130,16 +144,21 @@ class ResumeValidator:
             if phrase.lower() in fixed_bio.lower() and phrase not in replacements:
                 warnings.append(f"Bio: contains banned phrase '{phrase}' (no auto-replacement)")
 
-        # Check years claims
+        # Check years claims — BLOCKING for string bios (bio builder already caps years)
         max_years = self._bio_constraints.get('max_years_claim', 6)
         # Match patterns like "6+ years", "7 years", "8+ years of"
         years_pattern = re.compile(r'(\d+)\+?\s*years?', re.IGNORECASE)
-        for match in years_pattern.finditer(fixed_bio):
-            claimed = int(match.group(1))
+
+        def _cap_match(m):
+            claimed = int(m.group(1))
             if claimed > max_years:
                 warnings.append(
-                    f"Bio: claims '{match.group(0)}' but max allowed is {max_years} years"
+                    f"Bio: auto-capped '{m.group(0)}' to {max_years} years"
                 )
+                return m.group(0).replace(m.group(1), str(max_years), 1)
+            return m.group(0)
+
+        fixed_bio = years_pattern.sub(_cap_match, fixed_bio)
 
         return fixed_bio, warnings
 
@@ -164,17 +183,31 @@ class ResumeValidator:
             if not company or not title:
                 continue
 
-            # Find matching company key
-            company_lower = company.lower().replace(' ', '_')
+            # Find matching company key (normalize to alphanumeric for dot-containing names like Ele.me)
+            company_norm = re.sub(r'[^a-z0-9]', '', company.lower())
             matched_key = None
             for key in company_titles:
-                if key in company_lower or company_lower in key:
+                key_norm = re.sub(r'[^a-z0-9]', '', key.lower())
+                # Require full match or that key fully contains company (or vice versa)
+                # with at least 3 chars overlap to avoid short-key false positives
+                if company_norm == key_norm:
+                    matched_key = key
+                    break
+                # Prefix match: require at least 4 chars overlap AND >= 60% of longer string
+                overlap_len = min(len(key_norm), len(company_norm))
+                max_len = max(len(key_norm), len(company_norm))
+                if overlap_len >= 4 and overlap_len / max_len >= 0.6 and (
+                    company_norm.startswith(key_norm) or key_norm.startswith(company_norm)
+                ):
                     matched_key = key
                     break
 
             if matched_key:
                 allowed = company_titles[matched_key]
-                if title not in allowed:
+                # Normalize whitespace for comparison (AI may add/drop spaces)
+                title_norm = ' '.join(title.strip().lower().split())
+                allowed_norm = {' '.join(t.strip().lower().split()) for t in allowed}
+                if title_norm not in allowed_norm:
                     errors.append(
                         f"Title '{title}' for {company} not in allowed list: {sorted(allowed)}"
                     )
@@ -190,12 +223,29 @@ class ResumeValidator:
             return errors, warnings
 
         excluded = [s.lower() for s in self._skill_tiers.get('excluded', [])]
+        # Also add individual components of compound excluded skills (e.g. "C/C++" -> "c", "c++")
+        excluded_expanded = set(excluded)
+        for ex in excluded:
+            if '/' in ex:
+                for part in ex.split('/'):
+                    part = part.strip()
+                    if part:
+                        excluded_expanded.add(part)
+        excluded = list(excluded_expanded)
 
         # Build set of verified skills (flatten all categories)
+        # Strip parenthetical qualifiers so "Python (Expert)" -> "python" matches skill_base
         verified_set = set()
         for category, skill_list in self._skill_tiers.get('verified', {}).items():
             for s in skill_list:
-                verified_set.add(s.lower())
+                base = re.sub(r'\s*\(.*?\)', '', s.lower()).strip()
+                verified_set.add(base)
+                # Also add individual components of compound skills (e.g., "ETL/ELT" -> "etl", "elt")
+                if '/' in base:
+                    for part in base.split('/'):
+                        part = part.strip()
+                        if part:
+                            verified_set.add(part)
 
         # Build set of activated transferable skills
         jd_lower = jd_text.lower()
@@ -207,30 +257,42 @@ class ResumeValidator:
             # e.g. "JD mentions Azure" -> check if "azure" is in JD
             keywords = re.findall(r'\b\w+\b', write_when)
             for kw in keywords:
-                if kw in ('jd', 'mentions', 'or', 'but', 'not', 'as', 'primary', 'for', 'when'):
+                if kw in TRANSFERABLE_SKIP_WORDS:
                     continue
-                if kw in jd_lower:
-                    transferable_activated.add(skill.lower())
+                if re.search(r'\b' + re.escape(kw) + r'\b', jd_lower):
+                    transferable_activated.add(re.sub(r'\s*\(.*?\)', '', skill.lower()).strip())
                     break
 
         # Check each skill in the resume
         for skill_group in skills:
             skills_str = skill_group.get('skills_list', '')
-            # Parse individual skills from comma-separated string
-            individual_skills = [s.strip() for s in skills_str.split(',')]
+            if not isinstance(skills_str, str):
+                errors.append(f"Skill group '{skill_group.get('category', '?')}': skills_list must be a string, got {type(skills_str).__name__}")
+                continue
+            # Parse individual skills from comma-separated string (also split on slash for compound skills)
+            individual_skills = [s.strip() for part in skills_str.split(',') for s in part.split('/')]
             for skill in individual_skills:
                 skill_clean = skill.strip()
                 if not skill_clean:
                     continue
                 skill_lower = skill_clean.lower()
 
-                # Check against excluded list
+                # Check against excluded list (exact token match to avoid "java" matching "javascript")
+                # Strip parenthetical qualifiers like "Python (Expert)" -> "python"
+                skill_base = re.sub(r'\s*\(.*?\)', '', skill_lower).strip()
                 for ex in excluded:
-                    if ex in skill_lower:
+                    if skill_base == ex or skill_base.startswith(ex + ' '):
                         errors.append(
                             f"Excluded skill '{skill_clean}' found in category "
                             f"'{skill_group.get('category', '?')}'"
                         )
+
+                # Warn if skill is not in verified or activated transferable set
+                if skill_base not in verified_set and skill_base not in transferable_activated:
+                    warnings.append(
+                        f"Unverified skill '{skill_clean}' in category "
+                        f"'{skill_group.get('category', '?')}'"
+                    )
 
         return errors, warnings
 
@@ -239,10 +301,13 @@ class ResumeValidator:
         warnings = []
         seen = {}  # skill_lower -> category
 
-        for skill_group in tailored.get('skills', []):
+        for skill_group in (tailored.get('skills') or []):
             category = skill_group.get('category', '?')
             skills_str = skill_group.get('skills_list', '')
-            individual_skills = [s.strip() for s in skills_str.split(',')]
+            if not isinstance(skills_str, str):
+                continue
+            # Split on comma and slash for consistency with _validate_skills
+            individual_skills = [s.strip() for part in skills_str.split(',') for s in part.split('/')]
             for skill in individual_skills:
                 skill_clean = skill.strip()
                 if not skill_clean:
@@ -284,19 +349,30 @@ class ResumeValidator:
         errors = []
 
         # At least 2 experiences
-        experiences = tailored.get('experiences', [])
+        experiences = tailored.get('experiences') or []
         if len(experiences) < 2:
             errors.append(f"Need at least 2 experiences, got {len(experiences)}")
 
         # At least 3 skill categories
-        skills = tailored.get('skills', [])
+        skills = tailored.get('skills') or []
         if len(skills) < 3:
             errors.append(f"Need at least 3 skill categories, got {len(skills)}")
 
-        # Each experience must have at least 1 bullet
+        # At least 1 project
+        projects = tailored.get('projects') or []
+        if len(projects) < 1:
+            errors.append(f"Need at least 1 project, got {len(projects)}")
+
+        # Each experience must have at least 1 bullet (filter empty strings)
         for i, exp in enumerate(experiences):
-            bullets = exp.get('bullets', [])
+            bullets = [b for b in (exp.get('bullets') or []) if isinstance(b, str) and b.strip()]
             if len(bullets) == 0:
                 errors.append(f"Experience '{exp.get('company', i)}' has no bullets")
+
+        # Each project must have at least 1 bullet
+        for i, proj in enumerate(tailored.get('projects') or []):
+            bullets = [b for b in (proj.get('bullets') or []) if isinstance(b, str) and b.strip()]
+            if len(bullets) == 0:
+                errors.append(f"Project '{proj.get('name', i)}' has no bullets")
 
         return errors

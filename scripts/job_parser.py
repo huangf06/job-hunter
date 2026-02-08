@@ -39,7 +39,7 @@ class JobParser:
             "title": "",
             "company": "",
             "location": "",
-            "description": text[:2000],  # 限制长度
+            "description": text[:15000],  # Align with scraper's 15K limit
             "requirements": "",
             "url": url,
             "source": source,
@@ -74,7 +74,10 @@ class JobParser:
             "data scientist", "machine learning engineer", "ml engineer",
             "data engineer", "ai engineer", "quantitative researcher",
             "data analyst", "software engineer", "python developer",
-            "research scientist", "algorithm engineer", "senior data engineer"
+            "research scientist", "algorithm engineer", "senior data engineer",
+            "backend engineer", "platform engineer", "devops engineer",
+            "analytics engineer", "mlops engineer", "deep learning engineer",
+            "quantitative analyst", "research engineer", "applied scientist",
         ]
         
         # 方法1: 查找包含职位关键词的行
@@ -102,7 +105,10 @@ class JobParser:
     def _extract_company(lines: List[str], full_text: str) -> str:
         """提取公司名称"""
         # 方法1: 查找 "at Company" 模式 (最常见)
-        match = re.search(r'at\s+([A-Z][A-Za-z0-9\s&\.]+?)(?:\s+in\s+|\s*$|\s*\.|")', full_text, re.I)
+        # Restrict to first 500 chars (header area) to avoid matching "at Company" in JD body.
+        # No re.I: [A-Z] anchor requires uppercase start to avoid matching "at least" etc.
+        header = full_text[:500]
+        match = re.search(r'at\s+([A-Z][A-Za-z0-9\s&\.]+?)(?:\s+in\s+|\s*$|\s*\.|")', header)
         if match:
             company = match.group(1).strip()
             if len(company) > 2 and len(company) < 50:
@@ -124,7 +130,7 @@ class JobParser:
         
         # 方法3: 查找 "Company Name" + "Location" 模式
         for i, line in enumerate(lines[:15]):
-            if any(loc in line for loc in ["Amsterdam", "Rotterdam", "Utrecht", "Netherlands", "NL", "in"]):
+            if any(loc in line for loc in ["Amsterdam", "Rotterdam", "Utrecht", "Netherlands", "NL"]):
                 # 前一行可能是公司名
                 if i > 0:
                     prev = lines[i-1]
@@ -185,8 +191,8 @@ class JobParser:
         for indicator in req_indicators:
             idx = text_lower.find(indicator)
             if idx != -1:
-                # 提取要求部分（接下来的500字符）
-                req_text = text[idx:idx+500]
+                # 提取要求部分（接下来的2000字符）
+                req_text = text[idx:idx+2000]
                 return req_text.strip()
         
         return ""

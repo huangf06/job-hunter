@@ -65,7 +65,7 @@ title_blacklist:
   - "trainee"
   - "werkstudent"
 
-# Priority rules (for sorting results)
+# Legacy priority rules (NOT consumed by any v2.0 code — see config/base/scoring.yaml for active scoring)
 priority_rules:
   high:
     title_contains:

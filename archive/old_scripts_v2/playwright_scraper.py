@@ -152,8 +152,8 @@ class PlaywrightJobScraper:
             
             # 链接
             link_el = await card.query_selector("a")
-            href = await link_el.get_attribute("href") if link_el else ""
-            url = f"https://linkedin.com{href}" if href.startswith("/") else href
+            href = (await link_el.get_attribute("href") or "") if link_el else ""
+            url = f"https://www.linkedin.com{href}" if href.startswith("/") else href
             
             # 发布时间
             posted = ""
@@ -163,7 +163,10 @@ class PlaywrightJobScraper:
                     posted = await time_el.get_attribute("datetime") or await time_el.inner_text()
                     if posted:
                         break
-            
+
+            if not title.strip() or not company.strip() or not url:
+                return None
+
             return {
                 "title": title.strip(),
                 "company": company.strip(),
@@ -181,9 +184,9 @@ class PlaywrightJobScraper:
         print(f"[LinkedIn] Fetching job detail: {url}")
         
         try:
-            await self.page.goto(url, wait_until="networkidle", timeout=30000)
+            await self.page.goto(url, wait_until="domcontentloaded", timeout=30000)
             await asyncio.sleep(2)
-            
+
             # 获取详细描述
             description_el = await self.page.query_selector(".description__text")
             description = await description_el.inner_text() if description_el else ""
@@ -288,6 +291,9 @@ class PlaywrightJobScraper:
                     if location.strip():
                         break
             
+            if not title.strip() or not company.strip() or not url:
+                return None
+
             return {
                 "title": title.strip(),
                 "company": company.strip(),
@@ -305,7 +311,7 @@ class PlaywrightJobScraper:
         print(f"[IamExpat] Fetching job detail: {url}")
         
         try:
-            await self.page.goto(url, wait_until="networkidle", timeout=30000)
+            await self.page.goto(url, wait_until="domcontentloaded", timeout=30000)
             await asyncio.sleep(2)
             
             # 获取详细描述
@@ -424,6 +430,9 @@ class PlaywrightJobScraper:
                         url = f"https://nl.indeed.com{href}" if href.startswith("/") else href
                         break
             
+            if not title.strip() or not company.strip() or not url:
+                return None
+
             return {
                 "title": title.strip(),
                 "company": company.strip(),
@@ -457,8 +466,10 @@ def save_scrape_results(jobs: List[Dict], platform: str, search_term: str) -> Pa
         "jobs": jobs
     }
     
-    with open(filepath, "w", encoding="utf-8") as f:
+    tmp_path = filepath.with_suffix('.tmp')
+    with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+    tmp_path.replace(filepath)
     
     print(f"[OK] Saved {len(jobs)} jobs to {filepath}")
     return filepath
@@ -498,20 +509,23 @@ async def main():
             "quantitative researcher",
             "AI engineer"
         ]
-        
+
         all_jobs = []
-        async with PlaywrightJobScraper(headless=not args.visible) as scraper:
-            for term in search_terms:
-                # LinkedIn
-                jobs = await scraper.scrape_linkedin(term, args.location, args.max_jobs)
-                all_jobs.extend(jobs)
-                await asyncio.sleep(2)
-                
-                # IamExpat
-                jobs = await scraper.scrape_iamexpat(term, args.max_jobs)
-                all_jobs.extend(jobs)
-                await asyncio.sleep(2)
-        
+        try:
+            async with PlaywrightJobScraper(headless=not args.visible) as scraper:
+                for term in search_terms:
+                    # LinkedIn
+                    jobs = await scraper.scrape_linkedin(term, args.location, args.max_jobs)
+                    all_jobs.extend(jobs)
+                    await asyncio.sleep(2)
+
+                    # IamExpat
+                    jobs = await scraper.scrape_iamexpat(term, args.max_jobs)
+                    all_jobs.extend(jobs)
+                    await asyncio.sleep(2)
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            print("\n\n[INTERRUPTED] Saving scraped data before exit...")
+
         # 去重
         seen = set()
         unique_jobs = []
@@ -520,7 +534,7 @@ async def main():
             if key not in seen:
                 seen.add(key)
                 unique_jobs.append(job)
-        
+
         save_scrape_results(unique_jobs, "daily", "all_terms")
         print(f"\n[Daily] Total unique jobs: {len(unique_jobs)}")
     

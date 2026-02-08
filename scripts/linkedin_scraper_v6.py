@@ -17,7 +17,7 @@ Usage:
     # Run specific profile
     python linkedin_scraper_v6.py --profile ml_data
 
-    # Save to database
+    # Save to database (opt-in)
     python linkedin_scraper_v6.py --profile ml_data --save-to-db
 
     # Save to database only (no JSON)
@@ -161,10 +161,18 @@ class LinkedInScraperV6:
         self.playwright = None
         self.all_jobs: List[Dict] = []
         self.seen_keys: Set[str] = set()
-        # Database support
-        self.db = JobDatabase() if DB_AVAILABLE else None
+        # Database support (lazy init — only connect when save_to_db is used)
+        self._db = None
         self.saved_to_db = 0
         self.skipped_duplicates = 0
+        self._saved_job_urls: Set[str] = set()  # Track URLs already saved to DB
+
+    @property
+    def db(self):
+        """Lazy database initialization."""
+        if self._db is None and DB_AVAILABLE:
+            self._db = JobDatabase()
+        return self._db
 
     async def __aenter__(self):
         self.playwright = await async_playwright().start()
@@ -172,7 +180,7 @@ class LinkedInScraperV6:
         if self.use_cdp:
             print(f"[Browser] Connecting to CDP: {self.cdp_url}")
             try:
-                self.browser = await self.playwright.chromium.connect_over_cdp(self.cdp_url)
+                self.browser = await self.playwright.chromium.connect_over_cdp(self.cdp_url, timeout=10000)
                 contexts = self.browser.contexts
                 if contexts:
                     self.context = contexts[0]
@@ -198,7 +206,7 @@ class LinkedInScraperV6:
             )
             self.context = await self.browser.new_context(
                 viewport={"width": 1920, "height": 1080},
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
                 locale="en-US",
                 timezone_id="Europe/Amsterdam",
             )
@@ -247,18 +255,26 @@ class LinkedInScraperV6:
         try:
             with open(COOKIES_FILE, 'r', encoding='utf-8') as f:
                 cookies = json.load(f)
+            if not isinstance(cookies, list) or len(cookies) == 0:
+                print("  [NO] Cookies file is empty or malformed (expected non-empty list)")
+                return await self._manual_login()
+            # Verify session cookie exists (li_at is required for LinkedIn auth)
+            has_session = any(c.get('name') == 'li_at' for c in cookies if isinstance(c, dict))
+            if not has_session:
+                print("  [WARN] No 'li_at' session cookie found — login may fail")
             await self.context.add_cookies(cookies)
 
             print("  -> Verifying login...")
             await self._safe_goto("https://www.linkedin.com/feed/", timeout=30000)
             await asyncio.sleep(2)
 
-            if "/feed" in self.page.url:
-                print("  [OK] Login successful")
-                return True
-            else:
+            expired_markers = ["/login", "/checkpoint", "/authwall", "/uas/"]
+            if any(marker in self.page.url for marker in expired_markers):
                 print("  [NO] Cookies expired")
                 return await self._manual_login()
+            else:
+                print("  [OK] Login successful")
+                return True
 
         except Exception as e:
             print(f"  [NO] Login failed: {e}")
@@ -266,6 +282,9 @@ class LinkedInScraperV6:
 
     async def _manual_login(self) -> bool:
         """Manual login"""
+        if not sys.stdin.isatty():
+            print("  [FATAL] Cannot prompt for login in non-interactive mode — aborting")
+            return False
         print("  -> Please login to LinkedIn manually...")
         await self._safe_goto("https://www.linkedin.com/login", timeout=30000)
         input("Press Enter after login...")
@@ -273,12 +292,15 @@ class LinkedInScraperV6:
         try:
             cookies = await self.context.cookies()
             COOKIES_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(COOKIES_FILE, 'w', encoding='utf-8') as f:
+            # Atomic write: temp file + rename to prevent corruption on crash
+            tmp_path = COOKIES_FILE.with_suffix('.tmp')
+            with open(tmp_path, 'w', encoding='utf-8') as f:
                 json.dump(cookies, f, indent=2)
+            tmp_path.replace(COOKIES_FILE)
             print("  [OK] Cookies saved")
             return True
         except Exception as e:
-            print(f"  [!] Failed to save cookies: {e}")
+            print(f"  [WARN] Cookies NOT saved — you will need to login again next time: {e}")
             return True
 
     async def _safe_goto(self, url: str, timeout: int = 60000, retries: int = 3) -> bool:
@@ -293,15 +315,44 @@ class LinkedInScraperV6:
                     return True
                 else:
                     print(f"  [!] Page response error (status: {response.status if response else 'None'})")
+                    # Check for CAPTCHA on non-OK responses too
+                    try:
+                        content = await self.page.content()
+                        content_lower = content.lower()
+                        captcha_markers = ['captcha', 'challenge', 'verify you are human', 'security check']
+                        if any(m in content_lower for m in captcha_markers):
+                            print(f"  [!] CAPTCHA/challenge page detected")
+                            if sys.stdin.isatty():
+                                input("  -> Solve the CAPTCHA in the browser, then press Enter...")
+                                return True
+                            else:
+                                print(f"  [!] Non-interactive mode, cannot solve CAPTCHA — aborting")
+                                return False
+                    except Exception:
+                        pass
             except PlaywrightTimeout:
                 print(f"  [!] Timeout, checking page content...")
                 await asyncio.sleep(2)
                 try:
                     content = await self.page.content()
-                    if len(content) > 1000:
+                    content_lower = content.lower()
+                    # Detect CAPTCHA / challenge pages
+                    captcha_markers = ['captcha', 'challenge', 'verify you are human', 'security check']
+                    if any(m in content_lower for m in captcha_markers):
+                        print(f"  [!] CAPTCHA/challenge page detected — pausing for manual solve")
+                        if sys.stdin.isatty():
+                            input("  -> Solve the CAPTCHA in the browser, then press Enter...")
+                            return True
+                        else:
+                            print(f"  [!] Non-interactive mode, cannot solve CAPTCHA — aborting")
+                            return False
+                    # Validate page has actual job content, not an error page
+                    elif len(content) > 1000 and ('jobs' in content_lower or 'linkedin' in content_lower):
                         print(f"  -> Page partially loaded ({len(content)} bytes), continuing")
                         return True
-                except:
+                    else:
+                        print(f"  [!] Page content too short or missing expected elements ({len(content)} bytes)")
+                except Exception:
                     pass
             except Exception as e:
                 print(f"  [NO] Navigation error: {e}")
@@ -341,7 +392,7 @@ class LinkedInScraperV6:
             print(f"\n[Query {i}/{len(queries)}] {description}")
             print(f"  Keywords: {keywords[:60]}{'...' if len(keywords) > 60 else ''}")
 
-            jobs = await self._scrape_single_query(keywords, location, max_jobs // len(queries))
+            jobs = await self._scrape_single_query(keywords, location, max(1, -(-max_jobs // len(queries))))
 
             # Blacklist filter
             filtered_jobs = self._filter_blacklist(jobs)
@@ -349,7 +400,7 @@ class LinkedInScraperV6:
 
             # Add to global dedup set
             for job in filtered_jobs:
-                key = f"{job['title']}-{job['company']}"
+                key = f"{job['title']}-{job['company']}-{job.get('location', '')}"
                 if key not in self.seen_keys:
                     self.seen_keys.add(key)
                     self.all_jobs.append(job)
@@ -365,8 +416,8 @@ class LinkedInScraperV6:
         if fetch_jd and self.all_jobs:
             jobs_without_jd = [j for j in self.all_jobs if not j.get('description') and j.get('url')]
 
-            # 如果有数据库，过滤掉已有完整JD的职位
-            if jobs_without_jd and self.db:
+            # 如果有数据库且用户请求了DB模式，过滤掉已有完整JD的职位
+            if jobs_without_jd and save_to_db and self.db:
                 urls = [j['url'] for j in jobs_without_jd]
                 urls_needing_jd = set(self.db.filter_urls_needing_jd(urls))
                 skipped_count = len(jobs_without_jd) - len(urls_needing_jd)
@@ -377,21 +428,26 @@ class LinkedInScraperV6:
             if jobs_without_jd:
                 await self.fetch_job_descriptions(jobs_without_jd)
 
-        # Save to database if requested
+        # Save to database if requested (only save jobs not yet saved in this session)
         if save_to_db and self.db:
-            print(f"\n[Database] Saving {len(profile_jobs)} jobs to database...")
-            for job in profile_jobs:
-                job['search_profile'] = profile_name
-                job['search_query'] = profile_name
-                if self.db.job_exists(job.get('url', '')):
-                    self.skipped_duplicates += 1
-                    continue
-                try:
-                    self.db.insert_job(job)
-                    self.saved_to_db += 1
-                except Exception as e:
-                    print(f"  ! Failed to save job: {e}")
-            print(f"[Database] Saved: {self.saved_to_db}, Duplicates skipped: {self.skipped_duplicates}")
+            unsaved = [j for j in self.all_jobs if j.get('url') not in self._saved_job_urls]
+            if unsaved:
+                print(f"\n[Database] Saving {len(unsaved)} new jobs to database...")
+                for job in unsaved:
+                    if not job.get('search_profile'):
+                        job['search_profile'] = profile_name
+                    if not job.get('search_query'):
+                        job['search_query'] = profile_name
+                    try:
+                        _, was_inserted = self.db.insert_job(job)
+                        if was_inserted:
+                            self.saved_to_db += 1
+                        else:
+                            self.skipped_duplicates += 1
+                        self._saved_job_urls.add(job.get('url', ''))
+                    except Exception as e:
+                        print(f"  ! Failed to save job: {e}")
+                print(f"[Database] Saved: {self.saved_to_db}, Duplicates skipped: {self.skipped_duplicates}")
 
         return profile_jobs
 
@@ -438,7 +494,7 @@ class LinkedInScraperV6:
                 await self.page.wait_for_selector(selector, timeout=timeout // len(selectors))
                 print(f"  [OK] Found job list ({selector})")
                 return True
-            except:
+            except Exception:
                 continue
         print("  [!] Standard job list selector not found")
         return False
@@ -470,7 +526,7 @@ class LinkedInScraperV6:
 
                 job = await self._parse_card(card)
                 if job:
-                    key = f"{job['title']}-{job['company']}"
+                    key = f"{job['title']}-{job['company']}-{job.get('location', '')}"
                     if key not in seen:
                         seen.add(key)
                         jobs.append(job)
@@ -558,7 +614,7 @@ class LinkedInScraperV6:
                 try:
                     await self.page.wait_for_selector(selector, timeout=5000)
                     break
-                except:
+                except Exception:
                     continue
 
             # 尝试点击 "Show more" / "See more" 按钮展开完整JD
@@ -576,7 +632,7 @@ class LinkedInScraperV6:
                         await btn.click()
                         await asyncio.sleep(0.5)
                         break
-                except:
+                except Exception:
                     continue
 
             # 提取JD文本
@@ -589,8 +645,10 @@ class LinkedInScraperV6:
                             description = text.strip()
                             description = re.sub(r'\n{3,}', '\n\n', description)
                             description = re.sub(r' {2,}', ' ', description)
-                            return description[:5000]
-                except:
+                            if len(description) > 15000:
+                                print(f"      [WARN] JD truncated from {len(description)} to 15000 chars")
+                            return description[:15000]
+                except Exception:
                     continue
 
             return None
@@ -612,7 +670,7 @@ class LinkedInScraperV6:
                 cards = await self.page.query_selector_all(selector)
                 if cards and len(cards) > 0:
                     return cards
-            except:
+            except Exception:
                 continue
         return []
 
@@ -643,7 +701,7 @@ class LinkedInScraperV6:
                 link_el = await card.query_selector("a.job-card-list__title")
             if not link_el:
                 link_el = await card.query_selector("a")
-            href = await link_el.get_attribute("href") if link_el else ""
+            href = (await link_el.get_attribute("href") or "") if link_el else ""
             url = href.split('?')[0] if href else ""
             if url and not url.startswith("http"):
                 url = f"https://www.linkedin.com{url}"
@@ -660,8 +718,10 @@ class LinkedInScraperV6:
                     "source": "LinkedIn",
                     "scraped_at": datetime.now().isoformat()
                 }
+            elif title and company:
+                print(f"  [WARN] No URL found for: {title[:35]} @ {company[:20]}")
         except Exception as e:
-            pass
+            print(f"  [WARN] _parse_card error: {e}")
         return None
 
     def _clean_title(self, title: str) -> str:
@@ -677,9 +737,7 @@ class LinkedInScraperV6:
             first_part = parts[0].strip()
             second_part = parts[1].strip() if len(parts) > 1 else ""
 
-            if second_part and (second_part.startswith(first_part) or first_part.startswith(second_part)):
-                title = first_part
-            elif second_part == first_part:
+            if second_part and second_part == first_part:
                 title = first_part
 
         title = re.sub(r'\s+', ' ', title).strip()
@@ -695,7 +753,7 @@ class LinkedInScraperV6:
                     text = await el.inner_text()
                     if text and text.strip():
                         return text.strip()
-            except:
+            except Exception:
                 continue
         return ""
 
@@ -720,7 +778,7 @@ class LinkedInScraperV6:
             if any(bl in title_lower for bl in title_blacklist):
                 continue
 
-            key = f"{job['title']}-{job['company']}"
+            key = f"{job['title']}-{job['company']}-{job.get('location', '')}"
             if key in self.seen_keys:
                 continue
 
@@ -755,8 +813,9 @@ class LinkedInScraperV6:
             "jobs": self.all_jobs
         }
 
-        with open(filepath, "w", encoding="utf-8") as f:
+        with open(filepath.with_suffix('.tmp'), "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+        filepath.with_suffix('.tmp').replace(filepath)
 
         print(f"\n[OK] Saved: {filepath}")
         return filepath
@@ -778,8 +837,8 @@ class LinkedInScraperV6:
                 jd_mark = "[JD]" if job.get("description") else ""
                 print(f"  - {job['title'][:40]} @ {job['company'][:25]} {jd_mark}")
 
-        # Database summary
-        if self.db and self.saved_to_db > 0:
+        # Database summary (use _db directly to avoid triggering lazy init)
+        if self._db is not None and self.saved_to_db > 0:
             print(f"\n[Database Summary]")
             print(f"  New jobs saved: {self.saved_to_db}")
             print(f"  Duplicates skipped: {self.skipped_duplicates}")
@@ -798,7 +857,7 @@ async def main():
     parser.add_argument("--cdp", action="store_true", help="Use CDP to connect to existing browser")
     parser.add_argument("--cdp-url", default="http://localhost:9222", help="CDP URL")
     parser.add_argument("--no-jd", action="store_true", help="Skip JD fetching (fast mode)")
-    parser.add_argument("--no-db", action="store_true", help="Don't save to database")
+    parser.add_argument("--save-to-db", action="store_true", help="Save results to database")
     parser.add_argument("--no-json", action="store_true", help="Don't save JSON file")
     args = parser.parse_args()
 
@@ -808,7 +867,7 @@ async def main():
         config.list_profiles()
         return
 
-    save_to_db = not args.no_db
+    save_to_db = args.save_to_db
     if save_to_db and not DB_AVAILABLE:
         print("Warning: Database module not available, skipping DB save")
         save_to_db = False
@@ -836,26 +895,29 @@ async def main():
             print("[FAIL] Login failed")
             return
 
-        for profile_name in profiles_to_run:
-            await scraper.run_profile(
-                profile_name,
-                fetch_jd=not args.no_jd,
-                save_to_db=save_to_db
-            )
+        try:
+            for profile_name in profiles_to_run:
+                await scraper.run_profile(
+                    profile_name,
+                    fetch_jd=not args.no_jd,
+                    save_to_db=save_to_db
+                )
 
-            if profile_name != profiles_to_run[-1]:
-                print("\n-> Waiting 10s before next profile...")
-                await asyncio.sleep(10)
+                if profile_name != profiles_to_run[-1]:
+                    print("\n-> Waiting 10s before next profile...")
+                    await asyncio.sleep(10)
 
-        profile_label = args.profile if args.profile else "all"
-        scraper.save_results(profile_label, save_json=not args.no_json)
-        scraper.print_summary()
-
-        print("\n" + "=" * 70)
-        print(f"Done! Total {len(scraper.all_jobs)} jobs")
-        if save_to_db:
-            print(f"  Database new: {scraper.saved_to_db}")
-        print("=" * 70)
+            print("\n" + "=" * 70)
+            print(f"Done! Total {len(scraper.all_jobs)} jobs")
+            if save_to_db:
+                print(f"  Database new: {scraper.saved_to_db}")
+            print("=" * 70)
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            print("\n\n[INTERRUPTED] Saving scraped data before exit...")
+        finally:
+            profile_label = args.profile if args.profile else "all"
+            scraper.save_results(profile_label, save_json=not args.no_json)
+            scraper.print_summary()
 
 
 if __name__ == "__main__":

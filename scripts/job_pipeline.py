@@ -32,6 +32,7 @@ Usage:
 import json
 import sys
 import re
+import shutil
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
@@ -63,195 +64,23 @@ except ImportError:
     print("[Warning] 数据库模块不可用，使用 JSON 追踪器")
 
 
-class JobAnalyzer:
-    """职位匹配度分析器 (Legacy - 兼容旧版 JSON 分析)"""
-
-    # 目标关键词和权重 (与 scoring.yaml v2.0 保持一致)
-    POSITIVE_KEYWORDS = {
-        # 标题级别关键词 (高权重)
-        "machine learning": 2.5,
-        "ml engineer": 2.5,
-        "ai engineer": 2.5,
-        "data scientist": 2.5,
-        "deep learning": 2.5,
-        "data engineer": 2.0,
-        "quant": 2.5,
-        "quantitative": 2.5,
-        # 正文级别关键词
-        "python": 1.0,
-        "pytorch": 1.0,
-        "tensorflow": 1.0,
-        "nlp": 1.0,
-        "llm": 1.0,
-        "sql": 0.5,
-        "spark": 1.0,
-        "pyspark": 1.0,
-        "trading": 1.0,
-        "junior": 1.5,
-        "entry level": 1.5,
-        "graduate": 1.0,
-        "visa sponsor": 2.0,
-        "relocation": 1.0,
-        "sponsorship": 2.0,
-        "kmv": 1.5,
-    }
-
-    NEGATIVE_KEYWORDS = {
-        "senior manager": -3.0,
-        "director": -3.0,
-        "head of": -3.0,
-        "vp ": -3.0,
-        "vice president": -3.0,
-        "10+ years": -2.0,
-        "8+ years": -1.5,
-        "dutch required": -5.0,
-        "dutch native": -5.0,
-        "german required": -3.0,
-        "french required": -3.0,
-        "principal": -2.0,
-        "staff engineer": -1.5,
-        "5+ years": -0.5,
-        "6+ years": -1.0,
-        "7+ years": -1.0,
-        "senior": -0.5,
-        "lead": -1.5,
-    }
-
-    TARGET_COMPANIES = {
-        # Tier 1
-        "picnic": 2.0, "adyen": 2.0, "booking.com": 2.0,
-        "optiver": 2.0, "imc": 2.0, "flow traders": 2.0, "deepdesk": 2.0,
-        # Tier 2
-        "abn amro": 1.5, "ing": 1.5, "rabobank": 1.5, "asml": 1.5, "philips": 1.5,
-        # Tier 3
-        "tomtom": 1.0, "coolblue": 1.0, "bol.com": 1.0, "shell": 1.0, "kpn": 1.0,
-    }
-
-    @classmethod
-    def analyze(cls, job: Dict) -> Dict:
-        """分析单个职位的匹配度"""
-        score = 3.0  # 基础分 (v2.0: 从 5.0 降到 3.0)
-        reasons = {"positive": [], "negative": []}
-
-        # 合并文本
-        title = job.get('title', '').lower()
-        text = f"{title} {job.get('company', '')} {job.get('description', '')}".lower()
-
-        # 正面因素
-        for keyword, points in cls.POSITIVE_KEYWORDS.items():
-            if keyword in text:
-                score += points
-                reasons["positive"].append(f"{keyword} (+{points})")
-
-        # 负面因素
-        for keyword, points in cls.NEGATIVE_KEYWORDS.items():
-            if keyword in text:
-                score += points
-                reasons["negative"].append(f"{keyword} ({points})")
-
-        # 目标公司加分
-        company = job.get('company', '').lower()
-        for target, bonus in cls.TARGET_COMPANIES.items():
-            if target in company:
-                score += bonus
-                reasons["positive"].append(f"target company: {target} (+{bonus})")
-                break
-
-        # 限制分数范围
-        score = max(0, min(10, score))
-
-        # 推荐等级 (v2.0 阈值)
-        if score >= 7.0:
-            recommendation = "APPLY_NOW"
-        elif score >= 5.5:
-            recommendation = "APPLY"
-        elif score >= 4.0:
-            recommendation = "MAYBE"
-        else:
-            recommendation = "SKIP"
-
-        return {
-            "score": round(score, 1),
-            "recommendation": recommendation,
-            "reasons": reasons
-        }
-    
-    @classmethod
-    def analyze_file(cls, filepath: Path) -> List[Dict]:
-        """分析整个文件的所有职位"""
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        
-        jobs = data.get('jobs', [])
-        results = []
-        
-        for job in jobs:
-            analysis = cls.analyze(job)
-            job_with_analysis = {**job, **analysis}
-            results.append(job_with_analysis)
-        
-        # 按分数排序
-        results.sort(key=lambda x: x['score'], reverse=True)
-        
-        return results
+## Legacy JobAnalyzer removed in v2.0 cleanup — use JobPipeline + AI Analyzer instead
 
 
-class ResumeTailor:
-    """简历定制器"""
-    
-    def __init__(self):
-        self.base_template = self._load_template()
-    
-    def _load_template(self) -> str:
-        """加载 HTML 模板"""
-        template_path = TEMPLATES_DIR / "resume_base.html"
-        if template_path.exists():
-            with open(template_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        raise FileNotFoundError(f"Template not found: {template_path}")
-    
-    def tailor_for_job(self, job: Dict) -> str:
-        """根据职位定制简历"""
-        html = self.base_template
-        
-        # 根据职位类型调整摘要
-        title = job.get('title', '').lower()
-        company = job.get('company', '')
-        
-        if 'machine learning' in title or 'ml engineer' in title:
-            summary = f"Machine Learning Engineer with expertise in developing and deploying ML models at scale. M.Sc. in AI from VU Amsterdam with thesis on Uncertainty Quantification in Deep RL. Experienced in PyTorch, TensorFlow, and production ML systems. Eager to contribute to {company}'s ML initiatives."
-        elif 'data engineer' in title:
-            summary = f"Data Engineer with strong background in building scalable data pipelines, ETL processes, and ML infrastructure. M.Sc. in AI from VU Amsterdam. Experienced in Python, SQL, PySpark, and cloud platforms. Seeking to leverage data engineering skills at {company}."
-        elif 'quant' in title:
-            summary = f"Quantitative Researcher with hands-on experience in factor research, backtesting, and live trading systems. Background in multi-factor alpha models and futures strategies with proven track record (14.6% annual return). M.Sc. in AI from VU Amsterdam. Seeking quantitative role at {company}."
-        elif 'data scientist' in title:
-            summary = f"Data Scientist with expertise in machine learning, statistical modeling, and data-driven decision making. M.Sc. in AI from VU Amsterdam. Experienced in building end-to-end ML pipelines, credit risk modeling, and quantitative analysis. Excited to bring analytical skills to {company}."
-        else:
-            summary = f"Data professional with expertise in machine learning, data engineering, and quantitative analysis. M.Sc. in AI from VU Amsterdam. Experienced in Python, SQL, and ML frameworks. Seeking to contribute to {company}'s data initiatives."
-        
-        # 替换摘要
-        import re
-        html = re.sub(
-            r'(<div class="tailored-summary"[^>]*>)(.*?)(</div>)',
-            f'\\1{summary}\\3',
-            html,
-            flags=re.DOTALL
-        )
-        
-        return html
-    
-    def save_tailored_html(self, job: Dict, output_path: Path = None) -> Path:
-        """保存定制后的 HTML"""
-        if output_path is None:
-            safe_company = re.sub(r'[^\w\-]', '_', job.get('company', 'unknown').lower())[:20]
-            safe_title = re.sub(r'[^\w\-]', '_', job.get('title', 'job').lower())[:20]
-            output_path = OUTPUT_DIR / f"{safe_company}_{safe_title}.html"
-        
-        html = self.tailor_for_job(job)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(html)
-        
-        return output_path
+## Legacy ResumeTailor removed in v2.0 cleanup — use ResumeRenderer (src/resume_renderer.py) instead
+
+
+def _keyword_boundary_pattern(kw: str) -> str:
+    """Build regex pattern with proper word boundaries for keywords with non-word chars at edges.
+
+    Standard \\b fails for keywords like '.net' (leading dot) or 'c#' (trailing hash).
+    For leading non-word chars: skip boundary (the char itself is discriminating).
+    For trailing non-word chars: use (?!\\w) lookahead.
+    """
+    escaped = re.escape(kw)
+    prefix = '' if kw and not kw[0].isalnum() and kw[0] != '_' else r'\b'
+    suffix = r'(?!\w)' if kw and not kw[-1].isalnum() and kw[-1] != '_' else r'\b'
+    return prefix + escaped + suffix
 
 
 class JobTracker:
@@ -400,6 +229,12 @@ class JobPipeline:
         self.db = JobDatabase()
         self.filter_config = self._load_config("base/filters.yaml")
         self.score_config = self._load_config("base/scoring.yaml")
+        self.ai_config = self._load_config("ai_config.yaml")
+
+        # Cache company and title blacklists (avoid reloading per-job)
+        search_profiles = self._load_config("search_profiles.yaml")
+        self.company_blacklist = [c.lower() for c in search_profiles.get('company_blacklist', [])]
+        self.title_blacklist = [t.lower() for t in search_profiles.get('title_blacklist', [])]
 
         print(f"[Pipeline] Database: {self.db.db_path}")
 
@@ -408,7 +243,8 @@ class JobPipeline:
         config_path = CONFIG_DIR / config_name
         if config_path.exists():
             with open(config_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
+                return yaml.safe_load(f) or {}
+        print(f"[WARN] Config not found: {config_path}")
         return {}
 
     def import_inbox(self) -> int:
@@ -441,11 +277,13 @@ class JobPipeline:
         archive_subdir = ARCHIVE_DIR / date_str
         archive_subdir.mkdir(parents=True, exist_ok=True)
         dest = archive_subdir / file_path.name
-        file_path.rename(dest)
+        if dest.exists():
+            dest = archive_subdir / f"{file_path.stem}_{datetime.now().strftime('%H%M%S')}{file_path.suffix}"
+        shutil.move(str(file_path), str(dest))
 
-    def filter_jobs(self) -> tuple:
+    def filter_jobs(self, limit: int = 500) -> tuple:
         """Filter all unfiltered jobs"""
-        unfiltered = self.db.get_unfiltered_jobs(limit=500)
+        unfiltered = self.db.get_unfiltered_jobs(limit=limit)
         if not unfiltered:
             print("[Filter] No jobs to filter")
             return 0, 0
@@ -454,12 +292,16 @@ class JobPipeline:
         passed_count, rejected_count = 0, 0
 
         for job in unfiltered:
-            result = self._apply_filter(job)
-            self.db.save_filter_result(result)
-            if result.passed:
-                passed_count += 1
-            else:
-                rejected_count += 1
+            try:
+                result = self._apply_filter(job)
+                self.db.save_filter_result(result)
+                if result.passed:
+                    passed_count += 1
+                else:
+                    rejected_count += 1
+            except Exception as e:
+                print(f"  x Filter error for {job.get('id', '?')}: {e}")
+                continue
 
         print(f"[Filter] Done: {passed_count} passed, {rejected_count} rejected")
         return passed_count, rejected_count
@@ -474,11 +316,20 @@ class JobPipeline:
         - regex: 正则表达式匹配
         """
         job_id = job['id']
-        title = job.get('title', '').lower()
-        description = job.get('description', '').lower()
-        company = job.get('company', '').lower()
-        location = job.get('location', '').lower()
+        title = (job.get('title') or '').lower()
+        description = (job.get('description') or '').lower()
+        company = (job.get('company') or '').lower()
+        location = (job.get('location') or '').lower()
         full_text = f"{title} {company} {description} {location}"
+
+        # Reject jobs with insufficient data (empty JDs waste AI tokens)
+        if not title.strip() or not description.strip() or len(description) < 50:
+            return FilterResult(
+                job_id=job_id, passed=False,
+                reject_reason="insufficient_data",
+                filter_version="2.0",
+                matched_rules=json.dumps({"title_len": len(title), "desc_len": len(description)})
+            )
 
         hard_rules = self.filter_config.get('hard_reject_rules', {})
 
@@ -502,8 +353,8 @@ class JobPipeline:
                 # Use word boundary matching to avoid partial matches
                 count = 0
                 for word in indicators:
-                    # Use regex word boundary for accurate matching
-                    if re.search(r'\b' + re.escape(word) + r'\b', full_text):
+                    # Use _keyword_boundary_pattern for consistency with rest of pipeline
+                    if re.search(_keyword_boundary_pattern(word), full_text):
                         count += 1
                 if count >= threshold:
                     return FilterResult(
@@ -515,7 +366,15 @@ class JobPipeline:
 
             # --- Title-based role check ---
             elif rule_type == 'title_check':
-                # First check reject patterns (blacklist has priority)
+                # Check exceptions first (against title, not body)
+                exceptions = rule_config.get('exceptions', [])
+                if any(
+                    re.search(_keyword_boundary_pattern(exc.lower().strip()), title)
+                    for exc in exceptions if exc.strip()
+                ):
+                    continue
+
+                # Check reject patterns (blacklist has priority)
                 reject_patterns = rule_config.get('title_reject_patterns', [])
                 rejected = False
                 for pattern in reject_patterns:
@@ -533,7 +392,10 @@ class JobPipeline:
                 # Then check whitelist - title must contain at least one target keyword
                 must_contain = rule_config.get('title_must_contain_one_of', [])
                 if must_contain:
-                    found = any(kw.lower() in title for kw in must_contain)
+                    found = any(
+                        re.search(_keyword_boundary_pattern(kw.lower().strip()), title)
+                        for kw in must_contain if kw.strip()
+                    )
                     if not found:
                         return FilterResult(
                             job_id=job_id, passed=False,
@@ -544,10 +406,12 @@ class JobPipeline:
 
             # --- Tech stack check (title + body) ---
             elif rule_type == 'tech_stack':
-                exceptions = [e.lower() for e in rule_config.get('exceptions', [])]
+                exceptions = [e.lower().strip() for e in rule_config.get('exceptions', [])]
 
-                # Skip if title contains an exception keyword (e.g., "data", "ml")
-                title_has_exception = any(exc in title for exc in exceptions)
+                # Skip if title contains an exception keyword (word-boundary match)
+                title_has_exception = any(
+                    re.search(_keyword_boundary_pattern(exc), title) for exc in exceptions if exc
+                )
 
                 if not title_has_exception:
                     # Check title patterns
@@ -567,7 +431,7 @@ class JobPipeline:
                     # Check body irrelevant keyword count
                     body_keywords = rule_config.get('body_irrelevant_keywords', [])
                     body_threshold = rule_config.get('body_irrelevant_threshold', 5)
-                    body_count = sum(1 for kw in body_keywords if kw.lower() in description)
+                    body_count = sum(1 for kw in body_keywords if re.search(_keyword_boundary_pattern(kw.lower()), description))
                     if body_count >= body_threshold:
                         return FilterResult(
                             job_id=job_id, passed=False,
@@ -581,8 +445,11 @@ class JobPipeline:
                 patterns = rule_config.get('patterns', [])
                 exceptions = rule_config.get('exceptions', [])
 
-                # Check exceptions first
-                if any(exc.lower() in full_text for exc in exceptions):
+                # Check exceptions first (word-boundary match against full_text)
+                if any(
+                    re.search(_keyword_boundary_pattern(exc.lower().strip()), full_text)
+                    for exc in exceptions if exc.strip()
+                ):
                     continue
 
                 for pattern in patterns:
@@ -597,35 +464,50 @@ class JobPipeline:
                     except re.error:
                         continue
 
-        # 公司黑名单
-        search_profiles = self._load_config("search_profiles.yaml")
-        company_blacklist = [c.lower() for c in search_profiles.get('company_blacklist', [])]
-        for blacklisted in company_blacklist:
-            if blacklisted in company:
+        # 公司黑名单 (cached in __init__)
+        for blacklisted in self.company_blacklist:
+            if re.search(_keyword_boundary_pattern(blacklisted), company):
                 return FilterResult(
                     job_id=job_id, passed=False,
                     reject_reason="company_blacklist",
                     filter_version="2.0"
                 )
 
+        # 标题黑名单 (cached in __init__) — reject intern/trainee/student titles
+        for blacklisted in self.title_blacklist:
+            if re.search(_keyword_boundary_pattern(blacklisted), title):
+                return FilterResult(
+                    job_id=job_id, passed=False,
+                    reject_reason="title_blacklist",
+                    filter_version="2.0",
+                    matched_rules=json.dumps({"blocked_title_keyword": blacklisted})
+                )
+
         return FilterResult(job_id=job_id, passed=True, filter_version="2.0")
 
-    def score_jobs(self) -> int:
+    def score_jobs(self, limit: int = 500) -> int:
         """Score all unscored jobs"""
-        unscored = self.db.get_unscored_jobs(limit=500)
+        unscored = self.db.get_unscored_jobs(limit=limit)
         if not unscored:
             print("[Score] No jobs to score")
             return 0
 
         print(f"\n[Score] Scoring {len(unscored)} jobs...")
+        scored = 0
         for job in unscored:
-            result = self._calculate_score(job)
-            self.db.save_score(result)
-            if result.score >= 7.0:
-                print(f"  * [{result.score:.1f}] {job['title'][:40]} @ {job['company'][:20]}")
+            try:
+                result = self._calculate_score(job)
+                self.db.save_score(result)
+                scored += 1
+                apply_now_threshold = self.score_config.get('thresholds', {}).get('apply_now', 7.0)
+                if result.score >= apply_now_threshold:
+                    print(f"  * [{result.score:.1f}] {job['title'][:40]} @ {job['company'][:20]}")
+            except Exception as e:
+                print(f"  x Score error for {job.get('id', '?')}: {e}")
+                continue
 
-        print(f"[Score] Done: {len(unscored)} jobs scored")
-        return len(unscored)
+        print(f"[Score] Done: {scored}/{len(unscored)} jobs scored")
+        return scored
 
     def _calculate_score(self, job: Dict) -> ScoreResult:
         """计算职位评分 v2.0
@@ -639,26 +521,38 @@ class JobPipeline:
         6. 限制到 0-10 范围
         """
         job_id = job['id']
-        title = job.get('title', '').lower()
-        description = job.get('description', '').lower()
-        company = job.get('company', '').lower()
-        full_text = f"{title} {company} {description}"
+        title = (job.get('title') or '').lower()
+        description = (job.get('description') or '').lower()
+        company = (job.get('company') or '').lower()
+        location = (job.get('location') or '').lower()
+        full_text = f"{title} {company} {description} {location}"
 
         base_score = self.score_config.get('base_score', {}).get('starting_score', 3.0)
         score = base_score
         score_breakdown = {}
         matched_keywords = []
 
+        # Penalize very short descriptions (keeps empty-JD jobs below AI threshold)
+        short_jd = self.score_config.get('body_scoring', {}).get('short_jd', {})
+        short_jd_threshold = short_jd.get('threshold', 100)
+        short_jd_penalty = short_jd.get('penalty', -2.0)
+        if len(description) < short_jd_threshold:
+            score += short_jd_penalty
+            score_breakdown["short_jd_penalty"] = short_jd_penalty
+
         # === Title scoring ===
         title_config = self.score_config.get('title_scoring', {})
 
         # Positive title categories (only match once per category)
-        for category in ['core_ml_ai', 'data_engineering', 'quant']:
-            cat_config = title_config.get(category, {})
+        for category, cat_config in title_config.items():
+            if category == 'negative_title':
+                continue
+            if not isinstance(cat_config, dict) or 'keywords' not in cat_config:
+                continue
             keywords = cat_config.get('keywords', [])
             weight = cat_config.get('weight', 0)
             for kw in keywords:
-                if kw.lower() in title:
+                if re.search(_keyword_boundary_pattern(kw.lower()), title):
                     score += weight
                     score_breakdown[f"title_{category}"] = weight
                     matched_keywords.append(f"title:{kw}")
@@ -667,10 +561,12 @@ class JobPipeline:
         # Negative title keywords
         negative_title = title_config.get('negative_title', {})
         for neg_name, neg_config in negative_title.items():
+            if not isinstance(neg_config, dict):
+                continue
             keywords = neg_config.get('keywords', [])
             weight = neg_config.get('weight', 0)
             for kw in keywords:
-                if kw.lower() in title:
+                if re.search(_keyword_boundary_pattern(kw.lower()), title):
                     score += weight
                     score_breakdown[f"title_neg_{neg_name}"] = weight
                     matched_keywords.append(f"title_neg:{kw}")
@@ -690,7 +586,7 @@ class JobPipeline:
             if keywords:
                 cat_score = 0
                 for kw in keywords:
-                    if kw.lower() in full_text:
+                    if re.search(_keyword_boundary_pattern(kw.lower()), description):
                         cat_score += weight
                         matched_keywords.append(kw)
 
@@ -706,12 +602,27 @@ class JobPipeline:
                     score_breakdown[f"body_{category}"] = cat_score
             else:
                 # Handle inline key-value categories (high_experience)
+                cat_score = 0
+                _SKIP_KEYS = {'max_total', 'keywords', 'weight', 'description'}
                 for kw, kw_config in cat_config.items():
+                    if kw in _SKIP_KEYS:
+                        continue
                     if isinstance(kw_config, dict) and 'weight' in kw_config:
-                        if kw.lower() in full_text:
-                            score += kw_config['weight']
-                            score_breakdown[f"body_{category}_{kw}"] = kw_config['weight']
+                        if re.search(_keyword_boundary_pattern(kw.lower()), description):
+                            cat_score += kw_config['weight']
                             matched_keywords.append(kw)
+
+                # Apply cap for inline categories too
+                inline_max = cat_config.get('max_total', None)
+                if inline_max is not None:
+                    if inline_max >= 0:
+                        cat_score = min(cat_score, inline_max)
+                    else:
+                        cat_score = max(cat_score, inline_max)
+
+                if cat_score != 0:
+                    score += cat_score
+                    score_breakdown[f"body_{category}"] = cat_score
 
         # === Non-core tech penalty ===
         penalty_config = self.score_config.get('non_core_tech_penalty', {})
@@ -722,8 +633,8 @@ class JobPipeline:
             min_core = penalty_config.get('min_core_keywords', 2)
             penalty = penalty_config.get('penalty', -2.0)
 
-            non_core_count = sum(1 for kw in non_core_kws if kw.lower() in full_text)
-            core_count = sum(1 for kw in core_kws if kw.lower() in full_text)
+            non_core_count = sum(1 for kw in non_core_kws if re.search(_keyword_boundary_pattern(kw.lower()), full_text))
+            core_count = sum(1 for kw in core_kws if re.search(_keyword_boundary_pattern(kw.lower()), full_text))
 
             if non_core_count >= threshold and core_count < min_core:
                 score += penalty
@@ -736,7 +647,7 @@ class JobPipeline:
                                  ('tier_2', target_companies.get('tier_2', [])),
                                  ('tier_3', target_companies.get('tier_3', []))]:
             for target in companies:
-                if target.lower() in company:
+                if re.search(_keyword_boundary_pattern(target.lower()), company):
                     bonus = target_companies.get('bonus_scores', {}).get(tier, 0)
                     score += bonus
                     score_breakdown[f"company_{tier}"] = bonus
@@ -751,11 +662,18 @@ class JobPipeline:
 
         # === Determine recommendation ===
         thresholds = self.score_config.get('thresholds', {})
-        if score >= thresholds.get('apply_now', 7.0):
+        apply_now_th = thresholds.get('apply_now', 7.0)
+        apply_th = thresholds.get('apply', 5.5)
+        maybe_th = thresholds.get('maybe', 4.0)
+
+        if not (maybe_th <= apply_th <= apply_now_th):
+            raise ValueError(f"Invalid threshold order in scoring.yaml: maybe={maybe_th}, apply={apply_th}, apply_now={apply_now_th}")
+
+        if score >= apply_now_th:
             recommendation = "APPLY_NOW"
-        elif score >= thresholds.get('apply', 5.5):
+        elif score >= apply_th:
             recommendation = "APPLY"
-        elif score >= thresholds.get('maybe', 4.0):
+        elif score >= maybe_th:
             recommendation = "MAYBE"
         else:
             recommendation = "SKIP"
@@ -773,7 +691,7 @@ class JobPipeline:
         print("\n=== Funnel Stats ===")
         print(f"Total scraped:    {stats.get('total_scraped', 0)}")
         print(f"Passed filter:    {stats.get('passed_filter', 0)}")
-        print(f"High score (>=6): {stats.get('scored_high', 0)}")
+        print(f"High score (>=5.5): {stats.get('scored_high', 0)}")
         print(f"AI analyzed:      {stats.get('ai_analyzed', 0)}")
         print(f"AI high (>=5):    {stats.get('ai_scored_high', 0)}")
         print(f"Resume generated: {stats.get('resume_generated', 0)}")
@@ -791,7 +709,7 @@ class JobPipeline:
             return
         print(f"\nReady to apply ({len(ready)}):")
         for i, job in enumerate(ready, 1):
-            print(f"{i:2}. [{job['score']:.1f}] {job['title'][:45]} @ {job['company'][:25]}")
+            print(f"{i:2}. [{job.get('score', 0):.1f}] {job['title'][:45]} @ {job['company'][:25]}")
             print(f"    ID: {job['id']}")
 
     # ==================== AI Analysis & Resume Generation ====================
@@ -807,6 +725,8 @@ class JobPipeline:
             spec = importlib.util.spec_from_file_location(
                 "ai_analyzer", PROJECT_ROOT / "src" / "ai_analyzer.py"
             )
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find ai_analyzer.py at {PROJECT_ROOT / 'src' / 'ai_analyzer.py'}")
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             AIAnalyzer = module.AIAnalyzer
@@ -823,6 +743,8 @@ class JobPipeline:
             spec = importlib.util.spec_from_file_location(
                 "resume_renderer", PROJECT_ROOT / "src" / "resume_renderer.py"
             )
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find resume_renderer.py at {PROJECT_ROOT / 'src' / 'resume_renderer.py'}")
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             ResumeRenderer = module.ResumeRenderer
@@ -839,6 +761,8 @@ class JobPipeline:
             spec = importlib.util.spec_from_file_location(
                 "ai_analyzer", PROJECT_ROOT / "src" / "ai_analyzer.py"
             )
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find ai_analyzer.py at {PROJECT_ROOT / 'src' / 'ai_analyzer.py'}")
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             AIAnalyzer = module.AIAnalyzer
@@ -856,15 +780,15 @@ class JobPipeline:
                 print(f"  Experiences: {len(tailored['experiences'])} selected")
         return result
 
-    def process_all(self):
+    def process_all(self, limit: int = 50):
         """Run full processing pipeline (including AI analysis and resume generation)"""
         print("=" * 70)
         print("Job Hunter Pipeline v2.0 (with AI Analysis)")
         print("=" * 70)
 
         imported = self.import_inbox()
-        passed, rejected = self.filter_jobs()
-        scored = self.score_jobs()
+        passed, rejected = self.filter_jobs(limit=limit)
+        scored = self.score_jobs(limit=limit)
 
         print("\n" + "-" * 70)
         print("Stage 1 Complete: imported {}, filtered {}/{}, scored {}".format(
@@ -872,21 +796,31 @@ class JobPipeline:
         print("-" * 70)
 
         # AI Analysis (optional - only if high-score jobs exist)
-        jobs_for_ai = self.db.get_jobs_needing_analysis(min_rule_score=3.0, limit=10)
+        ai_thresholds = self.ai_config.get('thresholds', {})
+        rule_score_threshold = ai_thresholds.get('rule_score_for_ai', 3.0)
+        ai_score_threshold = ai_thresholds.get('ai_score_generate_resume', 5.0)
+
+        jobs_for_ai = self.db.get_jobs_needing_analysis(min_rule_score=rule_score_threshold, limit=limit)
         if jobs_for_ai:
             print(f"\nFound {len(jobs_for_ai)} jobs ready for AI analysis")
-            user_input = input("Run AI analysis? (y/n, default: n): ").strip().lower()
+            try:
+                user_input = input("Run AI analysis? (y/n, default: n): ").strip().lower()
+            except EOFError:
+                user_input = 'n'
             if user_input == 'y':
-                analyzed = self.ai_analyze_jobs(limit=10)
+                analyzed = self.ai_analyze_jobs(min_rule_score=rule_score_threshold, limit=limit)
                 print(f"AI analyzed: {analyzed} jobs")
 
                 # Resume generation
-                jobs_for_resume = self.db.get_analyzed_jobs_for_resume(min_ai_score=5.0, limit=10)
+                jobs_for_resume = self.db.get_analyzed_jobs_for_resume(min_ai_score=ai_score_threshold, limit=limit)
                 if jobs_for_resume:
                     print(f"\nFound {len(jobs_for_resume)} jobs ready for resume generation")
-                    user_input = input("Generate resumes? (y/n, default: n): ").strip().lower()
+                    try:
+                        user_input = input("Generate resumes? (y/n, default: n): ").strip().lower()
+                    except EOFError:
+                        user_input = 'n'
                     if user_input == 'y':
-                        generated = self.generate_resumes(limit=10)
+                        generated = self.generate_resumes(min_ai_score=ai_score_threshold, limit=limit)
                         print(f"Resumes generated: {generated}")
 
         print("\n" + "=" * 70)
@@ -941,6 +875,7 @@ def main():
         print(f"  Cleared {filter_count} filter results, {score_count} score results")
 
         pipeline = JobPipeline()
+        # Reprocess all jobs (ignore --limit to avoid data loss from partial reprocessing)
         pipeline.filter_jobs()
         pipeline.score_jobs()
         pipeline.show_stats()
@@ -948,20 +883,21 @@ def main():
 
     # 新版数据库流水线
     if args.process or args.import_only or args.filter or args.score or args.ready \
-       or args.ai_analyze or args.generate or args.analyze_job:
+       or args.ai_analyze or args.generate or args.analyze_job \
+       or args.stats or args.mark_applied:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
             sys.exit(1)
 
         pipeline = JobPipeline()
         if args.process:
-            pipeline.process_all()
+            pipeline.process_all(limit=args.limit)
         elif args.import_only:
             pipeline.import_inbox()
         elif args.filter:
-            pipeline.filter_jobs()
+            pipeline.filter_jobs(limit=args.limit)
         elif args.score:
-            pipeline.score_jobs()
+            pipeline.score_jobs(limit=args.limit)
         elif args.ready:
             pipeline.show_ready()
         elif args.ai_analyze:
@@ -971,49 +907,18 @@ def main():
             pipeline.generate_resumes(min_ai_score=args.min_score, limit=args.limit)
         elif args.analyze_job:
             pipeline.analyze_single_job(args.analyze_job, model=args.model)
-        return
-
-    # 旧版 JSON 分析 (兼容)
-    if args.analyze:
-        filepath = DATA_DIR / args.analyze
-        if not filepath.exists():
-            print(f"File not found: {filepath}")
-            sys.exit(1)
-
-        print(f"Analyzing jobs from {filepath}...")
-        jobs = JobAnalyzer.analyze_file(filepath)
-
-        tracker = JobTracker()
-        added = 0
-        for job in jobs:
-            if tracker.add_job(job, {"score": job.get('score'), "recommendation": job.get('recommendation')}):
-                added += 1
-
-        print(f"Added {added} new jobs to tracker")
-        print_analysis_report(jobs)
-        return
-
-    if args.stats:
-        if DB_AVAILABLE:
-            pipeline = JobPipeline()
+        elif args.stats:
             pipeline.show_stats()
-        else:
-            tracker = JobTracker()
-            stats = tracker.get_stats()
-            print("\n=== TRACKER STATS ===")
-            for key, value in stats.items():
-                print(f"  {key}: {value}")
-        return
-
-    if args.mark_applied:
-        if DB_AVAILABLE:
+        elif args.mark_applied:
             db = JobDatabase()
             db.update_application_status(args.mark_applied, "applied", applied_at=datetime.now().isoformat())
             print(f"已标记为申请: {args.mark_applied}")
-        else:
-            tracker = JobTracker()
-            tracker.mark_applied(args.mark_applied)
         return
+
+    # 旧版 JSON 分析 (已废弃)
+    if args.analyze:
+        print("[DEPRECATED] --analyze is removed in v2.0. Use --ai-analyze instead.")
+        sys.exit(1)
 
     # Help message
     print("Job Pipeline v2.0 - Commands:")

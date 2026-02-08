@@ -188,15 +188,6 @@ body {
 .skill-items { color: var(--text-main); flex: 1; }
 .skill-items a { color: var(--link-color); text-decoration: none; }
 
-.languages-row {
-    font-size: 9.5pt;
-    color: var(--text-main);
-}
-.language-item { display: inline; }
-.language-name { font-weight: bold; }
-.language-level { color: var(--text-muted); font-style: italic; }
-.language-divider { color: var(--text-muted); margin: 0 6pt; }
-
 @media print {
     body { padding: 0; max-width: none; }
     .experience-item, .education-item, .project-item { break-inside: avoid; }
@@ -221,12 +212,12 @@ body {
             <span class="contact-divider">|</span>
             <a href="{{ github }}">{{ github_display }}</a>
             <span class="contact-divider">|</span>
-            <a href="{{ blog_url }}">feithink.substack.com</a>
+            <a href="{{ blog_url }}">{{ blog_display | default('huangf06.github.io/FeiThink/en/') }}</a>
         </div>
     </header>
 
     <!-- BIO (optional) -->
-    {% if bio %}
+    {% if bio and bio.strip() %}
     <div class="bio">{{ bio }}</div>
     {% endif %}
 
@@ -308,7 +299,7 @@ body {
             </div>
             <div class="exp-subheader">
                 <span class="exp-title">{{ exp.title }}</span>
-                <span class="exp-location">{{ exp.location }}</span>
+                {% if exp.location %}<span class="exp-location">{{ exp.location }}</span>{% endif %}
             </div>
             <ul class="exp-bullets">
                 {% for bullet in exp.bullets %}
@@ -341,11 +332,11 @@ body {
         <div class="skills-list">
             <div class="skill-row">
                 <span class="skill-category">Interests:</span>
-                <span class="skill-items">Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing</span>
+                <span class="skill-items">{{ interests | default('Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing') }}</span>
             </div>
             <div class="skill-row">
                 <span class="skill-category">Blog:</span>
-                <span class="skill-items"><a href="{{ blog_url }}">huangf06.github.io/FeiThink/en/</a></span>
+                <span class="skill-items"><a href="{{ blog_url }}">{{ blog_display | default('huangf06.github.io/FeiThink/en/') }}</a></span>
             </div>
         </div>
     </section>

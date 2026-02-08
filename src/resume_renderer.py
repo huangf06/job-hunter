@@ -77,6 +77,7 @@ class ResumeRenderer:
             'linkedin_display': self.candidate.get('linkedin_display', 'linkedin.com/in/huangf06'),
             'github_display': self.candidate.get('github_display', 'github.com/huangf06'),
             'blog_url': self.candidate.get('blog_url', 'https://huangf06.github.io/FeiThink/en/'),
+            'blog_display': self.candidate.get('blog_display', 'huangf06.github.io/FeiThink/en/'),
 
             # Education - Master
             'edu_master_school': master.get('school', 'Vrije Universiteit Amsterdam'),
@@ -98,7 +99,12 @@ class ResumeRenderer:
             'certification': edu.get('certification', ''),
 
             # Career note (for gap explanation)
-            'career_note': 'Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation.',
+            'career_note': self.config.get('resume', {}).get('career_note',
+                'Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation.'),
+
+            # Interests
+            'interests': self.config.get('resume', {}).get('interests',
+                'Philosophy (Kant, existentialism), Dostoevsky, powerlifting, analytical writing'),
         }
 
     def render_resume(self, job_id: str) -> Optional[Dict[str, str]]:
@@ -118,6 +124,11 @@ class ResumeRenderer:
             tailored = json.loads(tailored_json)
         except json.JSONDecodeError as e:
             print(f"[Renderer] Invalid tailored_resume JSON: {e}")
+            return None
+
+        # Early exit for rejected resumes (empty dict from analyzer)
+        if not tailored:
+            print(f"[Renderer] Skipping job {job_id}: tailored resume was rejected by analyzer")
             return None
 
         # Validate structure before rendering
@@ -150,32 +161,43 @@ class ResumeRenderer:
 
         # Build template context
         context = self._build_context(tailored, job)
+        if context is None:
+            return None
 
         # Render HTML
         template_name = self.config.get('resume', {}).get('template', 'base_template.html')
         template_name = Path(template_name).name  # Extract filename only
 
+        from jinja2 import TemplateNotFound
         try:
             template = self.jinja_env.get_template(template_name)
-        except Exception as e:
-            print(f"[Renderer] Template not found: {template_name}, using fallback")
-            fallback = self.config.get('resume', {}).get('fallback', 'resume_master.html')
-            fallback = Path(fallback).name
-            template = self.jinja_env.get_template(fallback)
+        except TemplateNotFound:
+            print(f"[Renderer] FATAL: Template not found: {template_name}")
+            return None
 
         html_content = template.render(**context)
 
         # v3.0: Post-render QA checks
         qa_issues = self._post_render_qa(html_content)
         if qa_issues:
-            print(f"[Renderer] Post-render QA warnings:")
-            for issue in qa_issues:
-                print(f"  [QA] {issue}")
+            # Structured QA: each issue is (message, is_blocking)
+            blocking_qa = [msg for msg, is_blocking in qa_issues if is_blocking]
+            non_blocking_qa = [msg for msg, is_blocking in qa_issues if not is_blocking]
+            if non_blocking_qa:
+                print(f"[Renderer] Post-render QA warnings:")
+                for issue in non_blocking_qa:
+                    print(f"  [QA] {issue}")
+            if blocking_qa:
+                print(f"[Renderer] Post-render QA BLOCKING:")
+                for issue in blocking_qa:
+                    print(f"  [QA BLOCK] {issue}")
+                return None
 
         # Generate output paths
-        company_safe = self._safe_filename(job.get('company', 'unknown')[:20])
+        company_safe = self._safe_filename(job.get('company', 'unknown'))[:20].rstrip('_')
+        job_id_short = job.get('id', 'unknown')[:8]
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        base_name = f"Fei_Huang_{company_safe}_{timestamp}"
+        base_name = f"Fei_Huang_{company_safe}_{job_id_short}_{timestamp}"
 
         html_path = self.output_dir / f"{base_name}.html"
         pdf_path = self.output_dir / f"{base_name}.pdf"
@@ -188,29 +210,25 @@ class ResumeRenderer:
         pdf_success = self._html_to_pdf(html_path, pdf_path)
 
         if pdf_success:
-            # Save to database
-            resume_record = Resume(
-                job_id=job_id,
-                role_type=self._detect_role_type(job),
-                template_version="ai_v1",
-                html_path=str(html_path),
-                pdf_path=str(pdf_path)
-            )
-            self.db.save_resume(resume_record)
-
             print(f"  -> HTML: {html_path.name}")
             print(f"  -> PDF:  {pdf_path.name}")
-
-            return {
-                'html_path': str(html_path),
-                'pdf_path': str(pdf_path)
-            }
         else:
             print(f"  -> HTML: {html_path.name} (PDF generation failed)")
-            return {
-                'html_path': str(html_path),
-                'pdf_path': None
-            }
+
+        # Save to database (allows retry of PDF generation on subsequent runs if pdf_path is empty)
+        resume_record = Resume(
+            job_id=job_id,
+            role_type=self._detect_role_type(job),
+            template_version="ai_v1",
+            html_path=str(html_path),
+            pdf_path=str(pdf_path) if pdf_success else ''
+        )
+        self.db.save_resume(resume_record)
+
+        return {
+            'html_path': str(html_path),
+            'pdf_path': str(pdf_path) if pdf_success else None
+        }
 
     def _build_context(self, tailored: Dict, job: Dict) -> Dict:
         """构建完整的模板上下文"""
@@ -218,11 +236,14 @@ class ResumeRenderer:
 
         # Bio - optional (null means omit)
         bio = tailored.get('bio')
-        if bio:
+        if bio and isinstance(bio, str):
             company = job.get('company', 'the company')
             bio = bio.replace('[Company]', company).replace('{company}', company)
             context['bio'] = bio
         else:
+            if bio and not isinstance(bio, str):
+                print(f"  [ERROR] Bio is {type(bio).__name__}, expected string — bio assembly failed upstream")
+                return None
             context['bio'] = ''
 
         # Experiences
@@ -237,6 +258,8 @@ class ResumeRenderer:
         skills = tailored.get('skills', [])
         skills = [s for s in skills if s.get('category', '').lower() not in ('certifications', 'certification')]
         skills = self._dedup_skills(skills)
+        if len(skills) < 3:
+            print(f"  [WARN] Only {len(skills)} skill categories after dedup (min 3)")
         context['skills'] = skills
 
         return context
@@ -245,7 +268,10 @@ class ResumeRenderer:
         """Remove duplicate skills across categories, keeping first occurrence."""
         seen = set()
         for group in skills:
-            items = [s.strip() for s in group['skills_list'].split(',')]
+            skills_str = group.get('skills_list', '')
+            if not skills_str or not isinstance(skills_str, str):
+                continue
+            items = [s.strip() for s in skills_str.split(',')]
             unique = []
             for item in items:
                 base = re.sub(r'\s*\(.*?\)', '', item).strip().lower()
@@ -253,7 +279,7 @@ class ResumeRenderer:
                     seen.add(base)
                     unique.append(item)
             group['skills_list'] = ', '.join(unique)
-        return [g for g in skills if g['skills_list'].strip()]
+        return [g for g in skills if isinstance(g.get('skills_list'), str) and g['skills_list'].strip()]
 
     def _validate_tailored_structure(self, tailored: Dict) -> tuple:
         """Validate AI-generated tailored resume JSON structure.
@@ -294,6 +320,8 @@ class ResumeRenderer:
                     continue
                 if not proj.get('name'):
                     errors.append(f"Project {i} missing 'name'")
+                if not proj.get('date'):
+                    errors.append(f"Project {i} missing 'date'")
                 if not isinstance(proj.get('bullets'), list):
                     errors.append(f"Project {i} missing or invalid 'bullets'")
 
@@ -314,19 +342,22 @@ class ResumeRenderer:
         return len(errors) == 0, errors
 
     def _post_render_qa(self, html_content: str) -> list:
-        """Post-render quality assurance checks on generated HTML."""
+        """Post-render quality assurance checks on generated HTML.
+
+        Returns list of (message, is_blocking) tuples.
+        """
         issues = []
 
         # Check for inconsistent blog URLs
         blog_urls = re.findall(r'https?://[^"<>\s]+(?:substack|feithink|github\.io/FeiThink)[^"<>\s]*', html_content)
         unique_urls = set(blog_urls)
         if len(unique_urls) > 1:
-            issues.append(f"Inconsistent blog URLs found: {unique_urls}")
+            issues.append((f"Inconsistent blog URLs found: {unique_urls}", False))
 
         # Check certification appears at most 2 times
         cert_count = html_content.lower().count('databricks certified')
         if cert_count > 2:
-            issues.append(f"Certification mentioned {cert_count} times (max 2)")
+            issues.append((f"Certification mentioned {cert_count} times (max 2)", False))
 
         # Estimate page count (rough: ~3000 chars per page for A4 with this template)
         text_only = re.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=re.DOTALL)
@@ -335,18 +366,19 @@ class ResumeRenderer:
         text_only = re.sub(r'\s+', ' ', text_only).strip()  # collapse whitespace
         est_pages = len(text_only) / 3000
         if est_pages < 0.8:
-            issues.append(f"Resume may be too short (~{est_pages:.1f} pages)")
+            issues.append((f"Resume may be too short (~{est_pages:.1f} pages)", False))
         elif est_pages > 2.5:
-            issues.append(f"Resume may be too long (~{est_pages:.1f} pages)")
+            issues.append((f"Resume may be too long (~{est_pages:.1f} pages)", True))
 
         # Check for empty bullets
         empty_bullets = re.findall(r'<li>\s*</li>', html_content)
         if empty_bullets:
-            issues.append(f"Found {len(empty_bullets)} empty bullet(s) <li></li>")
+            issues.append((f"Found {len(empty_bullets)} empty bullet(s) <li></li>", False))
 
         # Check for double HTML escaping
-        if '&amp;amp;' in html_content or '&amp;lt;' in html_content:
-            issues.append("Double HTML escaping detected (e.g., &amp;amp;)")
+        double_escape_patterns = ['&amp;amp;', '&amp;lt;', '&amp;gt;', '&amp;quot;', '&amp;#']
+        if any(p in html_content for p in double_escape_patterns):
+            issues.append(("Double HTML escaping detected", False))
 
         return issues
 
@@ -364,7 +396,7 @@ class ResumeRenderer:
         """根据职位标题检测角色类型"""
         title = job.get('title', '').lower()
 
-        if any(kw in title for kw in ['ml', 'machine learning', 'ai ', 'deep learning']):
+        if any(kw in title for kw in ['ml', 'machine learning', 'deep learning']) or re.search(r'\bai\b', title):
             return 'ml_engineer'
         elif any(kw in title for kw in ['data engineer', 'pipeline', 'etl']):
             return 'data_engineer'
@@ -390,30 +422,35 @@ class ResumeRenderer:
 
             with sync_playwright() as p:
                 browser = p.chromium.launch()
-                page = browser.new_page()
+                try:
+                    page = browser.new_page()
 
-                # Load HTML file
-                page.goto(f'file://{html_path.absolute()}')
+                    # Load HTML file
+                    page.goto(html_path.absolute().as_uri())
 
-                # Generate PDF
-                page.pdf(
-                    path=str(pdf_path),
-                    format=pdf_config.get('format', 'A4'),
-                    margin={
-                        'top': margin.get('top', '0.55in'),
-                        'right': margin.get('right', '0.55in'),
-                        'bottom': margin.get('bottom', '0.55in'),
-                        'left': margin.get('left', '0.55in'),
-                    },
-                    print_background=pdf_config.get('print_background', True)
-                )
-
-                browser.close()
+                    # Generate PDF
+                    page.pdf(
+                        path=str(pdf_path),
+                        format=pdf_config.get('format', 'A4'),
+                        margin={
+                            'top': margin.get('top', '0.55in'),
+                            'right': margin.get('right', '0.55in'),
+                            'bottom': margin.get('bottom', '0.55in'),
+                            'left': margin.get('left', '0.55in'),
+                        },
+                        print_background=pdf_config.get('print_background', True)
+                    )
+                finally:
+                    browser.close()
 
             return True
 
         except Exception as e:
-            print(f"  [ERROR] PDF generation failed: {e}")
+            err_str = str(e)
+            if 'Executable doesn\'t exist' in err_str or 'browserType.launch' in err_str:
+                print(f"  [ERROR] Chromium not installed. Run: playwright install chromium")
+            else:
+                print(f"  [ERROR] PDF generation failed: {e}")
             return False
 
     def render_batch(self, min_ai_score: float = None, limit: int = 50) -> int:

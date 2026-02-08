@@ -575,6 +575,7 @@ title_options:
 
 bio_constraints:
   max_years_claim: 6
+  min_years_claim: 4
   years_claim_scope: "working with data systems"
   banned_phrases:
     - "deep expertise"
@@ -643,4 +644,4 @@ bio_builder:
       text: "Eager to bring these skills to {company}."
     seeking_impact:
       text: "Looking forward to delivering data-driven impact at {company}."
-    null: null
+    # closer_id: null means no closer (handled in code, no YAML entry needed)
