@@ -42,6 +42,11 @@ from pathlib import Path
 from typing import List, Dict, Optional, Set
 from urllib.parse import urlencode
 
+# Fix Windows console encoding — emoji/CJK in job titles would crash print()
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, 'reconfigure') and getattr(_stream, 'encoding', 'utf-8').lower() not in ('utf-8', 'utf8'):
+        _stream.reconfigure(errors='replace')
+
 import yaml
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 
@@ -90,7 +95,7 @@ class SearchConfig:
             "defaults": {
                 "location": "Netherlands",
                 "date_posted": "r86400",
-                "workplace_type": "2,3",
+                "workplace_type": "1,3",
                 "sort_by": "DD",
                 "max_jobs": 50
             },
@@ -478,51 +483,48 @@ class LinkedInScraperV6:
         if not found:
             print("  [!] Job list not found, continuing...")
 
-        return await self._extract_jobs(max_jobs)
+        return await self._extract_jobs(max_jobs, base_url=url)
 
     async def _wait_for_jobs_list(self, timeout: int = 15000):
-        """Wait for job list"""
-        print("  -> Waiting for job list...")
-        selectors = [
-            ".jobs-search-results__list-item",
-            "li[data-occludable-job-id]",
-            ".job-card-container",
-            ".scaffold-layout__list-container",
-        ]
-        for selector in selectors:
-            try:
-                await self.page.wait_for_selector(selector, timeout=timeout // len(selectors))
-                print(f"  [OK] Found job list ({selector})")
+        """Wait for job cards to appear on the page"""
+        elapsed = 0
+        while elapsed < timeout:
+            cards = await self._get_job_cards()
+            if cards:
+                print(f"  [OK] Found {len(cards)} job cards")
                 return True
-            except Exception:
-                continue
-        print("  [!] Standard job list selector not found")
+            await asyncio.sleep(1)
+            elapsed += 1000
+        print("  [!] No job cards found within timeout")
         return False
 
-    async def _extract_jobs(self, max_jobs: int) -> List[Dict]:
-        """Extract jobs"""
+    async def _extract_jobs(self, max_jobs: int, base_url: str = "") -> List[Dict]:
+        """Extract jobs across all pages (LinkedIn paginates ~25 per page)"""
         jobs = []
         seen = set()
-        no_new_count = 0
+        page = 1
+        max_pages = 20  # safety limit
 
         print(f"  -> Starting job extraction (max {max_jobs})...")
 
-        for scroll_round in range(15):
+        while page <= max_pages and len(jobs) < max_jobs:
+            # Get all card elements on current page
             cards = await self._get_job_cards()
-
             if not cards:
-                print(f"    Round {scroll_round + 1}: No job cards found")
-                no_new_count += 1
-                if no_new_count >= 3:
-                    print("  -> No cards for 3 rounds, stopping")
-                    break
-                await self._scroll_and_wait()
-                continue
+                print(f"    Page {page}: no cards found")
+                break
 
-            new_count = 0
+            # Scroll each card into viewport to un-occlude its content
+            page_new = 0
             for card in cards:
                 if len(jobs) >= max_jobs:
                     break
+
+                try:
+                    await card.scroll_into_view_if_needed(timeout=2000)
+                    await asyncio.sleep(0.15)
+                except Exception:
+                    pass
 
                 job = await self._parse_card(card)
                 if job:
@@ -530,26 +532,111 @@ class LinkedInScraperV6:
                     if key not in seen:
                         seen.add(key)
                         jobs.append(job)
-                        new_count += 1
+                        page_new += 1
                         print(f"    [{len(jobs)}] {job['title'][:35]} @ {job['company'][:20]}")
 
-            print(f"    Round {scroll_round + 1}: {len(cards)} cards, {new_count} new")
-
-            if new_count == 0:
-                no_new_count += 1
-                if no_new_count >= 3:
-                    print("  -> No new jobs for 3 rounds, stopping scroll")
-                    break
-            else:
-                no_new_count = 0
+            print(f"    Page {page}: {page_new} jobs extracted (total: {len(jobs)})")
 
             if len(jobs) >= max_jobs:
                 break
 
-            await self._scroll_and_wait()
+            # If this page yielded 0 new jobs, no point continuing
+            if page_new == 0:
+                print(f"  -> Page {page} had 0 new jobs, stopping pagination")
+                break
 
-        print(f"  [OK] Extracted {len(jobs)} jobs this query")
+            # Try to go to next page
+            has_next = await self._goto_next_page(page, base_url)
+            if not has_next:
+                print(f"  -> No more pages after page {page}")
+                break
+
+            page += 1
+            await asyncio.sleep(3)
+
+            # Wait for new page's job list to load
+            await self._wait_for_jobs_list(timeout=10000)
+            await asyncio.sleep(2)
+
+            # Scroll to top for fresh extraction
+            await self._scroll_job_list_to_top()
+
+        print(f"  [OK] Extracted {len(jobs)} jobs across {page} page(s)")
         return jobs
+
+    async def _goto_next_page(self, current_page: int, base_url: str = "") -> bool:
+        """Navigate to the next page of results. Returns True if successful."""
+        next_page = current_page + 1
+        print(f"  -> Attempting pagination to page {next_page}...")
+
+        # Strategy 1: Click button with specific page number aria-label
+        try:
+            for label_pattern in [
+                f'button[aria-label="Page {next_page}"]',
+                f'li[data-test-pagination-page-btn="{next_page}"] button',
+            ]:
+                btn = await self.page.query_selector(label_pattern)
+                if btn and await btn.is_visible():
+                    await btn.click()
+                    print(f"  [OK] Clicked page {next_page} button (aria-label)")
+                    return True
+        except Exception as e:
+            print(f"  [WARN] Strategy 1 (aria-label) error: {e}")
+
+        # Strategy 2: Find pagination container buttons by page number text
+        try:
+            for sel in [
+                ".jobs-search-pagination",
+                ".artdeco-pagination",
+                "ul.artdeco-pagination__pages",
+            ]:
+                container = await self.page.query_selector(sel)
+                if not container:
+                    continue
+                buttons = await container.query_selector_all("button")
+                for btn in buttons:
+                    text = (await btn.inner_text()).strip()
+                    if text == str(next_page):
+                        await btn.click()
+                        print(f"  [OK] Clicked page {next_page} button (text match in {sel})")
+                        return True
+        except Exception as e:
+            print(f"  [WARN] Strategy 2 (text match) error: {e}")
+
+        # Strategy 3: "Next" / arrow button
+        try:
+            for sel in [
+                'button[aria-label="Next"]',
+                'button[aria-label="View next page"]',
+                '.artdeco-pagination__button--next',
+            ]:
+                btn = await self.page.query_selector(sel)
+                if btn and await btn.is_visible():
+                    disabled = await btn.get_attribute("disabled")
+                    if not disabled:
+                        await btn.click()
+                        print(f"  [OK] Clicked 'Next' button ({sel})")
+                        return True
+        except Exception as e:
+            print(f"  [WARN] Strategy 3 (Next button) error: {e}")
+
+        # Strategy 4: URL-based navigation (most reliable fallback)
+        if base_url:
+            start = (next_page - 1) * 25
+            if '&start=' in base_url or '?start=' in base_url:
+                paginated_url = re.sub(r'([?&])start=\d+', f'\\1start={start}', base_url)
+            else:
+                paginated_url = f"{base_url}&start={start}"
+            print(f"  -> Falling back to URL pagination (start={start})")
+            if await self._safe_goto(paginated_url, timeout=30000):
+                print(f"  [OK] Navigated to page {next_page} via URL")
+                return True
+            else:
+                print(f"  [FAIL] URL navigation failed")
+                return False
+
+        print(f"  [WARN] All pagination strategies failed for page {next_page}")
+        return False
 
     async def fetch_job_descriptions(self, jobs: List[Dict]) -> List[Dict]:
         """Fetch job descriptions"""
@@ -774,10 +861,21 @@ class LinkedInScraperV6:
                 continue
         return ""
 
-    async def _scroll_and_wait(self):
-        """Scroll and wait"""
-        await self.page.evaluate("window.scrollBy(0, 600)")
-        await asyncio.sleep(1.5)
+    async def _scroll_job_list_to_top(self):
+        """Scroll back to top (for fresh extraction after page transition)"""
+        await self.page.evaluate("""
+            (() => {
+                const container = document.querySelector('.jobs-search-results-list')
+                    || document.querySelector('.scaffold-layout__list')
+                    || document.querySelector('.jobs-search__results-list');
+                if (container && container.scrollHeight > container.clientHeight + 10) {
+                    container.scrollTop = 0;
+                } else {
+                    window.scrollTo(0, 0);
+                }
+            })()
+        """)
+        await asyncio.sleep(0.5)
 
     def _filter_blacklist(self, jobs: List[Dict]) -> List[Dict]:
         """Filter blacklist companies and titles"""
