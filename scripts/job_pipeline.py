@@ -951,6 +951,8 @@ class JobPipeline:
                     if user_input == 'y':
                         generated = self.generate_resumes(min_ai_score=ai_score_threshold, limit=limit)
                         print(f"Resumes generated: {generated}")
+                        # Also generate cover letters
+                        self.generate_cover_letters_batch(min_ai_score=ai_score_threshold, limit=limit)
 
         print("\n" + "=" * 70)
         self.show_stats()
@@ -1052,6 +1054,7 @@ def main():
                                      model=args.model)
         elif args.generate:
             pipeline.generate_resumes(min_ai_score=args.min_score, limit=args.limit)
+            pipeline.generate_cover_letters_batch(min_ai_score=args.min_score, limit=args.limit)
         elif args.cover_letter:
             pipeline.generate_cover_letter(args.cover_letter,
                                            custom_requirements=args.requirements,
