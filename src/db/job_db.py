@@ -665,10 +665,10 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_jobs_needing_analysis(self, min_rule_score: float = 3.0, limit: int = 50) -> List[Dict]:
+    def get_jobs_needing_analysis(self, min_rule_score: float = 3.0, limit: int = None) -> List[Dict]:
         """获取通过筛选、达到规则评分阈值、但未经 AI 分析的职位"""
         with self._get_conn() as conn:
-            cursor = conn.execute("""
+            query = """
                 SELECT j.*, s.score as rule_score, s.recommendation as rule_recommendation
                 FROM jobs j
                 JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
@@ -676,14 +676,18 @@ class JobDatabase:
                 LEFT JOIN job_analysis a ON j.id = a.job_id
                 WHERE a.id IS NULL
                 ORDER BY s.score DESC
-                LIMIT ?
-            """, (min_rule_score, limit))
+            """
+            params = [min_rule_score]
+            if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+            cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
-    def get_analyzed_jobs_for_resume(self, min_ai_score: float = 5.0, limit: int = 50) -> List[Dict]:
+    def get_analyzed_jobs_for_resume(self, min_ai_score: float = 5.0, limit: int = None) -> List[Dict]:
         """获取 AI 评分达标但未生成简历的职位 (or PDF generation previously failed)"""
         with self._get_conn() as conn:
-            cursor = conn.execute("""
+            query = """
                 SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
                        a.tailored_resume, a.reasoning
                 FROM jobs j
@@ -693,8 +697,12 @@ class JobDatabase:
                   AND a.tailored_resume IS NOT NULL
                   AND a.tailored_resume != '{}'
                 ORDER BY a.ai_score DESC
-                LIMIT ?
-            """, (min_ai_score, limit))
+            """
+            params = [min_ai_score]
+            if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+            cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
     def clear_analyses(self, model: str = None) -> int:
