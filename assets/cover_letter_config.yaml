@@ -1,0 +1,46 @@
+# =============================================================================
+# Cover Letter Configuration
+# =============================================================================
+# Narrative components and tone rules for cover letter generation.
+# AI picks from these whitelists; assembler validates against them.
+# =============================================================================
+
+narrative_angles:
+  builder_to_scaler: "From building to scaling"
+  domain_expert: "Deep domain expertise"
+  cross_functional: "Unique cross-domain blend"
+  growth_trajectory: "Career trajectory alignment"
+  problem_solver: "Proven problem solver"
+
+opening_hooks:
+  company_mission: "Lead with something specific about the company"
+  role_alignment: "Lead with why this specific role fits"
+  industry_passion: "Lead with genuine interest in the domain"
+  shared_values: "Lead with alignment on values/approach"
+
+closer_types:
+  eager_company: "Express specific enthusiasm for this company"
+  seeking_impact: "Emphasize desire to create impact"
+  conversation: "Simple call-to-action for next steps"
+
+tone_guidelines:
+  - "Confident but not arrogant"
+  - "Specific, never generic"
+  - "Show, don't tell — back every claim with evidence_ids"
+  - "No filler phrases: passionate, hard-working, team player"
+  - "Do NOT repeat resume bullet text verbatim — paraphrase into narrative"
+  - "Company-specific statements must be derived from the job description"
+
+banned_phrases:
+  - "I am writing to apply for"
+  - "I believe I would be a great fit"
+  - "Thank you for your consideration"
+  - "Please find attached my resume"
+  - "I am confident that"
+  - "passionate about"
+  - "hard-working"
+  - "team player"
+
+length_guidance:
+  standard: "~300 words"
+  short: "~150 words"
