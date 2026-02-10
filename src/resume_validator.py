@@ -82,8 +82,8 @@ class ResumeValidator:
     def _load_config(self, lib_path: Path):
         """Load skill_tiers, title_options, bio_constraints, allowed categories from bullet_library.yaml."""
         if not lib_path.exists():
-            print(f"[CRITICAL] bullet_library.yaml not found at {lib_path} — ALL validation gates disabled!")
-            print(f"[CRITICAL] Resumes will pass without title, skill, or category checks.")
+            print(f"[CRITICAL] bullet_library.yaml not found at {lib_path} — ALL resumes will be REJECTED!")
+            print(f"[CRITICAL] Restore bullet_library.yaml to enable resume validation and generation.")
             self._skill_tiers = {}
             self._title_options = {}
             self._bio_constraints = {}
@@ -116,7 +116,7 @@ class ResumeValidator:
         jd_text = job.get('description', '') or ''
 
         # If bullet_library was not loaded, reject all resumes
-        if not getattr(self, '_library_loaded', True):
+        if not getattr(self, '_library_loaded', False):
             errors.append("bullet_library.yaml not found — cannot validate resume")
             return ValidationResult(passed=False, errors=errors)
 
@@ -225,17 +225,7 @@ class ResumeValidator:
             matched_key = None
             for key in company_titles:
                 key_norm = re.sub(r'[^a-z0-9]', '', key.lower())
-                # Require full match or that key fully contains company (or vice versa)
-                # with at least 3 chars overlap to avoid short-key false positives
                 if company_norm == key_norm:
-                    matched_key = key
-                    break
-                # Prefix match: require at least 4 chars overlap AND >= 60% of longer string
-                overlap_len = min(len(key_norm), len(company_norm))
-                max_len = max(len(key_norm), len(company_norm))
-                if overlap_len >= 4 and overlap_len / max_len >= 0.6 and (
-                    company_norm.startswith(key_norm) or key_norm.startswith(company_norm)
-                ):
                     matched_key = key
                     break
 

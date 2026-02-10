@@ -70,6 +70,9 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 BLOCKED_RESOURCES = ['image', 'media', 'font', 'stylesheet']
 BLOCKED_URL_PATTERNS = ['analytics', 'tracking', 'ads', 'beacon', 'pixel', 'telemetry', 'metrics']
 
+# LinkedIn returns this many jobs per page (used for URL-based pagination)
+JOBS_PER_PAGE = 25
+
 
 class SearchConfig:
     """Search configuration manager"""
@@ -184,21 +187,42 @@ class LinkedInScraperV6:
 
         if self.use_cdp:
             print(f"[Browser] Connecting to CDP: {self.cdp_url}")
+            # Quick port check before attempting CDP (avoids 10s timeout)
+            import socket
+            from urllib.parse import urlparse
+            parsed = urlparse(self.cdp_url)
+            host = parsed.hostname or "localhost"
+            port = parsed.port or 9222
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
             try:
-                self.browser = await self.playwright.chromium.connect_over_cdp(self.cdp_url, timeout=10000)
-                contexts = self.browser.contexts
-                if contexts:
-                    self.context = contexts[0]
-                    pages = self.context.pages
-                    self.page = pages[0] if pages else await self.context.new_page()
-                else:
-                    self.context = await self.browser.new_context()
-                    self.page = await self.context.new_page()
-                print("  [OK] CDP connected")
-            except Exception as e:
-                print(f"  [FAIL] CDP connection failed: {e}")
+                sock.connect((host, port))
+                sock.close()
+                cdp_reachable = True
+            except (ConnectionRefusedError, OSError):
+                sock.close()
+                cdp_reachable = False
+
+            if not cdp_reachable:
+                print(f"  [SKIP] CDP port {port} not reachable — no Chrome with --remote-debugging-port?")
                 print("  -> Falling back to built-in browser")
                 self.use_cdp = False
+            else:
+                try:
+                    self.browser = await self.playwright.chromium.connect_over_cdp(self.cdp_url, timeout=10000)
+                    contexts = self.browser.contexts
+                    if contexts:
+                        self.context = contexts[0]
+                        pages = self.context.pages
+                        self.page = pages[0] if pages else await self.context.new_page()
+                    else:
+                        self.context = await self.browser.new_context()
+                        self.page = await self.context.new_page()
+                    print("  [OK] CDP connected")
+                except Exception as e:
+                    print(f"  [FAIL] CDP connection failed: {e}")
+                    print("  -> Falling back to built-in browser")
+                    self.use_cdp = False
 
         if not self.use_cdp:
             self.browser = await self.playwright.chromium.launch(
@@ -263,11 +287,24 @@ class LinkedInScraperV6:
             if not isinstance(cookies, list) or len(cookies) == 0:
                 print("  [NO] Cookies file is empty or malformed (expected non-empty list)")
                 return await self._manual_login()
+            # Validate individual cookie objects (must have name, value, domain)
+            valid_cookies = []
+            for c in cookies:
+                if not isinstance(c, dict):
+                    continue
+                if not all(c.get(k) for k in ('name', 'value', 'domain')):
+                    continue
+                valid_cookies.append(c)
+            if not valid_cookies:
+                print("  [NO] No valid cookies found (each needs name, value, domain)")
+                return await self._manual_login()
+            if len(valid_cookies) < len(cookies):
+                print(f"  [WARN] Skipped {len(cookies) - len(valid_cookies)} malformed cookie(s)")
             # Verify session cookie exists (li_at is required for LinkedIn auth)
-            has_session = any(c.get('name') == 'li_at' for c in cookies if isinstance(c, dict))
+            has_session = any(c.get('name') == 'li_at' for c in valid_cookies)
             if not has_session:
                 print("  [WARN] No 'li_at' session cookie found — login may fail")
-            await self.context.add_cookies(cookies)
+            await self.context.add_cookies(valid_cookies)
 
             print("  -> Verifying login...")
             await self._safe_goto("https://www.linkedin.com/feed/", timeout=30000)
@@ -622,7 +659,7 @@ class LinkedInScraperV6:
 
         # Strategy 4: URL-based navigation (most reliable fallback)
         if base_url:
-            start = (next_page - 1) * 25
+            start = (next_page - 1) * JOBS_PER_PAGE
             if '&start=' in base_url or '?start=' in base_url:
                 paginated_url = re.sub(r'([?&])start=\d+', f'\\1start={start}', base_url)
             else:

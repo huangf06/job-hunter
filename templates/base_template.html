@@ -212,7 +212,7 @@ body {
             <span class="contact-divider">|</span>
             <a href="{{ github }}">{{ github_display }}</a>
             <span class="contact-divider">|</span>
-            <a href="{{ blog_url }}">{{ blog_display | default('huangf06.github.io/FeiThink/en/') }}</a>
+            <a href="{{ blog_url }}">{{ blog_display | default('feithink.substack.com') }}</a>
         </div>
     </header>
 
@@ -340,7 +340,7 @@ body {
             </div>
             <div class="skill-row">
                 <span class="skill-category">Blog:</span>
-                <span class="skill-items"><a href="https://huangf06.github.io/FeiThink/en/">huangf06.github.io/FeiThink/en/</a></span>
+                <span class="skill-items"><a href="{{ blog_url }}">{{ blog_display | default('feithink.substack.com') }}</a></span>
             </div>
         </div>
     </section>

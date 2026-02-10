@@ -496,6 +496,12 @@ skill_tiers:
     research: ["Experiment Design", "Experimental Design", "Statistical Testing",
                "Benchmarking", "Hyperparameter Tuning", "Bayesian Methods",
                "Calibration Analysis", "Uncertainty Quantification", "Technical Writing"]
+    quant_methods: ["Factor Modeling", "Fama-MacBeth Regression", "Backtesting",
+                    "Walk-Forward Validation", "Alpha Research",
+                    "Event-Driven Strategy", "Monte Carlo Simulation"]
+    risk_analytics: ["Options Pricing", "Black-Scholes", "Greeks Computation",
+                     "IV Solver", "Portfolio Risk Monitoring", "Position Sizing",
+                     "Drawdown Control", "Risk Limits"]
     nlp_genai: ["Hugging Face Transformers", "GPT-2", "LLM APIs", "LLM APIs (Claude)",
                 "Prompt Engineering", "Fine-Tuning", "XTTS v2", "Text Generation"]
     certifications: ["Databricks Certified Data Engineer Professional (2026)"]
