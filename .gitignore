@@ -35,6 +35,16 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+nul
+
+# Personal files
+materials/
+
+# Temp files
+_tmp_*
+
+# Claude Code local settings
+.claude/settings.local.json
 
 # Logs
 logs/
