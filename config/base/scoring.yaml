@@ -23,10 +23,10 @@ base_score:
 
 thresholds:
   # APPLY_NOW: 自动生成简历
-  apply_now: 7.0  # SYNC: also hardcoded in job_db.py views — update both if changed
+  apply_now: 7.0
 
   # APPLY: 生成简历，需要review
-  apply: 5.5  # SYNC: also hardcoded in job_db.py views — update both if changed
+  apply: 5.5
 
   # MAYBE: 值得看看
   maybe: 4.0

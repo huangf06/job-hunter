@@ -350,7 +350,9 @@ class AIAnalyzer:
     def _resolve_bullet_ids(self, tailored: Dict) -> tuple:
         """Resolve bullet IDs to verified text from library.
 
-        Returns (tailored_with_text, errors). Unknown IDs = hard error.
+        Returns (tailored_with_text, errors). Unknown IDs are skipped (not
+        included in resolved bullets) and reported as errors. Downstream
+        validator checks minimum bullet counts.
         Also accepts exact text matches for backward compatibility.
         """
         errors = []
@@ -637,21 +639,21 @@ class AIAnalyzer:
             # Parse JSON from response
             parsed = self._parse_response(text)
             if not parsed:
+                preview = text[:300].replace('\n', ' ')
                 print(f"  [WARN] Failed to parse AI response for {job_id}")
+                print(f"    Raw response preview: {preview}")
                 return None
 
             scoring = parsed.get('scoring') or {}
             tailored = parsed.get('tailored_resume') or {}
 
-            # Resolve bullet IDs to verified text (hard reject unknown IDs)
+            # Resolve bullet IDs to verified text (skip unknown, keep valid)
             tailored, bullet_errors = self._resolve_bullet_ids(tailored)
             rejection_reason = ''
             if bullet_errors:
                 for err in bullet_errors:
-                    print(f"    [BULLET ERROR] {err}")
-                print(f"    [REJECTED] {len(bullet_errors)} unknown bullet(s) — resume will not generate")
-                rejection_reason = f"REJECTED: {'; '.join(bullet_errors)}"
-                tailored = {}
+                    print(f"    [BULLET WARN] {err}")
+                print(f"    [WARN] {len(bullet_errors)} unknown bullet(s) skipped — validator will check minimums")
 
             # Assemble bio from structured spec (or pass through string/null)
             if tailored:

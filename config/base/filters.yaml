@@ -66,6 +66,7 @@ hard_reject_rules:
       - "artificial intelligence"
       - "python"
       - "quant"
+      - "quantitative"
       - "analytics"
       - "scientist"
       - "research"
@@ -73,6 +74,11 @@ hard_reject_rules:
       - "deep learning"
       - "nlp"
       - "llm"
+      - "mlops"
+      - "software"
+      - "backend"
+      - "developer"
+      - "engineer"
     # 标题包含以下任一关键词直接拒绝 (优先于上面的白名单)
     title_reject_patterns:
       - "\\bpolicy\\b"
@@ -80,7 +86,7 @@ hard_reject_rules:
       - "\\bproduct\\s*manager\\b"
       - "\\bsales\\b"
       - "\\brecruiter\\b"
-      - "\\bhr\\b"
+      - "(?<![/\\d])\\bhr\\b"
       - "\\blegal\\b"
       - "\\bfinance\\s*manager\\b"
       - "\\baccountant\\b"

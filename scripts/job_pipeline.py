@@ -987,7 +987,6 @@ def main():
                     applied_dir = submit_dir.parent / "_applied"
                     applied_dir.mkdir(parents=True, exist_ok=True)
                     dest = applied_dir / submit_dir.name
-                    import shutil
                     shutil.move(str(submit_dir), str(dest))
                     print(f"[Applied] {job_id}")
                     print(f"  -> Archived: _applied/{submit_dir.name}/")
