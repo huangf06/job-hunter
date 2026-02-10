@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ name }} - Cover Letter</title>
+    <style>
+:root {
+    --primary-color: #1a1a1a;
+    --secondary-color: #4a4a4a;
+    --accent-color: #2c5282;
+    --text-main: #1a1a1a;
+    --text-muted: #555555;
+    --link-color: #2c5282;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@page { size: A4; margin: 0.75in 0.75in 0.75in 0.75in; }
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: var(--text-main);
+    max-width: 8.27in;
+    margin: 0 auto;
+    padding: 0.75in;
+    background: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.header {
+    margin-bottom: 20pt;
+}
+
+.name {
+    font-size: 18pt;
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 0.5pt;
+    margin-bottom: 4pt;
+}
+
+.contact-info {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.contact-info a { color: var(--link-color); text-decoration: none; }
+
+.date-line {
+    margin-top: 20pt;
+    margin-bottom: 20pt;
+    font-size: 10.5pt;
+    color: var(--text-muted);
+}
+
+.greeting {
+    margin-bottom: 14pt;
+    font-size: 11pt;
+}
+
+.body-paragraph {
+    margin-bottom: 12pt;
+    text-align: justify;
+}
+
+.sign-off {
+    margin-top: 20pt;
+}
+
+.sign-off .closing {
+    margin-bottom: 24pt;
+}
+
+.sign-off .signature {
+    font-weight: bold;
+}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="name">{{ name }}</div>
+        <div class="contact-info">
+            {{ email }}
+            {% if phone %} &middot; {{ phone }}{% endif %}
+            {% if location %} &middot; {{ location }}{% endif %}
+            <br>
+            {% if linkedin_display %}<a href="{{ linkedin }}">{{ linkedin_display }}</a>{% endif %}
+            {% if github_display %} &middot; <a href="{{ github }}">{{ github_display }}</a>{% endif %}
+        </div>
+    </div>
+
+    <div class="date-line">{{ date }}</div>
+
+    <div class="greeting">Dear {{ greeting }},</div>
+
+    {% for paragraph in paragraphs %}
+    <div class="body-paragraph">{{ paragraph }}</div>
+    {% endfor %}
+
+    <div class="sign-off">
+        <div class="closing">Sincerely,</div>
+        <div class="signature">{{ name }}</div>
+    </div>
+</body>
+</html>
