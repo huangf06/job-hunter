@@ -106,6 +106,19 @@ class AnalysisResult:
     tokens_used: int = 0
 
 
+@dataclass
+class CoverLetter:
+    """Cover letter 记录"""
+    job_id: str
+    spec_json: str = ""
+    custom_requirements: str = ""
+    standard_text: str = ""
+    short_text: str = ""
+    html_path: str = ""
+    pdf_path: str = ""
+    tokens_used: int = 0
+
+
 class JobDatabase:
     """职位数据库操作类"""
 
@@ -225,6 +238,20 @@ class JobDatabase:
         analyzed_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
 
+    -- Cover letter 表
+    CREATE TABLE IF NOT EXISTS cover_letters (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id TEXT NOT NULL UNIQUE REFERENCES jobs(id),
+        spec_json TEXT,
+        custom_requirements TEXT,
+        standard_text TEXT,
+        short_text TEXT,
+        html_path TEXT,
+        pdf_path TEXT,
+        tokens_used INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+    );
+
     -- 索引
     CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company);
     CREATE INDEX IF NOT EXISTS idx_jobs_source ON jobs(source);
@@ -236,6 +263,7 @@ class JobDatabase:
     CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
     CREATE INDEX IF NOT EXISTS idx_job_analysis_score ON job_analysis(ai_score);
     CREATE INDEX IF NOT EXISTS idx_job_analysis_recommendation ON job_analysis(recommendation);
+    CREATE INDEX IF NOT EXISTS idx_cover_letters_job ON cover_letters(job_id);
     """
 
     # 视图定义 (template — thresholds filled from config at init time)
@@ -678,6 +706,49 @@ class JobDatabase:
             else:
                 cursor = conn.execute("DELETE FROM job_analysis")
             return cursor.rowcount
+
+    # ==================== Cover Letter 操作 ====================
+
+    def save_cover_letter(self, cl: CoverLetter):
+        """保存 cover letter 记录"""
+        with self._get_conn() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO cover_letters
+                (job_id, spec_json, custom_requirements, standard_text, short_text,
+                 html_path, pdf_path, tokens_used, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (cl.job_id, cl.spec_json, cl.custom_requirements,
+                  cl.standard_text, cl.short_text,
+                  cl.html_path, cl.pdf_path, cl.tokens_used,
+                  datetime.now().isoformat()))
+
+    def get_cover_letter(self, job_id: str) -> Optional[Dict]:
+        """获取 cover letter 记录"""
+        with self._get_conn() as conn:
+            cursor = conn.execute(
+                "SELECT * FROM cover_letters WHERE job_id = ?",
+                (job_id,)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def get_jobs_needing_cover_letter(self, min_ai_score: float = 5.0, limit: int = 50) -> List[Dict]:
+        """获取有 AI 分析+简历但无 cover letter 的职位"""
+        with self._get_conn() as conn:
+            cursor = conn.execute("""
+                SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
+                       a.tailored_resume, a.reasoning
+                FROM jobs j
+                JOIN job_analysis a ON j.id = a.job_id AND a.ai_score >= ?
+                JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
+                LEFT JOIN cover_letters cl ON j.id = cl.job_id
+                WHERE cl.id IS NULL
+                  AND a.tailored_resume IS NOT NULL
+                  AND a.tailored_resume != '{}'
+                ORDER BY a.ai_score DESC
+                LIMIT ?
+            """, (min_ai_score, limit))
+            return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Application 操作 (original) ====================
 
