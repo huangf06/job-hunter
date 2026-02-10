@@ -773,7 +773,7 @@ class JobPipeline:
 
     # ==================== AI Analysis & Resume Generation ====================
 
-    def ai_analyze_jobs(self, min_rule_score: float = None, limit: int = 50,
+    def ai_analyze_jobs(self, min_rule_score: float = None, limit: int = None,
                         model: str = None) -> int:
         """AI 分析通过预筛选的职位"""
         try:
@@ -793,7 +793,7 @@ class JobPipeline:
         analyzer = AIAnalyzer(model_override=model)
         return analyzer.analyze_batch(min_rule_score=min_rule_score, limit=limit)
 
-    def generate_resumes(self, min_ai_score: float = None, limit: int = 50) -> int:
+    def generate_resumes(self, min_ai_score: float = None, limit: int = None) -> int:
         """为高分职位生成简历"""
         try:
             from src.resume_renderer import ResumeRenderer
@@ -990,8 +990,8 @@ def main():
                         help='Analyze a single job by ID')
     parser.add_argument('--min-score', type=float, default=None,
                         help='Minimum score threshold for AI commands')
-    parser.add_argument('--limit', type=int, default=50,
-                        help='Max jobs to process')
+    parser.add_argument('--limit', type=int, default=None,
+                        help='Max jobs to process (default: no limit)')
     parser.add_argument('--model', type=str, default=None,
                         choices=['opus', 'kimi'],
                         help='AI model: opus (Claude) or kimi')
@@ -1183,7 +1183,7 @@ def main():
     print()
     print("  Options:")
     print("  --min-score N      Minimum score threshold")
-    print("  --limit N          Max jobs to process (default 50)")
+    print("  --limit N          Max jobs to process (default: no limit)")
     print()
     print("  Legacy:")
     print("  --analyze FILE     Analyze JSON file")

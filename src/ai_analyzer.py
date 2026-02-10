@@ -754,7 +754,7 @@ class AIAnalyzer:
 
         return None
 
-    def analyze_batch(self, min_rule_score: float = None, limit: int = 50) -> int:
+    def analyze_batch(self, min_rule_score: float = None, limit: int = None) -> int:
         """批量分析职位"""
         threshold = min_rule_score
         if threshold is None:

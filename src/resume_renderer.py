@@ -483,7 +483,7 @@ class ResumeRenderer:
                 print(f"  [ERROR] PDF generation failed: {e}")
             return False
 
-    def render_batch(self, min_ai_score: float = None, limit: int = 50) -> int:
+    def render_batch(self, min_ai_score: float = None, limit: int = None) -> int:
         """批量渲染简历"""
         threshold = min_ai_score
         if threshold is None:
@@ -520,7 +520,7 @@ def main():
     parser.add_argument('--job', type=str, help='Render resume for a single job ID')
     parser.add_argument('--min-score', type=float, default=None,
                         help='Minimum AI score threshold')
-    parser.add_argument('--limit', type=int, default=50,
+    parser.add_argument('--limit', type=int, default=None,
                         help='Max resumes to render in batch')
 
     args = parser.parse_args()
