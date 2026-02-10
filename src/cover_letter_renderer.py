@@ -126,7 +126,11 @@ class CoverLetterRenderer:
         resume_record = self.db.get_resume(job_id)
         if resume_record and resume_record.get('submit_dir'):
             submit_dir = Path(resume_record['submit_dir'])
-            if not submit_dir.exists():
+            # Check if already archived to _applied/ (prefer archived location)
+            applied_dir = submit_dir.parent / "_applied" / submit_dir.name
+            if applied_dir.exists():
+                submit_dir = applied_dir
+            elif not submit_dir.exists():
                 submit_dir.mkdir(parents=True, exist_ok=True)
         else:
             # Fallback: create new submit folder
