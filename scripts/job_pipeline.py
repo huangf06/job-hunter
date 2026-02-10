@@ -811,6 +811,76 @@ class JobPipeline:
         renderer = ResumeRenderer()
         return renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
 
+    def generate_cover_letter(self, job_id: str, custom_requirements: str = None,
+                              force: bool = False):
+        """Generate + render cover letter for a single job"""
+        try:
+            from src.cover_letter_generator import CoverLetterGenerator
+        except ImportError:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "cover_letter_generator", PROJECT_ROOT / "src" / "cover_letter_generator.py"
+            )
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find cover_letter_generator.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            CoverLetterGenerator = module.CoverLetterGenerator
+
+        try:
+            from src.cover_letter_renderer import CoverLetterRenderer
+        except ImportError:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "cover_letter_renderer", PROJECT_ROOT / "src" / "cover_letter_renderer.py"
+            )
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find cover_letter_renderer.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            CoverLetterRenderer = module.CoverLetterRenderer
+
+        generator = CoverLetterGenerator()
+        result = generator.generate(job_id, custom_requirements=custom_requirements, force=force)
+        if result:
+            renderer = CoverLetterRenderer()
+            renderer.render(job_id)
+
+    def generate_cover_letters_batch(self, min_ai_score: float = None, limit: int = 50):
+        """Batch generate + render cover letters"""
+        try:
+            from src.cover_letter_generator import CoverLetterGenerator
+        except ImportError:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "cover_letter_generator", PROJECT_ROOT / "src" / "cover_letter_generator.py"
+            )
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find cover_letter_generator.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            CoverLetterGenerator = module.CoverLetterGenerator
+
+        try:
+            from src.cover_letter_renderer import CoverLetterRenderer
+        except ImportError:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "cover_letter_renderer", PROJECT_ROOT / "src" / "cover_letter_renderer.py"
+            )
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find cover_letter_renderer.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            CoverLetterRenderer = module.CoverLetterRenderer
+
+        generator = CoverLetterGenerator()
+        generated = generator.generate_batch(min_ai_score=min_ai_score, limit=limit)
+
+        if generated > 0:
+            renderer = CoverLetterRenderer()
+            renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
+
     def analyze_single_job(self, job_id: str, model: str = None):
         """分析单个职位"""
         try:
@@ -924,6 +994,16 @@ def main():
                         choices=['opus', 'kimi'],
                         help='AI model: opus (Claude) or kimi')
 
+    # Cover letter commands
+    parser.add_argument('--cover-letter', type=str, metavar='JOB_ID',
+                        help='Generate cover letter for a specific job')
+    parser.add_argument('--cover-letters', action='store_true',
+                        help='Batch generate cover letters for jobs with resumes')
+    parser.add_argument('--requirements', type=str, default=None,
+                        help='Custom requirements from application page (use with --cover-letter)')
+    parser.add_argument('--regen', action='store_true',
+                        help='Force regenerate (use with --cover-letter)')
+
     args = parser.parse_args()
 
     # 重新处理所有职位 (清除旧结果)
@@ -950,7 +1030,8 @@ def main():
     if args.process or args.import_only or args.filter or args.score or args.ready \
        or args.ai_analyze or args.generate or args.analyze_job \
        or args.stats or args.mark_applied or args.mark_all_applied \
-       or args.update_status or args.tracker:
+       or args.update_status or args.tracker \
+       or args.cover_letter or args.cover_letters:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
             sys.exit(1)
@@ -971,6 +1052,13 @@ def main():
                                      model=args.model)
         elif args.generate:
             pipeline.generate_resumes(min_ai_score=args.min_score, limit=args.limit)
+        elif args.cover_letter:
+            pipeline.generate_cover_letter(args.cover_letter,
+                                           custom_requirements=args.requirements,
+                                           force=args.regen)
+        elif args.cover_letters:
+            pipeline.generate_cover_letters_batch(min_ai_score=args.min_score,
+                                                   limit=args.limit)
         elif args.analyze_job:
             pipeline.analyze_single_job(args.analyze_job, model=args.model)
         elif args.stats:
@@ -1083,6 +1171,12 @@ def main():
     print("  --ai-analyze       AI analysis on scored jobs")
     print("  --generate         Generate resumes for AI high-score jobs")
     print("  --analyze-job ID   Analyze a single job")
+    print()
+    print("  Cover Letters:")
+    print("  --cover-letter ID  Generate cover letter for a job")
+    print("  --cover-letters    Batch generate cover letters")
+    print("  --requirements TXT Custom requirements (with --cover-letter)")
+    print("  --regen            Force regenerate (with --cover-letter)")
     print()
     print("  Options:")
     print("  --min-score N      Minimum score threshold")
