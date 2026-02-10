@@ -22,8 +22,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Generator
 
+import yaml
+
 # 数据库路径
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobs.db"
+CONFIG_DIR = Path(__file__).parent.parent.parent / "config"
 
 
 @dataclass
@@ -235,8 +238,8 @@ class JobDatabase:
     CREATE INDEX IF NOT EXISTS idx_job_analysis_recommendation ON job_analysis(recommendation);
     """
 
-    # 视图定义
-    VIEWS = """
+    # 视图定义 (template — thresholds filled from config at init time)
+    VIEWS_TEMPLATE = """
     -- 待处理职位视图
     CREATE VIEW IF NOT EXISTS v_pending_jobs AS
     SELECT
@@ -265,7 +268,7 @@ class JobDatabase:
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
-    JOIN job_analysis an ON j.id = an.job_id AND an.ai_score >= 7.0 AND an.tailored_resume != '{}'  -- SYNC: matches ai_config.yaml thresholds.ai_score_apply_now
+    JOIN job_analysis an ON j.id = an.job_id AND an.ai_score >= {ai_score_apply_now} AND an.tailored_resume != '{{}}'
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
     ORDER BY an.ai_score DESC;
@@ -275,7 +278,8 @@ class JobDatabase:
     SELECT
         j.id, j.title, j.company, j.location, j.url,
         an.ai_score as score, an.recommendation,
-        r.pdf_path as resume_path
+        r.pdf_path as resume_path,
+        r.submit_dir
     FROM jobs j
     JOIN job_analysis an ON j.id = an.job_id
     JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
@@ -288,9 +292,9 @@ class JobDatabase:
     SELECT
         COUNT(DISTINCT j.id) as total_scraped,
         COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
-        COUNT(DISTINCT CASE WHEN s.score >= 5.5 THEN j.id END) as scored_high,  -- SYNC: matches scoring.yaml thresholds.apply
+        COUNT(DISTINCT CASE WHEN s.score >= {rule_score_apply} THEN j.id END) as scored_high,
         COUNT(DISTINCT CASE WHEN an.id IS NOT NULL THEN j.id END) as ai_analyzed,
-        COUNT(DISTINCT CASE WHEN an.ai_score >= 5.0 THEN j.id END) as ai_scored_high,  -- SYNC: matches ai_config.yaml thresholds.ai_score_generate_resume
+        COUNT(DISTINCT CASE WHEN an.ai_score >= {ai_score_generate_resume} THEN j.id END) as ai_scored_high,
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
         COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
         COUNT(DISTINCT CASE WHEN a.status = 'interview' THEN j.id END) as interview,
@@ -326,12 +330,49 @@ class JobDatabase:
             conn.execute("DROP VIEW IF EXISTS v_high_score_jobs")
             conn.execute("DROP VIEW IF EXISTS v_ready_to_apply")
             conn.execute("DROP VIEW IF EXISTS v_funnel_stats")
-            for statement in self.VIEWS.split(';'):
+            views_sql = self._build_views_sql()
+            for statement in views_sql.split(';'):
                 statement = statement.strip()
                 if statement:
                     conn.execute(statement)
             # Migrations: add columns that may not exist in older databases
             self._migrate(conn)
+
+    @staticmethod
+    def _load_view_thresholds() -> Dict[str, float]:
+        """Load thresholds from config files for DB views.
+
+        Returns dict with keys: ai_score_apply_now, ai_score_generate_resume,
+        rule_score_apply. Falls back to hardcoded defaults if config unavailable.
+        """
+        defaults = {
+            'ai_score_apply_now': 7.0,
+            'ai_score_generate_resume': 5.0,
+            'rule_score_apply': 5.5,
+        }
+        try:
+            ai_config_path = CONFIG_DIR / "ai_config.yaml"
+            if ai_config_path.exists():
+                with open(ai_config_path, 'r', encoding='utf-8') as f:
+                    ai_cfg = yaml.safe_load(f) or {}
+                thresholds = ai_cfg.get('thresholds', {})
+                defaults['ai_score_apply_now'] = float(thresholds.get('ai_score_apply_now', defaults['ai_score_apply_now']))
+                defaults['ai_score_generate_resume'] = float(thresholds.get('ai_score_generate_resume', defaults['ai_score_generate_resume']))
+
+            scoring_path = CONFIG_DIR / "base" / "scoring.yaml"
+            if scoring_path.exists():
+                with open(scoring_path, 'r', encoding='utf-8') as f:
+                    scoring_cfg = yaml.safe_load(f) or {}
+                score_thresholds = scoring_cfg.get('thresholds', {})
+                defaults['rule_score_apply'] = float(score_thresholds.get('apply', defaults['rule_score_apply']))
+        except Exception:
+            pass  # Use defaults on any config error
+        return defaults
+
+    def _build_views_sql(self) -> str:
+        """Build views SQL with thresholds loaded from config."""
+        thresholds = self._load_view_thresholds()
+        return self.VIEWS_TEMPLATE.format(**thresholds)
 
     def _migrate(self, conn):
         """Add columns introduced after initial schema."""
@@ -698,6 +739,49 @@ class JobDatabase:
             cursor = conn.execute("SELECT * FROM v_ready_to_apply")
             return [dict(row) for row in cursor.fetchall()]
 
+    def get_application_tracker(self) -> Dict:
+        """获取申请跟踪数据：按状态分组，含天数统计"""
+        with self._get_conn() as conn:
+            # Summary counts
+            summary = conn.execute("""
+                SELECT status, COUNT(*) as count
+                FROM applications
+                GROUP BY status
+                ORDER BY CASE status
+                    WHEN 'applied' THEN 1
+                    WHEN 'interview' THEN 2
+                    WHEN 'offer' THEN 3
+                    WHEN 'rejected' THEN 4
+                    ELSE 5
+                END
+            """).fetchall()
+
+            # Per-status job details
+            rows = conn.execute("""
+                SELECT
+                    a.status, a.applied_at, a.response_at, a.interview_at,
+                    j.title, j.company, j.url,
+                    an.ai_score as score,
+                    CAST(JULIANDAY('now', 'localtime') - JULIANDAY(a.applied_at) AS INTEGER) as days_since
+                FROM applications a
+                JOIN jobs j ON a.job_id = j.id
+                LEFT JOIN job_analysis an ON a.job_id = an.job_id
+                ORDER BY a.status, an.ai_score DESC
+            """).fetchall()
+
+            by_status = {}
+            for row in rows:
+                row_dict = dict(row)
+                status = row_dict['status']
+                if status not in by_status:
+                    by_status[status] = []
+                by_status[status].append(row_dict)
+
+            return {
+                'summary': [dict(r) for r in summary],
+                'by_status': by_status
+            }
+
     # ==================== 统计和分析 ====================
 
     def get_funnel_stats(self) -> Dict:
@@ -748,13 +832,14 @@ class JobDatabase:
 
     def get_daily_stats(self, days: int = 7) -> List[Dict]:
         """获取每日统计"""
+        thresholds = self._load_view_thresholds()
         with self._get_conn() as conn:
             cursor = conn.execute("""
                 SELECT
                     DATE(j.scraped_at) as date,
                     COUNT(DISTINCT j.id) as scraped,
                     COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed,
-                    COUNT(DISTINCT CASE WHEN s.score >= 5.5 THEN j.id END) as high_score,  -- SYNC: matches scoring.yaml thresholds.apply
+                    COUNT(DISTINCT CASE WHEN s.score >= ? THEN j.id END) as high_score,
                     COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated
                 FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
@@ -763,7 +848,7 @@ class JobDatabase:
                 WHERE j.scraped_at >= DATE('now', 'localtime', ?)
                 GROUP BY DATE(j.scraped_at)
                 ORDER BY date DESC
-            """, (f'-{days} days',))
+            """, (thresholds['rule_score_apply'], f'-{days} days'))
             return [dict(row) for row in cursor.fetchall()]
 
     def get_daily_token_usage(self) -> int:
@@ -934,10 +1019,11 @@ def main():
 
     elif args.command == "stats":
         stats = db.get_funnel_stats()
+        view_thresholds = JobDatabase._load_view_thresholds()
         print("\n=== 漏斗统计 ===")
         print(f"总抓取: {stats.get('total_scraped', 0)}")
         print(f"通过筛选: {stats.get('passed_filter', 0)}")
-        print(f"高分 (>=5.5): {stats.get('scored_high', 0)}")
+        print(f"高分 (>={view_thresholds['rule_score_apply']}): {stats.get('scored_high', 0)}")
         print(f"已生成简历: {stats.get('resume_generated', 0)}")
         print(f"已申请: {stats.get('applied', 0)}")
         print(f"面试: {stats.get('interview', 0)}")

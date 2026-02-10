@@ -702,15 +702,74 @@ class JobPipeline:
             print(f"  {stat['reject_reason']}: {stat['count']} ({stat['percentage']}%)")
 
     def show_ready(self):
-        """Show jobs ready to apply"""
+        """Show jobs ready to apply and generate application checklist"""
         ready = self.db.get_ready_to_apply()
         if not ready:
             print("No jobs ready to apply")
             return
         print(f"\nReady to apply ({len(ready)}):")
         for i, job in enumerate(ready, 1):
-            print(f"{i:2}. [{job.get('score', 0):.1f}] {job['title'][:45]} @ {job['company'][:25]}")
-            print(f"    ID: {job['id']}")
+            submit_dir = job.get('submit_dir', '')
+            submit_pdf = str(Path(submit_dir) / "Fei_Huang_Resume.pdf") if submit_dir else ''
+            print(f"{i:2}. [{job.get('score', 0):.1f}] {job['title'][:50]} @ {job['company'][:25]}")
+            print(f"    URL:  {job.get('url', 'N/A')}")
+            if submit_pdf:
+                print(f"    Send: {submit_pdf}")
+            print(f"    Full: {job.get('resume_path', 'N/A')}")
+
+        # Generate HTML checklist file
+        checklist_path = PROJECT_ROOT / "ready_to_send" / "apply_checklist.html"
+        checklist_path.parent.mkdir(parents=True, exist_ok=True)
+        from datetime import datetime
+        from html import escape
+        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        rows_html = []
+        for i, job in enumerate(ready, 1):
+            score = job.get('score', 0)
+            rec = job.get('recommendation', '')
+            title = escape(job.get('title', ''))
+            company = escape(job.get('company', ''))
+            url = escape(job.get('url', ''))
+            pdf = job.get('resume_path', '')
+            submit_dir = job.get('submit_dir', '')
+            submit_pdf = str(Path(submit_dir) / "Fei_Huang_Resume.pdf") if submit_dir else ''
+
+            score_color = '#2e7d32' if score >= 7.0 else '#e65100' if score >= 6.0 else '#555'
+            rows_html.append(f"""<tr>
+  <td><input type="checkbox"></td>
+  <td><span style="color:{score_color};font-weight:bold">{score:.1f}</span> {escape(rec)}</td>
+  <td>{company}</td>
+  <td>{title}</td>
+  <td><a href="{url}" target="_blank">Open</a></td>
+  <td>{f'<a href="file:///{submit_pdf}" target="_blank">Submit PDF</a>' if submit_pdf else ''}</td>
+  <td style="font-size:0.8em;color:#888">{escape(pdf)}</td>
+</tr>""")
+
+        html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Application Checklist</title>
+<style>
+  body {{ font-family: -apple-system, 'Segoe UI', sans-serif; margin: 2em; background: #fafafa; }}
+  h1 {{ margin-bottom: 0.2em; }}
+  .meta {{ color: #666; margin-bottom: 1.5em; }}
+  table {{ border-collapse: collapse; width: 100%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+  th, td {{ padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }}
+  th {{ background: #f5f5f5; font-weight: 600; position: sticky; top: 0; }}
+  tr:hover {{ background: #f0f7ff; }}
+  input[type=checkbox] {{ transform: scale(1.3); cursor: pointer; }}
+  a {{ color: #1a73e8; text-decoration: none; }}
+  a:hover {{ text-decoration: underline; }}
+  tr:has(input:checked) {{ background: #e8f5e9; opacity: 0.6; }}
+</style></head><body>
+<h1>Application Checklist</h1>
+<p class="meta">Generated: {now} | Total: {len(ready)} jobs</p>
+<table>
+<tr><th></th><th>Score</th><th>Company</th><th>Title</th><th>Job Link</th><th>Resume</th><th>Tracking Path</th></tr>
+{"".join(rows_html)}
+</table></body></html>"""
+
+        checklist_path.write_text(html, encoding="utf-8")
+        print(f"\nChecklist saved: {checklist_path}")
 
     # ==================== AI Analysis & Resume Generation ====================
 
@@ -841,6 +900,12 @@ def main():
     parser.add_argument('--ready', action='store_true', help='Show ready to apply')
     parser.add_argument('--stats', action='store_true', help='Show stats')
     parser.add_argument('--mark-applied', type=str, help='Mark job as applied')
+    parser.add_argument('--mark-all-applied', action='store_true',
+                        help='Mark ALL ready-to-apply jobs as applied and archive ready_to_send/')
+    parser.add_argument('--update-status', nargs=2, metavar=('JOB_ID', 'STATUS'),
+                        help='Update application status (rejected/interview/offer)')
+    parser.add_argument('--tracker', action='store_true',
+                        help='Show application tracker (status breakdown)')
     parser.add_argument('--reprocess', action='store_true',
                         help='Clear old filter/score results and reprocess all jobs with new rules')
 
@@ -884,7 +949,8 @@ def main():
     # 新版数据库流水线
     if args.process or args.import_only or args.filter or args.score or args.ready \
        or args.ai_analyze or args.generate or args.analyze_job \
-       or args.stats or args.mark_applied:
+       or args.stats or args.mark_applied or args.mark_all_applied \
+       or args.update_status or args.tracker:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
             sys.exit(1)
@@ -929,6 +995,68 @@ def main():
                     print(f"[Applied] {job_id} (submit folder not found)")
             else:
                 print(f"[Applied] {job_id}")
+        elif args.mark_all_applied:
+            db = JobDatabase()
+            ready = db.get_ready_to_apply()
+            if not ready:
+                print("[Mark All] No ready-to-apply jobs to mark")
+            else:
+                now = datetime.now().isoformat()
+                archived = 0
+                for job in ready:
+                    job_id = job['id']
+                    db.update_application_status(job_id, "applied", applied_at=now)
+                    submit_dir = Path(job['submit_dir']) if job.get('submit_dir') else None
+                    if submit_dir and submit_dir.exists():
+                        applied_dir = submit_dir.parent / "_applied"
+                        applied_dir.mkdir(parents=True, exist_ok=True)
+                        dest = applied_dir / submit_dir.name
+                        shutil.move(str(submit_dir), str(dest))
+                        archived += 1
+                # Also move checklist
+                checklist = PROJECT_ROOT / "ready_to_send" / "apply_checklist.html"
+                if checklist.exists():
+                    applied_dir = checklist.parent / "_applied"
+                    applied_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(checklist), str(applied_dir / checklist.name))
+                print(f"[Mark All] {len(ready)} jobs marked as applied, {archived} folders archived")
+        elif args.update_status:
+            db = JobDatabase()
+            job_id, status = args.update_status
+            valid = {'rejected', 'interview', 'offer'}
+            if status not in valid:
+                print(f"Invalid status '{status}'. Must be one of: {', '.join(sorted(valid))}")
+                sys.exit(1)
+            kwargs = {}
+            if status == 'rejected':
+                kwargs['response_at'] = datetime.now().isoformat()
+            elif status == 'interview':
+                kwargs['interview_at'] = datetime.now().isoformat()
+            elif status == 'offer':
+                kwargs['response_at'] = datetime.now().isoformat()
+            db.update_application_status(job_id, status, **kwargs)
+            job = db.get_job(job_id)
+            name = f"{job['title'][:40]} @ {job['company']}" if job else job_id
+            print(f"[Status] {name} -> {status}")
+        elif args.tracker:
+            db = JobDatabase()
+            tracker = db.get_application_tracker()
+            # Summary
+            print("\n=== Application Tracker ===")
+            total = sum(s['count'] for s in tracker['summary'])
+            print(f"Total tracked: {total}")
+            for s in tracker['summary']:
+                print(f"  {s['status']:12s}: {s['count']}")
+            # Per-status details
+            for status, jobs in tracker['by_status'].items():
+                if not jobs:
+                    continue
+                print(f"\n--- {status.upper()} ({len(jobs)}) ---")
+                for j in jobs[:20]:
+                    days = j.get('days_since', '?')
+                    print(f"  [{j.get('score', 0):.1f}] {j['company']:25s} | {j['title'][:40]}  ({days}d ago)")
+                if len(jobs) > 20:
+                    print(f"  ... and {len(jobs) - 20} more")
         return
 
     # 旧版 JSON 分析 (已废弃)
@@ -948,6 +1076,9 @@ def main():
     print("  --stats            Show funnel stats")
     print("  --reprocess        Clear and reprocess all jobs")
     print("  --mark-applied ID  Mark job as applied")
+    print("  --mark-all-applied Mark ALL ready jobs as applied + archive")
+    print("  --update-status ID STATUS  Update status (rejected/interview/offer)")
+    print("  --tracker          Show application tracker")
     print()
     print("  AI-powered:")
     print("  --ai-analyze       AI analysis on scored jobs")
