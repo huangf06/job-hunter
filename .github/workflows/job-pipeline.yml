@@ -1,0 +1,93 @@
+name: Job Pipeline
+
+on:
+  schedule:
+    # Weekdays UTC 8:00 (NL time 9:00 CET / 10:00 CEST)
+    - cron: '0 8 * * 1-5'
+
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Search profile (ml_data / backend_data / quant / all)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ml_data
+          - backend_data
+          - quant
+      run_ai_analyze:
+        description: 'Run AI analysis after scoring'
+        required: false
+        default: true
+        type: boolean
+      ai_limit:
+        description: 'Max jobs to AI-analyze'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  scrape-and-process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+
+    steps:
+      # 1. Checkout
+      - uses: actions/checkout@v4
+
+      # 2. Python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      # 4. Write LinkedIn cookies from secret
+      - name: Write LinkedIn cookies
+        env:
+          COOKIES_JSON: ${{ secrets.LINKEDIN_COOKIES }}
+        run: |
+          mkdir -p config
+          printf '%s' "$COOKIES_JSON" > config/linkedin_cookies.json
+
+      # 5. Scrape LinkedIn jobs
+      - name: Scrape jobs
+        run: |
+          PROFILES="${{ github.event.inputs.profile || 'all' }}"
+
+          if [ "$PROFILES" = "all" ]; then
+            echo "=== Running all enabled profiles ==="
+            python scripts/linkedin_scraper_v6.py --headless --save-to-db --no-json
+          else
+            echo "=== Running profile: $PROFILES ==="
+            python scripts/linkedin_scraper_v6.py --profile "$PROFILES" --headless --save-to-db --no-json
+          fi
+
+      # 6. Process pipeline (import → filter → rule score)
+      - name: Process pipeline
+        run: python scripts/job_pipeline.py --process
+
+      # 7. AI analysis (optional)
+      - name: AI analyze
+        if: github.event.inputs.run_ai_analyze != 'false'
+        run: |
+          LIMIT="${{ github.event.inputs.ai_limit || '10' }}"
+          python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
+
+      # 8. Print stats
+      - name: Pipeline stats
+        if: always()
+        run: python scripts/job_pipeline.py --stats
