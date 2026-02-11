@@ -80,12 +80,14 @@ class ResumeRenderer:
             'github_display': self.candidate.get('github_display', 'github.com/huangf06'),
             'blog_url': self.candidate.get('blog_url', 'https://feithink.substack.com/'),
             'blog_display': self.candidate.get('blog_display', 'feithink.substack.com'),
+            'additional_blog_url': self.candidate.get('additional_blog_url', 'https://huangf06.github.io/FeiThink/en/'),
+            'additional_blog_display': self.candidate.get('additional_blog_display', 'huangf06.github.io/FeiThink'),
 
             # Education - Master
             'edu_master_school': master.get('school', 'Vrije Universiteit Amsterdam'),
             'edu_master_location': master.get('location', 'Amsterdam, Netherlands'),
             'edu_master_degree': master.get('degree', 'M.Sc. in Artificial Intelligence'),
-            'edu_master_date': master.get('date', 'Sep. 2023 -- Aug. 2025'),
+            'edu_master_date': master.get('date', 'Sep. 2023 - Aug. 2025'),
             'edu_master_gpa': master.get('gpa', ''),
             'edu_master_coursework': master.get('coursework', ''),
             'edu_master_thesis': master.get('thesis', ''),
@@ -94,7 +96,7 @@ class ResumeRenderer:
             'edu_bachelor_school': bachelor.get('school', 'Tsinghua University'),
             'edu_bachelor_location': bachelor.get('location', 'Beijing, China'),
             'edu_bachelor_degree': bachelor.get('degree', 'B.Eng. in Industrial Engineering'),
-            'edu_bachelor_date': bachelor.get('date', 'Sep. 2006 -- Jul. 2010'),
+            'edu_bachelor_date': bachelor.get('date', 'Sep. 2006 - Jul. 2010'),
             'edu_bachelor_school_note': bachelor.get('school_note', ''),
             'edu_bachelor_thesis': bachelor.get('thesis', ''),
 

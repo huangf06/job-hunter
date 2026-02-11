@@ -61,7 +61,7 @@ education:
     institution: "Vrije Universiteit Amsterdam"
     degree: "M.Sc. in Artificial Intelligence"
     location: "Amsterdam, Netherlands"
-    period: "Sep. 2023 -- Aug. 2025"
+    period: "Sep. 2023 - Aug. 2025"
     gpa: "8.2/10"
     # AI should pick 4-5 most relevant courses per job. All listed are 9.0+.
     selected_courses:
@@ -92,7 +92,7 @@ education:
     institution: "Tsinghua University"
     degree: "B.Eng. in Industrial Engineering"
     location: "Beijing, China"
-    period: "Sep. 2006 -- Jul. 2010"
+    period: "Sep. 2006 - Jul. 2010"
     ranking: "#1 in China, Top 20 globally"
     focus: ["Operations Research", "Optimization", "Applied Statistics"]
 
@@ -108,7 +108,7 @@ work_experience:
   glp_technology:
     company: "GLP Technology"
     location: "Shanghai, China"
-    period: "Jul. 2017 -- Aug. 2019"
+    period: "Jul. 2017 - Aug. 2019"
 
     titles:
       default: "Data Scientist & Team Lead"
@@ -142,7 +142,7 @@ work_experience:
   independent_investor:
     display_name: "Independent Investor"
     location: "Zhengzhou, China"
-    period: "Sep. 2019 -- Aug. 2023"
+    period: "Sep. 2019 - Aug. 2023"
 
     titles:
       minimal: "Independent Investor"
@@ -169,7 +169,7 @@ work_experience:
     company: "Baiquan Investment"
     company_type: "Quantitative hedge fund"
     location: "Beijing, China"
-    period: "Jul. 2015 -- Jun. 2017"
+    period: "Jul. 2015 - Jun. 2017"
 
     titles:
       default: "Quantitative Researcher"
@@ -203,7 +203,7 @@ work_experience:
     company: "Henan Energy"
     company_type: "State-owned enterprise (coal & chemical)"
     location: "Zhengzhou, China"
-    period: "Jul. 2010 -- Aug. 2013"
+    period: "Jul. 2010 - Aug. 2013"
 
     titles:
       default: "Business Supervisor"
@@ -230,7 +230,7 @@ work_experience:
   aoshen_business:
     company: "Aoshen Business"
     location: "China"
-    period: "Sep. 2014 -- Dec. 2014"
+    period: "Sep. 2014 - Dec. 2014"
 
     titles:
       default: "Data Analyst"
@@ -247,7 +247,7 @@ work_experience:
     company: "Ele.me"
     company_note: "(acquired by Alibaba)"
     location: "Shanghai, China"
-    period: "Sep. 2013 -- Jul. 2015"
+    period: "Sep. 2013 - Jul. 2015"
 
     titles:
       default: "Data Analyst"
@@ -275,7 +275,7 @@ projects:
   thesis_uq_rl:
     title: "Uncertainty Quantification Benchmark for Deep RL"
     institution: "VU Amsterdam"
-    period: "Feb. 2025 -- Aug. 2025"
+    period: "Feb. 2025 - Aug. 2025"
 
     verified_bullets:
 
@@ -294,7 +294,7 @@ projects:
   deribit_options:
     title: "Automated Crypto Options Trading System"
     institution: "Personal Project"
-    period: "Oct. 2025 -- Present"
+    period: "Oct. 2025 - Present"
 
     verified_bullets:
 
@@ -310,7 +310,7 @@ projects:
   nlp_projects:
     title: "NLP Course Projects"
     institution: "VU Amsterdam"
-    period: "Jan. 2024 -- Apr. 2024"
+    period: "Jan. 2024 - Apr. 2024"
 
     verified_bullets:
 
@@ -326,7 +326,7 @@ projects:
   expedia_recommendation:
     title: "Expedia Hotel Recommendation System"
     institution: "VU Amsterdam - Data Mining Course"
-    period: "Sep. 2024 -- Dec. 2024"
+    period: "Sep. 2024 - Dec. 2024"
 
     verified_bullets:
 
@@ -339,7 +339,7 @@ projects:
   ml4qs:
     title: "ML for Quantified Self: IMU Sensor Classification"
     institution: "VU Amsterdam"
-    period: "Sep. 2024 -- Dec. 2024"
+    period: "Sep. 2024 - Dec. 2024"
 
     verified_bullets:
 
@@ -397,7 +397,7 @@ projects:
   financial_data_lakehouse:
     title: "Financial Data Lakehouse (Databricks/Spark/AWS)"
     institution: "Personal Portfolio Project"
-    period: "Oct. 2025 -- Present"
+    period: "Oct. 2025 - Present"
 
     verified_bullets:
 
@@ -419,7 +419,7 @@ projects:
   lifeos:
     title: "LifeOS: Personal Productivity Platform"
     institution: "Personal Project"
-    period: "2025 -- Present"
+    period: "2025 - Present"
 
     verified_bullets:
 
@@ -432,7 +432,7 @@ projects:
   job_hunter_automation:
     title: "AI-Powered Job Application Pipeline"
     institution: "Personal Project"
-    period: "2025 -- Present"
+    period: "2025 - Present"
 
     verified_bullets:
 
