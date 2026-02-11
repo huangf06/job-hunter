@@ -225,11 +225,27 @@ class IncrementalScraper:
                     print("  [ERROR] CAPTCHA detected, aborting")
                     return []
                     
-                # 提取职位列表
-                job_cards = await self.page.query_selector_all('[data-job-id]')
+                # 提取职位列表 - 尝试多个选择器
+                job_cards = []
+                selectors = [
+                    ".jobs-search-results__list-item",
+                    "li[data-occludable-job-id]",
+                    ".job-card-container",
+                    ".scaffold-layout__list-item",
+                    "[data-job-id]",
+                ]
+                for selector in selectors:
+                    job_cards = await self.page.query_selector_all(selector)
+                    if job_cards:
+                        print(f"  [Selector] Using: {selector} ({len(job_cards)} cards)")
+                        break
                 
                 if not job_cards:
                     print(f"  [WARN] No job cards found on page {page_num}")
+                    # 调试：保存页面内容
+                    content = await self.page.content()
+                    print(f"  [DEBUG] Page content length: {len(content)}")
+                    print(f"  [DEBUG] Current URL: {self.page.url}")
                     return []
                     
                 for card in job_cards:
