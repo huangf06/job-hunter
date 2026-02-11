@@ -26,6 +26,13 @@ from typing import List, Dict, Optional, Any, Generator
 
 import yaml
 
+# Load .env if available (for local dev — CI uses env: blocks)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent.parent.parent / ".env", override=True)
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 # 数据库路径
