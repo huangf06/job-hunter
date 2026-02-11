@@ -217,13 +217,24 @@ class IncrementalScraper:
         
         for attempt in range(MAX_RETRIES):
             try:
-                await self.page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
-                await asyncio.sleep(3)
+                # 使用 networkidle 等待页面完全加载（LinkedIn是动态加载）
+                await self.page.goto(search_url, wait_until="networkidle", timeout=45000)
+                await asyncio.sleep(5)  # 额外等待动态内容渲染
                 
                 # 检查是否被拦截
-                if "captcha" in (await self.page.content()).lower():
+                page_content = await self.page.content()
+                if "captcha" in page_content.lower():
                     print("  [ERROR] CAPTCHA detected, aborting")
                     return []
+                
+                # 检查是否登录失效
+                if "linkedin.com/login" in self.page.url:
+                    print("  [ERROR] Login expired, redirect to login page")
+                    return []
+                    
+                # 调试：输出页面信息
+                print(f"  [DEBUG] Current URL: {self.page.url}")
+                print(f"  [DEBUG] Page content length: {len(page_content)}")
                     
                 # 提取职位列表 - 尝试多个选择器
                 job_cards = []
