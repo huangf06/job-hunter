@@ -54,12 +54,12 @@ python scripts/job_pipeline.py --filter        # 只筛选
 python scripts/job_pipeline.py --score         # 只规则评分
 ```
 
-### 3. AI 分析与简历生成 (新)
+### 3. AI 分析与简历生成
 ```bash
 # AI 分析高分职位 (调用 Claude Opus)
 python scripts/job_pipeline.py --ai-analyze
 
-# 为 AI 高分职位生成简历
+# 为 AI 高分职位生成简历 + Cover Letter
 python scripts/job_pipeline.py --generate
 
 # 分析单个职位
@@ -70,12 +70,18 @@ python scripts/job_pipeline.py --analyze-job JOB_ID
 - `--min-score N`: 最低分数阈值
 - `--limit N`: 最大处理数量 (默认 50)
 
-### 4. 查看状态
+### 4. 查看状态与申请跟踪
 ```bash
 python scripts/job_pipeline.py --stats         # 漏斗统计
 python scripts/job_pipeline.py --ready         # 待申请职位
 python scripts/job_pipeline.py --mark-applied JOB_ID  # 标记已申请
+python scripts/job_pipeline.py --tracker       # 申请状态看板
 ```
+
+### 5. CI/CD (GitHub Actions)
+流水线自动运行: `.github/workflows/job-pipeline.yml`
+- 定时触发: 每日自动爬取 + 处理 + AI 分析
+- 使用 Turso 云数据库，无需本地 DB
 
 ## 文件结构
 
@@ -93,7 +99,7 @@ job-hunter/
 │   ├── resume_validator.py         # 简历验证器 (v3.0)
 │   └── db/
 │       ├── __init__.py
-│       └── job_db.py               # SQLite 数据库模块
+│       └── job_db.py               # SQLite + Turso 云数据库模块
 │
 ├── config/
 │   ├── ai_config.yaml          # AI 配置 (模型、阈值、prompt)
@@ -104,14 +110,20 @@ job-hunter/
 │
 ├── templates/
 │   ├── base_template.html      # 主模板 (Jinja2)
+│   ├── cover_letter_template.html  # Cover Letter 模板
 │   └── resume_master.html      # 完整参考简历
 │
 ├── assets/
-│   └── bullet_library.yaml     # 已验证的经历库 (核心)
+│   ├── bullet_library.yaml     # 已验证的经历库 (核心)
+│   └── cover_letter_config.yaml    # Cover Letter 配置
 │
 ├── data/
-│   ├── jobs.db                 # SQLite 数据库
+│   ├── jobs.db                 # SQLite 数据库 (Turso embedded replica)
 │   └── inbox/                  # 待导入 JSON
+│
+├── .github/
+│   └── workflows/
+│       └── job-pipeline.yml    # CI/CD 自动化流水线
 │
 ├── output/                     # 生成的简历
 └── archive/                    # 归档的旧代码
@@ -119,7 +131,8 @@ job-hunter/
 
 ## 数据库结构
 
-SQLite 数据库 `data/jobs.db`:
+SQLite 本地数据库 + Turso 云同步 (embedded replica 模式)。
+设置 `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` 环境变量启用云同步。
 
 | 表名 | 用途 |
 |------|------|
@@ -128,6 +141,7 @@ SQLite 数据库 `data/jobs.db`:
 | `ai_scores` | 规则评分结果 |
 | `job_analysis` | AI 分析结果 + 定制简历 JSON |
 | `resumes` | 生成的简历记录 |
+| `cover_letters` | Cover Letter 记录 |
 | `applications` | 申请状态跟踪 |
 
 查看统计:
@@ -154,7 +168,7 @@ print(db.get_funnel_stats())
    python scripts/job_pipeline.py --ai-analyze --limit 10
    ```
 
-4. **生成简历**:
+4. **生成简历 + Cover Letter**:
    ```bash
    python scripts/job_pipeline.py --generate
    ```
@@ -183,8 +197,10 @@ print(db.get_funnel_stats())
 - LinkedIn cookies 在 `config/linkedin_cookies.json`
 - 数据文件 (*.db, *.json) 不提交到 git
 - AI 分析消耗 token，注意预算控制
-- 归档代码在 `archive/deprecated_v41/`
+- 归档代码在 `archive/`
 - Playwright PDF 需要: `playwright install chromium`
+- Turso 云同步: 设置 `.env` 中的 `TURSO_DATABASE_URL` 和 `TURSO_AUTH_TOKEN`
+- Windows 上 libsql embedded replica 有已知栈溢出 bug，如遇崩溃可取消 Turso 环境变量回退到本地 SQLite
 
 ## 归档内容 (v41 → v2.0)
 
