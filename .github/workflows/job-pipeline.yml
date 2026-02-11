@@ -23,9 +23,9 @@ on:
         default: true
         type: boolean
       ai_limit:
-        description: 'Max jobs to AI-analyze'
+        description: 'Max jobs to AI-analyze (empty = no limit)'
         required: false
-        default: '10'
+        default: ''
         type: string
 
 jobs:
@@ -84,8 +84,12 @@ jobs:
       - name: AI analyze
         if: github.event.inputs.run_ai_analyze != 'false'
         run: |
-          LIMIT="${{ github.event.inputs.ai_limit || '10' }}"
-          python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
+          LIMIT="${{ github.event.inputs.ai_limit }}"
+          if [ -n "$LIMIT" ]; then
+            python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
+          else
+            python scripts/job_pipeline.py --ai-analyze
+          fi
 
       # 8. Print stats
       - name: Pipeline stats
