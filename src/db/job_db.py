@@ -708,16 +708,20 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_unfiltered_jobs(self, limit: int = 100) -> List[Dict]:
+    def get_unfiltered_jobs(self, limit: int = None) -> List[Dict]:
         """获取未筛选的职位"""
         with self._get_conn() as conn:
-            cursor = conn.execute("""
+            query = """
                 SELECT j.* FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
                 WHERE f.id IS NULL
                 ORDER BY j.scraped_at DESC
-                LIMIT ?
-            """, (limit,))
+            """
+            params = []
+            if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+            cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Score 操作 ====================
@@ -743,17 +747,21 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_unscored_jobs(self, limit: int = 100) -> List[Dict]:
+    def get_unscored_jobs(self, limit: int = None) -> List[Dict]:
         """获取已通过筛选但未评分的职位"""
         with self._get_conn() as conn:
-            cursor = conn.execute("""
+            query = """
                 SELECT j.* FROM jobs j
                 JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
                 LEFT JOIN ai_scores s ON j.id = s.job_id
                 WHERE s.id IS NULL
                 ORDER BY j.scraped_at DESC
-                LIMIT ?
-            """, (limit,))
+            """
+            params = []
+            if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+            cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Resume 操作 ====================
@@ -808,7 +816,7 @@ class JobDatabase:
             return dict(row) if row else None
 
     def get_jobs_needing_analysis(self, min_rule_score: float = 3.0, limit: int = None) -> List[Dict]:
-        """获取通过筛选、达到规则评分阈值、但未经 AI 分析的职位"""
+        """获取通过筛选、达到规则评分阈值、但未经 AI 分析的职位 (排除已投递)"""
         with self._get_conn() as conn:
             query = """
                 SELECT j.*, s.score as rule_score, s.recommendation as rule_recommendation
@@ -816,7 +824,9 @@ class JobDatabase:
                 JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
                 JOIN ai_scores s ON j.id = s.job_id AND s.score >= ?
                 LEFT JOIN job_analysis a ON j.id = a.job_id
+                LEFT JOIN applications app ON j.id = app.job_id
                 WHERE a.id IS NULL
+                  AND app.job_id IS NULL
                 ORDER BY s.score DESC
             """
             params = [min_rule_score]
@@ -827,7 +837,7 @@ class JobDatabase:
             return [dict(row) for row in cursor.fetchall()]
 
     def get_analyzed_jobs_for_resume(self, min_ai_score: float = 5.0, limit: int = None) -> List[Dict]:
-        """获取 AI 评分达标但未生成简历的职位 (or PDF generation previously failed)"""
+        """获取 AI 评分达标但未生成简历的职位 (排除已投递; 含 PDF 生成失败重试)"""
         with self._get_conn() as conn:
             query = """
                 SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
@@ -835,9 +845,11 @@ class JobDatabase:
                 FROM jobs j
                 JOIN job_analysis a ON j.id = a.job_id AND a.ai_score >= ?
                 LEFT JOIN resumes r ON j.id = r.job_id
+                LEFT JOIN applications app ON j.id = app.job_id
                 WHERE (r.id IS NULL OR (r.pdf_path IS NULL OR r.pdf_path = ''))
                   AND a.tailored_resume IS NOT NULL
                   AND a.tailored_resume != '{}'
+                  AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
             params = [min_ai_score]
@@ -882,10 +894,10 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_jobs_needing_cover_letter(self, min_ai_score: float = 5.0, limit: int = 50) -> List[Dict]:
+    def get_jobs_needing_cover_letter(self, min_ai_score: float = 5.0, limit: int = None) -> List[Dict]:
         """获取有 AI 分析+简历但无 cover letter 的职位"""
         with self._get_conn() as conn:
-            cursor = conn.execute("""
+            query = """
                 SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
                        a.tailored_resume, a.reasoning
                 FROM jobs j
@@ -896,8 +908,12 @@ class JobDatabase:
                   AND a.tailored_resume IS NOT NULL
                   AND a.tailored_resume != '{}'
                 ORDER BY a.ai_score DESC
-                LIMIT ?
-            """, (min_ai_score, limit))
+            """
+            params = [min_ai_score]
+            if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+            cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Application 操作 (original) ====================
