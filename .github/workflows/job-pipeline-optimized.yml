@@ -53,7 +53,7 @@ jobs:
   # ==========================================
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 20  # 严格限制爬取时间
+    timeout-minutes: 30  # 爬取时间限制：30分钟（LinkedIn可能较慢）
     outputs:
       new_jobs_count: ${{ steps.scrape.outputs.new_jobs_count }}
       total_jobs_count: ${{ steps.scrape.outputs.total_jobs_count }}
@@ -90,14 +90,15 @@ jobs:
           fi
 
           echo "=== Starting incremental scrape: $PROFILE ==="
+          echo "Note: Using 24h time filter (LinkedIn limitation), limiting to 4 pages per profile"
           START_TIME=$(date +%s)
           
           # 使用优化后的增量爬取脚本
+          # --max-pages 4 = 每profile最多4页 (~100职位)
           python scripts/scraper_incremental.py \
             --profile "$PROFILE" \
             --headless \
-            --save-to-db \
-            --max-age-hours 4 \
+            --max-pages 4 \
             $FORCE_FLAG \
             --output stats.json
           

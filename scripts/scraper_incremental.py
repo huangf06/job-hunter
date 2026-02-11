@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-LinkedIn 增量爬取器 - 智能去重 + 快速更新
-============================================
+LinkedIn 增量爬取器 v3.1 - 修正版
+====================================
 
-核心优化：
-1. 数据库预检查：爬取前批量查询已有职位，避免重复抓取
-2. URL级去重：同一职位多个搜索词只抓一次JD
-3. 时间窗口：只抓取最近N小时的职位（默认4小时）
-4. 快速失败：LinkedIn反爬时快速退出，不浪费时间
+核心逻辑修正：
+1. LinkedIn 时间过滤只支持固定值 (r86400=24h, r604800=1w)
+2. 我们用 24h 抓取，通过数据库去重避免重复处理
+3. 限制每 profile 爬取页数，避免重复抓取旧职位
+4. 智能排序：按发布时间排序，新职位在前
 
 Usage:
-    python scraper_incremental.py --profile all --max-age-hours 4
+    python scraper_incremental.py --profile all --max-pages 4
     python scraper_incremental.py --profile ml_data --force-refresh
 """
 
@@ -18,7 +18,7 @@ import asyncio
 import hashlib
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 from urllib.parse import urlencode
@@ -53,9 +53,9 @@ REQUEST_DELAY = 2
 class IncrementalScraper:
     """增量爬取器 - 智能去重 + 快速更新"""
     
-    def __init__(self, headless: bool = True, max_age_hours: int = 4):
+    def __init__(self, headless: bool = True, max_pages_per_profile: int = 4):
         self.headless = headless
-        self.max_age_hours = max_age_hours
+        self.max_pages_per_profile = max_pages_per_profile  # 每profile最多4页(~100职位)
         self.db = JobDatabase()
         self.browser = None
         self.context = None
@@ -187,21 +187,33 @@ class IncrementalScraper:
             print(f"[Login] Failed: {e}")
             return False
             
-    async def scrape_search_page(self, keywords: str, location: str, max_jobs: int = 50) -> List[Dict]:
-        """爬取搜索页面，只获取基本信息（不抓JD）"""
+    async def scrape_search_page(self, keywords: str, location: str, page_num: int = 1) -> List[Dict]:
+        """爬取搜索页面，只获取基本信息（不抓JD）
+        
+        Args:
+            keywords: 搜索关键词
+            location: 地点
+            page_num: 页码（从1开始）
+        """
         jobs = []
         
-        # 构建搜索URL
+        # 构建搜索URL - 使用 LinkedIn 支持的时间参数
+        # r86400 = 过去24小时（LinkedIn只支持这个，不支持任意小时数）
         params = {
             'keywords': keywords,
             'location': location,
-            'f_TPR': f'r{self.max_age_hours * 3600}',  # 时间过滤
+            'f_TPR': 'r86400',  # 过去24小时 - LinkedIn只支持固定值
             'f_WT': '1,3',  # On-site + Hybrid
-            'sortBy': 'DD',  # 最新发布
+            'sortBy': 'DD',  # 最新发布（Most Recent）
         }
+        
+        # 添加分页参数（LinkedIn使用start参数）
+        if page_num > 1:
+            params['start'] = (page_num - 1) * JOBS_PER_PAGE
+            
         search_url = f"https://www.linkedin.com/jobs/search?{urlencode(params)}"
         
-        print(f"  [Search] {keywords[:50]}...")
+        print(f"  [Search Page {page_num}] {keywords[:50]}...")
         
         for attempt in range(MAX_RETRIES):
             try:
@@ -216,7 +228,11 @@ class IncrementalScraper:
                 # 提取职位列表
                 job_cards = await self.page.query_selector_all('[data-job-id]')
                 
-                for card in job_cards[:max_jobs]:
+                if not job_cards:
+                    print(f"  [WARN] No job cards found on page {page_num}")
+                    return []
+                    
+                for card in job_cards:
                     try:
                         # 提取基本信息
                         title_el = await card.query_selector('.job-card-list__title')
@@ -248,7 +264,7 @@ class IncrementalScraper:
                     except Exception as e:
                         continue
                         
-                print(f"  [OK] Found {len(jobs)} jobs")
+                print(f"  [OK] Page {page_num}: {len(jobs)} jobs")
                 return jobs
                 
             except PlaywrightTimeout:
@@ -293,33 +309,44 @@ class IncrementalScraper:
             
     async def run_profile(self, profile_name: str, profile_config: Dict, 
                          search_config: Dict) -> List[Dict]:
-        """运行单个profile"""
+        """运行单个profile - 增量模式"""
         print(f"\n{'='*60}")
         print(f"[Profile] {profile_name}")
         print(f"{'='*60}")
         
         queries = profile_config.get('queries', [])
         location = profile_config.get('location_override', search_config.get('location', 'Netherlands'))
-        max_jobs = profile_config.get('max_jobs_override', search_config.get('max_jobs', 50))
         
         all_jobs = []
         
-        # 第一阶段：快速抓取所有搜索词的职位列表（不抓JD）
+        # 第一阶段：抓取所有搜索词的职位列表（限制页数）
         for i, query in enumerate(queries):
             keywords = query.get('keywords', '')
             print(f"\n[Query {i+1}/{len(queries)}] {keywords[:60]}...")
             
-            jobs = await self.scrape_search_page(keywords, location, max(1, max_jobs // len(queries)))
-            
-            for job in jobs:
-                job['search_profile'] = profile_name
-                job['search_query'] = keywords
+            # 只抓取前 N 页（增量模式）
+            for page_num in range(1, self.max_pages_per_profile + 1):
+                jobs = await self.scrape_search_page(keywords, location, page_num)
                 
-            all_jobs.extend(jobs)
-            
-            if i < len(queries) - 1:
-                await asyncio.sleep(REQUEST_DELAY)
+                if not jobs:
+                    break  # 没有更多职位了
+                    
+                for job in jobs:
+                    job['search_profile'] = profile_name
+                    job['search_query'] = keywords
+                    
+                all_jobs.extend(jobs)
                 
+                # 如果这一页全是已存在的职位，提前停止
+                urls = [j['url'] for j in jobs]
+                existing = self._preload_existing_jobs(urls)
+                if len(existing) == len(jobs):
+                    print(f"  [STOP] Page {page_num} all duplicates, stopping early")
+                    break
+                    
+                if page_num < self.max_pages_per_profile:
+                    await asyncio.sleep(REQUEST_DELAY)
+                    
         # 去重：同一职位可能出现在多个搜索词结果中
         seen_urls = set()
         unique_jobs = []
@@ -329,7 +356,7 @@ class IncrementalScraper:
                 seen_urls.add(url)
                 unique_jobs.append(job)
                 
-        print(f"\n[Phase 1] Total unique jobs: {len(unique_jobs)}")
+        print(f"\n[Phase 1] Total unique jobs from search: {len(unique_jobs)}")
         
         # 第二阶段：批量检查数据库去重
         urls = [j['url'] for j in unique_jobs]
@@ -375,8 +402,9 @@ class IncrementalScraper:
     async def run(self, profile: str = 'all', force_refresh: bool = False) -> Dict:
         """主运行函数"""
         print(f"\n{'='*70}")
-        print(f"LinkedIn Incremental Scraper v3.0")
-        print(f"Max age: {self.max_age_hours} hours | Force refresh: {force_refresh}")
+        print(f"LinkedIn Incremental Scraper v3.1")
+        print(f"Max pages per profile: {self.max_pages_per_profile} | Force refresh: {force_refresh}")
+        print(f"Note: LinkedIn only supports 24h/1w/1m time filters, using 24h")
         print(f"{'='*70}\n")
         
         # 登录
@@ -431,16 +459,16 @@ def main():
     
     parser = argparse.ArgumentParser(description='LinkedIn Incremental Scraper')
     parser.add_argument('--profile', default='all', help='Profile to run')
-    parser.add_argument('--max-age-hours', type=int, default=4, help='Max job age in hours')
+    parser.add_argument('--max-pages', type=int, default=4, help='Max pages per profile (default: 4 = ~100 jobs)')
     parser.add_argument('--headless', action='store_true', default=True, help='Run headless')
-    parser.add_argument('--force-refresh', action='store_true', help='Force refresh all jobs')
-    parser.add_argument('--save-to-db', action='store_true', help='Save to database')
+    parser.add_argument('--force-refresh', action='store_true', help='Force refresh (ignore early stop)')
+    parser.add_argument('--save-to-db', action='store_true', help='Save to database (always true)')
     parser.add_argument('--output', default='stats.json', help='Output stats file')
     
     args = parser.parse_args()
     
     async def run():
-        async with IncrementalScraper(headless=args.headless, max_age_hours=args.max_age_hours) as scraper:
+        async with IncrementalScraper(headless=args.headless, max_pages_per_profile=args.max_pages) as scraper:
             stats = await scraper.run(profile=args.profile, force_refresh=args.force_refresh)
             
             # 保存统计
