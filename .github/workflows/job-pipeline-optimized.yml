@@ -1,0 +1,257 @@
+name: Job Pipeline v3.0 - Optimized
+# =====================================
+# 深度优化：增量更新 + 快速去重 + 3次/天运行
+
+on:
+  schedule:
+    # 每天3次：早中晚 (UTC时间)
+    # 荷兰时间: 09:00 / 14:00 / 19:00 (CET) 或 10:00 / 15:00 / 20:00 (CEST)
+    - cron: '0 8,13,18 * * 1-5'
+    # 周末也跑一次，防止错过周五晚上发布的职位
+    - cron: '0 9 * * 0,6'
+
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Search profile (ml_data / backend_data / quant / all)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ml_data
+          - backend_data
+          - quant
+      skip_scrape:
+        description: 'Skip scraping (use existing data)'
+        required: false
+        default: false
+        type: boolean
+      force_refresh:
+        description: 'Force refresh (ignore cache, re-scrape all)'
+        required: false
+        default: false
+        type: boolean
+      ai_limit:
+        description: 'Max jobs for AI analysis (empty = auto)'
+        required: false
+        default: ''
+        type: string
+
+env:
+  PYTHONUNBUFFERED: '1'
+  TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+  TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+  # 性能优化：减少同步频率
+  TURSO_SYNC_INTERVAL: '300'  # 5分钟同步一次
+
+jobs:
+  # ==========================================
+  # Job 1: 快速爬取 (增量更新)
+  # ==========================================
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20  # 严格限制爬取时间
+    outputs:
+      new_jobs_count: ${{ steps.scrape.outputs.new_jobs_count }}
+      total_jobs_count: ${{ steps.scrape.outputs.total_jobs_count }}
+      duration_seconds: ${{ steps.scrape.outputs.duration_seconds }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Write LinkedIn cookies
+        env:
+          COOKIES_JSON: ${{ secrets.LINKEDIN_COOKIES }}
+        run: |
+          mkdir -p config
+          printf '%s' "$COOKIES_JSON" > config/linkedin_cookies.json
+
+      - name: Scrape LinkedIn (Incremental)
+        id: scrape
+        run: |
+          PROFILE="${{ github.event.inputs.profile || 'all' }}"
+          FORCE_FLAG=""
+          if [ "${{ github.event.inputs.force_refresh }}" == "true" ]; then
+            FORCE_FLAG="--force-refresh"
+            echo "🔄 Force refresh mode enabled"
+          fi
+
+          echo "=== Starting incremental scrape: $PROFILE ==="
+          START_TIME=$(date +%s)
+          
+          # 使用优化后的增量爬取脚本
+          python scripts/scraper_incremental.py \
+            --profile "$PROFILE" \
+            --headless \
+            --save-to-db \
+            --max-age-hours 4 \
+            $FORCE_FLAG \
+            --output stats.json
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          
+          # 输出统计
+          if [ -f stats.json ]; then
+            NEW_JOBS=$(python -c "import json; print(json.load(open('stats.json')).get('new_jobs', 0))")
+            TOTAL_JOBS=$(python -c "import json; print(json.load(open('stats.json')).get('total_scraped', 0))")
+            echo "new_jobs_count=$NEW_JOBS" >> $GITHUB_OUTPUT
+            echo "total_jobs_count=$TOTAL_JOBS" >> $GITHUB_OUTPUT
+            echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+            echo "✅ Scraped $NEW_JOBS new jobs (total: $TOTAL_JOBS) in ${DURATION}s"
+          else
+            echo "new_jobs_count=0" >> $GITHUB_OUTPUT
+            echo "total_jobs_count=0" >> $GITHUB_OUTPUT
+            echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload scrape stats
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-stats-${{ github.run_id }}
+          path: stats.json
+          retention-days: 7
+
+  # ==========================================
+  # Job 2: 规则评分 (快速本地处理)
+  # ==========================================
+  score:
+    runs-on: ubuntu-latest
+    needs: scrape
+    # 即使没有新职位也运行（可能有之前未处理的）
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Rule-based scoring
+        run: |
+          echo "=== Running rule-based scoring ==="
+          python scripts/job_pipeline.py --process --parallel
+
+      - name: Scoring stats
+        run: python scripts/job_pipeline.py --stats --brief
+
+  # ==========================================
+  # Job 3: AI分析 (只处理高分新职位)
+  # ==========================================
+  ai-analyze:
+    runs-on: ubuntu-latest
+    needs: [scrape, score]
+    # 只有有新职位时才运行AI分析
+    if: needs.scrape.outputs.new_jobs_count != '0' || github.event.inputs.ai_limit != ''
+    timeout-minutes: 30  # AI分析限制30分钟
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: AI Analysis (Prioritized)
+        run: |
+          LIMIT="${{ github.event.inputs.ai_limit }}"
+          
+          # 如果没有指定限制，自动计算：新职位 + 一些积压的高分职位
+          if [ -z "$LIMIT" ]; then
+            NEW_JOBS="${{ needs.scrape.outputs.new_jobs_count }}"
+            # 最多处理：新职位 + 最多10个积压职位
+            LIMIT=$((NEW_JOBS + 10))
+            echo "🤖 Auto-limit: $LIMIT (new: $NEW_JOBS + backlog: 10)"
+          fi
+          
+          echo "=== Running AI analysis (limit: $LIMIT) ==="
+          python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT" --priority-rule-score
+
+      - name: Generate resumes for high-scoring jobs
+        run: |
+          echo "=== Generating tailored resumes ==="
+          python scripts/job_pipeline.py --generate --limit 20
+
+      - name: AI analysis stats
+        run: python scripts/job_pipeline.py --stats --brief
+
+  # ==========================================
+  # Job 4: 通知汇总
+  # ==========================================
+  notify:
+    runs-on: ubuntu-latest
+    needs: [scrape, score, ai-analyze]
+    if: always() && (needs.scrape.outputs.new_jobs_count != '0' || needs.ai-analyze.result == 'success')
+    timeout-minutes: 2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          echo "=== Sending notification ==="
+          python scripts/notify_discord.py \
+            --new-jobs "${{ needs.scrape.outputs.new_jobs_count }}" \
+            --duration "${{ needs.scrape.outputs.duration_seconds }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  # ==========================================
+  # Job 5: 健康检查 (总是运行)
+  # ==========================================
+  health-check:
+    runs-on: ubuntu-latest
+    needs: [scrape, score, ai-analyze]
+    if: always()
+    timeout-minutes: 2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Pipeline health check
+        run: |
+          echo "=== Pipeline Health Check ==="
+          python scripts/job_pipeline.py --health-check
+
+      - name: Final stats
+        run: python scripts/job_pipeline.py --stats
