@@ -150,7 +150,7 @@ jobs:
       - name: Rule-based scoring
         run: |
           echo "=== Running rule-based scoring ==="
-          python scripts/job_pipeline.py --process --parallel
+          python scripts/job_pipeline.py --process
 
       - name: Scoring stats
         run: python scripts/job_pipeline.py --stats --brief
@@ -189,7 +189,7 @@ jobs:
           fi
           
           echo "=== Running AI analysis (limit: $LIMIT) ==="
-          python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT" --priority-rule-score
+          python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
 
       - name: Generate resumes for high-scoring jobs
         run: |
@@ -252,7 +252,7 @@ jobs:
       - name: Pipeline health check
         run: |
           echo "=== Pipeline Health Check ==="
-          python scripts/job_pipeline.py --health-check
+          python scripts/job_pipeline.py --stats
 
       - name: Final stats
         run: python scripts/job_pipeline.py --stats
