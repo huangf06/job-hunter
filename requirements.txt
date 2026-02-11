@@ -1,0 +1,19 @@
+# Dependencies
+
+# Config parsing
+pyyaml>=6.0
+
+# Template rendering
+jinja2>=3.1.0
+
+# PDF generation
+playwright>=1.40.0
+
+# AI (Claude API)
+anthropic>=0.77.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Turso cloud database (libsql)
+libsql>=0.1.0

@@ -15,6 +15,8 @@ SQLite 数据库操作，统一管理职位数据的存储和查询。
 
 import hashlib
 import json
+import logging
+import os
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
@@ -23,6 +25,8 @@ from pathlib import Path
 from typing import List, Dict, Optional, Any, Generator
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 # 数据库路径
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobs.db"
@@ -117,6 +121,83 @@ class CoverLetter:
     html_path: str = ""
     pdf_path: str = ""
     tokens_used: int = 0
+
+
+class _DictRow(dict):
+    """Row that supports both dict-style (row['col']) and index-style (row[0]) access.
+
+    libsql cursors return raw tuples instead of sqlite3.Row objects.
+    This wrapper restores dict-style access for backward compatibility.
+
+    NOTE: __iter__ yields VALUES (matching sqlite3.Row), not keys.
+    Use row.keys() for column names. dict(row) is safe (uses mapping copy).
+    """
+
+    def __init__(self, columns, values):
+        super().__init__(zip(columns, values))
+        self._values = values
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return super().__getitem__(key)
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __len__(self):
+        return len(self._values)
+
+
+class _DictCursor:
+    """Wraps a libsql cursor to return _DictRow objects."""
+
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+    def _wrap_row(self, row):
+        if row is None or self._cursor.description is None:
+            return row
+        cols = [d[0] for d in self._cursor.description]
+        return _DictRow(cols, row)
+
+    def fetchone(self):
+        return self._wrap_row(self._cursor.fetchone())
+
+    def fetchall(self):
+        if self._cursor.description is None:
+            return self._cursor.fetchall()
+        cols = [d[0] for d in self._cursor.description]
+        return [_DictRow(cols, row) for row in self._cursor.fetchall()]
+
+    def __iter__(self):
+        while True:
+            row = self.fetchone()
+            if row is None:
+                break
+            yield row
+
+
+class _DictConnection:
+    """Wraps a libsql connection so execute() returns _DictCursor."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def execute(self, sql, params=()):
+        return _DictCursor(self._conn.execute(sql, params))
+
+    def executemany(self, sql, params_seq):
+        return _DictCursor(self._conn.executemany(sql, params_seq))
+
+    def executescript(self, sql):
+        return _DictCursor(self._conn.executescript(sql))
 
 
 class JobDatabase:
@@ -337,8 +418,36 @@ class JobDatabase:
 
     def __init__(self, db_path: Path = None):
         """初始化数据库"""
+        self._turso_url = os.getenv("TURSO_DATABASE_URL")
+        self._turso_token = os.getenv("TURSO_AUTH_TOKEN")
         self.db_path = db_path or DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        # Persistent libsql connection for Turso embedded replica
+        # NOTE: libsql embedded replicas have a known stack overflow bug on
+        # Windows (https://github.com/tursodatabase/libsql/issues/2074).
+        # If this crashes, unset TURSO_DATABASE_URL to fall back to local SQLite.
+        self._libsql_raw = None
+        self._in_transaction = False
+        if self._turso_url:
+            if not self._turso_token:
+                raise ValueError(
+                    "TURSO_DATABASE_URL is set but TURSO_AUTH_TOKEN is missing. "
+                    "Set the token or unset the URL to use local SQLite."
+                )
+            import libsql
+            self._libsql_raw = libsql.connect(
+                str(self.db_path),
+                sync_url=self._turso_url,
+                auth_token=self._turso_token,
+            )
+            try:
+                self._libsql_raw.sync()
+            except Exception as e:
+                logger.warning("Turso initial sync failed (using local data): %s", e)
+            # Set PRAGMAs once for the persistent connection
+            self._libsql_raw.execute("PRAGMA journal_mode=WAL")
+            self._libsql_raw.execute("PRAGMA busy_timeout=5000")
+            self._libsql_raw.execute("PRAGMA foreign_keys=ON")
         self._init_db()
 
     def _init_db(self):
@@ -409,21 +518,54 @@ class JobDatabase:
             conn.execute("ALTER TABLE resumes ADD COLUMN submit_dir TEXT")
 
     @contextmanager
-    def _get_conn(self) -> Generator[sqlite3.Connection, None, None]:
-        """获取数据库连接"""
-        conn = sqlite3.connect(str(self.db_path))
-        try:
+    def _get_conn(self, *, sync_before=True):
+        """获取数据库连接 (Turso embedded replica or local SQLite)
+
+        Args:
+            sync_before: Pull from remote before reading. Set False for
+                         write-only operations to skip the network round-trip.
+        """
+        if self._libsql_raw:
+            # Re-entrancy: if already inside a _get_conn block on the shared
+            # connection, just yield the wrapper — the outer block owns the
+            # transaction lifecycle (commit / rollback / sync).
+            if self._in_transaction:
+                yield _DictConnection(self._libsql_raw)
+                return
+            if sync_before:
+                try:
+                    self._libsql_raw.sync()
+                except Exception as e:
+                    logger.warning("Turso pre-read sync failed (using local data): %s", e)
+            self._in_transaction = True
+            conn = _DictConnection(self._libsql_raw)
+            try:
+                yield conn
+                conn.commit()
+                # Sync after commit — data is already committed locally
+                try:
+                    self._libsql_raw.sync()
+                except Exception as e:
+                    logger.warning("Turso post-commit sync failed (data committed locally): %s", e)
+            except BaseException:
+                conn.rollback()
+                raise
+            finally:
+                self._in_transaction = False
+        else:
+            conn = sqlite3.connect(str(self.db_path))
             conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA busy_timeout=5000")
-            conn.execute("PRAGMA foreign_keys=ON")
-            yield conn
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
+            try:
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("PRAGMA busy_timeout=5000")
+                conn.execute("PRAGMA foreign_keys=ON")
+                yield conn
+                conn.commit()
+            except BaseException:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
 
     def execute(self, sql: str, params: tuple = ()) -> list:
         """执行 SQL 并返回结果行（用于 ad-hoc 查询和数据修改）"""
@@ -513,7 +655,7 @@ class JobDatabase:
             raw_data=json.dumps(job_data, ensure_ascii=False)
         )
 
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             cursor = conn.execute("""
                 INSERT OR IGNORE INTO jobs
                 (id, source, url, title, company, location, description,
@@ -548,7 +690,7 @@ class JobDatabase:
 
     def save_filter_result(self, result: FilterResult):
         """保存筛选结果"""
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO filter_results
                 (job_id, passed, filter_version, reject_reason, matched_rules, processed_at)
@@ -582,7 +724,7 @@ class JobDatabase:
 
     def save_score(self, result: ScoreResult):
         """保存评分结果"""
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO ai_scores
                 (job_id, score, model, score_breakdown, matched_keywords, analysis, recommendation, scored_at)
@@ -618,7 +760,7 @@ class JobDatabase:
 
     def save_resume(self, resume: Resume):
         """保存简历记录"""
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO resumes
                 (job_id, role_type, template_version, html_path, pdf_path, submit_dir, generated_at)
@@ -643,7 +785,7 @@ class JobDatabase:
 
     def save_analysis(self, result: AnalysisResult):
         """保存 AI 分析结果"""
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO job_analysis
                 (job_id, ai_score, skill_match, experience_fit, growth_potential,
@@ -707,7 +849,7 @@ class JobDatabase:
 
     def clear_analyses(self, model: str = None) -> int:
         """清除 AI 分析结果"""
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             if model:
                 cursor = conn.execute(
                     "DELETE FROM job_analysis WHERE model = ?", (model,))
@@ -719,7 +861,7 @@ class JobDatabase:
 
     def save_cover_letter(self, cl: CoverLetter):
         """保存 cover letter 记录"""
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO cover_letters
                 (job_id, spec_json, custom_requirements, standard_text, short_text,
@@ -762,7 +904,7 @@ class JobDatabase:
 
     def save_application(self, app: Application):
         """保存申请状态"""
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO applications
                 (job_id, status, applied_at, response_at, interview_at, outcome, notes, updated_at)
@@ -949,7 +1091,7 @@ class JobDatabase:
         Returns:
             删除的记录数
         """
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             if filter_version:
                 cursor = conn.execute(
                     "DELETE FROM filter_results WHERE filter_version = ?",
@@ -968,7 +1110,7 @@ class JobDatabase:
         Returns:
             删除的记录数
         """
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             if model:
                 cursor = conn.execute(
                     "DELETE FROM ai_scores WHERE model = ?",
@@ -995,7 +1137,7 @@ class JobDatabase:
             meta_search = data.get("search", "")
 
         imported = 0
-        with self._get_conn() as conn:
+        with self._get_conn(sync_before=False) as conn:
             for job_data in jobs:
                 url = job_data.get("url", "")
                 if not url:
@@ -1033,8 +1175,11 @@ class JobDatabase:
                     if cursor.rowcount > 0:
                         imported += 1
                 except Exception as e:
-                    import sqlite3 as _sqlite3
-                    severity = "WARN" if isinstance(e, _sqlite3.IntegrityError) else "ERROR"
+                    is_constraint = (
+                        isinstance(e, sqlite3.IntegrityError)
+                        or "UNIQUE constraint" in str(e)
+                    )
+                    severity = "WARN" if is_constraint else "ERROR"
                     print(f"  [{severity}] Failed to import job {url[:60]}: {e}")
 
         return imported
