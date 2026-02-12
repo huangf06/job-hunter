@@ -2,8 +2,10 @@ name: Job Pipeline
 
 on:
   schedule:
-    # Weekdays UTC 8:00 (NL time 9:00 CET / 10:00 CEST)
-    - cron: '0 8 * * 1-5'
+    # Weekdays 3x daily (Netherlands time)
+    - cron: '0 8 * * 1-5'   # 09:00 CET / 10:00 CEST
+    - cron: '0 12 * * 1-5'  # 13:00 CET / 14:00 CEST
+    - cron: '0 16 * * 1-5'  # 17:00 CET / 18:00 CEST
 
   workflow_dispatch:
     inputs:
@@ -45,22 +47,18 @@ jobs:
       ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
 
     steps:
-      # 1. Checkout
       - uses: actions/checkout@v4
 
-      # 2. Python
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
-      # 4. Write LinkedIn cookies from secret
       - name: Write LinkedIn cookies
         env:
           COOKIES_JSON: ${{ secrets.LINKEDIN_COOKIES }}
@@ -68,28 +66,26 @@ jobs:
           mkdir -p config
           printf '%s' "$COOKIES_JSON" > config/linkedin_cookies.json
 
-      # 5. Scrape LinkedIn jobs
+      # Scrape — no continue-on-error, failures are real failures
       - name: Scrape jobs
         id: scrape
-        continue-on-error: true
         run: |
           PROFILES="${{ github.event.inputs.profile || 'all' }}"
-
           if [ "$PROFILES" = "all" ]; then
-            echo "=== Running all enabled profiles ==="
             python scripts/linkedin_scraper_v6.py --headless --save-to-db --no-json
           else
-            echo "=== Running profile: $PROFILES ==="
             python scripts/linkedin_scraper_v6.py --profile "$PROFILES" --headless --save-to-db --no-json
           fi
 
-      # 6. Process pipeline (import → filter → rule score)
+      # Process pipeline (import → filter → rule score)
       - name: Process pipeline
+        timeout-minutes: 15
         run: python scripts/job_pipeline.py --process
 
-      # 7. AI analysis (optional)
+      # AI analysis
       - name: AI analyze
         if: github.event.inputs.run_ai_analyze != 'false'
+        timeout-minutes: 20
         run: |
           LIMIT="${{ github.event.inputs.ai_limit }}"
           if [ -n "$LIMIT" ]; then
@@ -98,7 +94,32 @@ jobs:
             python scripts/job_pipeline.py --ai-analyze
           fi
 
-      # 8. Print stats
+      # Generate resumes for high-scoring jobs
+      - name: Generate resumes
+        if: github.event.inputs.run_ai_analyze != 'false'
+        timeout-minutes: 10
+        run: python scripts/job_pipeline.py --generate
+
+      # Stats
       - name: Pipeline stats
         if: always()
         run: python scripts/job_pipeline.py --stats
+
+      # Telegram notification — always runs
+      - name: Notify (success)
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/notify.py --status success
+
+      - name: Notify (failure)
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # Find which step failed
+          FAILED_STEP=""
+          if [ "${{ steps.scrape.outcome }}" = "failure" ]; then FAILED_STEP="Scrape"; fi
+          python scripts/notify.py --status failure --failed-step "$FAILED_STEP"
