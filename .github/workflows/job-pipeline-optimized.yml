@@ -113,18 +113,18 @@ jobs:
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           
-          # 从数据库获取统计
-          NEW_JOBS=$(python -c "from src.db.job_db import JobDatabase; db=JobDatabase(); print(len(db.get_jobs_by_profile('$PROFILE', limit=1000)))")
+          # 从 scraper 输出的 metrics 文件读取真实新增数
+          NEW_JOBS=$(python -c "import json; m=json.load(open('data/scrape_metrics.json')); print(m.get('new_jobs', 0))")
           echo "new_jobs_count=$NEW_JOBS" >> $GITHUB_OUTPUT
           echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
-          echo "✅ Scraped in ${DURATION}s"
+          echo "✅ Scraped in ${DURATION}s, new jobs: $NEW_JOBS"
 
       - name: Upload scrape stats
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: scrape-stats-${{ github.run_id }}
-          path: stats.json
+          path: data/scrape_metrics.json
           retention-days: 7
 
   # ==========================================
@@ -161,8 +161,8 @@ jobs:
   ai-analyze:
     runs-on: ubuntu-latest
     needs: [scrape, score]
-    # Run if scrape succeeded, even if score was cancelled/failed (works with partial scoring)
-    if: always() && needs.scrape.result == 'success' && (needs.scrape.outputs.new_jobs_count != '0' || github.event.inputs.ai_limit != '')
+    # Always run if scrape succeeded — handles both new jobs and backlog
+    if: always() && needs.scrape.result == 'success'
     timeout-minutes: 30  # AI分析限制30分钟
 
     steps:
@@ -180,12 +180,12 @@ jobs:
         run: |
           LIMIT="${{ github.event.inputs.ai_limit }}"
           
-          # 如果没有指定限制，自动计算：新职位 + 一些积压的高分职位
+          # 如果没有指定限制，给足够的名额处理新职位 + 积压
           if [ -z "$LIMIT" ]; then
             NEW_JOBS="${{ needs.scrape.outputs.new_jobs_count }}"
-            # 最多处理：新职位 + 最多10个积压职位
-            LIMIT=$((NEW_JOBS + 10))
-            echo "🤖 Auto-limit: $LIMIT (new: $NEW_JOBS + backlog: 10)"
+            # 新职位 + 最多20个积压职位
+            LIMIT=$((NEW_JOBS + 20))
+            echo "Auto-limit: $LIMIT (new: $NEW_JOBS + backlog: 20)"
           fi
           
           echo "=== Running AI analysis (limit: $LIMIT) ==="
@@ -200,7 +200,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     needs: [scrape, score, ai-analyze]
-    if: always() && needs.scrape.result == 'success' && (needs.scrape.outputs.new_jobs_count != '0' || needs.ai-analyze.result == 'success')
+    if: always() && needs.scrape.result == 'success'
     timeout-minutes: 2
 
     steps:
