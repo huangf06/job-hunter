@@ -191,11 +191,6 @@ jobs:
           echo "=== Running AI analysis (limit: $LIMIT) ==="
           python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
 
-      - name: Generate resumes for high-scoring jobs
-        run: |
-          echo "=== Generating tailored resumes ==="
-          python scripts/job_pipeline.py --generate --limit 20
-
       - name: AI analysis stats
         run: python scripts/job_pipeline.py --stats
 
