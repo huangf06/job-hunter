@@ -425,8 +425,13 @@ class JobDatabase:
 
     def __init__(self, db_path: Path = None):
         """初始化数据库"""
-        self._turso_url = os.getenv("TURSO_DATABASE_URL")
-        self._turso_token = os.getenv("TURSO_AUTH_TOKEN")
+        # NO_TURSO=1 forces local SQLite (bypasses libsql memory issues on Windows)
+        if os.getenv("NO_TURSO"):
+            self._turso_url = None
+            self._turso_token = None
+        else:
+            self._turso_url = os.getenv("TURSO_DATABASE_URL")
+            self._turso_token = os.getenv("TURSO_AUTH_TOKEN")
         self.db_path = db_path or DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         # Persistent libsql connection for Turso embedded replica
@@ -435,6 +440,7 @@ class JobDatabase:
         # If this crashes, unset TURSO_DATABASE_URL to fall back to local SQLite.
         self._libsql_raw = None
         self._in_transaction = False
+        self._batch_active = False
         if self._turso_url:
             if not self._turso_token:
                 raise ValueError(
@@ -539,7 +545,7 @@ class JobDatabase:
             if self._in_transaction:
                 yield _DictConnection(self._libsql_raw)
                 return
-            if sync_before:
+            if sync_before and not self._batch_active:
                 try:
                     self._libsql_raw.sync()
                 except Exception as e:
@@ -549,11 +555,12 @@ class JobDatabase:
             try:
                 yield conn
                 conn.commit()
-                # Sync after commit — data is already committed locally
-                try:
-                    self._libsql_raw.sync()
-                except Exception as e:
-                    logger.warning("Turso post-commit sync failed (data committed locally): %s", e)
+                # Sync after commit — skip if inside batch_mode()
+                if not self._batch_active:
+                    try:
+                        self._libsql_raw.sync()
+                    except Exception as e:
+                        logger.warning("Turso post-commit sync failed (data committed locally): %s", e)
             except BaseException:
                 conn.rollback()
                 raise
@@ -573,6 +580,24 @@ class JobDatabase:
                 raise
             finally:
                 conn.close()
+
+    @contextmanager
+    def batch_mode(self):
+        """Suppress per-write Turso syncs; single sync on exit.
+
+        Use this to wrap loops that do many DB writes (e.g. filter/score)
+        to avoid ~200-300ms network round-trip per write.
+        """
+        self._batch_active = True
+        try:
+            yield
+        finally:
+            self._batch_active = False
+            if self._libsql_raw:
+                try:
+                    self._libsql_raw.sync()
+                except Exception as e:
+                    logger.warning("Turso batch sync failed: %s", e)
 
     def execute(self, sql: str, params: tuple = ()) -> list:
         """执行 SQL 并返回结果行（用于 ad-hoc 查询和数据修改）"""
