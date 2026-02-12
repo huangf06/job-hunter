@@ -30,7 +30,7 @@ try:
 except ImportError:
     pass
 
-from anthropic import Anthropic, RateLimitError, APITimeoutError, APIConnectionError
+from anthropic import Anthropic, RateLimitError, APITimeoutError, APIConnectionError, InternalServerError
 from src.db.job_db import JobDatabase, CoverLetter
 
 
@@ -375,7 +375,7 @@ Return ONLY the JSON object, no other text."""
                 wait = 30 * (attempt + 1) + random.uniform(0, 5)
                 print(f"  [RATE LIMIT] Waiting {wait:.0f}s...")
                 time.sleep(wait)
-            except (APITimeoutError, APIConnectionError) as e:
+            except (APITimeoutError, APIConnectionError, InternalServerError) as e:
                 wait = 2 ** (attempt + 1)
                 print(f"  [RETRY] {type(e).__name__}, waiting {wait}s...")
                 time.sleep(wait)
@@ -458,9 +458,13 @@ Return ONLY the JSON object, no other text."""
             ai_score = job.get('ai_score', 0)
             print(f"  [{i+1}/{len(jobs)}] [{ai_score:.1f}] {title} @ {company}")
 
-            result = self.generate(job['id'])
-            if result:
-                generated += 1
+            try:
+                result = self.generate(job['id'])
+                if result:
+                    generated += 1
+            except Exception as e:
+                print(f"  [ERROR] {type(e).__name__}: {str(e)[:100]}")
+                continue
 
         print(f"\n[CoverLetter] Done: {generated}/{len(jobs)} cover letters generated")
         return generated
