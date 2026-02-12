@@ -291,17 +291,18 @@ class JobPipeline:
         print(f"\n[Filter] Filtering {len(unfiltered)} jobs...")
         passed_count, rejected_count = 0, 0
 
-        for job in unfiltered:
-            try:
-                result = self._apply_filter(job)
-                self.db.save_filter_result(result)
-                if result.passed:
-                    passed_count += 1
-                else:
-                    rejected_count += 1
-            except Exception as e:
-                print(f"  x Filter error for {job.get('id', '?')}: {e}")
-                continue
+        with self.db.batch_mode():
+            for job in unfiltered:
+                try:
+                    result = self._apply_filter(job)
+                    self.db.save_filter_result(result)
+                    if result.passed:
+                        passed_count += 1
+                    else:
+                        rejected_count += 1
+                except Exception as e:
+                    print(f"  x Filter error for {job.get('id', '?')}: {e}")
+                    continue
 
         print(f"[Filter] Done: {passed_count} passed, {rejected_count} rejected")
         return passed_count, rejected_count
@@ -495,17 +496,18 @@ class JobPipeline:
 
         print(f"\n[Score] Scoring {len(unscored)} jobs...")
         scored = 0
-        for job in unscored:
-            try:
-                result = self._calculate_score(job)
-                self.db.save_score(result)
-                scored += 1
-                apply_now_threshold = self.score_config.get('thresholds', {}).get('apply_now', 7.0)
-                if result.score >= apply_now_threshold:
-                    print(f"  * [{result.score:.1f}] {job['title'][:40]} @ {job['company'][:20]}")
-            except Exception as e:
-                print(f"  x Score error for {job.get('id', '?')}: {e}")
-                continue
+        with self.db.batch_mode():
+            for job in unscored:
+                try:
+                    result = self._calculate_score(job)
+                    self.db.save_score(result)
+                    scored += 1
+                    apply_now_threshold = self.score_config.get('thresholds', {}).get('apply_now', 7.0)
+                    if result.score >= apply_now_threshold:
+                        print(f"  * [{result.score:.1f}] {job['title'][:40]} @ {job['company'][:20]}")
+                except Exception as e:
+                    print(f"  x Score error for {job.get('id', '?')}: {e}")
+                    continue
 
         print(f"[Score] Done: {scored}/{len(unscored)} jobs scored")
         return scored
