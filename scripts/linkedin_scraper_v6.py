@@ -35,6 +35,7 @@ Usage:
 
 import asyncio
 import json
+import random
 import re
 import sys
 from datetime import datetime
@@ -434,7 +435,7 @@ class LinkedInScraperV6:
             print(f"\n[Query {i}/{len(queries)}] {description}")
             print(f"  Keywords: {keywords[:60]}{'...' if len(keywords) > 60 else ''}")
 
-            jobs = await self._scrape_single_query(keywords, location, max(1, -(-max_jobs // len(queries))))
+            jobs = await self._scrape_single_query(keywords, location, max(1, -(-max_jobs // len(queries))), db=self.db if save_to_db else None)
 
             # Blacklist filter
             filtered_jobs = self._filter_blacklist(jobs)
@@ -493,7 +494,7 @@ class LinkedInScraperV6:
 
         return profile_jobs
 
-    async def _scrape_single_query(self, keywords: str, location: str, max_jobs: int) -> List[Dict]:
+    async def _scrape_single_query(self, keywords: str, location: str, max_jobs: int, db=None) -> List[Dict]:
         """Execute single search query"""
         defaults = self.config.defaults
 
@@ -520,7 +521,7 @@ class LinkedInScraperV6:
         if not found:
             print("  [!] Job list not found, continuing...")
 
-        return await self._extract_jobs(max_jobs, base_url=url)
+        return await self._extract_jobs(max_jobs, base_url=url, db=db)
 
     async def _wait_for_jobs_list(self, timeout: int = 15000):
         """Wait for job cards to appear on the page"""
@@ -535,7 +536,7 @@ class LinkedInScraperV6:
         print("  [!] No job cards found within timeout")
         return False
 
-    async def _extract_jobs(self, max_jobs: int, base_url: str = "") -> List[Dict]:
+    async def _extract_jobs(self, max_jobs: int, base_url: str = "", db=None) -> List[Dict]:
         """Extract jobs across all pages (LinkedIn paginates ~25 per page)"""
         jobs = []
         seen = set()
@@ -553,6 +554,7 @@ class LinkedInScraperV6:
 
             # Scroll each card into viewport to un-occlude its content
             page_new = 0
+            page_urls = []
             for card in cards:
                 if len(jobs) >= max_jobs:
                     break
@@ -570,6 +572,8 @@ class LinkedInScraperV6:
                         seen.add(key)
                         jobs.append(job)
                         page_new += 1
+                        if job.get('url'):
+                            page_urls.append(job['url'])
                         print(f"    [{len(jobs)}] {job['title'][:35]} @ {job['company'][:20]}")
 
             print(f"    Page {page}: {page_new} jobs extracted (total: {len(jobs)})")
@@ -582,6 +586,14 @@ class LinkedInScraperV6:
                 print(f"  -> Page {page} had 0 new jobs, stopping pagination")
                 break
 
+            # Smart stop: if most jobs on this page are already in DB, stop
+            if db and page_urls:
+                new_urls = set(db.filter_urls_needing_jd(page_urls))
+                known_ratio = 1 - (len(new_urls) / len(page_urls))
+                if known_ratio >= 0.8:
+                    print(f"  -> Smart stop: {known_ratio:.0%} of page {page} already in DB, stopping")
+                    break
+
             # Try to go to next page
             has_next = await self._goto_next_page(page, base_url)
             if not has_next:
@@ -589,7 +601,7 @@ class LinkedInScraperV6:
                 break
 
             page += 1
-            await asyncio.sleep(3)
+            await asyncio.sleep(random.uniform(2, 5))  # randomized page delay
 
             # Wait for new page's job list to load
             await self._wait_for_jobs_list(timeout=10000)
