@@ -90,7 +90,7 @@ class IncrementalScraper:
         )
         self.context = await self.browser.new_context(
             viewport={"width": 1920, "height": 1080},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.0.36",
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             locale="en-US",
             timezone_id="Europe/Amsterdam",
         )
@@ -235,6 +235,14 @@ class IncrementalScraper:
                 # 调试：输出页面信息
                 print(f"  [DEBUG] Current URL: {self.page.url}")
                 print(f"  [DEBUG] Page content length: {len(page_content)}")
+                
+                # 截图保存用于调试
+                try:
+                    screenshot_path = f"/tmp/linkedin_debug_{keywords[:20]}_{page_num}.png"
+                    await self.page.screenshot(path=screenshot_path, full_page=True)
+                    print(f"  [DEBUG] Screenshot saved: {screenshot_path}")
+                except Exception as e:
+                    print(f"  [DEBUG] Screenshot failed: {e}")
                     
                 # 提取职位列表 - 尝试多个选择器
                 job_cards = []

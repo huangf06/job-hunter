@@ -28,6 +28,10 @@ on:
         default: ''
         type: string
 
+concurrency:
+  group: job-pipeline
+  cancel-in-progress: true
+
 jobs:
   scrape-and-process:
     runs-on: ubuntu-latest
@@ -66,6 +70,8 @@ jobs:
 
       # 5. Scrape LinkedIn jobs
       - name: Scrape jobs
+        id: scrape
+        continue-on-error: true
         run: |
           PROFILES="${{ github.event.inputs.profile || 'all' }}"
 

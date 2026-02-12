@@ -32,7 +32,7 @@ try:
 except ImportError:
     pass  # dotenv not installed, rely on env vars directly
 
-from anthropic import Anthropic, RateLimitError, APITimeoutError, AuthenticationError, APIConnectionError
+from anthropic import Anthropic, RateLimitError, APITimeoutError, AuthenticationError, APIConnectionError, InternalServerError
 from src import TRANSFERABLE_SKIP_WORDS
 from src.db.job_db import JobDatabase, AnalysisResult
 
@@ -183,16 +183,10 @@ class AIAnalyzer:
             return '\n'.join(sections)
 
         except Exception as e:
-            print(f"[WARN] Failed to load bullet library: {e}")
+            print(f"[CRITICAL] Failed to load bullet library: {e}")
             import traceback
             traceback.print_exc()
-            self._parsed_bullets = {}
-            self._skill_tiers = {}
-            self._title_options = {}
-            self._bio_constraints = {}
-            self._bio_builder = {}
-            self._allowed_categories = []
-            return ""
+            raise RuntimeError(f"Cannot start AI Analyzer: bullet library failed to load: {e}") from e
 
     def _extract_valid_bullets(self) -> set:
         """Extract all valid bullets from parsed bullet library YAML (configured keys only)."""
@@ -607,12 +601,12 @@ class AIAnalyzer:
                             print(f"  [WARN] Empty response from API for {job_id} after 3 attempts")
                             return None
                     break
-                except (RateLimitError, APITimeoutError, APIConnectionError) as e:
+                except (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError) as e:
                     if attempt < 2:
                         import random
                         # Rate limits need longer backoff than timeouts/connection errors
                         base = 30 * (attempt + 1) if isinstance(e, RateLimitError) else 2 ** (attempt + 1)
-                        wait = base + random.uniform(0, 2)
+                        wait = base + random.uniform(0, base * 0.5)
                         print(f"\n    [RETRY] {e}, waiting {wait:.0f}s...", end=' ')
                         time.sleep(wait)
                     else:
@@ -623,8 +617,20 @@ class AIAnalyzer:
                 return None
 
             if response.stop_reason == "max_tokens":
-                print(f"\n    [WARN] Response truncated (max_tokens={self.max_tokens}) — skipping")
-                return None
+                # Track tokens even for truncated responses (API still charges)
+                usage = response.usage
+                tokens_used = 0
+                if usage:
+                    tokens_used = getattr(usage, 'input_tokens', 0) + getattr(usage, 'output_tokens', 0)
+                print(f"\n    [WARN] Response truncated (max_tokens={self.max_tokens}) — saving sentinel")
+                # Save sentinel to prevent infinite retry on same job
+                return AnalysisResult(
+                    job_id=job_id, ai_score=0.0,
+                    recommendation='REJECTED',
+                    reasoning='Response truncated (max_tokens) — JD too complex for token limit',
+                    tailored_resume='{}',
+                    model=self.model, tokens_used=tokens_used
+                )
 
             text_blocks = [b for b in response.content if getattr(b, 'type', None) == 'text']
             if not text_blocks:
@@ -642,7 +648,14 @@ class AIAnalyzer:
                 preview = text[:300].replace('\n', ' ')
                 print(f"  [WARN] Failed to parse AI response for {job_id}")
                 print(f"    Raw response preview: {preview}")
-                return None
+                # Save sentinel to prevent infinite retry on unparseable responses
+                return AnalysisResult(
+                    job_id=job_id, ai_score=0.0,
+                    recommendation='REJECTED',
+                    reasoning=f'Failed to parse AI response: {preview[:200]}',
+                    tailored_resume='{}',
+                    model=self.model, tokens_used=tokens_used
+                )
 
             scoring = parsed.get('scoring') or {}
             tailored = parsed.get('tailored_resume') or {}
@@ -700,7 +713,14 @@ class AIAnalyzer:
             raise
         except Exception as e:
             print(f"  [ERROR] AI analysis failed for {job_id}: {ascii(str(e))}")
-            return None
+            # Save sentinel to prevent infinite retry on deterministic errors
+            return AnalysisResult(
+                job_id=job_id, ai_score=0.0,
+                recommendation='REJECTED',
+                reasoning=f'Analysis error: {str(e)[:200]}',
+                tailored_resume='{}',
+                model=self.model, tokens_used=0
+            )
 
     def _parse_response(self, text: str) -> Optional[Dict]:
         """解析 AI 的 JSON 响应"""

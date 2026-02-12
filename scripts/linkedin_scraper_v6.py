@@ -1045,7 +1045,7 @@ async def main():
     ) as scraper:
         if not await scraper.login_with_cookies():
             print("[FAIL] Login failed")
-            return
+            sys.exit(1)
 
         try:
             for profile_name in profiles_to_run:
@@ -1064,6 +1064,16 @@ async def main():
             if save_to_db:
                 print(f"  Database new: {scraper.saved_to_db}")
             print("=" * 70)
+
+            # Exit with non-zero code if zero jobs scraped (alerts CI)
+            if len(scraper.all_jobs) == 0:
+                print("[WARN] Zero jobs scraped — exiting with code 1")
+                scraper.save_results(
+                    args.profile if args.profile else "all",
+                    save_json=not args.no_json
+                )
+                scraper.print_summary()
+                sys.exit(1)
         except (KeyboardInterrupt, asyncio.CancelledError):
             print("\n\n[INTERRUPTED] Saving scraped data before exit...")
         finally:
