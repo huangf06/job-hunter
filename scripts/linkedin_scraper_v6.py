@@ -452,8 +452,9 @@ class LinkedInScraperV6:
 
             # Delay between queries
             if i < len(queries):
-                print("  -> Waiting 5s before next query...")
-                await asyncio.sleep(5)
+                delay = random.uniform(3, 8)
+                print(f"  -> Waiting {delay:.1f}s before next query...")
+                await asyncio.sleep(delay)
 
         # Fetch JD for all jobs
         if fetch_jd and self.all_jobs:
@@ -1092,6 +1093,19 @@ async def main():
             profile_label = args.profile if args.profile else "all"
             scraper.save_results(profile_label, save_json=not args.no_json)
             scraper.print_summary()
+
+            # Write metrics for CI notification
+            metrics = {
+                "new_jobs": scraper.saved_to_db,
+                "skipped_duplicates": scraper.skipped_duplicates,
+                "total_scraped": len(scraper.all_jobs),
+                "with_jd": len([j for j in scraper.all_jobs if j.get("description")])
+            }
+            metrics_path = Path(__file__).resolve().parent.parent / "data" / "scrape_metrics.json"
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(metrics_path, "w") as f:
+                json.dump(metrics, f)
+            print(f"[Metrics] Written to {metrics_path}")
 
 
 if __name__ == "__main__":
