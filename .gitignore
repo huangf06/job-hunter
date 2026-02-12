@@ -5,6 +5,7 @@ config/credentials.json
 
 # Data (DB + scrape dumps)
 data/jobs.db
+data/jobs.db-*
 data/*.json
 data/leads/
 data/archive/
@@ -50,3 +51,11 @@ _tmp_*
 # Logs
 logs/
 *.log
+
+# Runtime output
+run_log*.txt
+v6_log.txt
+stats.json
+
+# Archive (dead code, accessible via git history)
+archive/

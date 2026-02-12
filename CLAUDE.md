@@ -126,7 +126,7 @@ job-hunter/
 │       └── job-pipeline.yml    # CI/CD 自动化流水线
 │
 ├── output/                     # 生成的简历
-└── archive/                    # 归档的旧代码
+└── .gitignore
 ```
 
 ## 数据库结构
@@ -197,16 +197,6 @@ print(db.get_funnel_stats())
 - LinkedIn cookies 在 `config/linkedin_cookies.json`
 - 数据文件 (*.db, *.json) 不提交到 git
 - AI 分析消耗 token，注意预算控制
-- 归档代码在 `archive/`
 - Playwright PDF 需要: `playwright install chromium`
 - Turso 云同步: 设置 `.env` 中的 `TURSO_DATABASE_URL` 和 `TURSO_AUTH_TOKEN`
 - Windows 上 libsql embedded replica 有已知栈溢出 bug，如遇崩溃可取消 Turso 环境变量回退到本地 SQLite
-
-## 归档内容 (v41 → v2.0)
-
-以下组件已归档到 `archive/deprecated_v41/`:
-- `role_classifier.py` → 被 AI Analyzer 替代
-- `content_engine.py` → 被 AI Analyzer 替代
-- `job_hunter_v42.py` → 功能迁移到 job_pipeline.py
-- `templates/ml_engineer.html` 等 → 合并到 base_template.html
-- `assets/bullet_library_simple.yaml` → 使用完整版
