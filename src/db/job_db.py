@@ -20,7 +20,7 @@ import os
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Generator
 
@@ -664,10 +664,23 @@ class JobDatabase:
 
         with self._get_conn(sync_before=False) as conn:
             cursor = conn.execute("""
-                INSERT OR IGNORE INTO jobs
+                INSERT INTO jobs
                 (id, source, url, title, company, location, description,
                  posted_date, scraped_at, search_profile, search_query, raw_data)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    description = CASE
+                        WHEN excluded.description != ''
+                             AND length(excluded.description) > length(COALESCE(jobs.description, ''))
+                        THEN excluded.description
+                        ELSE jobs.description
+                    END,
+                    raw_data = CASE
+                        WHEN excluded.description != ''
+                             AND length(excluded.description) > length(COALESCE(jobs.description, ''))
+                        THEN excluded.raw_data
+                        ELSE jobs.raw_data
+                    END
             """, (job.id, job.source, job.url, job.title, job.company,
                   job.location, job.description, job.posted_date, job.scraped_at,
                   job.search_profile, job.search_query, job.raw_data))
@@ -810,7 +823,7 @@ class JobDatabase:
                   result.experience_fit, result.growth_potential,
                   result.recommendation, result.reasoning,
                   result.tailored_resume, result.model, result.tokens_used,
-                  datetime.now().isoformat()))
+                  datetime.now(timezone.utc).isoformat()))
 
     def get_analysis(self, job_id: str) -> Optional[Dict]:
         """获取 AI 分析结果"""
@@ -874,6 +887,14 @@ class JobDatabase:
                     "DELETE FROM job_analysis WHERE model = ?", (model,))
             else:
                 cursor = conn.execute("DELETE FROM job_analysis")
+            return cursor.rowcount
+
+    def clear_rejected_analyses(self) -> int:
+        """清除被拒绝的 AI 分析结果 (tailored_resume = '{}')，允许重新分析"""
+        with self._get_conn(sync_before=False) as conn:
+            cursor = conn.execute(
+                "DELETE FROM job_analysis WHERE tailored_resume = '{}' OR tailored_resume IS NULL"
+            )
             return cursor.rowcount
 
     # ==================== Cover Letter 操作 ====================
@@ -1101,7 +1122,7 @@ class JobDatabase:
             row = conn.execute("""
                 SELECT COALESCE(SUM(tokens_used), 0) as today_tokens
                 FROM job_analysis
-                WHERE DATE(analyzed_at) = DATE('now', 'localtime')
+                WHERE DATE(analyzed_at) = DATE('now')
             """).fetchone()
             return row['today_tokens'] if row else 0
 
@@ -1188,10 +1209,23 @@ class JobDatabase:
                         raw_data=json.dumps(job_data, ensure_ascii=False)
                     )
                     cursor = conn.execute("""
-                        INSERT OR IGNORE INTO jobs
+                        INSERT INTO jobs
                         (id, source, url, title, company, location, description,
                          posted_date, scraped_at, search_profile, search_query, raw_data)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            description = CASE
+                                WHEN excluded.description != ''
+                                     AND length(excluded.description) > length(COALESCE(jobs.description, ''))
+                                THEN excluded.description
+                                ELSE jobs.description
+                            END,
+                            raw_data = CASE
+                                WHEN excluded.description != ''
+                                     AND length(excluded.description) > length(COALESCE(jobs.description, ''))
+                                THEN excluded.raw_data
+                                ELSE jobs.raw_data
+                            END
                     """, (job.id, job.source, job.url, job.title, job.company,
                           job.location, job.description, job.posted_date, job.scraped_at,
                           job.search_profile, job.search_query, job.raw_data))

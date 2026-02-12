@@ -445,9 +445,10 @@ class JobPipeline:
                 patterns = rule_config.get('patterns', [])
                 exceptions = rule_config.get('exceptions', [])
 
-                # Check exceptions first (word-boundary match against full_text)
+                # Check exceptions against title only (not full_text) to prevent
+                # casual keyword mentions in JD body from bypassing experience filters
                 if any(
-                    re.search(_keyword_boundary_pattern(exc.lower().strip()), full_text)
+                    re.search(_keyword_boundary_pattern(exc.lower().strip()), title)
                     for exc in exceptions if exc.strip()
                 ):
                     continue
@@ -1016,10 +1017,11 @@ def main():
 
         from src.db.job_db import JobDatabase as _JDB
         db = _JDB()
-        print("[Reprocess] Clearing old filter and score results...")
+        print("[Reprocess] Clearing old filter, score, and analysis results...")
         filter_count = db.clear_filter_results()
         score_count = db.clear_scores()
-        print(f"  Cleared {filter_count} filter results, {score_count} score results")
+        analysis_count = db.clear_rejected_analyses()
+        print(f"  Cleared {filter_count} filter results, {score_count} score results, {analysis_count} rejected analyses")
 
         pipeline = JobPipeline()
         # Reprocess all jobs (ignore --limit to avoid data loss from partial reprocessing)
