@@ -92,14 +92,23 @@ jobs:
           echo "=== Starting incremental scrape: $PROFILE ==="
           echo "Using linkedin_scraper_v6.py with database deduplication"
           START_TIME=$(date +%s)
-          
+
           # 使用 v6 爬取（已有数据库去重）
-          python scripts/linkedin_scraper_v6.py \
-            --profile "$PROFILE" \
-            --headless \
-            --save-to-db \
-            --no-json \
-            $FORCE_FLAG
+          # "all" 不是真实 profile 名，不传 --profile 让脚本自动运行所有 enabled profiles
+          if [ "$PROFILE" = "all" ]; then
+            python scripts/linkedin_scraper_v6.py \
+              --headless \
+              --save-to-db \
+              --no-json \
+              $FORCE_FLAG
+          else
+            python scripts/linkedin_scraper_v6.py \
+              --profile "$PROFILE" \
+              --headless \
+              --save-to-db \
+              --no-json \
+              $FORCE_FLAG
+          fi
           
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
