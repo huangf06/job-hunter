@@ -90,34 +90,25 @@ jobs:
           fi
 
           echo "=== Starting incremental scrape: $PROFILE ==="
-          echo "Note: Using 24h time filter (LinkedIn limitation), limiting to 4 pages per profile"
+          echo "Using linkedin_scraper_v6.py with database deduplication"
           START_TIME=$(date +%s)
           
-          # 使用优化后的增量爬取脚本
-          # --max-pages 4 = 每profile最多4页 (~100职位)
-          python scripts/scraper_incremental.py \
+          # 使用 v6 爬取（已有数据库去重）
+          python scripts/linkedin_scraper_v6.py \
             --profile "$PROFILE" \
             --headless \
-            --max-pages 4 \
-            $FORCE_FLAG \
-            --output stats.json
+            --save-to-db \
+            --no-json \
+            $FORCE_FLAG
           
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           
-          # 输出统计
-          if [ -f stats.json ]; then
-            NEW_JOBS=$(python -c "import json; print(json.load(open('stats.json')).get('new_jobs', 0))")
-            TOTAL_JOBS=$(python -c "import json; print(json.load(open('stats.json')).get('total_scraped', 0))")
-            echo "new_jobs_count=$NEW_JOBS" >> $GITHUB_OUTPUT
-            echo "total_jobs_count=$TOTAL_JOBS" >> $GITHUB_OUTPUT
-            echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
-            echo "✅ Scraped $NEW_JOBS new jobs (total: $TOTAL_JOBS) in ${DURATION}s"
-          else
-            echo "new_jobs_count=0" >> $GITHUB_OUTPUT
-            echo "total_jobs_count=0" >> $GITHUB_OUTPUT
-            echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
-          fi
+          # 从数据库获取统计
+          NEW_JOBS=$(python -c "from src.db.job_db import JobDatabase; db=JobDatabase(); print(len(db.get_jobs_by_profile('$PROFILE', limit=1000)))")
+          echo "new_jobs_count=$NEW_JOBS" >> $GITHUB_OUTPUT
+          echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+          echo "✅ Scraped in ${DURATION}s"
 
       - name: Upload scrape stats
         if: always()
