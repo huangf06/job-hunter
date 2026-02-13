@@ -105,7 +105,7 @@ SQLite locally, synced to Turso cloud for CI/CD.
 
 ## CI/CD
 
-GitHub Actions runs the full pipeline on schedule (`.github/workflows/job-pipeline.yml`).
+GitHub Actions runs the pipeline 3x daily on weekdays (NL time 08:23 / 12:23 / 16:23) and once on weekends. See `.github/workflows/job-pipeline-optimized.yml`.
 
 ## Notes
 
