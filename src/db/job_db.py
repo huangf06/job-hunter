@@ -983,7 +983,7 @@ class JobDatabase:
 
     def update_application_status(self, job_id: str, status: str, **kwargs):
         """更新申请状态"""
-        VALID_STATUSES = {'pending', 'applied', 'rejected', 'interview', 'offer'}
+        VALID_STATUSES = {'pending', 'applied', 'skipped', 'rejected', 'interview', 'offer'}
         if status not in VALID_STATUSES:
             raise ValueError(f"Invalid status '{status}', must be one of {sorted(VALID_STATUSES)}")
         ALLOWED_COLS = ('applied_at', 'response_at', 'interview_at', 'outcome', 'notes')
