@@ -1072,6 +1072,20 @@ class JobDatabase:
                 'by_status': by_status
             }
 
+    def find_applied_duplicates(self, job_id: str) -> List[Dict]:
+        """查找同 company+title 已投递的职位 (repost 检测)"""
+        with self._get_conn() as conn:
+            cursor = conn.execute("""
+                SELECT j2.id as job_id, j2.title, j2.company, a.applied_at
+                FROM jobs j1
+                JOIN jobs j2 ON LOWER(j1.company) = LOWER(j2.company)
+                              AND LOWER(j1.title) = LOWER(j2.title)
+                              AND j1.id != j2.id
+                JOIN applications a ON j2.id = a.job_id AND a.status = 'applied'
+                WHERE j1.id = ?
+            """, (job_id,))
+            return [dict(row) for row in cursor.fetchall()]
+
     # ==================== 统计和分析 ====================
 
     def get_funnel_stats(self) -> Dict:
