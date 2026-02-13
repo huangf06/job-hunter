@@ -6,6 +6,8 @@ config/credentials.json
 # Data (DB + scrape dumps)
 data/jobs.db
 data/jobs.db-*
+job-hunter-*.turso.io
+job-hunter-*.turso.io-*
 data/*.json
 data/leads/
 data/archive/
