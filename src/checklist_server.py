@@ -35,6 +35,7 @@ def generate_checklist(jobs: list[dict], ready_dir: Path) -> Path:
             "submit_dir": job.get("submit_dir", ""),
             "url": job.get("url", ""),
             "applied": False,
+            "repost_applied_at": job.get("repost_applied_at", ""),
         }
 
     state_path = ready_dir / "state.json"
@@ -67,12 +68,14 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 
         submit_dir = info["submit_dir"]
         abs_dir = str((ready_dir / submit_dir).resolve()).replace("\\", "\\\\")
+        repost = info.get("repost_applied_at", "")
+        repost_badge = f' <span style="color:#dc2626;font-weight:bold" title="Applied {_esc(repost)}">REPOST</span>' if repost else ''
 
         rows.append(f"""
         <tr data-job-id="{job_id}">
           <td><input type="checkbox" class="apply-cb" {'checked' if info['applied'] else ''} /></td>
           <td style="color:{score_color};font-weight:bold">{score:.1f}</td>
-          <td>{_esc(info['company'])}</td>
+          <td>{_esc(info['company'])}{repost_badge}</td>
           <td>{_esc(info['title'])}</td>
           <td>
             <button class="btn" onclick="openFolder('{abs_dir}')">Open Folder</button>

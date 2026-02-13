@@ -714,7 +714,9 @@ class JobPipeline:
         for i, job in enumerate(ready, 1):
             submit_dir = job.get('submit_dir', '')
             submit_pdf = str(Path(submit_dir) / "Fei_Huang_Resume.pdf") if submit_dir else ''
-            print(f"{i:2}. [{job.get('score', 0):.1f}] {job['title'][:50]} @ {job['company'][:25]}")
+            dupes = self.db.find_applied_duplicates(job['id'])
+            repost_tag = f" [REPOST - applied {dupes[0]['applied_at'][:10]}]" if dupes else ""
+            print(f"{i:2}. [{job.get('score', 0):.1f}] {job['title'][:50]} @ {job['company'][:25]}{repost_tag}")
             print(f"    URL:  {job.get('url', 'N/A')}")
             if submit_pdf:
                 print(f"    Send: {submit_pdf}")
@@ -737,12 +739,14 @@ class JobPipeline:
             pdf = job.get('resume_path', '')
             submit_dir = job.get('submit_dir', '')
             submit_pdf = str(Path(submit_dir) / "Fei_Huang_Resume.pdf") if submit_dir else ''
+            dupes = self.db.find_applied_duplicates(job['id'])
+            repost_badge = f' <span style="color:#d32f2f;font-weight:bold" title="Applied {escape(dupes[0]["applied_at"][:10])}">REPOST</span>' if dupes else ''
 
             score_color = '#2e7d32' if score >= 7.0 else '#e65100' if score >= 6.0 else '#555'
             rows_html.append(f"""<tr>
   <td><input type="checkbox"></td>
   <td><span style="color:{score_color};font-weight:bold">{score:.1f}</span> {escape(rec)}</td>
-  <td>{company}</td>
+  <td>{company}{repost_badge}</td>
   <td>{title}</td>
   <td><a href="{url}" target="_blank">Open</a></td>
   <td>{f'<a href="file:///{submit_pdf}" target="_blank">Submit PDF</a>' if submit_pdf else ''}</td>
@@ -812,6 +816,14 @@ class JobPipeline:
             ResumeRenderer = module.ResumeRenderer
 
         renderer = ResumeRenderer()
+
+        # Check for reposts before rendering
+        jobs = self.db.get_analyzed_jobs_for_resume(min_ai_score=min_ai_score, limit=limit)
+        for job in jobs:
+            dupes = self.db.find_applied_duplicates(job['job_id'])
+            if dupes:
+                print(f"  ⚠ REPOST: {job.get('title', '')} @ {job.get('company', '')} — applied {dupes[0]['applied_at'][:10]}")
+
         return renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
 
     def generate_cover_letter(self, job_id: str, custom_requirements: str = None,
@@ -946,6 +958,14 @@ class JobPipeline:
         # Step 3: Collect ALL ready-to-apply jobs (new + existing)
         all_ready = self.db.get_ready_to_apply()
 
+        # Enrich with repost info
+        repost_count = 0
+        for job in all_ready:
+            dupes = self.db.find_applied_duplicates(job['id'])
+            if dupes:
+                job['repost_applied_at'] = dupes[0]['applied_at'][:10]
+                repost_count += 1
+
         if not all_ready:
             print("\nNo jobs ready to apply. All caught up!")
             return
@@ -969,6 +989,8 @@ class JobPipeline:
             for label, err in results["cl_failed"]:
                 print(f"    ! {label}: {err[:80]}")
         print(f"  Total ready: {len(all_ready)}")
+        if repost_count:
+            print(f"  Reposts:     {repost_count} (already applied to same company+title)")
         print(f"{'='*50}\n")
 
         # Step 6: Start checklist server
