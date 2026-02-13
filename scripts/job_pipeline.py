@@ -891,14 +891,15 @@ class JobPipeline:
         from src.cover_letter_generator import CoverLetterGenerator
         from src.cover_letter_renderer import CoverLetterRenderer
 
-        threshold = min_ai_score or self.config.get('thresholds', {}).get(
+        threshold = min_ai_score or self.ai_config.get('thresholds', {}).get(
             'ai_score_generate_resume', 5.0)
         limit = limit or 50
 
         # Step 1: Sync from Turso
         print("Syncing database...")
         try:
-            self.db.sync()
+            if self.db._libsql_raw:
+                self.db._libsql_raw.sync()
         except Exception as e:
             print(f"Warning: Turso sync failed ({e}), using local data")
 
@@ -1001,6 +1002,8 @@ class JobPipeline:
         # Process applied jobs
         for job_id, info in applied.items():
             self.db.update_application_status(job_id, "applied", applied_at=now)
+            if not info.get("submit_dir"):
+                continue
             src = ready_dir / info["submit_dir"]
             if src.exists() and src.is_dir():
                 dest = applied_dir / src.name
@@ -1009,6 +1012,8 @@ class JobPipeline:
         # Process skipped jobs
         for job_id, info in skipped.items():
             self.db.update_application_status(job_id, "skipped")
+            if not info.get("submit_dir"):
+                continue
             src = ready_dir / info["submit_dir"]
             if src.exists() and src.is_dir():
                 shutil.rmtree(src)
@@ -1022,7 +1027,8 @@ class JobPipeline:
         # Sync to Turso
         print("Syncing to cloud...")
         try:
-            self.db.sync()
+            if self.db._libsql_raw:
+                self.db._libsql_raw.sync()
         except Exception as e:
             print(f"Warning: Turso sync failed ({e}), changes saved locally")
 
