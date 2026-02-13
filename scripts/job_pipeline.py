@@ -34,7 +34,7 @@ import sys
 import re
 import shutil
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Optional
 
 import yaml
@@ -884,6 +884,162 @@ class JobPipeline:
             renderer = CoverLetterRenderer()
             renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
 
+    def cmd_prepare(self, min_ai_score: float = None, limit: int = None):
+        """One-command: generate all materials + launch checklist server."""
+        from src.checklist_server import generate_checklist, start_server
+        from src.resume_renderer import ResumeRenderer
+        from src.cover_letter_generator import CoverLetterGenerator
+        from src.cover_letter_renderer import CoverLetterRenderer
+
+        threshold = min_ai_score or self.config.get('thresholds', {}).get(
+            'ai_score_generate_resume', 5.0)
+        limit = limit or 50
+
+        # Step 1: Sync from Turso
+        print("Syncing database...")
+        try:
+            self.db.sync()
+        except Exception as e:
+            print(f"Warning: Turso sync failed ({e}), using local data")
+
+        # Step 2: Generate resumes for jobs that need them
+        renderer = ResumeRenderer()
+        jobs = self.db.get_analyzed_jobs_for_resume(
+            min_ai_score=threshold, limit=limit)
+
+        results = {"success": [], "failed": [], "cl_failed": []}
+
+        if jobs:
+            print(f"\nGenerating materials for {len(jobs)} jobs...")
+            cl_gen = CoverLetterGenerator()
+            cl_renderer = CoverLetterRenderer()
+
+            for job in jobs:
+                job_id = job['id']
+                company = job.get('company', 'Unknown')
+                title = job.get('title', 'Unknown')
+                label = f"{company} - {title}"
+
+                # Resume
+                try:
+                    resume_result = renderer.render_resume(job_id)
+                    if not resume_result:
+                        results["failed"].append((label, "render returned None"))
+                        continue
+                except Exception as e:
+                    results["failed"].append((label, str(e)))
+                    continue
+
+                results["success"].append(label)
+
+                # Cover letter (non-blocking: resume is saved even if CL fails)
+                try:
+                    cl_spec = cl_gen.generate(job_id)
+                    if cl_spec:
+                        cl_renderer.render(job_id)
+                except Exception as e:
+                    results["cl_failed"].append((label, str(e)))
+        else:
+            print("No new jobs need resume generation.")
+
+        # Step 3: Collect ALL ready-to-apply jobs (new + existing)
+        all_ready = self.db.get_ready_to_apply()
+
+        if not all_ready:
+            print("\nNo jobs ready to apply. All caught up!")
+            return
+
+        # Step 4: Generate checklist
+        ready_dir = Path(PROJECT_ROOT) / "ready_to_send"
+        generate_checklist(all_ready, ready_dir)
+
+        # Step 5: Summary report
+        print(f"\n{'='*50}")
+        print(f"  PREPARE SUMMARY")
+        print(f"{'='*50}")
+        if results["success"]:
+            print(f"  New resumes: {len(results['success'])}")
+        if results["failed"]:
+            print(f"  Failed:      {len(results['failed'])}")
+            for label, err in results["failed"]:
+                print(f"    x {label}: {err[:80]}")
+        if results["cl_failed"]:
+            print(f"  CL warnings: {len(results['cl_failed'])}")
+            for label, err in results["cl_failed"]:
+                print(f"    ! {label}: {err[:80]}")
+        print(f"  Total ready: {len(all_ready)}")
+        print(f"{'='*50}\n")
+
+        # Step 6: Start checklist server
+        start_server(ready_dir)
+
+    def cmd_finalize(self):
+        """Read checklist state, archive applied jobs, clean up skipped."""
+        ready_dir = Path(PROJECT_ROOT) / "ready_to_send"
+        state_path = ready_dir / "state.json"
+
+        if not state_path.exists():
+            print("No state.json found. Run --prepare first.")
+            return
+
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        jobs = state.get("jobs", {})
+
+        if not jobs:
+            print("No jobs in state. Nothing to finalize.")
+            return
+
+        applied = {jid: j for jid, j in jobs.items() if j.get("applied")}
+        skipped = {jid: j for jid, j in jobs.items() if not j.get("applied")}
+
+        applied_dir = ready_dir / "_applied"
+        if applied:
+            applied_dir.mkdir(parents=True, exist_ok=True)
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Process applied jobs
+        for job_id, info in applied.items():
+            self.db.update_application_status(job_id, "applied", applied_at=now)
+            src = ready_dir / info["submit_dir"]
+            if src.exists() and src.is_dir():
+                dest = applied_dir / src.name
+                shutil.move(str(src), str(dest))
+
+        # Process skipped jobs
+        for job_id, info in skipped.items():
+            self.db.update_application_status(job_id, "skipped")
+            src = ready_dir / info["submit_dir"]
+            if src.exists() and src.is_dir():
+                shutil.rmtree(src)
+
+        # Clean up state files
+        state_path.unlink(missing_ok=True)
+        checklist_path = ready_dir / "apply_checklist.html"
+        if checklist_path.exists():
+            checklist_path.unlink()
+
+        # Sync to Turso
+        print("Syncing to cloud...")
+        try:
+            self.db.sync()
+        except Exception as e:
+            print(f"Warning: Turso sync failed ({e}), changes saved locally")
+
+        # Report
+        print(f"\n{'='*50}")
+        print(f"  FINALIZE SUMMARY")
+        print(f"{'='*50}")
+        if applied:
+            print(f"  Applied ({len(applied)}):")
+            for jid, info in applied.items():
+                print(f"    -> {info['company']} - {info['title']}")
+        if skipped:
+            print(f"  Skipped ({len(skipped)}):")
+            for jid, info in skipped.items():
+                print(f"    -- {info['company']} - {info['title']}")
+        print(f"{'='*50}")
+
     def analyze_single_job(self, job_id: str, model: str = None):
         """分析单个职位"""
         try:
@@ -1009,6 +1165,12 @@ def main():
     parser.add_argument('--regen', action='store_true',
                         help='Force regenerate (use with --cover-letter)')
 
+    # Local workflow commands
+    parser.add_argument('--prepare', action='store_true',
+                        help='Generate all application materials and launch checklist')
+    parser.add_argument('--finalize', action='store_true',
+                        help='Archive applied jobs, clean up skipped, sync to cloud')
+
     args = parser.parse_args()
 
     # 重新处理所有职位 (清除旧结果)
@@ -1037,13 +1199,18 @@ def main():
        or args.ai_analyze or args.generate or args.analyze_job \
        or args.stats or args.mark_applied or args.mark_all_applied \
        or args.update_status or args.tracker \
-       or args.cover_letter or args.cover_letters:
+       or args.cover_letter or args.cover_letters \
+       or args.prepare or args.finalize:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
             sys.exit(1)
 
         pipeline = JobPipeline()
-        if args.process:
+        if args.prepare:
+            pipeline.cmd_prepare(min_ai_score=args.min_score, limit=args.limit)
+        elif args.finalize:
+            pipeline.cmd_finalize()
+        elif args.process:
             pipeline.process_all(limit=args.limit)
         elif args.import_only:
             pipeline.import_inbox()
