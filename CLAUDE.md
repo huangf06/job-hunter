@@ -59,9 +59,6 @@ python scripts/job_pipeline.py --score         # 只规则评分
 # AI 分析高分职位 (调用 Claude Opus)
 python scripts/job_pipeline.py --ai-analyze
 
-# 为 AI 高分职位生成简历 + Cover Letter
-python scripts/job_pipeline.py --generate
-
 # 分析单个职位
 python scripts/job_pipeline.py --analyze-job JOB_ID
 ```
@@ -70,15 +67,30 @@ python scripts/job_pipeline.py --analyze-job JOB_ID
 - `--min-score N`: 最低分数阈值
 - `--limit N`: 最大处理数量 (默认 50)
 
-### 4. 查看状态与申请跟踪
+### 4. 本地投递工作流 (推荐)
+```bash
+# 一键生成简历 + Cover Letter + 启动 checklist server
+python scripts/job_pipeline.py --prepare
+
+# 投递完成后，归档已投递、清理跳过的
+python scripts/job_pipeline.py --finalize
+```
+
+`--prepare` 流程: 同步 DB → 生成简历/CL → 收集待投递 → 生成 HTML checklist → 启动本地 server
+`--finalize` 流程: 读取 state.json → 标记 applied/skipped → 归档文件 → 同步 Turso
+
+Repost 检测: `--prepare` 自动检测同 company+title 已投递的职位，在 checklist 中标注 REPOST 警告。
+
+### 5. 查看状态与申请跟踪
 ```bash
 python scripts/job_pipeline.py --stats         # 漏斗统计
-python scripts/job_pipeline.py --ready         # 待申请职位
+python scripts/job_pipeline.py --ready         # 待申请职位 (旧版)
+python scripts/job_pipeline.py --generate      # 生成简历 (旧版)
 python scripts/job_pipeline.py --mark-applied JOB_ID  # 标记已申请
 python scripts/job_pipeline.py --tracker       # 申请状态看板
 ```
 
-### 5. CI/CD (GitHub Actions)
+### 6. CI/CD (GitHub Actions)
 流水线自动运行: `.github/workflows/job-pipeline.yml`
 - 定时触发: 每日自动爬取 + 处理 + AI 分析
 - 使用 Turso 云数据库，无需本地 DB
@@ -97,6 +109,9 @@ job-hunter/
 │   ├── ai_analyzer.py              # AI 分析器 (Claude Opus)
 │   ├── resume_renderer.py          # 简历渲染器 (Jinja2 + Playwright)
 │   ├── resume_validator.py         # 简历验证器 (v3.0)
+│   ├── cover_letter_generator.py   # Cover Letter AI 生成
+│   ├── cover_letter_renderer.py    # Cover Letter 渲染
+│   ├── checklist_server.py         # 本地 checklist HTTP server
 │   └── db/
 │       ├── __init__.py
 │       └── job_db.py               # SQLite + Turso 云数据库模块
@@ -126,6 +141,7 @@ job-hunter/
 │       └── job-pipeline.yml    # CI/CD 自动化流水线
 │
 ├── output/                     # 生成的简历
+├── ready_to_send/              # --prepare 生成的投递材料 + checklist
 └── .gitignore
 ```
 
@@ -168,14 +184,14 @@ print(db.get_funnel_stats())
    python scripts/job_pipeline.py --ai-analyze --limit 10
    ```
 
-4. **生成简历 + Cover Letter**:
+4. **一键准备投递材料** (生成简历/CL + 启动 checklist):
    ```bash
-   python scripts/job_pipeline.py --generate
+   python scripts/job_pipeline.py --prepare
    ```
 
-5. **查看待申请**:
+5. **投递完成后归档**:
    ```bash
-   python scripts/job_pipeline.py --ready
+   python scripts/job_pipeline.py --finalize
    ```
 
 ## 配置说明
