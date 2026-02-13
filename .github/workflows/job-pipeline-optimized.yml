@@ -214,15 +214,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Send Discord notification
+      - name: Send Telegram notification
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          echo "=== Sending notification ==="
-          python scripts/notify_discord.py \
-            --new-jobs "${{ needs.scrape.outputs.new_jobs_count }}" \
-            --duration "${{ needs.scrape.outputs.duration_seconds }}" \
-            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/notify.py --status success
 
   # ==========================================
   # Job 5: 健康检查 (总是运行)
