@@ -153,7 +153,7 @@ function openFolder(path) {{
 }}
 
 function copyPath(path, btn) {{
-  const realPath = path.replace(/\\\\/g, '\\');
+  const realPath = path.replace(/\\\\/g, '\\\\');
   navigator.clipboard.writeText(realPath).then(() => {{
     btn.textContent = 'Copied!';
     btn.classList.add('copied');

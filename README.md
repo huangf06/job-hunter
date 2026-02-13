@@ -41,6 +41,16 @@ python scripts/job_pipeline.py --generate
 python scripts/job_pipeline.py --ready
 ```
 
+### Local Application Workflow
+
+```bash
+# Prepare: generates resume/cover letter, opens checklist server
+python scripts/job_pipeline.py --prepare JOB_ID
+
+# Finalize: marks applied, stops server, moves files to ready_to_send/
+python scripts/job_pipeline.py --finalize JOB_ID
+```
+
 ## Architecture
 
 ```
@@ -53,6 +63,7 @@ src/                        # Reusable modules
   ai_analyzer.py                # AI scoring + resume tailoring (Claude Opus)
   resume_renderer.py            # Jinja2 → HTML → PDF
   resume_validator.py           # Bullet/bio/skill validation gates
+  checklist_server.py           # Local application checklist UI
   db/job_db.py                  # SQLite + Turso cloud sync
 
 config/
