@@ -112,7 +112,7 @@ class ResumeRenderer:
 
             # Languages (human languages, separate from technical skills)
             'languages': self.config.get('resume', {}).get('languages',
-                'English (Fluent), Mandarin (Native), Dutch (Conversational)'),
+                'English (Fluent), Mandarin (Native)'),
         }
 
     def render_resume(self, job_id: str) -> Optional[Dict[str, str]]:
