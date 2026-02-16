@@ -958,6 +958,12 @@ class JobPipeline:
         # Step 3: Collect ALL ready-to-apply jobs (new + existing)
         all_ready = self.db.get_ready_to_apply()
 
+        # Filter out jobs whose submit_dir no longer exists on disk
+        before_count = len(all_ready)
+        all_ready = [j for j in all_ready if j.get('submit_dir') and Path(j['submit_dir']).is_dir()]
+        if before_count > len(all_ready):
+            print(f"  Skipped {before_count - len(all_ready)} jobs (resume files missing on disk).")
+
         # Enrich with repost info
         repost_count = 0
         for job in all_ready:
