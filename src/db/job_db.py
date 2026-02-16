@@ -538,7 +538,9 @@ class JobDatabase:
             sync_before: Pull from remote before reading. Set False for
                          write-only operations to skip the network round-trip.
         """
-        if self._libsql_raw:
+        use_libsql = self._libsql_raw is not None
+
+        if use_libsql:
             # Re-entrancy: if already inside a _get_conn block on the shared
             # connection, just yield the wrapper — the outer block owns the
             # transaction lifecycle (commit / rollback / sync).
@@ -550,6 +552,26 @@ class JobDatabase:
                     self._libsql_raw.sync()
                 except Exception as e:
                     logger.warning("Turso pre-read sync failed (using local data): %s", e)
+            # Health check: verify libsql can actually read data.
+            # On Windows, libsql embedded replicas have a known bug where the
+            # connection appears valid but data reads fail with
+            # "file is not a database".  Detect this early and fall back to
+            # plain sqlite3 for the rest of the session.
+            try:
+                self._libsql_raw.execute(
+                    "SELECT 1 FROM sqlite_master LIMIT 1"
+                ).fetchone()
+            except (ValueError, Exception) as e:
+                if "file is not a database" in str(e):
+                    logger.warning(
+                        "libsql connection unusable (%s), "
+                        "falling back to local SQLite for this session", e)
+                    self._libsql_raw = None
+                    use_libsql = False
+                else:
+                    raise
+
+        if use_libsql:
             self._in_transaction = True
             conn = _DictConnection(self._libsql_raw)
             try:
