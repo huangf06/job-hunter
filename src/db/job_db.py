@@ -1094,19 +1094,43 @@ class JobDatabase:
                 'by_status': by_status
             }
 
+    @staticmethod
+    def _normalize_title(title: str) -> str:
+        """标准化职位标题为排序词集合，忽略词序和标点"""
+        import re
+        words = re.findall(r'[a-z0-9+#]+', title.lower())
+        return ' '.join(sorted(words))
+
     def find_applied_duplicates(self, job_id: str) -> List[Dict]:
-        """查找同 company+title 已投递的职位 (repost 检测)"""
+        """查找同 company+title 已投递的职位 (repost 检测)
+
+        使用词集合比较，忽略词序和标点，例如:
+        "Data Engineer - Enterprise" == "Enterprise Data Engineer"
+        """
         with self._get_conn() as conn:
+            # 先获取目标职位的 company 和 title
+            target = conn.execute(
+                "SELECT title, company FROM jobs WHERE id = ?", (job_id,)
+            ).fetchone()
+            if not target:
+                return []
+
+            target_company = target['company'].lower()
+            target_title_norm = self._normalize_title(target['title'])
+
+            # 查找同公司已投递的职位，在 Python 层做标题词集合比较
             cursor = conn.execute("""
-                SELECT j2.id as job_id, j2.title, j2.company, a.applied_at
-                FROM jobs j1
-                JOIN jobs j2 ON LOWER(j1.company) = LOWER(j2.company)
-                              AND LOWER(j1.title) = LOWER(j2.title)
-                              AND j1.id != j2.id
-                JOIN applications a ON j2.id = a.job_id AND a.status = 'applied'
-                WHERE j1.id = ?
-            """, (job_id,))
-            return [dict(row) for row in cursor.fetchall()]
+                SELECT j.id as job_id, j.title, j.company, a.applied_at
+                FROM jobs j
+                JOIN applications a ON j.id = a.job_id AND a.status = 'applied'
+                WHERE LOWER(j.company) = ? AND j.id != ?
+            """, (target_company, job_id))
+
+            results = []
+            for row in cursor.fetchall():
+                if self._normalize_title(row['title']) == target_title_norm:
+                    results.append(dict(row))
+            return results
 
     # ==================== 统计和分析 ====================
 
