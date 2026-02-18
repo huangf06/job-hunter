@@ -475,7 +475,19 @@ work_authorization:
     visa_type: "Highly Skilled Migrant (Kennismigrant)"
     sponsorship_needed: true
     timeline: "Required from December 2026 onwards"
-    employer_requirements: "Employer must be recognized sponsor; salary threshold ~€4,000-5,000/month"
+    employer_requirements: "Employer must be IND recognized sponsor (erkend referent)"
+    salary_threshold: "€3,122/month (reduced rate for post-Zoekjaar transition)"
+    processing_time: "2-4 weeks"
+
+# Common screening question answers
+screening_answers:
+  onsite: "Yes, available for fully onsite work"
+  availability: "Immediately"
+  salary_strategy:
+    small_company: "€50,000-60,000"    # SME, startups, non-tech companies
+    mid_company: "€55,000-65,000"      # mid-size tech, established companies
+    large_company: "€65,000-80,000"    # FAANG, top-tier tech, finance
+    note: "Open to discussion depending on full compensation package"
 
 # =============================================================================
 # SKILL TIERS — Three-level skill classification for resume generation
