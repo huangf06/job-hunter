@@ -12,6 +12,9 @@ playwright>=1.40.0
 # AI (Claude API)
 anthropic>=0.77.0
 
+# HTTP client (Google Calendar API)
+requests>=2.31.0
+
 # Environment variables
 python-dotenv>=1.0.0
 

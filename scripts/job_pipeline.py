@@ -1205,6 +1205,16 @@ def main():
     parser.add_argument('--finalize', action='store_true',
                         help='Archive applied jobs, clean up skipped, sync to cloud')
 
+    # Interview scheduling commands
+    parser.add_argument('--schedule-interview', type=str, metavar='COMPANY',
+                        help='Suggest best interview slots for a company')
+    parser.add_argument('--suggest-availability', type=str, metavar='COMPANY',
+                        help='Show all available interview slots for a company')
+    parser.add_argument('--duration', type=int, default=60,
+                        help='Interview duration in minutes (default: 60)')
+    parser.add_argument('--days', type=int, default=14,
+                        help='Days ahead to search for slots (default: 14)')
+
     args = parser.parse_args()
 
     # 重新处理所有职位 (清除旧结果)
@@ -1234,7 +1244,8 @@ def main():
        or args.stats or args.mark_applied or args.mark_all_applied \
        or args.update_status or args.tracker \
        or args.cover_letter or args.cover_letters \
-       or args.prepare or args.finalize:
+       or args.prepare or args.finalize \
+       or args.schedule_interview or args.suggest_availability:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
             sys.exit(1)
@@ -1244,6 +1255,24 @@ def main():
             pipeline.cmd_prepare(min_ai_score=args.min_score, limit=args.limit)
         elif args.finalize:
             pipeline.cmd_finalize()
+        elif args.schedule_interview:
+            from src.interview_scheduler import InterviewScheduler, format_slots
+            scheduler = InterviewScheduler()
+            slots = scheduler.suggest_slots(
+                company=args.schedule_interview,
+                duration_minutes=args.duration,
+                days=args.days,
+            )
+            print(format_slots(slots))
+        elif args.suggest_availability:
+            from src.interview_scheduler import InterviewScheduler, format_availability
+            scheduler = InterviewScheduler()
+            by_date = scheduler.suggest_availability(
+                company=args.suggest_availability,
+                duration_minutes=args.duration,
+                days=args.days,
+            )
+            print(format_availability(by_date))
         elif args.process:
             pipeline.process_all(limit=args.limit)
         elif args.import_only:
@@ -1385,6 +1414,12 @@ def main():
     print("  --cover-letters    Batch generate cover letters")
     print("  --requirements TXT Custom requirements (with --cover-letter)")
     print("  --regen            Force regenerate (with --cover-letter)")
+    print()
+    print("  Interview Scheduling:")
+    print("  --schedule-interview COMPANY  Suggest best interview slots")
+    print("  --suggest-availability COMPANY  Show all available slots")
+    print("  --duration N       Interview duration in minutes (default: 60)")
+    print("  --days N           Days ahead to search (default: 14)")
     print()
     print("  Options:")
     print("  --min-score N      Minimum score threshold")
