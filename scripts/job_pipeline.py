@@ -972,6 +972,14 @@ class JobPipeline:
                 job['repost_applied_at'] = dupes[0]['applied_at'][:10]
                 repost_count += 1
 
+        # Enrich with rejection history
+        rejection_count = 0
+        for job in all_ready:
+            rejected = self.db.find_rejected_duplicates(job['id'])
+            if rejected:
+                job['rejection_rejected_at'] = (rejected[0].get('rejected_at') or '')[:10]
+                rejection_count += 1
+
         if not all_ready:
             print("\nNo jobs ready to apply. All caught up!")
             return
