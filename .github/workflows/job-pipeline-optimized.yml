@@ -53,7 +53,7 @@ jobs:
   # ==========================================
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # 爬取时间限制：30分钟（LinkedIn可能较慢）
+    timeout-minutes: 40  # 爬取时间限制：40分钟（LinkedIn JD获取可能较慢）
     outputs:
       new_jobs_count: ${{ steps.scrape.outputs.new_jobs_count }}
       total_jobs_count: ${{ steps.scrape.outputs.total_jobs_count }}
@@ -227,7 +227,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [scrape, score, ai-analyze]
     if: always()
-    timeout-minutes: 2
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
@@ -244,6 +244,3 @@ jobs:
         run: |
           echo "=== Pipeline Health Check ==="
           python scripts/job_pipeline.py --stats
-
-      - name: Final stats
-        run: python scripts/job_pipeline.py --stats
