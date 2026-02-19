@@ -58,6 +58,14 @@ class InterviewScheduler:
 
         self.buffer_minutes = self.config.get("buffer_minutes", 60)
 
+        # Personal energy profile (candidate-specific calibration)
+        energy = self.config.get("candidate_energy", {})
+        self.energy_morning_peak = energy.get("morning_peak", 2.0)
+        self.energy_morning_warmup = energy.get("morning_warmup", 1.0)
+        self.energy_afternoon_focus = energy.get("afternoon_focus", -0.5)
+        self.energy_post_lunch_dip = energy.get("post_lunch_dip", -1.5)
+        self.energy_late_afternoon = energy.get("late_afternoon", -1.0)
+
         self.calendar = GoogleCalendarClient()
         self.db = JobDatabase()
 
@@ -84,45 +92,110 @@ class InterviewScheduler:
         return None
 
     # ========== Slot Scoring ==========
+    #
+    # Scoring philosophy (career coaching best practices):
+    #
+    # A good interview slot optimizes THREE perspectives:
+    #
+    # 1. CANDIDATE performance — your cognitive peak, preparation buffer
+    #    - 10:00-11:30 is peak cognitive window for most people
+    #    - Post-lunch (13:00-13:30) dip; 14:00-15:30 recovery
+    #    - Avoid first-thing (09:00) if you need warmup time
+    #
+    # 2. INTERVIEWER receptiveness — their energy and attention
+    #    - Monday morning: catching up on emails, standups, not focused on you
+    #    - Monday afternoon: settled in, acceptable
+    #    - Tuesday-Wednesday: peak week engagement, best days
+    #    - Thursday: still good, slight wind-down
+    #    - Friday morning: acceptable; Friday afternoon: mentally checked out
+    #    - Mid-morning (10-12): interviewer is warmed up but not yet fatigued
+    #    - Late afternoon (16:00+): they want to go home
+    #
+    # 3. STRATEGIC factors — impression and context
+    #    - Tue/Wed 10:00-11:30 is the "golden window" (both sides peak)
+    #    - Being early in the interview day avoids decision fatigue
+    #    - Back-to-back interviews same day drain preparation quality
+    #    - High-priority companies deserve golden-window slots
 
     def _score_slot(self, start: datetime, end: datetime, ai_score: Optional[float]) -> tuple:
-        """Score a candidate slot. Returns (score, reason_parts)."""
-        score = 5.0
+        """Score a candidate slot on three dimensions. Returns (score, reason_parts).
+
+        Dimensions:
+        - Candidate cognitive performance (time of day)
+        - Interviewer receptiveness (day of week + time)
+        - Strategic fit (golden window, priority company)
+        """
+        score = 3.0  # base
         reasons = []
 
         hour = start.hour
+        minute = start.minute
+        h_frac = hour + minute / 60.0  # e.g. 10:30 = 10.5
         weekday = start.weekday()  # 0=Mon ... 4=Fri
 
-        # Time-of-day scoring
-        if self.peak_start.hour <= hour < self.peak_end.hour:
-            score += 3.0
-            reasons.append("peak hours (10-12)")
-        elif 9 <= hour < 10:
-            score += 1.0
-            reasons.append("early morning")
-        elif 13 <= hour < 15:
-            score += 1.5
-            reasons.append("early afternoon")
-        elif 15 <= hour < 17:
-            score += 0.5
+        # --- Dimension 1: Candidate cognitive performance (configurable) ---
+        if 10.0 <= h_frac < 11.5:
+            score += 3.0 + self.energy_morning_peak
+            reasons.append("candidate peak (10-11:30)")
+        elif 9.0 <= h_frac < 10.0:
+            score += 1.5 + self.energy_morning_warmup
+            reasons.append("candidate warmup (9-10)")
+        elif 14.0 <= h_frac < 15.5:
+            score += 2.0 + self.energy_afternoon_focus
+            reasons.append("afternoon (not your best)")
+        elif 13.0 <= h_frac < 14.0:
+            score += 0.5 + self.energy_post_lunch_dip
+            reasons.append("post-lunch dip")
+        elif 15.5 <= h_frac < 17.0:
+            score += 1.0 + self.energy_late_afternoon
             reasons.append("late afternoon")
 
-        # Day-of-week scoring
-        if weekday <= 2:  # Mon-Wed
-            score += 1.0
-            reasons.append("Mon-Wed")
+        # --- Dimension 2: Interviewer receptiveness (max +3.0) ---
+        if weekday in (1, 2):  # Tue, Wed
+            if 10.0 <= h_frac < 12.0:
+                score += 3.0
+                reasons.append("interviewer peak (Tue/Wed morning)")
+            elif 14.0 <= h_frac < 16.0:
+                score += 2.0
+                reasons.append("interviewer engaged (Tue/Wed afternoon)")
+            else:
+                score += 1.5
+                reasons.append("Tue/Wed")
         elif weekday == 3:  # Thu
-            score += 0.5
-            reasons.append("Thu")
-        # Fri: +0
-
-        # High-priority company bonus
-        if ai_score is not None and ai_score >= 7.0:
-            if self.peak_start.hour <= hour < self.peak_end.hour:
+            if 10.0 <= h_frac < 12.0:
+                score += 2.5
+                reasons.append("interviewer good (Thu morning)")
+            else:
                 score += 1.0
-                reasons.append("priority company + peak")
+                reasons.append("Thu")
+        elif weekday == 0:  # Mon
+            if h_frac < 12.0:
+                score -= 0.5
+                reasons.append("Mon morning (interviewer settling in)")
+            else:
+                score += 1.0
+                reasons.append("Mon afternoon (settled)")
+        elif weekday == 4:  # Fri
+            if h_frac < 12.0:
+                score += 0.5
+                reasons.append("Fri morning (acceptable)")
+            else:
+                score -= 1.0
+                reasons.append("Fri afternoon (interviewer checked out)")
 
-        score = min(10.0, score)
+        # --- Dimension 3: Strategic bonus (max +2.0) ---
+        # Golden window: Tue/Wed 10:00-11:30
+        is_golden = weekday in (1, 2) and 10.0 <= h_frac < 11.5
+        if is_golden:
+            score += 1.0
+            reasons.append("GOLDEN WINDOW")
+
+        # High-priority company deserves best slots
+        if ai_score is not None and ai_score >= 7.0 and is_golden:
+            score += 1.0
+            reasons.append("priority company")
+
+        score = max(0.0, min(10.0, score))
         return score, reasons
 
     # ========== Slot Generation ==========
