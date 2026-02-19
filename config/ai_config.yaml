@@ -372,9 +372,23 @@ prompts:
 # Metadata
 # =============================================================================
 
+# =============================================================================
+# Interview Scheduler
+# =============================================================================
+
+interview_scheduler:
+  working_hours:
+    start: "09:00"
+    end: "17:00"
+  peak_hours:
+    start: "10:00"
+    end: "12:00"
+  buffer_minutes: 60
+  timezone: "Europe/Amsterdam"
+
 metadata:
   version: "2.0.0"
   created: "2026-02-05"
-  updated: "2026-02-07"
+  updated: "2026-02-19"
   author: "Fei Huang"
   description: "AI-powered job analysis and resume generation configuration (v2: bullet-by-ID)"
