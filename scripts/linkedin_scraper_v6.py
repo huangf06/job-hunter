@@ -689,7 +689,7 @@ class LinkedInScraperV6:
         return False
 
     async def fetch_job_descriptions(self, jobs: List[Dict]) -> List[Dict]:
-        """Fetch job descriptions"""
+        """Fetch job descriptions with consecutive failure bail-out"""
         if not jobs:
             return jobs
 
@@ -701,6 +701,9 @@ class LinkedInScraperV6:
         print(f"\n  [JD] Fetching descriptions for {len(jobs_to_fetch)} jobs...")
 
         fetched_count = 0
+        consecutive_failures = 0
+        max_consecutive_failures = 5  # bail out if 5 in a row fail
+
         for i, job in enumerate(jobs_to_fetch):
             url = job.get('url', '')
             if not url:
@@ -711,66 +714,100 @@ class LinkedInScraperV6:
                 if description:
                     job['description'] = description
                     fetched_count += 1
+                    consecutive_failures = 0
                     print(f"    [{i+1}/{len(jobs_to_fetch)}] {job['title'][:30]} - {len(description)} chars")
                 else:
+                    consecutive_failures += 1
                     print(f"    [{i+1}/{len(jobs_to_fetch)}] {job['title'][:30]} - no description found")
+
+                    if consecutive_failures >= max_consecutive_failures:
+                        remaining = len(jobs_to_fetch) - i - 1
+                        print(f"  [JD] Bail out: {max_consecutive_failures} consecutive failures, skipping {remaining} remaining jobs")
+                        break
 
                 # 更保守的间隔避免被限流
                 await asyncio.sleep(2.0 + (1.0 * (i % 3)))
 
             except Exception as e:
+                consecutive_failures += 1
                 print(f"    [{i+1}/{len(jobs_to_fetch)}] {job['title'][:30]} - error: {str(e)[:30]}")
+                if consecutive_failures >= max_consecutive_failures:
+                    remaining = len(jobs_to_fetch) - i - 1
+                    print(f"  [JD] Bail out: {max_consecutive_failures} consecutive failures, skipping {remaining} remaining jobs")
+                    break
                 continue
 
         print(f"  [JD] Fetched {fetched_count}/{len(jobs_to_fetch)} descriptions")
         return jobs
 
+    def _clean_jd_text(self, text: str) -> Optional[str]:
+        """Clean and validate JD text"""
+        if not text or len(text.strip()) < 100:
+            return None
+        description = text.strip()
+        description = re.sub(r'\n{3,}', '\n\n', description)
+        description = re.sub(r' {2,}', ' ', description)
+        if len(description) > 15000:
+            print(f"      [WARN] JD truncated from {len(description)} to 15000 chars")
+        return description[:15000]
+
     async def _fetch_single_jd(self, url: str) -> Optional[str]:
-        """Fetch single job description"""
+        """Fetch single job description with multiple fallback strategies"""
         try:
             # 使用 domcontentloaded 确保基本DOM已加载
             await self.page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
+            # 检查是否被重定向到登录/auth页面
+            current_url = self.page.url
+            auth_markers = ["/login", "/checkpoint", "/authwall", "/uas/"]
+            if any(marker in current_url for marker in auth_markers):
+                print(f"      [AUTH] Redirected to auth page: {current_url[:80]}")
+                return None
+
             # 等待页面稳定
             await asyncio.sleep(3)
 
-            # JD选择器 - 按优先级排列
+            # === Strategy 1: CSS selectors (按优先级排列) ===
             jd_selectors = [
                 ".jobs-description__content",
                 ".jobs-box__html-content",
                 ".jobs-description-content__text",
                 "#job-details",
+                ".show-more-less-html__markup",
                 "article[class*='jobs-description']",
                 ".jobs-description",
                 "[class*='description']",
                 ".job-view-layout",
             ]
 
-            # 先尝试等待JD元素出现
-            for selector in jd_selectors[:4]:
+            # 先尝试等待JD元素出现 (2s per selector)
+            found_selector = False
+            for selector in jd_selectors[:5]:
                 try:
-                    await self.page.wait_for_selector(selector, timeout=5000)
+                    await self.page.wait_for_selector(selector, timeout=2000)
+                    found_selector = True
                     break
                 except Exception:
                     continue
 
             # 尝试点击 "Show more" / "See more" 按钮展开完整JD
-            show_more_selectors = [
-                "button[aria-label*='Show more']",
-                "button[aria-label*='See more']",
-                ".jobs-description__footer-button",
-                "button.show-more-less-html__button",
-                "[class*='show-more']",
-            ]
-            for btn_selector in show_more_selectors:
-                try:
-                    btn = await self.page.query_selector(btn_selector)
-                    if btn:
-                        await btn.click()
-                        await asyncio.sleep(0.5)
-                        break
-                except Exception:
-                    continue
+            if found_selector:
+                show_more_selectors = [
+                    "button[aria-label*='Show more']",
+                    "button[aria-label*='See more']",
+                    ".jobs-description__footer-button",
+                    "button.show-more-less-html__button",
+                    "[class*='show-more']",
+                ]
+                for btn_selector in show_more_selectors:
+                    try:
+                        btn = await self.page.query_selector(btn_selector)
+                        if btn:
+                            await btn.click()
+                            await asyncio.sleep(0.5)
+                            break
+                    except Exception:
+                        continue
 
             # 提取JD文本
             for selector in jd_selectors:
@@ -778,15 +815,58 @@ class LinkedInScraperV6:
                     el = await self.page.query_selector(selector)
                     if el:
                         text = await el.inner_text()
-                        if text and len(text.strip()) > 100:
-                            description = text.strip()
-                            description = re.sub(r'\n{3,}', '\n\n', description)
-                            description = re.sub(r' {2,}', ' ', description)
-                            if len(description) > 15000:
-                                print(f"      [WARN] JD truncated from {len(description)} to 15000 chars")
-                            return description[:15000]
+                        result = self._clean_jd_text(text)
+                        if result:
+                            return result
                 except Exception:
                     continue
+
+            # === Strategy 2: JSON-LD structured data ===
+            try:
+                jsonld = await self.page.evaluate("""() => {
+                    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+                    for (const s of scripts) {
+                        try {
+                            const data = JSON.parse(s.textContent);
+                            if (data.description) return data.description;
+                            if (data['@type'] === 'JobPosting' && data.description) return data.description;
+                        } catch(e) {}
+                    }
+                    return null;
+                }""")
+                if jsonld:
+                    # JSON-LD description may contain HTML, strip tags
+                    clean = re.sub(r'<[^>]+>', ' ', jsonld)
+                    result = self._clean_jd_text(clean)
+                    if result:
+                        print(f"      [JSON-LD] Extracted via structured data")
+                        return result
+            except Exception:
+                pass
+
+            # === Strategy 3: Page body text fallback ===
+            try:
+                # 从 main 或 body 提取最长的文本块
+                body_text = await self.page.evaluate("""() => {
+                    const main = document.querySelector('main') || document.body;
+                    if (!main) return '';
+                    return main.innerText || '';
+                }""")
+                # 只在有足够内容时使用 body fallback
+                result = self._clean_jd_text(body_text)
+                if result and len(result) > 300:
+                    print(f"      [BODY] Extracted via body text fallback")
+                    return result
+            except Exception:
+                pass
+
+            # === 所有策略都失败，打印诊断信息 ===
+            try:
+                title = await self.page.title()
+                diag_text = await self.page.evaluate("() => document.body?.innerText?.substring(0, 300) || 'empty'")
+                print(f"      [DIAG] title='{title[:60]}' body='{diag_text[:120]}...'")
+            except Exception:
+                pass
 
             return None
 
