@@ -1132,6 +1132,36 @@ class JobDatabase:
                     results.append(dict(row))
             return results
 
+    def find_rejected_duplicates(self, job_id: str) -> List[Dict]:
+        """查找同 company+title 被拒的职位 (rejection history 检测)
+
+        使用词集合比较，忽略词序和标点，例如:
+        "Data Engineer - Enterprise" == "Enterprise Data Engineer"
+        """
+        with self._get_conn() as conn:
+            target = conn.execute(
+                "SELECT title, company FROM jobs WHERE id = ?", (job_id,)
+            ).fetchone()
+            if not target:
+                return []
+
+            target_company = target['company'].lower()
+            target_title_norm = self._normalize_title(target['title'])
+
+            cursor = conn.execute("""
+                SELECT j.id as job_id, j.title, j.company,
+                       COALESCE(a.response_at, a.updated_at) as rejected_at
+                FROM jobs j
+                JOIN applications a ON j.id = a.job_id AND a.status = 'rejected'
+                WHERE LOWER(j.company) = ? AND j.id != ?
+            """, (target_company, job_id))
+
+            results = []
+            for row in cursor.fetchall():
+                if self._normalize_title(row['title']) == target_title_norm:
+                    results.append(dict(row))
+            return results
+
     # ==================== 统计和分析 ====================
 
     def get_funnel_stats(self) -> Dict:
