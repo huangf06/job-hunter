@@ -90,7 +90,25 @@ python scripts/job_pipeline.py --mark-applied JOB_ID  # 标记已申请
 python scripts/job_pipeline.py --tracker       # 申请状态看板
 ```
 
-### 6. CI/CD (GitHub Actions)
+### 6. 面试调度 (Google Calendar 集成)
+```bash
+# 推荐最佳面试时间 (结合日历空闲 + 公司 AI 评分 + 三维评分模型)
+python scripts/job_pipeline.py --schedule-interview COMPANY --duration 45 --days 14
+
+# 列出所有可用时间段 (适用于 "选你有空的时间" 场景)
+python scripts/job_pipeline.py --suggest-availability COMPANY --duration 30
+
+# 首次授权 / 添加 Gmail 权限
+python scripts/google_auth.py
+```
+
+三维评分模型:
+- **候选人状态**: 上午 10:00-11:30 最佳，下午略低
+- **面试官状态**: 周二三上午最投入，周一上午在清邮件/开 standup
+- **策略加成**: "黄金窗口" = 周二/三 10:00-11:30 双方同时巅峰
+- 个人能量曲线可在 `config/ai_config.yaml` → `interview_scheduler.candidate_energy` 调整
+
+### 7. CI/CD (GitHub Actions)
 流水线自动运行: `.github/workflows/job-pipeline.yml`
 - 定时触发: 每日自动爬取 + 处理 + AI 分析
 - 使用 Turso 云数据库，无需本地 DB
@@ -102,7 +120,8 @@ job-hunter/
 ├── scripts/                    # CLI 入口
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
 │   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫
-│   └── job_parser.py               # JD 解析器
+│   ├── job_parser.py               # JD 解析器
+│   └── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
 │
 ├── src/                        # 可复用模块
 │   ├── __init__.py
@@ -112,6 +131,8 @@ job-hunter/
 │   ├── cover_letter_generator.py   # Cover Letter AI 生成
 │   ├── cover_letter_renderer.py    # Cover Letter 渲染
 │   ├── checklist_server.py         # 本地 checklist HTTP server
+│   ├── google_calendar.py          # Google Calendar REST 客户端 (通用)
+│   ├── interview_scheduler.py      # 智能面试调度 (日历+DB+评分)
 │   └── db/
 │       ├── __init__.py
 │       └── job_db.py               # SQLite + Turso 云数据库模块
@@ -216,3 +237,6 @@ print(db.get_funnel_stats())
 - Playwright PDF 需要: `playwright install chromium`
 - Turso 云同步: 设置 `.env` 中的 `TURSO_DATABASE_URL` 和 `TURSO_AUTH_TOKEN`
 - Windows 上 libsql embedded replica 有已知栈溢出 bug，如遇崩溃可取消 Turso 环境变量回退到本地 SQLite
+- Google Calendar: token 文件在 `~/.config/google-calendar-mcp/tokens.json`，与 MCP 共享 (原子读写)
+- Google OAuth 凭据在 `~/.config/gcp-oauth.keys.json`，首次使用或添加 scope 时运行 `python scripts/google_auth.py`
+- 面试调度评分可通过 `config/ai_config.yaml` → `interview_scheduler.candidate_energy` 调整个人能量曲线

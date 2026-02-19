@@ -386,6 +386,15 @@ interview_scheduler:
   buffer_minutes: 60
   timezone: "Europe/Amsterdam"
 
+  # Personal energy profile (candidate-specific calibration)
+  # Adjusts candidate cognitive dimension scores
+  candidate_energy:
+    morning_peak: 2.0       # 10:00-11:30 bonus (on top of base)
+    morning_warmup: 1.0     # 09:00-10:00
+    afternoon_focus: 0.0    # 14:00-15:30 (slight preference for morning, not a hard penalty)
+    post_lunch_dip: -0.5    # 13:00-14:00
+    late_afternoon: -0.5    # 15:30-17:00
+
 metadata:
   version: "2.0.0"
   created: "2026-02-05"
