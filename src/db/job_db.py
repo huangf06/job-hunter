@@ -448,15 +448,31 @@ class JobDatabase:
                     "Set the token or unset the URL to use local SQLite."
                 )
             import libsql
-            self._libsql_raw = libsql.connect(
-                str(self.db_path),
-                sync_url=self._turso_url,
-                auth_token=self._turso_token,
-            )
-            try:
-                self._libsql_raw.sync()
-            except Exception as e:
-                logger.warning("Turso initial sync failed (using local data): %s", e)
+            # Retry connect+sync to handle transient Turso network errors
+            max_retries = 3
+            for attempt in range(1, max_retries + 1):
+                try:
+                    self._libsql_raw = libsql.connect(
+                        str(self.db_path),
+                        sync_url=self._turso_url,
+                        auth_token=self._turso_token,
+                    )
+                    self._libsql_raw.sync()
+                    break
+                except Exception as e:
+                    if attempt < max_retries:
+                        wait = attempt * 2
+                        logger.warning(
+                            "Turso connect/sync attempt %d/%d failed: %s — retrying in %ds",
+                            attempt, max_retries, e, wait,
+                        )
+                        import time
+                        time.sleep(wait)
+                    else:
+                        logger.warning(
+                            "Turso connect/sync failed after %d attempts (using local data): %s",
+                            max_retries, e,
+                        )
             # Set PRAGMAs once for the persistent connection
             self._libsql_raw.execute("PRAGMA journal_mode=WAL")
             self._libsql_raw.execute("PRAGMA busy_timeout=5000")
