@@ -1108,6 +1108,10 @@ class JobPipeline:
         print(f"{'='*50}")
         print(f"  Archived: {result['archived_count']} jobs")
         print(f"  Archive:  {result['archive_path']}")
+        if result['archive_path']:
+            import os
+            size_mb = os.path.getsize(result['archive_path']) / (1024 * 1024)
+            print(f"  Size:     {size_mb:.1f} MB")
         if result['details']:
             print(f"  Details:")
             for table, count in result['details'].items():

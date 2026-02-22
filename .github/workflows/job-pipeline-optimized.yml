@@ -125,6 +125,7 @@ jobs:
       # Step 2: 规则评分 (快速本地处理)
       # ==========================================
       - name: Rule-based scoring
+        id: score
         continue-on-error: true
         run: |
           echo "=== Running rule-based scoring ==="
@@ -134,6 +135,7 @@ jobs:
       # Step 3: AI 分析 (只处理高分新职位)
       # ==========================================
       - name: AI Analysis
+        id: ai
         continue-on-error: true
         run: |
           LIMIT="${{ github.event.inputs.ai_limit }}"
@@ -157,7 +159,18 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python scripts/notify.py --status success
+        run: |
+          # Collect failed steps
+          FAILED_STEPS=""
+          [ "${{ steps.scrape.outcome }}" == "failure" ] && FAILED_STEPS="scrape"
+          [ "${{ steps.score.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }score"
+          [ "${{ steps.ai.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-analyze"
+
+          if [ -n "$FAILED_STEPS" ]; then
+            python scripts/notify.py --status failure --failed-step "$FAILED_STEPS"
+          else
+            python scripts/notify.py --status success
+          fi
 
       # ==========================================
       # Step 5: 统计汇总

@@ -1190,10 +1190,12 @@ class JobDatabase:
                 SELECT j.id
                 FROM jobs j
                 JOIN filter_results f ON j.id = f.job_id
-                LEFT JOIN applications a ON j.id = a.job_id
                 WHERE j.scraped_at < datetime('now', ? || ' days')
-                  AND (a.job_id IS NULL
-                       OR a.status NOT IN ('applied', 'interview', 'offer'))
+                  AND NOT EXISTS (
+                      SELECT 1 FROM applications a
+                      WHERE a.job_id = j.id
+                        AND a.status IN ('applied', 'interview', 'offer')
+                  )
                 ORDER BY j.scraped_at ASC
             """, (str(-retention_days),))
             return [row['id'] for row in cursor.fetchall()]
@@ -1226,6 +1228,8 @@ class JobDatabase:
 
         # Tables to archive (order: parent first, then dependents)
         # For each table, define (table_name, fk_column)
+        # NOTE: processed_emails is intentionally excluded — it's email dedup
+        # tracking (no job_id FK) and must be retained to prevent re-processing.
         related_tables = [
             ("filter_results", "job_id"),
             ("ai_scores", "job_id"),
@@ -1233,6 +1237,7 @@ class JobDatabase:
             ("resumes", "job_id"),
             ("cover_letters", "job_id"),
             ("applications", "job_id"),
+            ("feedback", "job_id"),
             ("emails", "job_id"),
         ]
 
@@ -1282,10 +1287,14 @@ class JobDatabase:
             archive_conn.commit()
 
             # Verify: count jobs in archive that we intended to write
-            archived_count = archive_conn.execute(
-                f"SELECT COUNT(*) FROM jobs WHERE id IN ({','.join(['?'] * len(cold_ids))})",
-                cold_ids
-            ).fetchone()[0]
+            archived_count = 0
+            for chunk_start in range(0, len(cold_ids), CHUNK_SIZE):
+                chunk = cold_ids[chunk_start:chunk_start + CHUNK_SIZE]
+                placeholders = ','.join(['?'] * len(chunk))
+                archived_count += archive_conn.execute(
+                    f"SELECT COUNT(*) FROM jobs WHERE id IN ({placeholders})",
+                    chunk
+                ).fetchone()[0]
 
             if archived_count != len(cold_ids):
                 archive_conn.close()
