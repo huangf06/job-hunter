@@ -722,7 +722,7 @@ class JobDatabase:
             scraped_at=job_data.get("scraped_at", datetime.now().isoformat()),
             search_profile=job_data.get("search_profile", ""),
             search_query=job_data.get("search_query", ""),
-            raw_data=json.dumps(job_data, ensure_ascii=False)
+            raw_data=""  # Deprecated: no longer populated (duplicates description)
         )
 
         with self._get_conn(sync_before=False) as conn:
@@ -737,12 +737,6 @@ class JobDatabase:
                              AND length(excluded.description) > length(COALESCE(jobs.description, ''))
                         THEN excluded.description
                         ELSE jobs.description
-                    END,
-                    raw_data = CASE
-                        WHEN excluded.description != ''
-                             AND length(excluded.description) > length(COALESCE(jobs.description, ''))
-                        THEN excluded.raw_data
-                        ELSE jobs.raw_data
                     END
             """, (job.id, job.source, job.url, job.title, job.company,
                   job.location, job.description, job.posted_date, job.scraped_at,
@@ -1488,7 +1482,7 @@ class JobDatabase:
                         scraped_at=job_data.get("scraped_at", datetime.now().isoformat()),
                         search_profile=job_data.get("search_profile", ""),
                         search_query=job_data.get("search_query", ""),
-                        raw_data=json.dumps(job_data, ensure_ascii=False)
+                        raw_data=""  # Deprecated: no longer populated (duplicates description)
                     )
                     cursor = conn.execute("""
                         INSERT INTO jobs
@@ -1501,12 +1495,6 @@ class JobDatabase:
                                      AND length(excluded.description) > length(COALESCE(jobs.description, ''))
                                 THEN excluded.description
                                 ELSE jobs.description
-                            END,
-                            raw_data = CASE
-                                WHEN excluded.description != ''
-                                     AND length(excluded.description) > length(COALESCE(jobs.description, ''))
-                                THEN excluded.raw_data
-                                ELSE jobs.raw_data
                             END
                     """, (job.id, job.source, job.url, job.title, job.company,
                           job.location, job.description, job.posted_date, job.scraped_at,
