@@ -1082,7 +1082,7 @@ class JobPipeline:
                 print(f"    -- {info['company']} - {info['title']}")
         print(f"{'='*50}")
 
-    def cmd_archive(self, retention_days: int = 30):
+    def cmd_archive(self, retention_days: int = 7):
         """Archive cold jobs to local SQLite and delete from live DB."""
         # Preview first
         cold_ids = self.db.get_cold_job_ids(retention_days=retention_days)
@@ -1257,8 +1257,8 @@ def main():
     # Archive command
     parser.add_argument('--archive', action='store_true',
                         help='Archive cold jobs to local SQLite and purge from live DB')
-    parser.add_argument('--retention-days', type=int, default=30,
-                        help='Days to retain in live DB (default: 30, use with --archive)')
+    parser.add_argument('--retention-days', type=int, default=7,
+                        help='Days to retain in live DB (default: 7, use with --archive)')
 
     # Interview scheduling commands
     parser.add_argument('--schedule-interview', type=str, metavar='COMPANY',
@@ -1461,7 +1461,7 @@ def main():
     print("  --update-status ID STATUS  Update status (rejected/interview/offer)")
     print("  --tracker          Show application tracker")
     print("  --archive          Archive cold jobs to local DB + purge from live DB")
-    print("  --retention-days N Days to keep in live DB (default: 30, use with --archive)")
+    print("  --retention-days N Days to keep in live DB (default: 7, use with --archive)")
     print()
     print("  AI-powered:")
     print("  --ai-analyze       AI analysis on scored jobs")
