@@ -1178,6 +1178,26 @@ class JobDatabase:
                     results.append(dict(row))
             return results
 
+    def get_cold_job_ids(self, retention_days: int = 30) -> List[str]:
+        """Get job IDs eligible for archival.
+
+        Cold = scraped_at older than retention_days
+               AND no application with status applied/interview/offer
+               AND has a filter_result (not in active pipeline)
+        """
+        with self._get_conn() as conn:
+            cursor = conn.execute("""
+                SELECT j.id
+                FROM jobs j
+                JOIN filter_results f ON j.id = f.job_id
+                LEFT JOIN applications a ON j.id = a.job_id
+                WHERE j.scraped_at < datetime('now', ? || ' days')
+                  AND (a.job_id IS NULL
+                       OR a.status NOT IN ('applied', 'interview', 'offer'))
+                ORDER BY j.scraped_at ASC
+            """, (str(-retention_days),))
+            return [row['id'] for row in cursor.fetchall()]
+
     # ==================== 统计和分析 ====================
 
     def get_funnel_stats(self) -> Dict:
