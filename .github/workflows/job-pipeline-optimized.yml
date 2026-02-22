@@ -1,6 +1,7 @@
-name: Job Pipeline v3.0 - Optimized
+name: Job Pipeline v4.0 - Single Runner
 # =====================================
-# 深度优化：增量更新 + 快速去重 + 3次/天运行
+# 合并为单 job：减少 Turso sync 流量 ~85%
+# 所有 step 共享同一 runner，embedded replica 只下载一次
 
 on:
   schedule:
@@ -44,20 +45,11 @@ env:
   TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
-  # 性能优化：减少同步频率
-  TURSO_SYNC_INTERVAL: '300'  # 5分钟同步一次
 
 jobs:
-  # ==========================================
-  # Job 1: 快速爬取 (增量更新)
-  # ==========================================
-  scrape:
+  pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 40  # 爬取时间限制：40分钟（LinkedIn JD获取可能较慢）
-    outputs:
-      new_jobs_count: ${{ steps.scrape.outputs.new_jobs_count }}
-      total_jobs_count: ${{ steps.scrape.outputs.total_jobs_count }}
-      duration_seconds: ${{ steps.scrape.outputs.duration_seconds }}
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
@@ -79,8 +71,13 @@ jobs:
           mkdir -p config
           printf '%s' "$COOKIES_JSON" > config/linkedin_cookies.json
 
-      - name: Scrape LinkedIn (Incremental)
+      # ==========================================
+      # Step 1: 爬取 (增量更新)
+      # ==========================================
+      - name: Scrape LinkedIn
         id: scrape
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
         run: |
           PROFILE="${{ github.event.inputs.profile || 'all' }}"
           FORCE_FLAG=""
@@ -90,11 +87,8 @@ jobs:
           fi
 
           echo "=== Starting incremental scrape: $PROFILE ==="
-          echo "Using linkedin_scraper_v6.py with database deduplication"
           START_TIME=$(date +%s)
 
-          # 使用 v6 爬取（已有数据库去重）
-          # "all" 不是真实 profile 名，不传 --profile 让脚本自动运行所有 enabled profiles
           if [ "$PROFILE" = "all" ]; then
             python scripts/linkedin_scraper_v6.py \
               --headless \
@@ -109,11 +103,10 @@ jobs:
               --no-json \
               $FORCE_FLAG
           fi
-          
+
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
-          
-          # 从 scraper 输出的 metrics 文件读取真实新增数
+
           NEW_JOBS=$(python -c "import json; m=json.load(open('data/scrape_metrics.json')); print(m.get('new_jobs', 0))")
           echo "new_jobs_count=$NEW_JOBS" >> $GITHUB_OUTPUT
           echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
@@ -126,121 +119,51 @@ jobs:
           name: scrape-stats-${{ github.run_id }}
           path: data/scrape_metrics.json
           retention-days: 7
+          if-no-files-found: ignore
 
-  # ==========================================
-  # Job 2: 规则评分 (快速本地处理)
-  # ==========================================
-  score:
-    runs-on: ubuntu-latest
-    needs: scrape
-    # 即使没有新职位也运行（可能有之前未处理的）
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
+      # ==========================================
+      # Step 2: 规则评分 (快速本地处理)
+      # ==========================================
       - name: Rule-based scoring
+        continue-on-error: true
         run: |
           echo "=== Running rule-based scoring ==="
           python scripts/job_pipeline.py --process
 
-      - name: Scoring stats
-        run: python scripts/job_pipeline.py --stats
-
-  # ==========================================
-  # Job 3: AI分析 (只处理高分新职位)
-  # ==========================================
-  ai-analyze:
-    runs-on: ubuntu-latest
-    needs: [scrape, score]
-    # Always run if scrape succeeded — handles both new jobs and backlog
-    if: always() && needs.scrape.result == 'success'
-    timeout-minutes: 30  # AI分析限制30分钟
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: AI Analysis (Prioritized)
+      # ==========================================
+      # Step 3: AI 分析 (只处理高分新职位)
+      # ==========================================
+      - name: AI Analysis
+        continue-on-error: true
         run: |
           LIMIT="${{ github.event.inputs.ai_limit }}"
-          
-          # 如果没有指定限制，给足够的名额处理新职位 + 积压
+
           if [ -z "$LIMIT" ]; then
-            NEW_JOBS="${{ needs.scrape.outputs.new_jobs_count }}"
-            # 新职位 + 最多20个积压职位
+            NEW_JOBS="${{ steps.scrape.outputs.new_jobs_count }}"
+            NEW_JOBS="${NEW_JOBS:-0}"
             LIMIT=$((NEW_JOBS + 20))
             echo "Auto-limit: $LIMIT (new: $NEW_JOBS + backlog: 20)"
           fi
-          
+
           echo "=== Running AI analysis (limit: $LIMIT) ==="
           python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
 
-      - name: AI analysis stats
-        run: python scripts/job_pipeline.py --stats
-
-  # ==========================================
-  # Job 4: 通知汇总
-  # ==========================================
-  notify:
-    runs-on: ubuntu-latest
-    needs: [scrape, score, ai-analyze]
-    if: always() && needs.scrape.result == 'success'
-    timeout-minutes: 2
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
+      # ==========================================
+      # Step 4: 通知
+      # ==========================================
       - name: Send Telegram notification
+        if: always()
+        continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/notify.py --status success
 
-  # ==========================================
-  # Job 5: 健康检查 (总是运行)
-  # ==========================================
-  health-check:
-    runs-on: ubuntu-latest
-    needs: [scrape, score, ai-analyze]
-    if: always()
-    timeout-minutes: 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Pipeline health check
+      # ==========================================
+      # Step 5: 统计汇总
+      # ==========================================
+      - name: Pipeline stats
+        if: always()
         run: |
-          echo "=== Pipeline Health Check ==="
+          echo "=== Pipeline Stats ==="
           python scripts/job_pipeline.py --stats
