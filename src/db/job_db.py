@@ -1178,7 +1178,7 @@ class JobDatabase:
                     results.append(dict(row))
             return results
 
-    def get_cold_job_ids(self, retention_days: int = 30) -> List[str]:
+    def get_cold_job_ids(self, retention_days: int = 7) -> List[str]:
         """Get job IDs eligible for archival.
 
         Cold = scraped_at older than retention_days
@@ -1198,7 +1198,7 @@ class JobDatabase:
             """, (str(-retention_days),))
             return [row['id'] for row in cursor.fetchall()]
 
-    def archive_cold_data(self, retention_days: int = 30) -> Dict:
+    def archive_cold_data(self, retention_days: int = 7) -> Dict:
         """Archive cold jobs to a local SQLite file and delete from live DB.
 
         Returns dict with keys: archived_count, archive_path, details (per-table counts).
@@ -1207,11 +1207,10 @@ class JobDatabase:
         if not cold_ids:
             return {"archived_count": 0, "archive_path": None, "details": {}}
 
-        # Determine archive path: data/archive/archive_YYYY-MM.db
+        # Determine archive path: data/archive/full_history.db (single file)
         archive_dir = self.db_path.parent / "archive"
         archive_dir.mkdir(parents=True, exist_ok=True)
-        month_str = datetime.now().strftime("%Y-%m")
-        archive_path = archive_dir / f"archive_{month_str}.db"
+        archive_path = archive_dir / "full_history.db"
 
         # Open archive DB and ensure schema exists
         archive_conn = sqlite3.connect(str(archive_path))
@@ -1263,9 +1262,19 @@ class JobDatabase:
                             f"SELECT * FROM {table} WHERE {fk_col} IN ({placeholders})", chunk
                         ).fetchall()
                     except Exception:
-                        continue  # Table might not exist yet
+                        continue  # Table might not exist in live DB
                     if rows:
                         cols = [d[0] for d in conn.execute(f"SELECT * FROM {table} LIMIT 0").description]
+                        # Ensure table exists in archive (may not be in SCHEMA)
+                        try:
+                            archive_conn.execute(f"SELECT 1 FROM {table} LIMIT 0")
+                        except sqlite3.OperationalError:
+                            ddl = conn.execute(
+                                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+                                (table,)
+                            ).fetchone()
+                            if ddl and ddl['sql']:
+                                archive_conn.execute(ddl['sql'])
                         insert_sql = f"INSERT OR IGNORE INTO {table} ({','.join(cols)}) VALUES ({','.join(['?'] * len(cols))})"
                         archive_conn.executemany(insert_sql, [tuple(r) for r in rows])
                         details[table] = details.get(table, 0) + len(rows)
