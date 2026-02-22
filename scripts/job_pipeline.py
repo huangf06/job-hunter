@@ -1082,6 +1082,47 @@ class JobPipeline:
                 print(f"    -- {info['company']} - {info['title']}")
         print(f"{'='*50}")
 
+    def cmd_archive(self, retention_days: int = 30):
+        """Archive cold jobs to local SQLite and delete from live DB."""
+        # Preview first
+        cold_ids = self.db.get_cold_job_ids(retention_days=retention_days)
+        if not cold_ids:
+            print(f"[Archive] No cold jobs found (retention: {retention_days} days)")
+            return
+
+        print(f"\n[Archive] Found {len(cold_ids)} cold jobs (older than {retention_days} days, not applied/interview/offer)")
+
+        # Confirm
+        try:
+            confirm = input(f"Archive and delete {len(cold_ids)} jobs from live DB? (y/n): ").strip().lower()
+        except EOFError:
+            confirm = 'n'
+        if confirm != 'y':
+            print("[Archive] Cancelled")
+            return
+
+        result = self.db.archive_cold_data(retention_days=retention_days)
+
+        print(f"\n{'='*50}")
+        print(f"  ARCHIVE SUMMARY")
+        print(f"{'='*50}")
+        print(f"  Archived: {result['archived_count']} jobs")
+        print(f"  Archive:  {result['archive_path']}")
+        if result['details']:
+            print(f"  Details:")
+            for table, count in result['details'].items():
+                print(f"    {table}: {count} rows")
+        print(f"{'='*50}")
+
+        # Sync to Turso
+        print("\nSyncing deletions to Turso...")
+        try:
+            if self.db._libsql_raw:
+                self.db._libsql_raw.sync()
+                print("Turso sync complete.")
+        except Exception as e:
+            print(f"Warning: Turso sync failed ({e}), deletions saved locally")
+
     def analyze_single_job(self, job_id: str, model: str = None):
         """分析单个职位"""
         try:
@@ -1213,6 +1254,12 @@ def main():
     parser.add_argument('--finalize', action='store_true',
                         help='Archive applied jobs, clean up skipped, sync to cloud')
 
+    # Archive command
+    parser.add_argument('--archive', action='store_true',
+                        help='Archive cold jobs to local SQLite and purge from live DB')
+    parser.add_argument('--retention-days', type=int, default=30,
+                        help='Days to retain in live DB (default: 30, use with --archive)')
+
     # Interview scheduling commands
     parser.add_argument('--schedule-interview', type=str, metavar='COMPANY',
                         help='Suggest best interview slots for a company')
@@ -1252,7 +1299,7 @@ def main():
        or args.stats or args.mark_applied or args.mark_all_applied \
        or args.update_status or args.tracker \
        or args.cover_letter or args.cover_letters \
-       or args.prepare or args.finalize \
+       or args.prepare or args.finalize or args.archive \
        or args.schedule_interview or args.suggest_availability:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
@@ -1263,6 +1310,8 @@ def main():
             pipeline.cmd_prepare(min_ai_score=args.min_score, limit=args.limit)
         elif args.finalize:
             pipeline.cmd_finalize()
+        elif args.archive:
+            pipeline.cmd_archive(retention_days=args.retention_days)
         elif args.schedule_interview:
             from src.interview_scheduler import InterviewScheduler, format_slots
             scheduler = InterviewScheduler()
@@ -1411,6 +1460,8 @@ def main():
     print("  --mark-all-applied Mark ALL ready jobs as applied + archive")
     print("  --update-status ID STATUS  Update status (rejected/interview/offer)")
     print("  --tracker          Show application tracker")
+    print("  --archive          Archive cold jobs to local DB + purge from live DB")
+    print("  --retention-days N Days to keep in live DB (default: 30, use with --archive)")
     print()
     print("  AI-powered:")
     print("  --ai-analyze       AI analysis on scored jobs")
