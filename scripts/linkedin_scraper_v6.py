@@ -477,20 +477,21 @@ class LinkedInScraperV6:
             unsaved = [j for j in self.all_jobs if j.get('url') not in self._saved_job_urls]
             if unsaved:
                 print(f"\n[Database] Saving {len(unsaved)} new jobs to database...")
-                for job in unsaved:
-                    if not job.get('search_profile'):
-                        job['search_profile'] = profile_name
-                    if not job.get('search_query'):
-                        job['search_query'] = profile_name
-                    try:
-                        _, was_inserted = self.db.insert_job(job)
-                        if was_inserted:
-                            self.saved_to_db += 1
-                        else:
-                            self.skipped_duplicates += 1
-                        self._saved_job_urls.add(job.get('url', ''))
-                    except Exception as e:
-                        print(f"  ! Failed to save job: {e}")
+                with self.db.batch_mode():
+                    for job in unsaved:
+                        if not job.get('search_profile'):
+                            job['search_profile'] = profile_name
+                        if not job.get('search_query'):
+                            job['search_query'] = profile_name
+                        try:
+                            _, was_inserted = self.db.insert_job(job)
+                            if was_inserted:
+                                self.saved_to_db += 1
+                            else:
+                                self.skipped_duplicates += 1
+                            self._saved_job_urls.add(job.get('url', ''))
+                        except Exception as e:
+                            print(f"  ! Failed to save job: {e}")
                 print(f"[Database] Saved: {self.saved_to_db}, Duplicates skipped: {self.skipped_duplicates}")
 
         return profile_jobs

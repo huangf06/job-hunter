@@ -64,12 +64,6 @@ except ImportError:
     print("[Warning] 数据库模块不可用，使用 JSON 追踪器")
 
 
-## Legacy JobAnalyzer removed in v2.0 cleanup — use JobPipeline + AI Analyzer instead
-
-
-## Legacy ResumeTailor removed in v2.0 cleanup — use ResumeRenderer (src/resume_renderer.py) instead
-
-
 def _keyword_boundary_pattern(kw: str) -> str:
     """Build regex pattern with proper word boundaries for keywords with non-word chars at edges.
 
@@ -83,139 +77,9 @@ def _keyword_boundary_pattern(kw: str) -> str:
     return prefix + escaped + suffix
 
 
-class JobTracker:
-    """职位追踪器"""
-    
-    TRACKER_FILE = DATA_DIR / "job_tracker.json"
-    
-    def __init__(self):
-        self.data = self._load()
-    
-    def _load(self) -> Dict:
-        """加载追踪数据"""
-        default_data = {
-            "jobs": [],
-            "stats": {
-                "total_analyzed": 0,
-                "total_applied": 0,
-                "responses": 0,
-                "interviews": 0,
-                "offers": 0
-            }
-        }
-        
-        if self.TRACKER_FILE.exists():
-            with open(self.TRACKER_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                # 确保所有必要字段存在
-                for key, value in default_data.items():
-                    if key not in data:
-                        data[key] = value
-                return data
-        
-        return default_data
-    
-    def _save(self):
-        """保存追踪数据"""
-        with open(self.TRACKER_FILE, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, indent=2, ensure_ascii=False)
-    
-    def add_job(self, job: Dict, analysis: Dict):
-        """添加职位到追踪器"""
-        job_id = self._generate_id(job)
-        
-        # 检查是否已存在
-        if any(j['id'] == job_id for j in self.data['jobs']):
-            return False
-        
-        entry = {
-            "id": job_id,
-            "title": job.get('title'),
-            "company": job.get('company'),
-            "location": job.get('location'),
-            "url": job.get('url'),
-            "score": analysis.get('score'),
-            "recommendation": analysis.get('recommendation'),
-            "status": "new",
-            "added_at": datetime.now().isoformat(),
-            "applied_at": None,
-            "resume_path": None,
-            "notes": []
-        }
-        
-        self.data['jobs'].append(entry)
-        self.data['stats']['total_analyzed'] += 1
-        self._save()
-        return True
-    
-    def _generate_id(self, job: Dict) -> str:
-        """生成唯一 ID"""
-        import hashlib
-        key = f"{job.get('title', '')}-{job.get('company', '')}"
-        return hashlib.md5(key.encode()).hexdigest()[:12]
-    
-    def get_high_priority_jobs(self, min_score: float = 6.0) -> List[Dict]:
-        """获取高优先级职位"""
-        return [
-            j for j in self.data['jobs']
-            if j.get('score', 0) >= min_score and j['status'] == 'new'
-        ]
-    
-    def mark_applied(self, job_id: str, resume_path: str = None):
-        """标记为已申请"""
-        for job in self.data['jobs']:
-            if job['id'] == job_id:
-                job['status'] = 'applied'
-                job['applied_at'] = datetime.now().isoformat()
-                if resume_path:
-                    job['resume_path'] = str(resume_path)
-                self.data['stats']['total_applied'] += 1
-                self._save()
-                return True
-        return False
-    
-    def get_stats(self) -> Dict:
-        """获取统计信息"""
-        return self.data['stats']
-
-
-def print_analysis_report(jobs: List[Dict], top_n: int = 10):
-    """打印分析报告"""
-    print("\n" + "=" * 80)
-    print("JOB ANALYSIS REPORT")
-    print("=" * 80)
-    print(f"Total jobs analyzed: {len(jobs)}")
-    print(f"Top {top_n} by match score:\n")
-
-    for i, job in enumerate(jobs[:top_n], 1):
-        score = job.get('score', 0)
-        rec = job.get('recommendation', 'UNKNOWN')
-        title = job.get('title', 'N/A')
-        company = job.get('company', 'N/A')
-        location = job.get('location', 'N/A')
-
-        # 颜色代码 (仅支持终端)
-        if score >= 7:
-            color = "\033[92m"  # Green
-        elif score >= 5:
-            color = "\033[93m"  # Yellow
-        else:
-            color = "\033[91m"  # Red
-        reset = "\033[0m"
-
-        print(f"{i}. [{color}{score:.1f}{reset}] {rec}")
-        print(f"   {title} @ {company}")
-        print(f"   Location: {location}")
-
-        # 打印正面原因
-        reasons = job.get('reasons', {})
-        if reasons.get('positive'):
-            print(f"   + {', '.join(reasons['positive'][:3])}")
-        print()
-
 
 # =============================================================================
-# 新版数据库集成流水线
+# 数据库集成流水线
 # =============================================================================
 
 class JobPipeline:
@@ -783,38 +647,13 @@ class JobPipeline:
     def ai_analyze_jobs(self, min_rule_score: float = None, limit: int = None,
                         model: str = None) -> int:
         """AI 分析通过预筛选的职位"""
-        try:
-            from src.ai_analyzer import AIAnalyzer
-        except ImportError:
-            # Try alternative import path
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "ai_analyzer", PROJECT_ROOT / "src" / "ai_analyzer.py"
-            )
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Cannot find ai_analyzer.py at {PROJECT_ROOT / 'src' / 'ai_analyzer.py'}")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            AIAnalyzer = module.AIAnalyzer
-
+        from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer(model_override=model)
         return analyzer.analyze_batch(min_rule_score=min_rule_score, limit=limit)
 
     def generate_resumes(self, min_ai_score: float = None, limit: int = None) -> int:
         """为高分职位生成简历"""
-        try:
-            from src.resume_renderer import ResumeRenderer
-        except ImportError:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "resume_renderer", PROJECT_ROOT / "src" / "resume_renderer.py"
-            )
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Cannot find resume_renderer.py at {PROJECT_ROOT / 'src' / 'resume_renderer.py'}")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            ResumeRenderer = module.ResumeRenderer
-
+        from src.resume_renderer import ResumeRenderer
         renderer = ResumeRenderer()
 
         # Check for reposts before rendering
@@ -829,32 +668,8 @@ class JobPipeline:
     def generate_cover_letter(self, job_id: str, custom_requirements: str = None,
                               force: bool = False):
         """Generate + render cover letter for a single job"""
-        try:
-            from src.cover_letter_generator import CoverLetterGenerator
-        except ImportError:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "cover_letter_generator", PROJECT_ROOT / "src" / "cover_letter_generator.py"
-            )
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Cannot find cover_letter_generator.py")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            CoverLetterGenerator = module.CoverLetterGenerator
-
-        try:
-            from src.cover_letter_renderer import CoverLetterRenderer
-        except ImportError:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "cover_letter_renderer", PROJECT_ROOT / "src" / "cover_letter_renderer.py"
-            )
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Cannot find cover_letter_renderer.py")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            CoverLetterRenderer = module.CoverLetterRenderer
-
+        from src.cover_letter_generator import CoverLetterGenerator
+        from src.cover_letter_renderer import CoverLetterRenderer
         generator = CoverLetterGenerator()
         result = generator.generate(job_id, custom_requirements=custom_requirements, force=force)
         if result:
@@ -863,31 +678,8 @@ class JobPipeline:
 
     def generate_cover_letters_batch(self, min_ai_score: float = None, limit: int = 50):
         """Batch generate + render cover letters"""
-        try:
-            from src.cover_letter_generator import CoverLetterGenerator
-        except ImportError:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "cover_letter_generator", PROJECT_ROOT / "src" / "cover_letter_generator.py"
-            )
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Cannot find cover_letter_generator.py")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            CoverLetterGenerator = module.CoverLetterGenerator
-
-        try:
-            from src.cover_letter_renderer import CoverLetterRenderer
-        except ImportError:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "cover_letter_renderer", PROJECT_ROOT / "src" / "cover_letter_renderer.py"
-            )
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Cannot find cover_letter_renderer.py")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            CoverLetterRenderer = module.CoverLetterRenderer
+        from src.cover_letter_generator import CoverLetterGenerator
+        from src.cover_letter_renderer import CoverLetterRenderer
 
         generator = CoverLetterGenerator()
         generated = generator.generate_batch(min_ai_score=min_ai_score, limit=limit)
@@ -1129,19 +921,7 @@ class JobPipeline:
 
     def analyze_single_job(self, job_id: str, model: str = None):
         """分析单个职位"""
-        try:
-            from src.ai_analyzer import AIAnalyzer
-        except ImportError:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "ai_analyzer", PROJECT_ROOT / "src" / "ai_analyzer.py"
-            )
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Cannot find ai_analyzer.py at {PROJECT_ROOT / 'src' / 'ai_analyzer.py'}")
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            AIAnalyzer = module.AIAnalyzer
-
+        from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer(model_override=model)
         result = analyzer.analyze_single(job_id)
         if result:

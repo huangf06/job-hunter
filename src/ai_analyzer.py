@@ -798,40 +798,41 @@ class AIAnalyzer:
             print(f"  [WARN] Could not query daily token usage: {e} — starting from 0")
             total_tokens = 0
 
-        for i, job in enumerate(jobs):
-            title = job.get('title', '')[:45]
-            company = job.get('company', '')[:20]
-            rule_score = job.get('rule_score', 0)
-            print(f"  [{i+1}/{len(jobs)}] [{rule_score:.1f}] {title} @ {company}...", end=' ')
+        with self.db.batch_mode():
+            for i, job in enumerate(jobs):
+                title = job.get('title', '')[:45]
+                company = job.get('company', '')[:20]
+                rule_score = job.get('rule_score', 0)
+                print(f"  [{i+1}/{len(jobs)}] [{rule_score:.1f}] {title} @ {company}...", end=' ')
 
-            try:
-                result = self.analyze_job(job)
-                if result:
-                    self.db.save_analysis(result)
-                    analyzed += 1
-                    total_tokens += result.tokens_used
-                    print(f"-> {result.recommendation} ({result.ai_score:.1f})")
-                else:
-                    print("-> FAILED")
-            except AuthenticationError:
-                print(f"\n[AI Analyzer] Authentication failed — stopping batch. Check API key.")
-                break
-            except Exception as e:
-                print(f"-> ERROR: {e}")
+                try:
+                    result = self.analyze_job(job)
+                    if result:
+                        self.db.save_analysis(result)
+                        analyzed += 1
+                        total_tokens += result.tokens_used
+                        print(f"-> {result.recommendation} ({result.ai_score:.1f})")
+                    else:
+                        print("-> FAILED")
+                except AuthenticationError:
+                    print(f"\n[AI Analyzer] Authentication failed — stopping batch. Check API key.")
+                    break
+                except Exception as e:
+                    print(f"-> ERROR: {e}")
 
-            # Rate limiting
-            if i < len(jobs) - 1:
-                time.sleep(1)
+                # Rate limiting
+                if i < len(jobs) - 1:
+                    time.sleep(1)
 
-            # Token budget warning + hard stop
-            budget_config = self.config.get('budget', {})
-            warn_limit = budget_config.get('warn_threshold', 80000)
-            budget_limit = budget_config.get('daily_limit', 100000)
-            if total_tokens >= warn_limit and total_tokens < budget_limit:
-                print(f"\n  [WARN] Approaching token budget ({total_tokens}/{budget_limit} tokens)")
-            if total_tokens >= budget_limit:
-                print(f"\n[AI Analyzer] Token budget reached ({total_tokens} tokens)")
-                break
+                # Token budget warning + hard stop
+                budget_config = self.config.get('budget', {})
+                warn_limit = budget_config.get('warn_threshold', 80000)
+                budget_limit = budget_config.get('daily_limit', 100000)
+                if total_tokens >= warn_limit and total_tokens < budget_limit:
+                    print(f"\n  [WARN] Approaching token budget ({total_tokens}/{budget_limit} tokens)")
+                if total_tokens >= budget_limit:
+                    print(f"\n[AI Analyzer] Token budget reached ({total_tokens} tokens)")
+                    break
 
         print(f"\n[AI Analyzer] Done: {analyzed}/{len(jobs)} analyzed, {total_tokens} tokens used")
         return analyzed
