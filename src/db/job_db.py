@@ -1198,6 +1198,119 @@ class JobDatabase:
             """, (str(-retention_days),))
             return [row['id'] for row in cursor.fetchall()]
 
+    def archive_cold_data(self, retention_days: int = 30) -> Dict:
+        """Archive cold jobs to a local SQLite file and delete from live DB.
+
+        Returns dict with keys: archived_count, archive_path, details (per-table counts).
+        """
+        cold_ids = self.get_cold_job_ids(retention_days=retention_days)
+        if not cold_ids:
+            return {"archived_count": 0, "archive_path": None, "details": {}}
+
+        # Determine archive path: data/archive/archive_YYYY-MM.db
+        archive_dir = self.db_path.parent / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        month_str = datetime.now().strftime("%Y-%m")
+        archive_path = archive_dir / f"archive_{month_str}.db"
+
+        # Open archive DB and ensure schema exists
+        archive_conn = sqlite3.connect(str(archive_path))
+        archive_conn.execute("PRAGMA journal_mode=WAL")
+        archive_conn.execute("PRAGMA foreign_keys=OFF")  # We control insert order
+        for statement in self.SCHEMA.split(';'):
+            statement = statement.strip()
+            if statement:
+                try:
+                    archive_conn.execute(statement)
+                except sqlite3.OperationalError:
+                    pass  # Table/index already exists
+
+        # Tables to archive (order: parent first, then dependents)
+        # For each table, define (table_name, fk_column)
+        related_tables = [
+            ("filter_results", "job_id"),
+            ("ai_scores", "job_id"),
+            ("job_analysis", "job_id"),
+            ("resumes", "job_id"),
+            ("cover_letters", "job_id"),
+            ("applications", "job_id"),
+            ("emails", "job_id"),
+        ]
+
+        details = {}
+        CHUNK_SIZE = 500
+
+        with self._get_conn() as conn:
+            # Process in chunks to stay within SQLite variable limit
+            for start in range(0, len(cold_ids), CHUNK_SIZE):
+                chunk = cold_ids[start:start + CHUNK_SIZE]
+                placeholders = ','.join(['?'] * len(chunk))
+
+                # 1. Copy jobs
+                rows = conn.execute(
+                    f"SELECT * FROM jobs WHERE id IN ({placeholders})", chunk
+                ).fetchall()
+                if rows:
+                    cols = [d[0] for d in conn.execute("SELECT * FROM jobs LIMIT 0").description]
+                    insert_sql = f"INSERT OR IGNORE INTO jobs ({','.join(cols)}) VALUES ({','.join(['?'] * len(cols))})"
+                    archive_conn.executemany(insert_sql, [tuple(r) for r in rows])
+                    details["jobs"] = details.get("jobs", 0) + len(rows)
+
+                # 2. Copy related tables
+                for table, fk_col in related_tables:
+                    try:
+                        rows = conn.execute(
+                            f"SELECT * FROM {table} WHERE {fk_col} IN ({placeholders})", chunk
+                        ).fetchall()
+                    except Exception:
+                        continue  # Table might not exist yet
+                    if rows:
+                        cols = [d[0] for d in conn.execute(f"SELECT * FROM {table} LIMIT 0").description]
+                        insert_sql = f"INSERT OR IGNORE INTO {table} ({','.join(cols)}) VALUES ({','.join(['?'] * len(cols))})"
+                        archive_conn.executemany(insert_sql, [tuple(r) for r in rows])
+                        details[table] = details.get(table, 0) + len(rows)
+
+            archive_conn.commit()
+
+            # Verify: count jobs in archive that we intended to write
+            archived_count = archive_conn.execute(
+                f"SELECT COUNT(*) FROM jobs WHERE id IN ({','.join(['?'] * len(cold_ids))})",
+                cold_ids
+            ).fetchone()[0]
+
+            if archived_count != len(cold_ids):
+                archive_conn.close()
+                raise RuntimeError(
+                    f"Archive verification failed: expected {len(cold_ids)}, got {archived_count}"
+                )
+
+            # DELETE from live DB (reverse order: dependents first, then jobs)
+            for table, fk_col in reversed(related_tables):
+                for chunk_start in range(0, len(cold_ids), CHUNK_SIZE):
+                    chunk = cold_ids[chunk_start:chunk_start + CHUNK_SIZE]
+                    placeholders = ','.join(['?'] * len(chunk))
+                    try:
+                        conn.execute(
+                            f"DELETE FROM {table} WHERE {fk_col} IN ({placeholders})", chunk
+                        )
+                    except Exception:
+                        pass
+
+            for chunk_start in range(0, len(cold_ids), CHUNK_SIZE):
+                chunk = cold_ids[chunk_start:chunk_start + CHUNK_SIZE]
+                placeholders = ','.join(['?'] * len(chunk))
+                conn.execute(
+                    f"DELETE FROM jobs WHERE id IN ({placeholders})", chunk
+                )
+
+        archive_conn.close()
+
+        return {
+            "archived_count": len(cold_ids),
+            "archive_path": str(archive_path),
+            "details": details,
+        }
+
     # ==================== 统计和分析 ====================
 
     def get_funnel_stats(self) -> Dict:
