@@ -198,7 +198,15 @@ def start_server(ready_dir: Path, port: int = 8234):
             body = self.rfile.read(content_length)
 
             if self.path == "/state":
-                state_path.write_bytes(body)
+                try:
+                    json.loads(body)  # validate JSON
+                except (json.JSONDecodeError, ValueError):
+                    self.send_response(400)
+                    self.end_headers()
+                    return
+                tmp = state_path.with_suffix(".tmp")
+                tmp.write_bytes(body)
+                tmp.replace(state_path)  # atomic on both POSIX & Windows
                 self.send_response(200)
                 self.end_headers()
                 return

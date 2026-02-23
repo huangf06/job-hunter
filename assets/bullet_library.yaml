@@ -30,7 +30,6 @@ personal_info:
   name: "Fei Huang"
   email: "huangf06@gmail.com"
   phone: "+31 645 038 614"
-  address: "Antonio Vivaldistraat 7, 1081 HP, Amsterdam, Netherlands"
   resume_location: "Amsterdam, Netherlands"
   linkedin: "https://www.linkedin.com/in/huangf06/"
   github: "https://github.com/huangf06"
@@ -483,11 +482,7 @@ work_authorization:
 screening_answers:
   onsite: "Yes, available for fully onsite work"
   availability: "Immediately"
-  salary_strategy:
-    small_company: "€50,000-60,000"    # SME, startups, non-tech companies
-    mid_company: "€55,000-65,000"      # mid-size tech, established companies
-    large_company: "€65,000-80,000"    # FAANG, top-tier tech, finance
-    note: "Open to discussion depending on full compensation package"
+  # salary_strategy: moved to config/private/salary.yaml (gitignored)
 
 # =============================================================================
 # SKILL TIERS — Three-level skill classification for resume generation

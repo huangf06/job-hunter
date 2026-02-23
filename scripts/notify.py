@@ -16,13 +16,14 @@ import os
 import sys
 import urllib.request
 import urllib.error
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-CET = timezone(timedelta(hours=1))
+AMSTERDAM = ZoneInfo("Europe/Amsterdam")
 
 
 def load_scrape_metrics() -> dict:
@@ -114,8 +115,9 @@ def get_db_stats() -> dict:
 def format_message(status: str, failed_step: str = "",
                    scrape: dict = None, db_stats: dict = None) -> str:
     """Format Telegram message."""
-    now = datetime.now(CET)
-    time_str = now.strftime("%H:%M CET")
+    now = datetime.now(AMSTERDAM)
+    tz_abbr = "CEST" if now.dst() else "CET"
+    time_str = now.strftime(f"%H:%M {tz_abbr}")
 
     if status == "failure":
         lines = [f"Job Pipeline FAILED {time_str}"]

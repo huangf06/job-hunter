@@ -2,6 +2,7 @@
 .env
 config/linkedin_cookies.json
 config/credentials.json
+config/private/
 
 # Data (DB + scrape dumps)
 data/jobs.db
