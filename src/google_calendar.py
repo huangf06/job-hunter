@@ -8,10 +8,10 @@ Shares token file with google-calendar-mcp (atomic read-modify-write).
 Dependencies: requests (+ stdlib: json, time, dataclasses, datetime, pathlib, tempfile)
 """
 
+import os
 import json
 import time
 import tempfile
-import shutil
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -84,8 +84,8 @@ class GoogleCalendarClient:
         try:
             with open(fd, "w", encoding="utf-8") as f:
                 json.dump(all_tokens, f, indent=2)
-            # On Windows, shutil.move handles cross-device and overwrites
-            shutil.move(tmp_path, str(self.tokens_path))
+            # os.replace() is atomic on both POSIX and Windows (Python 3.3+)
+            os.replace(tmp_path, str(self.tokens_path))
         except Exception:
             Path(tmp_path).unlink(missing_ok=True)
             raise

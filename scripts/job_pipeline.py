@@ -827,24 +827,38 @@ class JobPipeline:
 
         now = datetime.now(timezone.utc).isoformat()
 
+        skipped_dir = ready_dir / "_skipped"
+
         # Process applied jobs
         for job_id, info in applied.items():
-            self.db.update_application_status(job_id, "applied", applied_at=now)
-            if not info.get("submit_dir"):
-                continue
-            src = ready_dir / info["submit_dir"]
-            if src.exists() and src.is_dir():
-                dest = applied_dir / src.name
-                shutil.move(str(src), str(dest))
+            try:
+                self.db.update_application_status(job_id, "applied", applied_at=now)
+                if not info.get("submit_dir"):
+                    continue
+                src = ready_dir / info["submit_dir"]
+                if src.exists() and src.is_dir():
+                    dest = applied_dir / src.name
+                    if dest.exists():
+                        shutil.rmtree(dest)
+                    shutil.move(str(src), str(dest))
+            except Exception as e:
+                print(f"  [WARN] Failed to finalize applied {job_id}: {e}")
 
-        # Process skipped jobs
+        # Process skipped jobs (move to _skipped/ instead of deleting)
         for job_id, info in skipped.items():
-            self.db.update_application_status(job_id, "skipped")
-            if not info.get("submit_dir"):
-                continue
-            src = ready_dir / info["submit_dir"]
-            if src.exists() and src.is_dir():
-                shutil.rmtree(src)
+            try:
+                self.db.update_application_status(job_id, "skipped")
+                if not info.get("submit_dir"):
+                    continue
+                src = ready_dir / info["submit_dir"]
+                if src.exists() and src.is_dir():
+                    skipped_dir.mkdir(parents=True, exist_ok=True)
+                    dest = skipped_dir / src.name
+                    if dest.exists():
+                        shutil.rmtree(dest)
+                    shutil.move(str(src), str(dest))
+            except Exception as e:
+                print(f"  [WARN] Failed to finalize skipped {job_id}: {e}")
 
         # Clean up state files
         state_path.unlink(missing_ok=True)
