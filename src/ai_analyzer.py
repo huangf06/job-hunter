@@ -495,13 +495,19 @@ class AIAnalyzer:
             parts.append(f"{role_title} with {years} years of experience.")
 
         # Education
-        if bio_spec.get('include_education', True):
+        include_edu = bio_spec.get('include_education', True)
+        if isinstance(include_edu, str):
+            include_edu = include_edu.lower() not in ('false', '0', 'no', 'none')
+        if include_edu:
             edu = self.config.get('resume', {}).get('education', {}).get('master', {})
             edu_text = f"{edu.get('degree', 'M.Sc. in Artificial Intelligence')} from {edu.get('school', 'VU Amsterdam')} ({edu.get('date', '2025').split('--')[-1].strip()}, GPA {edu.get('gpa', '8.2/10')})."
             parts.append(edu_text)
 
         # Certification
-        if bio_spec.get('include_certification', True):
+        include_cert = bio_spec.get('include_certification', True)
+        if isinstance(include_cert, str):
+            include_cert = include_cert.lower() not in ('false', '0', 'no', 'none')
+        if include_cert:
             cert = self.config.get('resume', {}).get('education', {}).get('certification', 'Databricks Certified Data Engineer Professional (2026)')
             # Strip year suffix if present for cleaner bio
             cert_clean = re.sub(r'\s*\(\d{4}\)\s*$', '', cert)
