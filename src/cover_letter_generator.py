@@ -313,6 +313,14 @@ Return ONLY the JSON object, no other text."""
         if not all_evidence_ids:
             errors.append("No evidence_ids found in spec — cover letter has no grounded claims")
 
+        # Validate required prose fields
+        if not std.get('opening_prose'):
+            errors.append("Missing or empty 'opening_prose' in standard section")
+        if not std.get('body_paragraphs'):
+            errors.append("Missing or empty 'body_paragraphs' in standard section")
+        if not std.get('closer_prose'):
+            errors.append("Missing or empty 'closer_prose' in standard section")
+
         # Check banned phrases
         banned = self.cl_config.get('banned_phrases', [])
         all_prose = self._extract_all_prose(spec)
