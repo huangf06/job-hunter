@@ -59,7 +59,7 @@ def get_db_stats() -> dict:
         funnel = db.get_funnel_stats()
         stats["applied"] = funnel.get("applied", 0)
         stats["interview"] = funnel.get("interview", 0)
-        stats["rejected"] = funnel.get("offer", 0)  # will fix below
+        stats["rejected"] = funnel.get("rejected", 0)
 
         # Get proper counts from applications table
         with db._get_conn() as conn:
