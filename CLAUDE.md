@@ -43,6 +43,24 @@ python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db --cdp
 - `--save-to-db`: 保存到 SQLite 数据库 (默认不保存)
 - `--cdp`: 连接已有浏览器 (Chrome 端口 9222)
 
+### 1b. 多平台爬取 (Greenhouse + Lever + IamExpat)
+```bash
+# 运行所有非 LinkedIn 平台
+python scripts/multi_scraper.py --all
+
+# 只运行 ATS (Greenhouse + Lever)
+python scripts/multi_scraper.py --platform ats
+
+# 只运行 IamExpat
+python scripts/multi_scraper.py --platform iamexpat
+
+# 指定搜索 profile
+python scripts/multi_scraper.py --platform iamexpat --profile ml_data
+```
+
+目标公司配置: `config/target_companies.yaml`
+IamExpat 搜索词: `config/search_profiles.yaml` 各 profile 下的 `iamexpat.queries`
+
 ### 2. 处理职位流水线
 ```bash
 # 完整流程 (导入 → 筛选 → 规则评分)
@@ -120,6 +138,7 @@ job-hunter/
 ├── scripts/                    # CLI 入口
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
 │   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫
+│   ├── multi_scraper.py            # 多平台爬虫编排 (Greenhouse+Lever+IamExpat)
 │   ├── job_parser.py               # JD 解析器
 │   └── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
 │
@@ -133,13 +152,19 @@ job-hunter/
 │   ├── checklist_server.py         # 本地 checklist HTTP server
 │   ├── google_calendar.py          # Google Calendar REST 客户端 (通用)
 │   ├── interview_scheduler.py      # 智能面试调度 (日历+DB+评分)
+│   ├── scrapers/                   # 多平台爬虫模块
+│   │   ├── base.py                     # BaseScraper 抽象类
+│   │   ├── greenhouse.py               # Greenhouse ATS API
+│   │   ├── lever.py                    # Lever ATS API
+│   │   └── iamexpat.py                 # IamExpat Jobs (Playwright)
 │   └── db/
 │       ├── __init__.py
 │       └── job_db.py               # SQLite + Turso 云数据库模块
 │
 ├── config/
 │   ├── ai_config.yaml          # AI 配置 (模型、阈值、prompt)
-│   ├── search_profiles.yaml    # 搜索配置
+│   ├── search_profiles.yaml    # 搜索配置 (LinkedIn + IamExpat)
+│   ├── target_companies.yaml   # 目标公司 ATS 配置 (Greenhouse + Lever)
 │   └── base/                   # 基础配置
 │       ├── filters.yaml            # 硬规则 v2.0
 │       └── scoring.yaml            # 评分规则 v2.0

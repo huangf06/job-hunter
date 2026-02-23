@@ -1,0 +1,39 @@
+# Target companies for direct ATS scraping
+# ats: greenhouse | lever
+# board_token: company identifier in ATS URL
+# location_filter: optional, case-insensitive substring match on job location
+#
+# To find board tokens:
+#   Greenhouse: https://boards-api.greenhouse.io/v1/boards/{token}/jobs
+#   Lever: https://api.lever.co/v0/postings/{token}?mode=json&limit=1
+#
+# NOTE: Booking.com uses iCIMS (not Greenhouse/Lever) — needs custom scraper
+# NOTE: Miro uses Greenhouse internally but doesn't expose public Board API
+
+companies:
+  # === Greenhouse ===
+  - name: Adyen
+    ats: greenhouse
+    board_token: adyen
+    location_filter: "Amsterdam"
+
+  - name: Databricks
+    ats: greenhouse
+    board_token: databricks
+    location_filter: "Amsterdam"
+
+  - name: MessageBird
+    ats: greenhouse
+    board_token: bird
+    location_filter: "Netherlands"
+
+  - name: Elastic
+    ats: greenhouse
+    board_token: elastic
+    location_filter: "The Netherlands"
+
+  # === Lever ===
+  - name: Spotify
+    ats: lever
+    board_token: spotify
+    location_filter: "Amsterdam"
