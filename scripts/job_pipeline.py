@@ -701,11 +701,7 @@ class JobPipeline:
 
         # Step 1: Sync from Turso
         print("Syncing database...")
-        try:
-            if self.db._libsql_raw:
-                self.db._libsql_raw.sync()
-        except Exception as e:
-            print(f"Warning: Turso sync failed ({e}), using local data")
+        self.db.final_sync()
 
         # Step 2: Generate resumes for jobs that need them
         renderer = ResumeRenderer()
@@ -868,11 +864,7 @@ class JobPipeline:
 
         # Sync to Turso
         print("Syncing to cloud...")
-        try:
-            if self.db._libsql_raw:
-                self.db._libsql_raw.sync()
-        except Exception as e:
-            print(f"Warning: Turso sync failed ({e}), changes saved locally")
+        self.db.final_sync()
 
         # Report
         print(f"\n{'='*50}")
@@ -926,12 +918,8 @@ class JobPipeline:
 
         # Sync to Turso
         print("\nSyncing deletions to Turso...")
-        try:
-            if self.db._libsql_raw:
-                self.db._libsql_raw.sync()
-                print("Turso sync complete.")
-        except Exception as e:
-            print(f"Warning: Turso sync failed ({e}), deletions saved locally")
+        self.db.final_sync()
+        print("Turso sync complete.")
 
     def analyze_single_job(self, job_id: str, model: str = None):
         """分析单个职位"""
@@ -1076,19 +1064,18 @@ def main():
             print("错误: 数据库模块不可用")
             sys.exit(1)
 
-        from src.db.job_db import JobDatabase as _JDB
-        db = _JDB()
+        pipeline = JobPipeline()
         print("[Reprocess] Clearing old filter, score, and analysis results...")
-        filter_count = db.clear_filter_results()
-        score_count = db.clear_scores()
-        analysis_count = db.clear_rejected_analyses()
+        filter_count = pipeline.db.clear_filter_results()
+        score_count = pipeline.db.clear_scores()
+        analysis_count = pipeline.db.clear_rejected_analyses()
         print(f"  Cleared {filter_count} filter results, {score_count} score results, {analysis_count} rejected analyses")
 
-        pipeline = JobPipeline()
         # Reprocess all jobs (ignore --limit to avoid data loss from partial reprocessing)
         pipeline.filter_jobs()
         pipeline.score_jobs()
         pipeline.show_stats()
+        pipeline.db.final_sync()
         return
 
     # 新版数据库流水线
@@ -1156,11 +1143,10 @@ def main():
         elif args.stats:
             pipeline.show_stats()
         elif args.mark_applied:
-            db = JobDatabase()
             job_id = args.mark_applied
-            db.update_application_status(job_id, "applied", applied_at=datetime.now(timezone.utc).isoformat())
+            pipeline.db.update_application_status(job_id, "applied", applied_at=datetime.now(timezone.utc).isoformat())
             # Archive the ready_to_send folder
-            resume = db.get_resume(job_id)
+            resume = pipeline.db.get_resume(job_id)
             if resume and resume.get('submit_dir'):
                 submit_dir = Path(resume['submit_dir'])
                 if submit_dir.exists():
@@ -1175,8 +1161,7 @@ def main():
             else:
                 print(f"[Applied] {job_id}")
         elif args.mark_all_applied:
-            db = JobDatabase()
-            ready = db.get_ready_to_apply()
+            ready = pipeline.db.get_ready_to_apply()
             if not ready:
                 print("[Mark All] No ready-to-apply jobs to mark")
             else:
@@ -1184,7 +1169,7 @@ def main():
                 archived = 0
                 for job in ready:
                     job_id = job['id']
-                    db.update_application_status(job_id, "applied", applied_at=now)
+                    pipeline.db.update_application_status(job_id, "applied", applied_at=now)
                     submit_dir = Path(job['submit_dir']) if job.get('submit_dir') else None
                     if submit_dir and submit_dir.exists():
                         applied_dir = submit_dir.parent / "_applied"
@@ -1200,7 +1185,6 @@ def main():
                     shutil.move(str(checklist), str(applied_dir / checklist.name))
                 print(f"[Mark All] {len(ready)} jobs marked as applied, {archived} folders archived")
         elif args.update_status:
-            db = JobDatabase()
             job_id, status = args.update_status
             valid = {'rejected', 'interview', 'offer'}
             if status not in valid:
@@ -1213,13 +1197,12 @@ def main():
                 kwargs['interview_at'] = datetime.now(timezone.utc).isoformat()
             elif status == 'offer':
                 kwargs['response_at'] = datetime.now(timezone.utc).isoformat()
-            db.update_application_status(job_id, status, **kwargs)
-            job = db.get_job(job_id)
+            pipeline.db.update_application_status(job_id, status, **kwargs)
+            job = pipeline.db.get_job(job_id)
             name = f"{job['title'][:40]} @ {job['company']}" if job else job_id
             print(f"[Status] {name} -> {status}")
         elif args.tracker:
-            db = JobDatabase()
-            tracker = db.get_application_tracker()
+            tracker = pipeline.db.get_application_tracker()
             # Summary
             print("\n=== Application Tracker ===")
             total = sum(s['count'] for s in tracker['summary'])
@@ -1246,6 +1229,11 @@ def main():
                     print(f"  [{j.get('score', 0):.1f}] {j['company']:25s} | {j['title'][:40]}  ({j['days_since']}d)")
                 if len(stale) > 15:
                     print(f"  ... and {len(stale) - 15} more")
+
+        # Final sync: push all accumulated writes to Turso remote.
+        # In "startup_only" mode this is the ONLY push; in "full" mode it's a
+        # harmless no-op (data was already synced incrementally).
+        pipeline.db.final_sync()
         return
 
     # 旧版 JSON 分析 (已废弃)

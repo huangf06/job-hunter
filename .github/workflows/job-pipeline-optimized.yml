@@ -70,7 +70,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/jobs.db
-          key: turso-replica-${{ github.run_id }}
+          key: turso-replica-v1
           restore-keys: |
             turso-replica-
 
