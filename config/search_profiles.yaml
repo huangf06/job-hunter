@@ -32,7 +32,7 @@ profiles:
     enabled: true
     priority: 2
     queries:
-      - keywords: '"Python Developer" OR "Backend Engineer" OR "Software Engineer" OR "Full Stack Engineer"'
+      - keywords: '"Python Developer" OR "Backend Engineer" OR "Software Engineer"'
         description: "Backend combined search"
 
     iamexpat:

@@ -1236,6 +1236,16 @@ def main():
                     print(f"  [{j.get('score', 0):.1f}] {j['company']:25s} | {j['title'][:40]}  ({days}d ago)")
                 if len(jobs) > 20:
                     print(f"  ... and {len(jobs) - 20} more")
+            # Stale applications — likely ghosted
+            STALE_DAYS = 30
+            stale = [j for j in tracker['by_status'].get('applied', [])
+                     if isinstance(j.get('days_since'), (int, float)) and j['days_since'] >= STALE_DAYS]
+            if stale:
+                print(f"\n--- LIKELY GHOSTED ({len(stale)}, applied {STALE_DAYS}+ days ago) ---")
+                for j in stale[:15]:
+                    print(f"  [{j.get('score', 0):.1f}] {j['company']:25s} | {j['title'][:40]}  ({j['days_since']}d)")
+                if len(stale) > 15:
+                    print(f"  ... and {len(stale) - 15} more")
         return
 
     # 旧版 JSON 分析 (已废弃)

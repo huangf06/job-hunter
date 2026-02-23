@@ -95,6 +95,7 @@ class IamExpatScraper(BaseScraper):
 
     async def _scrape_async(self) -> List[Dict]:
         all_jobs = []
+        global_seen_urls: set = set()
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=self.headless)
             context = await browser.new_context(
@@ -111,10 +112,13 @@ class IamExpatScraper(BaseScraper):
                         cards = await self._scrape_listing_page(page, url)
                     except Exception as e:
                         logger.warning("[IamExpat] Listing page %d failed: %s", page_num, e)
-                        break
+                        continue  # try next page instead of aborting query
                     if not cards:
                         break
                     for card in cards:
+                        if card["url"] in global_seen_urls:
+                            continue
+                        global_seen_urls.add(card["url"])
                         desc = await self._scrape_detail_page(page, card["url"])
                         job = self._to_job_dict(
                             title=card["title"], company=card["company"],
