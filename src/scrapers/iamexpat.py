@@ -40,7 +40,8 @@ class IamExpatScraper(BaseScraper):
 
     async def _scrape_listing_page(self, page, url: str) -> List[Dict]:
         """Extract job cards from a listing page."""
-        await page.goto(url, wait_until="networkidle", timeout=30000)
+        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        await page.wait_for_timeout(2000)  # Let Next.js hydrate
         try:
             await page.wait_for_selector("a[href*='/career/jobs-netherlands/']", timeout=10000)
         except Exception:
@@ -75,7 +76,8 @@ class IamExpatScraper(BaseScraper):
     async def _scrape_detail_page(self, page, url: str) -> str:
         """Fetch full JD from detail page."""
         try:
-            await page.goto(url, wait_until="networkidle", timeout=20000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            await page.wait_for_timeout(1000)  # Let Next.js hydrate
             ld_el = await page.query_selector('script[type="application/ld+json"]')
             if ld_el:
                 ld_text = await ld_el.inner_text()
