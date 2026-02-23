@@ -227,7 +227,7 @@ class JobDatabase:
         search_profile TEXT,
         search_query TEXT,
         raw_data TEXT,
-        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        created_at TEXT DEFAULT (datetime('now'))
     );
 
     -- 筛选结果表
@@ -238,7 +238,7 @@ class JobDatabase:
         filter_version TEXT,
         reject_reason TEXT,
         matched_rules TEXT,
-        processed_at TEXT DEFAULT (datetime('now', 'localtime')),
+        processed_at TEXT DEFAULT (datetime('now')),
         UNIQUE(job_id, filter_version)
     );
 
@@ -252,7 +252,7 @@ class JobDatabase:
         matched_keywords TEXT,
         analysis TEXT,
         recommendation TEXT,
-        scored_at TEXT DEFAULT (datetime('now', 'localtime')),
+        scored_at TEXT DEFAULT (datetime('now')),
         UNIQUE(job_id, model)
     );
 
@@ -265,7 +265,7 @@ class JobDatabase:
         html_path TEXT,
         pdf_path TEXT,
         submit_dir TEXT,
-        generated_at TEXT DEFAULT (datetime('now', 'localtime')),
+        generated_at TEXT DEFAULT (datetime('now')),
         UNIQUE(job_id, role_type)
     );
 
@@ -279,7 +279,7 @@ class JobDatabase:
         interview_at TEXT,
         outcome TEXT,
         notes TEXT,
-        updated_at TEXT DEFAULT (datetime('now', 'localtime')),
+        updated_at TEXT DEFAULT (datetime('now')),
         UNIQUE(job_id)
     );
 
@@ -292,7 +292,7 @@ class JobDatabase:
         rejection_stage TEXT,
         rejection_reason TEXT,
         notes TEXT,
-        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        created_at TEXT DEFAULT (datetime('now'))
     );
 
     -- 配置快照表 (UNUSED — reserved for future config versioning)
@@ -301,7 +301,7 @@ class JobDatabase:
         run_id TEXT NOT NULL,
         config_type TEXT NOT NULL,
         config_data TEXT NOT NULL,
-        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        created_at TEXT DEFAULT (datetime('now'))
     );
 
     -- AI 分析表 (整合评分 + 简历定制)
@@ -323,7 +323,7 @@ class JobDatabase:
         -- 元数据
         model TEXT,
         tokens_used INTEGER,
-        analyzed_at TEXT DEFAULT (datetime('now', 'localtime'))
+        analyzed_at TEXT DEFAULT (datetime('now'))
     );
 
     -- Cover letter 表
@@ -337,7 +337,7 @@ class JobDatabase:
         html_path TEXT,
         pdf_path TEXT,
         tokens_used INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        created_at TEXT DEFAULT (datetime('now'))
     );
 
     -- 索引
@@ -1104,7 +1104,7 @@ class JobDatabase:
                     a.status, a.applied_at, a.response_at, a.interview_at,
                     j.title, j.company, j.url,
                     an.ai_score as score,
-                    CAST(JULIANDAY('now', 'localtime') - JULIANDAY(a.applied_at) AS INTEGER) as days_since
+                    CAST(JULIANDAY('now') - JULIANDAY(a.applied_at) AS INTEGER) as days_since
                 FROM applications a
                 JOIN jobs j ON a.job_id = j.id
                 LEFT JOIN job_analysis an ON a.job_id = an.job_id
@@ -1406,19 +1406,23 @@ class JobDatabase:
                 LEFT JOIN filter_results f ON j.id = f.job_id
                 LEFT JOIN ai_scores s ON j.id = s.job_id
                 LEFT JOIN resumes r ON j.id = r.job_id
-                WHERE j.scraped_at >= DATE('now', 'localtime', ?)
+                WHERE j.scraped_at >= DATE('now', ?)
                 GROUP BY DATE(j.scraped_at)
                 ORDER BY date DESC
             """, (thresholds['rule_score_apply'], f'-{days} days'))
             return [dict(row) for row in cursor.fetchall()]
 
     def get_daily_token_usage(self) -> int:
-        """Get total tokens used today across all AI analyses."""
+        """Get total tokens used today across AI analyses + cover letters."""
         with self._get_conn() as conn:
             row = conn.execute("""
-                SELECT COALESCE(SUM(tokens_used), 0) as today_tokens
-                FROM job_analysis
-                WHERE DATE(analyzed_at) = DATE('now')
+                SELECT COALESCE(SUM(tokens), 0) as today_tokens FROM (
+                    SELECT tokens_used as tokens FROM job_analysis
+                    WHERE DATE(analyzed_at) = DATE('now')
+                    UNION ALL
+                    SELECT tokens_used as tokens FROM cover_letters
+                    WHERE DATE(created_at) = DATE('now')
+                )
             """).fetchone()
             return row['today_tokens'] if row else 0
 
