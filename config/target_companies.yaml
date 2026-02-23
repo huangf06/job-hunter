@@ -1,0 +1,42 @@
+# Target companies for direct ATS scraping
+# ats: greenhouse | lever
+# board_token: company identifier in ATS URL
+# location_filter: optional, case-insensitive substring match on job location
+
+companies:
+  # === Greenhouse ===
+  - name: Booking.com
+    ats: greenhouse
+    board_token: bookingcom
+    location_filter: "Amsterdam"
+
+  - name: Adyen
+    ats: greenhouse
+    board_token: adyen
+    location_filter: "Amsterdam"
+
+  - name: MessageBird
+    ats: greenhouse
+    board_token: messagebird
+    location_filter: "Amsterdam"
+
+  - name: Miro
+    ats: greenhouse
+    board_token: miro
+    location_filter: "Amsterdam"
+
+  - name: Databricks
+    ats: greenhouse
+    board_token: databricks
+    location_filter: "Amsterdam"
+
+  # === Lever ===
+  - name: Spotify
+    ats: lever
+    board_token: spotify
+    location_filter: "Netherlands"
+
+  - name: Elastic
+    ats: lever
+    board_token: elastic
+    location_filter: "Netherlands"
