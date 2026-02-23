@@ -435,6 +435,18 @@ class JobDatabase:
             self._turso_token = os.getenv("TURSO_AUTH_TOKEN")
         self.db_path = db_path or DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Sync mode: controls how aggressively we sync with Turso.
+        #   "full"         — sync before reads + after writes (default, safest)
+        #   "startup_only" — sync once at init, skip per-call pre-read syncs,
+        #                     still push after writes (ideal for CI: same runner,
+        #                     no external writers between steps)
+        #   "off"          — no syncs at all (pure local SQLite)
+        self._sync_mode = os.getenv("TURSO_SYNC_MODE", "full").lower()
+        if self._sync_mode == "off":
+            self._turso_url = None
+            self._turso_token = None
+
         # Persistent libsql connection for Turso embedded replica
         # NOTE: libsql embedded replicas have a known stack overflow bug on
         # Windows (https://github.com/tursodatabase/libsql/issues/2074).
@@ -554,6 +566,8 @@ class JobDatabase:
         Args:
             sync_before: Pull from remote before reading. Set False for
                          write-only operations to skip the network round-trip.
+                         In "startup_only" sync mode, pre-read syncs are always
+                         skipped (data was synced once at init).
         """
         use_libsql = self._libsql_raw is not None
 
@@ -564,7 +578,12 @@ class JobDatabase:
             if self._in_transaction:
                 yield _DictConnection(self._libsql_raw)
                 return
-            if sync_before and not self._batch_active:
+            # In "startup_only" mode, skip all pre-read syncs — data was pulled
+            # once at __init__ and no external writer exists within the same run.
+            should_pre_sync = (sync_before
+                               and not self._batch_active
+                               and self._sync_mode == "full")
+            if should_pre_sync:
                 try:
                     self._libsql_raw.sync()
                 except Exception as e:
