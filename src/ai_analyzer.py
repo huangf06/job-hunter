@@ -240,6 +240,8 @@ class AIAnalyzer:
             if isinstance(value, dict) and 'verified_bullets' in value:
                 for bullet in value['verified_bullets']:
                     if isinstance(bullet, dict) and 'id' in bullet and 'content' in bullet:
+                        if bullet['id'] in lookup:
+                            print(f"  [WARN] Duplicate bullet ID '{bullet['id']}' in {key} — overwriting previous")
                         lookup[bullet['id']] = bullet['content']
 
         for key, value in self._parsed_bullets.get('projects', {}).items():
@@ -248,6 +250,8 @@ class AIAnalyzer:
             if isinstance(value, dict) and 'verified_bullets' in value:
                 for bullet in value['verified_bullets']:
                     if isinstance(bullet, dict) and 'id' in bullet and 'content' in bullet:
+                        if bullet['id'] in lookup:
+                            print(f"  [WARN] Duplicate bullet ID '{bullet['id']}' in {key} — overwriting previous")
                         lookup[bullet['id']] = bullet['content']
 
         return lookup

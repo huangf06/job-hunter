@@ -458,7 +458,7 @@ class ResumeRenderer:
                     page = browser.new_page()
 
                     # Load HTML file
-                    page.goto(html_path.absolute().as_uri())
+                    page.goto(html_path.absolute().as_uri(), timeout=15000)
 
                     # Generate PDF
                     page.pdf(
@@ -470,7 +470,8 @@ class ResumeRenderer:
                             'bottom': margin.get('bottom', '0.55in'),
                             'left': margin.get('left', '0.55in'),
                         },
-                        print_background=pdf_config.get('print_background', True)
+                        print_background=pdf_config.get('print_background', True),
+                        timeout=30000,
                     )
                 finally:
                     browser.close()

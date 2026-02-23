@@ -36,9 +36,17 @@ class GreenhouseScraper(BaseScraper):
     def _fetch_jobs(self, board_token: str) -> List[Dict]:
         """Fetch all jobs from a Greenhouse board."""
         url = f"{API_BASE}/{board_token}/jobs?content=true"
-        resp = requests.get(url, timeout=30)
-        resp.raise_for_status()
-        return resp.json().get("jobs", [])
+        for attempt in range(3):
+            try:
+                resp = requests.get(url, timeout=30)
+                resp.raise_for_status()
+                return resp.json().get("jobs", [])
+            except (requests.ConnectionError, requests.Timeout) as e:
+                if attempt < 2:
+                    import time
+                    time.sleep(2 ** (attempt + 1))
+                else:
+                    raise
 
     def _matches_location(self, job: Dict, location_filter: Optional[str]) -> bool:
         if not location_filter:

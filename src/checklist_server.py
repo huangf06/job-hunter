@@ -125,7 +125,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 <p class="summary" id="summary"></p>
 
 <script>
-let state = {json.dumps(state)};
+let state = {json.dumps(state).replace("</", "<\\\\/")};
 
 function updateSummary() {{
   const checked = Object.values(state.jobs).filter(j => j.applied).length;

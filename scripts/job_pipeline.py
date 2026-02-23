@@ -1158,7 +1158,7 @@ def main():
         elif args.mark_applied:
             db = JobDatabase()
             job_id = args.mark_applied
-            db.update_application_status(job_id, "applied", applied_at=datetime.now().isoformat())
+            db.update_application_status(job_id, "applied", applied_at=datetime.now(timezone.utc).isoformat())
             # Archive the ready_to_send folder
             resume = db.get_resume(job_id)
             if resume and resume.get('submit_dir'):
@@ -1180,7 +1180,7 @@ def main():
             if not ready:
                 print("[Mark All] No ready-to-apply jobs to mark")
             else:
-                now = datetime.now().isoformat()
+                now = datetime.now(timezone.utc).isoformat()
                 archived = 0
                 for job in ready:
                     job_id = job['id']
@@ -1208,11 +1208,11 @@ def main():
                 sys.exit(1)
             kwargs = {}
             if status == 'rejected':
-                kwargs['response_at'] = datetime.now().isoformat()
+                kwargs['response_at'] = datetime.now(timezone.utc).isoformat()
             elif status == 'interview':
-                kwargs['interview_at'] = datetime.now().isoformat()
+                kwargs['interview_at'] = datetime.now(timezone.utc).isoformat()
             elif status == 'offer':
-                kwargs['response_at'] = datetime.now().isoformat()
+                kwargs['response_at'] = datetime.now(timezone.utc).isoformat()
             db.update_application_status(job_id, status, **kwargs)
             job = db.get_job(job_id)
             name = f"{job['title'][:40]} @ {job['company']}" if job else job_id

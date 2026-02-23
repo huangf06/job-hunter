@@ -153,6 +153,11 @@ body_scoring:
       - "relocation"
       - "kmv"
       - "highly skilled migrant"
+      - "kennismigrant"
+      - "30% ruling"
+      - "work permit"
+      - "international candidates"
+      - "relocation package"
     weight: 2.0
     max_total: 2.0
 
