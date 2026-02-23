@@ -613,8 +613,9 @@ class JobDatabase:
             try:
                 yield conn
                 conn.commit()
-                # Sync after commit — skip if inside batch_mode()
-                if not self._batch_active:
+                # Sync after commit — skip if inside batch_mode() or
+                # startup_only mode (defers all syncs to final_sync()).
+                if not self._batch_active and self._sync_mode == "full":
                     try:
                         self._libsql_raw.sync()
                     except Exception as e:
@@ -645,17 +646,36 @@ class JobDatabase:
 
         Use this to wrap loops that do many DB writes (e.g. filter/score)
         to avoid ~200-300ms network round-trip per write.
+
+        In "startup_only" mode, the batch-exit sync is also skipped —
+        all data is pushed once via final_sync() at end of pipeline.
         """
         self._batch_active = True
         try:
             yield
         finally:
             self._batch_active = False
-            if self._libsql_raw:
+            if self._libsql_raw and self._sync_mode == "full":
                 try:
                     self._libsql_raw.sync()
                 except Exception as e:
                     logger.warning("Turso batch sync failed: %s", e)
+
+    def final_sync(self):
+        """Push all local changes to Turso remote.
+
+        Call once at the very end of a pipeline run.  In "startup_only" mode
+        this is the ONLY push sync that happens (all per-write and per-batch
+        syncs are deferred).  In "full" mode this is a no-op safety net
+        (data was already synced incrementally).
+        """
+        if not self._libsql_raw:
+            return
+        try:
+            self._libsql_raw.sync()
+            logger.info("Turso final sync complete")
+        except Exception as e:
+            logger.warning("Turso final sync failed: %s", e)
 
     def execute(self, sql: str, params: tuple = ()) -> list:
         """执行 SQL 并返回结果行（用于 ad-hoc 查询和数据修改）"""
