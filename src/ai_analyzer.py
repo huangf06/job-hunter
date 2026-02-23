@@ -599,7 +599,13 @@ class AIAnalyzer:
                             continue
                         else:
                             print(f"  [WARN] Empty response from API for {job_id} after 3 attempts")
-                            return None
+                            return AnalysisResult(
+                                job_id=job_id, ai_score=0.0,
+                                recommendation='REJECTED',
+                                reasoning='Empty API response after 3 attempts',
+                                tailored_resume='{}',
+                                model=self.model, tokens_used=0,
+                            )
                     break
                 except (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError) as e:
                     if attempt < 2:
@@ -614,7 +620,13 @@ class AIAnalyzer:
 
             if not response or not response.content:
                 print(f"  [WARN] Empty response from API for {job_id}")
-                return None
+                return AnalysisResult(
+                    job_id=job_id, ai_score=0.0,
+                    recommendation='REJECTED',
+                    reasoning='Empty API response',
+                    tailored_resume='{}',
+                    model=self.model, tokens_used=0,
+                )
 
             if response.stop_reason == "max_tokens":
                 # Track tokens even for truncated responses (API still charges)

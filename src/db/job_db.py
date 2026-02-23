@@ -413,6 +413,7 @@ class JobDatabase:
         COUNT(DISTINCT CASE WHEN an.ai_score >= {ai_score_generate_resume} THEN j.id END) as ai_scored_high,
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
         COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
+        COUNT(DISTINCT CASE WHEN a.status = 'rejected' THEN j.id END) as rejected,
         COUNT(DISTINCT CASE WHEN a.status = 'interview' THEN j.id END) as interview,
         COUNT(DISTINCT CASE WHEN a.status = 'offer' THEN j.id END) as offer
     FROM jobs j
