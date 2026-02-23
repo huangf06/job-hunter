@@ -752,6 +752,13 @@ class JobPipeline:
         if before_count > len(all_ready):
             print(f"  Skipped {before_count - len(all_ready)} jobs (resume files missing on disk).")
 
+        # Enrich with source/description for CL scrutiny estimation
+        for job in all_ready:
+            full = self.db.get_job(job['id'])
+            if full:
+                job['source'] = full.get('source', '')
+                job['description'] = full.get('description', '')
+
         # Enrich with repost info
         repost_count = 0
         for job in all_ready:
@@ -855,6 +862,45 @@ class JobPipeline:
                     shutil.move(str(src), str(dest))
             except Exception as e:
                 print(f"  [WARN] Failed to finalize skipped {job_id}: {e}")
+
+        # Detect edited cover letters
+        edited_cls_dir = ready_dir / "_edited_cls"
+        edited_count = 0
+        for job_id, info in applied.items():
+            submit_dir_name = info.get("submit_dir", "")
+            if not submit_dir_name:
+                continue
+            archived_dir = applied_dir / Path(submit_dir_name).name
+            if not archived_dir.exists():
+                continue
+
+            # Find CL txt file in archived dir
+            cl_files = list(archived_dir.glob("*_Cover_Letter.txt"))
+            if not cl_files:
+                continue
+
+            file_text = cl_files[0].read_text(encoding="utf-8").strip().replace('\r\n', '\n')
+            if not file_text:
+                continue
+
+            # Compare with DB short_text (TXT files contain short version)
+            cl_record = self.db.get_cover_letter(job_id)
+            if not cl_record:
+                continue
+            db_text = (cl_record.get("short_text") or "").strip().replace('\r\n', '\n')
+
+            if file_text != db_text:
+                company = info.get("company", "unknown")
+                edited_cls_dir.mkdir(parents=True, exist_ok=True)
+                safe_co = re.sub(r'[^\w\s-]', '', company).strip().replace(' ', '_')[:20]
+                out_name = f"{safe_co}_{job_id[:8]}_edited_cl.txt"
+                (edited_cls_dir / out_name).write_text(file_text, encoding="utf-8")
+                edited_count += 1
+                print(f"  [EDITED CL] {company} - saved to _edited_cls/{out_name}")
+
+        if edited_count:
+            print(f"\n  {edited_count} edited cover letter(s) detected.")
+            print(f"  Review in ready_to_send/_edited_cls/ and extract to cl_knowledge_base.yaml")
 
         # Clean up state files
         state_path.unlink(missing_ok=True)
