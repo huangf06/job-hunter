@@ -220,6 +220,7 @@ class LinkedInScraperV6:
                         self.context = await self.browser.new_context()
                         self.page = await self.context.new_page()
                     print("  [OK] CDP connected")
+                    await self._setup_request_interception()
                 except Exception as e:
                     print(f"  [FAIL] CDP connection failed: {e}")
                     print("  -> Falling back to built-in browser")
@@ -398,6 +399,10 @@ class LinkedInScraperV6:
                 except Exception:
                     pass
             except Exception as e:
+                err_name = type(e).__name__
+                if err_name in ('TargetClosedError', 'BrowserClosedError'):
+                    print(f"  [FATAL] Browser/tab closed unexpectedly: {e}")
+                    return False
                 print(f"  [NO] Navigation error: {e}")
 
             if attempt < retries - 1:

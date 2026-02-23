@@ -368,10 +368,13 @@ class AIAnalyzer:
                     errors.append(f"[{company}] Bullet must be string, got {type(bullet).__name__}")
                     continue
                 if bullet in self.bullet_id_lookup:
-                    resolved.append(self.bullet_id_lookup[bullet])
+                    text = self.bullet_id_lookup[bullet]
+                    if text not in resolved:
+                        resolved.append(text)
                 elif bullet in self.valid_bullets:
                     # Backward compat: AI returned exact text from library
-                    resolved.append(bullet)
+                    if bullet not in resolved:
+                        resolved.append(bullet)
                 else:
                     errors.append(f"[{company}] Unknown bullet ID or text: '{bullet[:80]}'")
             exp['bullets'] = resolved
@@ -389,9 +392,12 @@ class AIAnalyzer:
                     errors.append(f"[{name}] Bullet must be string, got {type(bullet).__name__}")
                     continue
                 if bullet in self.bullet_id_lookup:
-                    resolved.append(self.bullet_id_lookup[bullet])
+                    text = self.bullet_id_lookup[bullet]
+                    if text not in resolved:
+                        resolved.append(text)
                 elif bullet in self.valid_bullets:
-                    resolved.append(bullet)
+                    if bullet not in resolved:
+                        resolved.append(bullet)
                 else:
                     errors.append(f"[{name}] Unknown bullet ID or text: '{bullet[:80]}'")
             proj['bullets'] = resolved

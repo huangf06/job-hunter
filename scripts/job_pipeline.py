@@ -659,7 +659,7 @@ class JobPipeline:
         # Check for reposts before rendering
         jobs = self.db.get_analyzed_jobs_for_resume(min_ai_score=min_ai_score, limit=limit)
         for job in jobs:
-            dupes = self.db.find_applied_duplicates(job['job_id'])
+            dupes = self.db.find_applied_duplicates(job['id'])
             if dupes:
                 print(f"  ⚠ REPOST: {job.get('title', '')} @ {job.get('company', '')} — applied {dupes[0]['applied_at'][:10]}")
 

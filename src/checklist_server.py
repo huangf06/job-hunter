@@ -69,20 +69,21 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 
         submit_dir = info["submit_dir"]
         abs_dir = str((ready_dir / submit_dir).resolve()).replace("\\", "\\\\")
+        abs_dir_js = abs_dir.replace("'", "\\'")  # JS-safe for onclick
         repost = info.get("repost_applied_at", "")
         repost_badge = f' <span style="color:#dc2626;font-weight:bold" title="Applied {_esc(repost)}">REPOST</span>' if repost else ''
         rejected = info.get("rejection_rejected_at", "")
         rejected_badge = f' <span style="color:#ea580c;font-weight:bold" title="Rejected {_esc(rejected)}">REJECTED</span>' if rejected else ''
 
         rows.append(f"""
-        <tr data-job-id="{job_id}">
+        <tr data-job-id="{_esc(job_id)}">
           <td><input type="checkbox" class="apply-cb" {'checked' if info['applied'] else ''} /></td>
           <td style="color:{score_color};font-weight:bold">{score:.1f}</td>
           <td>{_esc(info['company'])}{repost_badge}{rejected_badge}</td>
           <td>{_esc(info['title'])}</td>
           <td>
-            <button class="btn" onclick="openFolder('{abs_dir}')">Open Folder</button>
-            <button class="btn" onclick="copyPath('{abs_dir}', this)">Copy Path</button>
+            <button class="btn" onclick="openFolder('{abs_dir_js}')">Open Folder</button>
+            <button class="btn" onclick="copyPath('{abs_dir_js}', this)">Copy Path</button>
           </td>
           <td><a href="{_esc(info['url'])}" target="_blank">Job Link</a></td>
         </tr>""")
@@ -174,8 +175,9 @@ updateSummary();
 
 
 def _esc(text: str) -> str:
-    """HTML-escape a string."""
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+    """HTML-escape a string (covers attribute and text contexts)."""
+    return (text.replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;").replace("'", "&#39;"))
 
 
 def start_server(ready_dir: Path, port: int = 8234):
@@ -199,8 +201,12 @@ def start_server(ready_dir: Path, port: int = 8234):
 
             if self.path == "/state":
                 try:
-                    json.loads(body)  # validate JSON
+                    data = json.loads(body)
                 except (json.JSONDecodeError, ValueError):
+                    self.send_response(400)
+                    self.end_headers()
+                    return
+                if not isinstance(data, dict) or "jobs" not in data:
                     self.send_response(400)
                     self.end_headers()
                     return
@@ -215,7 +221,10 @@ def start_server(ready_dir: Path, port: int = 8234):
                 try:
                     data = json.loads(body)
                     folder = data.get("folder", "")
-                    if folder and Path(folder).is_dir():
+                    folder_path = Path(folder).resolve()
+                    # Only allow opening directories within ready_dir
+                    if (folder and folder_path.is_dir()
+                            and folder_path.is_relative_to(ready_dir.resolve())):
                         os.startfile(folder)
                     self.send_response(200)
                 except Exception:
