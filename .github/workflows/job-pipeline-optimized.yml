@@ -128,6 +128,16 @@ jobs:
           if-no-files-found: ignore
 
       # ==========================================
+      # Step 1b: 多平台爬取 (ATS API + IamExpat)
+      # ==========================================
+      - name: Scrape other platforms
+        id: multi_scrape
+        continue-on-error: true
+        run: |
+          echo "=== Scraping Greenhouse + Lever + IamExpat ==="
+          python scripts/multi_scraper.py --all
+
+      # ==========================================
       # Step 2: 规则评分 (快速本地处理)
       # ==========================================
       - name: Rule-based scoring
@@ -170,6 +180,7 @@ jobs:
           FAILED_STEPS=""
           [ "${{ steps.scrape.outcome }}" == "failure" ] && FAILED_STEPS="scrape"
           [ "${{ steps.score.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }score"
+          [ "${{ steps.multi_scrape.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }multi-scrape"
           [ "${{ steps.ai.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-analyze"
 
           if [ -n "$FAILED_STEPS" ]; then
