@@ -23,10 +23,22 @@ class LeverScraper(BaseScraper):
         """Fetch all postings with pagination."""
         all_postings = []
         skip = 0
-        while True:
+        max_pages = 50  # Safety limit to prevent infinite loops
+        pages_fetched = 0
+        while pages_fetched < max_pages:
+            pages_fetched += 1
             url = f"{API_BASE}/{board_token}?mode=json&limit={PAGE_SIZE}&skip={skip}"
-            resp = requests.get(url, timeout=30)
-            resp.raise_for_status()
+            for attempt in range(3):
+                try:
+                    resp = requests.get(url, timeout=30)
+                    resp.raise_for_status()
+                    break
+                except (requests.ConnectionError, requests.Timeout) as e:
+                    if attempt < 2:
+                        import time
+                        time.sleep(2 ** (attempt + 1))
+                    else:
+                        raise
             page = resp.json()
             if not page:
                 break

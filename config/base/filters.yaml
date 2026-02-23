@@ -94,7 +94,7 @@ hard_reject_rules:
       - "\\bkernel\\b"
       - "\\bembedded\\b"
       - "\\bplc\\b"
-      - "\\bsystems?\\s*engineer\\b"
+      - "\\bsystems?\\s*engineer\\b(?!.*(?:data|ml|machine\\s*learning|ai|platform))"
       - "\\bsiem\\b"
       - "\\bsecurity\\s*engineer\\b"
       - "\\brelease\\s*engineer\\b"

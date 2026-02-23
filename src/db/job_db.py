@@ -774,7 +774,7 @@ class JobDatabase:
                 (job_id, passed, filter_version, reject_reason, matched_rules, processed_at)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (result.job_id, result.passed, result.filter_version,
-                  result.reject_reason, result.matched_rules, datetime.now().isoformat()))
+                  result.reject_reason, result.matched_rules, datetime.now(timezone.utc).isoformat()))
 
     def get_filter_result(self, job_id: str) -> Optional[Dict]:
         """获取筛选结果"""
@@ -813,7 +813,7 @@ class JobDatabase:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (result.job_id, result.score, result.model, result.score_breakdown,
                   result.matched_keywords, result.analysis, result.recommendation,
-                  datetime.now().isoformat()))
+                  datetime.now(timezone.utc).isoformat()))
 
     def get_score(self, job_id: str) -> Optional[Dict]:
         """获取评分结果"""
@@ -853,7 +853,7 @@ class JobDatabase:
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (resume.job_id, resume.role_type, resume.template_version,
                   resume.html_path, resume.pdf_path, resume.submit_dir,
-                  datetime.now().isoformat()))
+                  datetime.now(timezone.utc).isoformat()))
 
     def get_resume(self, job_id: str) -> Optional[Dict]:
         """获取简历记录"""
@@ -968,7 +968,7 @@ class JobDatabase:
             """, (cl.job_id, cl.spec_json, cl.custom_requirements,
                   cl.standard_text, cl.short_text,
                   cl.html_path, cl.pdf_path, cl.tokens_used,
-                  datetime.now().isoformat()))
+                  datetime.now(timezone.utc).isoformat()))
 
     def get_cover_letter(self, job_id: str) -> Optional[Dict]:
         """获取 cover letter 记录"""
@@ -1012,7 +1012,7 @@ class JobDatabase:
                 (job_id, status, applied_at, response_at, interview_at, outcome, notes, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (app.job_id, app.status, app.applied_at, app.response_at,
-                  app.interview_at, app.outcome, app.notes, datetime.now().isoformat()))
+                  app.interview_at, app.outcome, app.notes, datetime.now(timezone.utc).isoformat()))
 
     def update_application_status(self, job_id: str, status: str, **kwargs):
         """更新申请状态"""
@@ -1028,7 +1028,7 @@ class JobDatabase:
             if existing:
                 # 更新: iterate over known columns, not arbitrary kwargs
                 set_clauses = ["status = ?", "updated_at = ?"]
-                params = [status, datetime.now().isoformat()]
+                params = [status, datetime.now(timezone.utc).isoformat()]
 
                 for col in ALLOWED_COLS:
                     if col in kwargs:
@@ -1047,7 +1047,7 @@ class JobDatabase:
                 """, (job_id, status, kwargs.get('applied_at', ''),
                       kwargs.get('response_at', ''), kwargs.get('interview_at', ''),
                       kwargs.get('outcome', ''), kwargs.get('notes', ''),
-                      datetime.now().isoformat()))
+                      datetime.now(timezone.utc).isoformat()))
 
     def get_application(self, job_id: str) -> Optional[Dict]:
         """获取申请状态"""
