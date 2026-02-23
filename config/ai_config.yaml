@@ -90,7 +90,6 @@ prompt_settings:
     - graphsage_gnn
     - obama_tts
     - lifeos
-    - job_hunter_automation
 
 # =============================================================================
 # AI Recommendation Thresholds (used in AI prompt)
