@@ -205,7 +205,7 @@ class ResumeRenderer:
         candidate_name = self._safe_filename(self.candidate.get('name', 'Resume'))
         company_safe = self._safe_filename(job.get('company', 'unknown'))[:20].rstrip('_')
         job_id_short = job.get('id', 'unknown')[:8]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         # Internal tracking name (unique, keeps history)
         tracking_name = f"{candidate_name}_{company_safe}_{job_id_short}_{timestamp}"
@@ -303,6 +303,10 @@ class ResumeRenderer:
         seen = set()
         for group in skills:
             skills_str = group.get('skills_list', '')
+            # Normalize list to comma-separated string
+            if isinstance(skills_str, list):
+                skills_str = ', '.join(str(s) for s in skills_str)
+                group['skills_list'] = skills_str
             if not skills_str or not isinstance(skills_str, str):
                 continue
             items = [s.strip() for s in skills_str.split(',')]

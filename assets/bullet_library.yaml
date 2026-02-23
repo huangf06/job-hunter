@@ -27,13 +27,8 @@
 # =============================================================================
 
 personal_info:
-  name: "Fei Huang"
-  email: "huangf06@gmail.com"
-  phone: "+31 645 038 614"
-  resume_location: "Amsterdam, Netherlands"
-  linkedin: "https://www.linkedin.com/in/huangf06/"
-  github: "https://github.com/huangf06"
-
+  # Contact details: single source of truth is config/ai_config.yaml → resume.candidate
+  # Only languages are defined here (used by resume template)
   languages:
     - language: "English"
       level: "Fluent"

@@ -449,6 +449,20 @@ Return ONLY the JSON object, no other text."""
             print("[CoverLetter] No jobs need cover letter generation")
             return 0
 
+        # Token budget check (shared with AI analyzer)
+        budget_config = self.config.get('budget', {})
+        budget_limit = budget_config.get('daily_limit', 100000)
+        try:
+            total_tokens = self.db.get_daily_token_usage()
+            if total_tokens > 0:
+                print(f"  Today's token usage so far: {total_tokens}")
+            if total_tokens >= budget_limit:
+                print(f"[CoverLetter] Daily token budget reached ({total_tokens}/{budget_limit}). Skipping.")
+                return 0
+        except Exception as e:
+            print(f"  [WARN] Could not query daily token usage: {e}")
+            total_tokens = 0
+
         print(f"\n[CoverLetter] Generating cover letters for {len(jobs)} jobs...")
         generated = 0
 
@@ -465,6 +479,16 @@ Return ONLY the JSON object, no other text."""
             except Exception as e:
                 print(f"  [ERROR] {type(e).__name__}: {str(e)[:100]}")
                 continue
+
+            # Re-check token budget periodically
+            if (i + 1) % 5 == 0:
+                try:
+                    total_tokens = self.db.get_daily_token_usage()
+                    if total_tokens >= budget_limit:
+                        print(f"\n[CoverLetter] Token budget reached ({total_tokens}/{budget_limit})")
+                        break
+                except Exception:
+                    pass
 
         print(f"\n[CoverLetter] Done: {generated}/{len(jobs)} cover letters generated")
         return generated

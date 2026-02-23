@@ -1,22 +1,22 @@
-# Dependencies
+# Dependencies — pinned for reproducible CI builds
 
 # Config parsing
-pyyaml>=6.0
+pyyaml==6.0.3
 
 # Template rendering
-jinja2>=3.1.0
+jinja2==3.1.6
 
 # PDF generation
-playwright>=1.40.0
+playwright==1.58.0
 
 # AI (Claude API)
-anthropic>=0.77.0
+anthropic==0.77.1
 
 # HTTP client (Google Calendar API)
-requests>=2.31.0
+requests==2.32.5
 
 # Environment variables
-python-dotenv>=1.0.0
+python-dotenv==1.2.1
 
 # Turso cloud database (libsql)
-libsql>=0.1.0
+libsql==0.1.11

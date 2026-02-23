@@ -142,7 +142,6 @@ jobs:
       # ==========================================
       - name: Rule-based scoring
         id: score
-        continue-on-error: true
         run: |
           echo "=== Running rule-based scoring ==="
           python scripts/job_pipeline.py --process
@@ -152,7 +151,6 @@ jobs:
       # ==========================================
       - name: AI Analysis
         id: ai
-        continue-on-error: true
         run: |
           LIMIT="${{ github.event.inputs.ai_limit }}"
 
