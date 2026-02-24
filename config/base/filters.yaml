@@ -37,7 +37,7 @@ hard_reject_rules:
       - "werkzaamheden"
       - "vereisten"
       - "beschikbaar"
-    threshold: 8  # >= 8 Dutch words found = reject
+    threshold: 5  # >= 5 Dutch words found = reject
 
   # 规则2: 明确要求荷兰语能力
   dutch_required:
@@ -45,6 +45,8 @@ hard_reject_rules:
     priority: 1
     type: "regex"
     patterns:
+      - "dutch\\s*speak"
+      - "nederlandstalig"
       - "dutch\\s*(required|mandatory|essential|native|fluent)"
       - "nederlands\\s*(verplicht|vereist|moeder.*taal|vloeiend)"
       - "fluency\\s+in\\s+dutch"
