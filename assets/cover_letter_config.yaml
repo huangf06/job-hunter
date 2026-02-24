@@ -1,27 +1,26 @@
 # =============================================================================
 # Cover Letter Configuration
 # =============================================================================
-# Narrative components, tone rules, and anti-detection rules for CL generation.
-# AI picks from these whitelists; assembler validates against them.
+# Tone rules, anti-detection rules, and theme signals for CL generation.
 # =============================================================================
 
-narrative_angles:
-  builder_to_scaler: "From building to scaling"
-  domain_expert: "Deep domain expertise"
-  cross_functional: "Unique cross-domain blend"
-  growth_trajectory: "Career trajectory alignment"
-  problem_solver: "Proven problem solver"
-
-opening_hooks:
-  company_mission: "Lead with something specific about the company"
-  role_alignment: "Lead with why this specific role fits"
-  industry_passion: "Lead with genuine interest in the domain"
-  shared_values: "Lead with alignment on values/approach"
-
-closer_types:
-  eager_company: "Express specific enthusiasm for this company"
-  seeking_impact: "Emphasize desire to create impact"
-  conversation: "Simple call-to-action for next steps"
+# Theme signals — map JD text patterns to micro-story themes
+# Used by _select_relevant_fragments() for theme-based matching
+theme_signals:
+  ownership: ["end-to-end", "full ownership", "first hire", "build from scratch",
+              "greenfield", "founding", "from the ground up"]
+  data_quality: ["data quality", "validation", "reliability", "trust",
+                 "governance", "accuracy", "data integrity"]
+  scale: ["scale", "growth", "high-volume", "millions", "performance",
+          "throughput", "large-scale", "petabyte"]
+  cross_team: ["stakeholder", "cross-functional", "collaborate", "business",
+               "communicate", "partner with", "work closely"]
+  ambiguity: ["fast-paced", "startup", "undefined", "greenfield",
+              "autonomous", "self-starter", "ambiguous"]
+  production_mindset: ["production", "monitoring", "SLA", "reliability",
+                       "on-call", "incident", "observability"]
+  learning: ["new domain", "diverse", "curious", "adapt", "fast learner",
+             "continuous learning", "grow"]
 
 tone_guidelines:
   - "Confident but not arrogant — state what you've done, not what you 'believe'"
@@ -67,5 +66,5 @@ anti_detection_rules:
   - "Vary sentence lengths: mix short punchy sentences with medium ones"
 
 length_guidance:
-  standard: "~250-350 words"
-  short: "~120-170 words"
+  standard: "150-250 words, 2-3 paragraphs"
+  short: "100-150 words, 1 paragraph"
