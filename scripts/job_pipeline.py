@@ -746,11 +746,51 @@ class JobPipeline:
         # Step 3: Collect ALL ready-to-apply jobs (new + existing)
         all_ready = self.db.get_ready_to_apply()
 
-        # Filter out jobs whose submit_dir no longer exists on disk
+        # Step 3.1: Restore submit_dirs cleaned by previous --finalize
+        candidate_name = renderer._safe_filename(
+            renderer.candidate.get('name', 'Resume'))
+        restored = 0
+        for job in all_ready:
+            submit_dir = job.get('submit_dir')
+            if submit_dir and Path(submit_dir).is_dir():
+                continue  # Already exists on disk
+
+            # Look up source PDF in output/
+            resume_rec = self.db.get_resume(job['id'])
+            if not resume_rec or not resume_rec.get('pdf_path'):
+                continue
+            src_pdf = Path(resume_rec['pdf_path'])
+            if not src_pdf.exists():
+                continue
+
+            # Re-create submit_dir and copy resume PDF
+            target_dir = Path(resume_rec['submit_dir']) if resume_rec.get('submit_dir') else None
+            if not target_dir:
+                continue
+            target_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_pdf, target_dir / f"{candidate_name}_Resume.pdf")
+
+            # Restore cover letter files if available
+            cl_rec = self.db.get_cover_letter(job['id'])
+            if cl_rec:
+                cl_pdf = Path(cl_rec['pdf_path']) if cl_rec.get('pdf_path') else None
+                if cl_pdf and cl_pdf.exists():
+                    shutil.copy2(cl_pdf, target_dir / f"{candidate_name}_Cover_Letter.pdf")
+                if cl_rec.get('short_text'):
+                    (target_dir / f"{candidate_name}_Cover_Letter.txt").write_text(
+                        cl_rec['short_text'], encoding='utf-8')
+
+            job['submit_dir'] = str(target_dir)
+            restored += 1
+
+        if restored:
+            print(f"  Restored {restored} submit directories from output/")
+
+        # Filter out jobs whose submit_dir still doesn't exist (source PDF gone)
         before_count = len(all_ready)
         all_ready = [j for j in all_ready if j.get('submit_dir') and Path(j['submit_dir']).is_dir()]
         if before_count > len(all_ready):
-            print(f"  Skipped {before_count - len(all_ready)} jobs (resume files missing on disk).")
+            print(f"  Skipped {before_count - len(all_ready)} jobs (resume files missing).")
 
         # Enrich with source/description for CL scrutiny estimation
         for job in all_ready:
