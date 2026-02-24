@@ -265,10 +265,21 @@ Prioritize [handwritten] fragments. Do NOT copy verbatim — adapt to THIS job.
 {frags_text}
 """
 
-        # --- Custom requirements section ---
+        # --- Custom requirements / seeds section ---
         req_section = ""
         if custom_requirements:
-            req_section = f"""
+            # Detect if this is seeds from checklist UI vs actual application requirements
+            is_seeds = any(custom_requirements.startswith(p) for p in
+                           ("Company observation:", "Personal motivation:", "Genuine curiosity:"))
+            if is_seeds:
+                req_section = f"""
+## Candidate's Seed Ideas (weave these in naturally)
+The candidate provided personal notes about this job. Draw on these authentically —
+they are raw thoughts, not requirements. Adapt the language, don't copy literally.
+{custom_requirements}
+"""
+            else:
+                req_section = f"""
 ## Custom Requirements (from application page)
 Address these directly:
 {custom_requirements}
