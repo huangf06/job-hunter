@@ -664,7 +664,8 @@ class AIAnalyzer:
             if not text_blocks:
                 print(f"  [WARN] No text content in response for {job_id}")
                 return None
-            text = text_blocks[0].text
+            # Concatenate ALL text blocks — thinking blocks may split text output
+            text = ''.join(b.text for b in text_blocks).strip()
             usage = response.usage
             tokens_used = 0
             if usage:

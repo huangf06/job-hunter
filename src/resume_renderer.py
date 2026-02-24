@@ -475,7 +475,6 @@ class ResumeRenderer:
                             'left': margin.get('left', '0.55in'),
                         },
                         print_background=pdf_config.get('print_background', True),
-                        timeout=30000,
                     )
                 finally:
                     browser.close()

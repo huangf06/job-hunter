@@ -504,6 +504,7 @@ skill_tiers:
                      "Drawdown Control", "Risk Limits"]
     nlp_genai: ["Hugging Face Transformers", "GPT-2", "LLM APIs", "LLM APIs (Claude)",
                 "Prompt Engineering", "Fine-Tuning", "XTTS v2", "Text Generation"]
+    analytics_bi: ["Power BI", "Tableau"]
     certifications: ["Databricks Certified Data Engineer Professional (2026)"]
   transferable:
     - skill: "Azure (Data Factory, ADLS)"
