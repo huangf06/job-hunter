@@ -470,36 +470,48 @@ Return ONLY the JSON object, no other text."""
 
         std = spec['standard']
 
-        # Validate narrative_angle
-        valid_angles = set(self.cl_config.get('narrative_angles', {}).keys())
-        angle = std.get('narrative_angle', '')
-        if angle and angle not in valid_angles:
-            errors.append(f"Invalid narrative_angle: '{angle}'. Valid: {valid_angles}")
+        # Validate paragraphs structure (new format)
+        paragraphs = std.get('paragraphs', [])
+        if paragraphs:
+            if len(paragraphs) < 2:
+                errors.append(f"Standard must have 2-3 paragraphs, got {len(paragraphs)}")
+            elif len(paragraphs) > 4:
+                errors.append(f"Standard has too many paragraphs ({len(paragraphs)}), max 4")
+        else:
+            # Backward compat: old format
+            if not std.get('body_paragraphs'):
+                errors.append("Missing paragraphs in standard section")
 
-        # Validate evidence_ids in standard
+        # Validate evidence_ids
         all_evidence_ids = []
-        for para in std.get('body_paragraphs', []):
+        source = paragraphs if paragraphs else std.get('body_paragraphs', [])
+        for para in source:
             for eid in para.get('evidence_ids', []):
                 all_evidence_ids.append(eid)
                 if eid not in self.bullet_id_lookup:
-                    errors.append(f"Unknown evidence_id in standard: '{eid}'")
+                    errors.append(f"Unknown evidence_id: '{eid}'")
 
-        # Validate evidence_ids in short
         for eid in spec['short'].get('evidence_ids', []):
             all_evidence_ids.append(eid)
             if eid not in self.bullet_id_lookup:
                 errors.append(f"Unknown evidence_id in short: '{eid}'")
 
         if not all_evidence_ids:
-            errors.append("No evidence_ids found in spec — cover letter has no grounded claims")
+            errors.append("No evidence_ids found — cover letter has no grounded claims")
 
-        # Validate required prose fields
-        if not std.get('opening_prose'):
-            errors.append("Missing or empty 'opening_prose' in standard section")
-        if not std.get('body_paragraphs'):
-            errors.append("Missing or empty 'body_paragraphs' in standard section")
-        if not std.get('closer_prose'):
-            errors.append("Missing or empty 'closer_prose' in standard section")
+        # Validate micro_story_id if present
+        ms_id = std.get('micro_story_id')
+        if ms_id:
+            valid_ms_ids = {f.get('id') for f in self.knowledge_base
+                            if f.get('type') == 'micro_story'}
+            if valid_ms_ids and ms_id not in valid_ms_ids:
+                errors.append(f"Unknown micro_story_id: '{ms_id}'")
+
+        # Word count check (standard only)
+        std_prose = self._extract_standard_prose(spec)
+        std_words = len(std_prose.split())
+        if std_words < 100:
+            errors.append(f"Standard too short ({std_words} words, min 100)")
 
         # Check banned phrases
         banned = self.cl_config.get('banned_phrases', [])
@@ -514,12 +526,28 @@ Return ONLY the JSON object, no other text."""
         """Extract all prose text from spec for validation"""
         parts = []
         std = spec.get('standard', {})
+        # New format
+        for para in std.get('paragraphs', []):
+            parts.append(para.get('prose', ''))
+        # Old format fallback
         parts.append(std.get('opening_prose', ''))
         for para in std.get('body_paragraphs', []):
             parts.append(para.get('prose', ''))
         parts.append(std.get('closer_prose', ''))
         parts.append(spec.get('short', {}).get('prose', ''))
-        return ' '.join(parts)
+        return ' '.join(p for p in parts if p)
+
+    def _extract_standard_prose(self, spec: Dict) -> str:
+        """Extract only standard section prose (not short)"""
+        std = spec.get('standard', {})
+        parts = []
+        for para in std.get('paragraphs', []):
+            parts.append(para.get('prose', ''))
+        parts.append(std.get('opening_prose', ''))
+        for para in std.get('body_paragraphs', []):
+            parts.append(para.get('prose', ''))
+        parts.append(std.get('closer_prose', ''))
+        return ' '.join(p for p in parts if p)
 
     # =========================================================================
     # Generation (core logic unchanged, prompt is new)
