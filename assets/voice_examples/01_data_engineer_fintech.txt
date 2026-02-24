@@ -1,0 +1,12 @@
+Dear Hiring Team,
+
+I found your engineering blog post about migrating from batch Spark jobs to streaming with Kafka. It's a transition I've thought about more than I'd like to admit. At GLP, we ran nightly PySpark ETL jobs that processed the day's loan applications and repayment data. It worked, until it didn't. When the business needed real-time risk signals, the batch architecture became the bottleneck. I never got to rebuild it -- I moved on before that happened -- but the problem stayed with me. It's partly why I built a streaming data lakehouse on my own last year, using Structured Streaming and Delta Lake on Databricks.
+
+What draws me to [Company] isn't just the tech stack. It's that you seem to be at the stage where data infrastructure decisions have real consequences. I've seen both sides of this: the early-stage chaos of being the first data hire at a fintech startup, where you own everything from schema design to regulatory reporting, and the "we should have built this differently" conversations that inevitably follow two years later.
+
+I should be upfront: I don't have production Kafka experience. But I've spent enough time with PySpark, Delta Lake, and messy real-world data to know that the engineering principles transfer. The hard part is never the specific tool -- it's designing pipelines that stay reliable when upstream data gets weird and volume triples overnight.
+
+I'm currently in the Netherlands on a Zoekjaar visa, looking to build my career here long-term. I'd welcome a conversation about how my background in data engineering and fintech infrastructure could contribute to what you're building.
+
+Best regards,
+Fei Huang

@@ -1,7 +1,7 @@
 # =============================================================================
 # Cover Letter Configuration
 # =============================================================================
-# Narrative components and tone rules for cover letter generation.
+# Narrative components, tone rules, and anti-detection rules for CL generation.
 # AI picks from these whitelists; assembler validates against them.
 # =============================================================================
 
@@ -24,14 +24,17 @@ closer_types:
   conversation: "Simple call-to-action for next steps"
 
 tone_guidelines:
-  - "Confident but not arrogant"
-  - "Specific, never generic"
-  - "Show, don't tell — back every claim with evidence_ids"
-  - "No filler phrases: passionate, hard-working, team player"
+  - "Confident but not arrogant — state what you've done, not what you 'believe'"
+  - "Specific, never generic — every sentence should fail the 'swap company name' test"
+  - "Show, don't tell — back claims with evidence_ids"
+  - "Selective depth over uniform coverage — go deep on 2-3 things, ignore the rest"
   - "Do NOT repeat resume bullet text verbatim — paraphrase into narrative"
   - "Company-specific statements must be derived from the job description"
+  - "Include ONE honest observation: a limitation, a curiosity, a genuine question"
+  - "The closer should be understated, not grandiose — 'I'd welcome a conversation' is fine"
 
 banned_phrases:
+  # Classic clichés
   - "I am writing to apply for"
   - "I believe I would be a great fit"
   - "Thank you for your consideration"
@@ -40,7 +43,29 @@ banned_phrases:
   - "passionate about"
   - "hard-working"
   - "team player"
+  # AI-typical constructions
+  - "I bring a unique combination of"
+  - "This aligns perfectly with"
+  - "What excites me about"
+  - "I would welcome the opportunity to"
+  - "Throughout my career"
+  - "I am particularly drawn to"
+  - "proven track record"
+  - "I am eager to leverage"
+
+# Anti-detection structural rules — these target AI writing patterns, not phrases
+anti_detection_rules:
+  - "Paragraph lengths MUST vary noticeably — one paragraph can be 1-2 sentences, another 4-5"
+  - "NEVER start two consecutive sentences with the same word (especially 'I')"
+  - "NEVER use 'Furthermore', 'Moreover', 'Additionally', 'In addition' as transitions"
+  - "NEVER use 'Having [past participle], I [verb]' construction"
+  - "NEVER use 'Not only X but also Y' balanced structures"
+  - "NEVER use 'With X years of experience in Y' as an opener"
+  - "Allow ONE slightly informal or conversational sentence per letter"
+  - "Do NOT address every JD requirement — pick 2-3 and go deep"
+  - "Express ONE genuine uncertainty, curiosity, or honest limitation"
+  - "Vary sentence lengths: mix short punchy sentences with medium ones"
 
 length_guidance:
-  standard: "~300 words"
-  short: "~150 words"
+  standard: "~250-350 words"
+  short: "~120-170 words"

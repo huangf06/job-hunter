@@ -1,0 +1,12 @@
+Dear Hiring Team,
+
+I came across [Company] while reading about how ML is being applied in clinical diagnostics. Your approach to patient pathway analysis using graph-based models caught my attention -- it reminded me of a project from my Master's at VU Amsterdam, where I benchmarked GraphSAGE and GAT architectures for protein interaction prediction. Different domain, but the underlying challenge felt familiar: extracting meaningful signal from relational data where the structure itself carries information.
+
+My path to ML engineering was not a straight line. I spent years in quantitative finance and fintech before going back for a Master's in AI. That detour gave me something a direct CS-to-ML path might not: a deep respect for when a model's predictions can be trusted and when they can't. My thesis was literally about this -- uncertainty quantification in deep reinforcement learning. I tested five UQ methods across 150 training runs to figure out which ones actually produce reliable confidence estimates rather than just numbers that look like probabilities.
+
+I'll be honest -- I'd need to learn the healthcare domain. But the engineering pattern is one I know: messy real-world data in, reliable predictions out, with enough validation in between that you can sleep at night. At GLP, a wrong credit score meant approving bad loans. I imagine the stakes in clinical decision support are higher, not lower.
+
+One thing I'm genuinely curious about: how do you approach model validation in a regulated environment? In finance we had backtesting and walk-forward validation. I wonder what the equivalent looks like when the outcome you're predicting is a patient trajectory.
+
+Best regards,
+Fei Huang

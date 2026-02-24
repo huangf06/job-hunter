@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """
-Cover Letter Generator — AI 驱动的求职信生成
-=============================================
+Cover Letter Generator — AI 驱动的求职信生成 (v2.0)
+====================================================
 
 基于已有的 job_analysis 结果，调用 Claude 生成结构化的 cover letter spec。
 AI 输出 JSON spec（包含 prose + evidence_ids），验证后存入 cover_letters 表。
+
+v2.0 CHANGES (2026-02-24):
+  - Voice examples: loads assets/voice_examples/*.txt as style reference
+  - Knowledge base: loads assets/cl_knowledge_base.yaml for human-originated fragments
+  - Anti-detection rules: structural rules to avoid AI writing patterns
+  - Selective depth: focus on 2-3 JD requirements, not all
+  - Visa context: Netherlands background naturally embedded
+  - Prompt completely rewritten for authenticity
 
 不改动 ai_analyzer.py — 独立模块，复用分析结果。
 """
@@ -70,6 +78,10 @@ class CoverLetterGenerator:
         self.cl_config = self._load_yaml(PROJECT_ROOT / "assets" / "cover_letter_config.yaml")
         self.bullet_id_lookup = self._build_bullet_id_lookup()
 
+        # v2.0: Load voice examples and knowledge base
+        self.voice_examples = self._load_voice_examples()
+        self.knowledge_base = self._load_knowledge_base()
+
     def _load_config(self, config_path: Path = None) -> dict:
         path = config_path or PROJECT_ROOT / "config" / "ai_config.yaml"
         if path.exists():
@@ -114,9 +126,82 @@ class CoverLetterGenerator:
             lines.append(f"[{bid}] {text}")
         return "\n".join(lines)
 
+    # =========================================================================
+    # v2.0: Voice examples + Knowledge base loading
+    # =========================================================================
+
+    def _load_voice_examples(self) -> List[str]:
+        """Load voice example files from assets/voice_examples/"""
+        examples = []
+        voice_dir = PROJECT_ROOT / "assets" / "voice_examples"
+        if not voice_dir.exists():
+            return examples
+        for path in sorted(voice_dir.glob("*.txt")):
+            text = path.read_text(encoding='utf-8').strip()
+            if text:
+                examples.append(text)
+        return examples
+
+    def _load_knowledge_base(self) -> List[Dict]:
+        """Load CL knowledge base fragments"""
+        kb_path = PROJECT_ROOT / "assets" / "cl_knowledge_base.yaml"
+        if not kb_path.exists():
+            return []
+        data = self._load_yaml(kb_path)
+        return data.get('fragments', [])
+
+    def _infer_role_types(self, job: Dict, analysis: Dict) -> List[str]:
+        """Infer role types from job title for fragment filtering"""
+        title = (job.get('title', '') or '').lower()
+        role_types = set()
+
+        mapping = {
+            'data_engineer': ['data engineer', 'etl', 'pipeline', 'databricks',
+                              'spark', 'data platform', 'data infrastructure'],
+            'ml_engineer': ['ml engineer', 'machine learning engineer',
+                            'ai engineer', 'deep learning'],
+            'data_scientist': ['data scientist', 'data science',
+                               'applied scientist'],
+            'quant': ['quant', 'trading', 'derivatives', 'risk analyst',
+                      'portfolio', 'hedge fund'],
+            'data_analyst': ['data analyst', 'analytics', 'business intelligence',
+                             'bi developer'],
+        }
+
+        for role_type, keywords in mapping.items():
+            if any(kw in title for kw in keywords):
+                role_types.add(role_type)
+
+        # Fallback: if no specific match, use broad types
+        if not role_types:
+            role_types = {'data_engineer', 'data_scientist', 'ml_engineer'}
+
+        return list(role_types)
+
+    def _select_relevant_fragments(self, fragments: List[Dict],
+                                   role_types: List[str]) -> List[Dict]:
+        """Select knowledge base fragments relevant to the given role types"""
+        relevant = []
+        for frag in fragments:
+            frag_roles = frag.get('role_types', [])
+            if 'all' in frag_roles or any(rt in frag_roles for rt in role_types):
+                relevant.append(frag)
+
+        # Sort: handwritten first, then voice_example, then ai_edited
+        origin_order = {
+            'handwritten': 0, 'voice_example': 1,
+            'ai_edited': 2, 'ai_approved': 3,
+        }
+        relevant.sort(key=lambda f: origin_order.get(f.get('origin', ''), 99))
+        return relevant
+
+    # =========================================================================
+    # Prompt building (v2.0 — completely rewritten)
+    # =========================================================================
+
     def _build_prompt(self, job: Dict, analysis: Dict,
                       custom_requirements: str = None) -> str:
-        """Build the cover letter generation prompt"""
+        """Build the cover letter generation prompt (v2.0)"""
         company = job.get('company', 'the company')
         title = job.get('title', 'the position')
         description = (job.get('description', '') or '')[:10000]
@@ -125,30 +210,68 @@ class CoverLetterGenerator:
         reasoning = analysis.get('reasoning', '')
         tailored_resume = analysis.get('tailored_resume', '{}')
 
+        # Load config sections
         angles = self.cl_config.get('narrative_angles', {})
         hooks = self.cl_config.get('opening_hooks', {})
         closers = self.cl_config.get('closer_types', {})
         tone = self.cl_config.get('tone_guidelines', [])
         banned = self.cl_config.get('banned_phrases', [])
+        anti_detection = self.cl_config.get('anti_detection_rules', [])
 
         angles_str = "\n".join(f"  - {k}: {v}" for k, v in angles.items())
         hooks_str = "\n".join(f"  - {k}: {v}" for k, v in hooks.items())
         closers_str = "\n".join(f"  - {k}: {v}" for k, v in closers.items())
         tone_str = "\n".join(f"  - {t}" for t in tone)
         banned_str = "\n".join(f'  - "{b}"' for b in banned)
+        anti_str = "\n".join(f"  - {r}" for r in anti_detection)
 
         evidence_pool = self._build_evidence_pool()
 
-        if custom_requirements:
-            requirements_section = f"""
-## Custom Requirements (from application page)
-The applicant has specific requirements from the application page. Address these directly:
-{custom_requirements}
+        # --- Voice examples section ---
+        voice_section = ""
+        if self.voice_examples:
+            voice_parts = []
+            for i, ex in enumerate(self.voice_examples[:3], 1):
+                voice_parts.append(f"### Example {i}\n{ex}")
+            voice_text = "\n\n".join(voice_parts)
+            voice_section = f"""
+## Candidate's Writing Voice (CRITICAL — match this style)
+Below are cover letters that represent the candidate's authentic voice.
+Your output MUST match this tone: the sentence rhythm, directness, level
+of formality, and personality. Do NOT use generic AI professional voice.
+
+{voice_text}
 """
-        else:
-            requirements_section = """
-## Custom Requirements
-None — generate a standard cover letter tailored to the job description.
+
+        # --- Knowledge base fragments section ---
+        kb_section = ""
+        role_types = self._infer_role_types(job, analysis)
+        relevant_frags = self._select_relevant_fragments(
+            self.knowledge_base, role_types)
+        if relevant_frags:
+            frag_lines = []
+            for frag in relevant_frags:
+                origin = frag.get('origin', 'unknown')
+                ftype = frag.get('type', '')
+                text = frag.get('text', '').strip()
+                frag_lines.append(f"  [{origin}] ({ftype}) {text}")
+            frags_text = "\n".join(frag_lines)
+            kb_section = f"""
+## Candidate's Own Thoughts (from previous cover letters)
+These are real fragments the candidate has written or approved. Use them
+as RAW MATERIAL — draw on the ideas, adapt the phrasing, weave in naturally.
+Prioritize [handwritten] fragments. Do NOT copy verbatim — adapt to THIS job.
+
+{frags_text}
+"""
+
+        # --- Custom requirements section ---
+        req_section = ""
+        if custom_requirements:
+            req_section = f"""
+## Custom Requirements (from application page)
+Address these directly:
+{custom_requirements}
 """
 
         # Escape braces in user content to prevent format string issues
@@ -156,8 +279,16 @@ None — generate a standard cover letter tailored to the job description.
         reasoning_safe = reasoning.replace('{', '{{').replace('}', '}}')
         tailored_safe = tailored_resume.replace('{', '{{').replace('}', '}}')
 
-        prompt = f"""You are writing a cover letter for a job application. Generate a structured JSON spec.
+        prompt = f"""You are writing a cover letter for Fei Huang, a job applicant in the Netherlands.
+Write a letter that sounds like Fei wrote it himself — authentic, specific, human.
 
+## Candidate Background
+- Based in the Netherlands since 2023 (MSc AI, VU Amsterdam, graduated Aug 2025)
+- On Zoekjaar (orientation year) visa, building career in NL long-term
+- Career path: Industrial Engineering (Tsinghua) -> Energy operations -> Food delivery analytics (Ele.me) -> Quant research (Baiquan) -> Fintech credit scoring (GLP) -> MSc AI -> Job search
+- Core philosophy: pragmatic engineer who values systems that work in production
+- Databricks Certified Data Engineer Professional (Feb 2026)
+{voice_section}{kb_section}
 ## Job Context
 - Title: {title}
 - Company: {company}
@@ -169,65 +300,73 @@ None — generate a standard cover letter tailored to the job description.
 
 ## Tailored Resume (already generated for this job)
 {tailored_safe}
-{requirements_section}
+{req_section}
 ## Evidence Pool (ONLY use these IDs for evidence_ids)
 {evidence_pool}
 
 ## Available Narrative Components
-Narrative angles (pick ONE that best fits):
+Narrative angles (pick ONE):
 {angles_str}
 
-Opening hook styles:
+Opening hooks:
 {hooks_str}
 
 Closer types:
 {closers_str}
 
-## Tone Rules
+## Tone & Voice Rules
 {tone_str}
 
-## Banned Phrases (NEVER use these)
+## Anti-Detection Rules (CRITICAL)
+{anti_str}
+
+## Banned Phrases (NEVER use)
 {banned_str}
 
 ## Output Format
-Return a single JSON object with this exact structure:
+Return a single JSON object:
 
 {{{{
   "standard": {{{{
-    "opening_prose": "A compelling 2-3 sentence opening. Reference something specific about the company from the JD. State the role. Hint at why you're a great fit.",
+    "opening_prose": "2-3 sentences. Anchor in something specific — a JD detail that resonated, or a connection to the company/domain. NOT a generic hook.",
     "body_paragraphs": [
       {{{{
-        "prose": "A narrative paragraph connecting your experience to the role's needs. Paraphrase, don't copy bullets verbatim. ~80-120 words.",
+        "prose": "A narrative paragraph. Can be 2-6 sentences. Go DEEP on one angle.",
         "evidence_ids": ["bullet_id_1", "bullet_id_2"]
       }}}},
       {{{{
-        "prose": "A second paragraph with different angle. ~80-120 words.",
+        "prose": "Different angle or honest reflection. Length MUST differ from previous paragraph.",
         "evidence_ids": ["bullet_id_3"]
       }}}}
     ],
-    "closer_prose": "2-3 sentences. Express enthusiasm, forward-looking, call to action.",
+    "closer_prose": "1-3 sentences. Understated. A conversation opener, not a sales pitch.",
     "narrative_angle": "one_of_the_angle_ids"
   }}}},
   "short": {{{{
-    "prose": "A concise ~150 word version suitable for email body or text box. Cover the same ground more briefly.",
+    "prose": "Concise ~150 word version for email/text box. Same voice, compressed.",
     "evidence_ids": ["bullet_id_1", "bullet_id_2", "bullet_id_3"]
   }}}}
 }}}}
 
 ## Rules
-1. evidence_ids MUST come from the Evidence Pool above — use exact IDs
-2. Do NOT copy bullet text verbatim — paraphrase achievements into narrative
-3. Company-specific statements MUST come from the job description — do NOT invent facts about the company
-4. Standard cover letter: ~250-300 words total (flexible, not strict)
-5. Short version: ~120-150 words (flexible)
-6. Standard has exactly 2 body_paragraphs
-7. narrative_angle must be one of: {', '.join(angles.keys())}
-8. Answer three questions: Why this company? Why you? Why now?
-9. Be specific and concrete — generic statements are worthless
+1. evidence_ids MUST come from the Evidence Pool — use exact IDs
+2. Do NOT copy bullet text verbatim — paraphrase into narrative
+3. Company-specific statements MUST come from the JD — do NOT invent company facts
+4. Standard: ~250-350 words total. Short: ~120-170 words. Both flexible.
+5. Standard has 2-4 body_paragraphs (choose what feels natural, NOT always 2)
+6. narrative_angle must be one of: {', '.join(angles.keys())}
+7. Focus on 2-3 JD requirements DEEPLY — do NOT address every requirement
+8. If knowledge base has relevant fragments, USE them as inspiration
+9. Weave in Netherlands context naturally if it fits (not forced)
+10. Express ONE genuine curiosity or honest observation
 
 Return ONLY the JSON object, no other text."""
 
         return prompt
+
+    # =========================================================================
+    # Response parsing & validation (unchanged from v1)
+    # =========================================================================
 
     def _parse_json_response(self, text: str) -> Optional[Dict]:
         """Parse JSON from AI response (same strategy as ai_analyzer.py)"""
@@ -340,6 +479,10 @@ Return ONLY the JSON object, no other text."""
         parts.append(std.get('closer_prose', ''))
         parts.append(spec.get('short', {}).get('prose', ''))
         return ' '.join(parts)
+
+    # =========================================================================
+    # Generation (core logic unchanged, prompt is new)
+    # =========================================================================
 
     def generate(self, job_id: str, custom_requirements: str = None,
                  force: bool = False) -> Optional[Dict]:
