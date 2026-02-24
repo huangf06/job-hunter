@@ -461,6 +461,7 @@ class JobDatabase:
                     "Set the token or unset the URL to use local SQLite."
                 )
             import libsql
+            import time as _time
             # Retry connect+sync to handle transient Turso network errors
             max_retries = 3
             for attempt in range(1, max_retries + 1):
@@ -473,19 +474,33 @@ class JobDatabase:
                     self._libsql_raw.sync()
                     break
                 except Exception as e:
+                    self._libsql_raw = None
+                    err_msg = str(e)
+                    # Stale local replica: db file exists without metadata.
+                    # Delete the db file so libsql can recreate from Turso.
+                    if "metadata file does not" in err_msg and self.db_path.exists():
+                        logger.warning(
+                            "Stale replica detected (attempt %d/%d) — deleting %s to re-sync from Turso",
+                            attempt, max_retries, self.db_path,
+                        )
+                        self.db_path.unlink(missing_ok=True)
                     if attempt < max_retries:
                         wait = attempt * 2
                         logger.warning(
                             "Turso connect/sync attempt %d/%d failed: %s — retrying in %ds",
                             attempt, max_retries, e, wait,
                         )
-                        import time
-                        time.sleep(wait)
+                        _time.sleep(wait)
                     else:
-                        logger.warning(
-                            "Turso connect/sync failed after %d attempts (using local data): %s",
+                        logger.error(
+                            "Turso connect/sync failed after %d attempts: %s",
                             max_retries, e,
                         )
+            if self._libsql_raw is None:
+                raise RuntimeError(
+                    f"Failed to connect to Turso after {max_retries} attempts. "
+                    "Check TURSO_DATABASE_URL/TURSO_AUTH_TOKEN and network connectivity."
+                )
             # Set PRAGMAs once for the persistent connection
             self._libsql_raw.execute("PRAGMA journal_mode=WAL")
             self._libsql_raw.execute("PRAGMA busy_timeout=5000")

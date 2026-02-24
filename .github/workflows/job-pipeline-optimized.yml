@@ -69,10 +69,12 @@ jobs:
       - name: Cache embedded replica DB
         uses: actions/cache@v4
         with:
-          path: data/jobs.db
-          key: turso-replica-v2-${{ github.run_id }}
+          path: |
+            data/jobs.db
+            data/jobs.db-*
+          key: turso-replica-v3-${{ github.run_id }}
           restore-keys: |
-            turso-replica-v2-
+            turso-replica-v3-
 
       - name: Install dependencies
         run: |
