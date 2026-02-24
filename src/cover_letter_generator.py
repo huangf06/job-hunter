@@ -226,7 +226,7 @@ class CoverLetterGenerator:
 
     def _build_prompt(self, job: Dict, analysis: Dict,
                       custom_requirements: str = None) -> str:
-        """Build the cover letter generation prompt (v2.0)"""
+        """Build the cover letter generation prompt (v2.0 — micro-story anchored)"""
         company = job.get('company', 'the company')
         title = job.get('title', 'the position')
         description = (job.get('description', '') or '')[:10000]
@@ -236,16 +236,10 @@ class CoverLetterGenerator:
         tailored_resume = analysis.get('tailored_resume', '{}')
 
         # Load config sections
-        angles = self.cl_config.get('narrative_angles', {})
-        hooks = self.cl_config.get('opening_hooks', {})
-        closers = self.cl_config.get('closer_types', {})
         tone = self.cl_config.get('tone_guidelines', [])
         banned = self.cl_config.get('banned_phrases', [])
         anti_detection = self.cl_config.get('anti_detection_rules', [])
 
-        angles_str = "\n".join(f"  - {k}: {v}" for k, v in angles.items())
-        hooks_str = "\n".join(f"  - {k}: {v}" for k, v in hooks.items())
-        closers_str = "\n".join(f"  - {k}: {v}" for k, v in closers.items())
         tone_str = "\n".join(f"  - {t}" for t in tone)
         banned_str = "\n".join(f'  - "{b}"' for b in banned)
         anti_str = "\n".join(f"  - {r}" for r in anti_detection)
@@ -268,14 +262,38 @@ of formality, and personality. Do NOT use generic AI professional voice.
 {voice_text}
 """
 
-        # --- Knowledge base fragments section ---
+        # --- Knowledge base fragments section (with theme matching) ---
         kb_section = ""
+        anchor_section = ""
         role_types = self._infer_role_types(job, analysis)
+        themes = self._extract_themes_from_jd(job)
         relevant_frags = self._select_relevant_fragments(
-            self.knowledge_base, role_types)
-        if relevant_frags:
+            self.knowledge_base, role_types, themes)
+
+        # Separate micro-stories from other fragments
+        micro_stories = [f for f in relevant_frags if f.get('type') == 'micro_story']
+        other_frags = [f for f in relevant_frags if f.get('type') != 'micro_story']
+
+        if micro_stories:
+            ms_lines = []
+            for frag in micro_stories:
+                frag_id = frag.get('id', 'unknown')
+                frag_themes = ', '.join(frag.get('themes', []))
+                text = frag.get('text', '').strip()
+                ms_lines.append(f"  [{frag_id}] (themes: {frag_themes}) {text}")
+            ms_text = "\n".join(ms_lines)
+            anchor_section = f"""
+## Anchor Material (use one as your starting point)
+These are micro-stories — real experiences the candidate has reflected on.
+Pick the one most connected to this job. Build your letter around it.
+Do NOT copy verbatim — adapt, compress, and connect to THIS role.
+
+{ms_text}
+"""
+
+        if other_frags:
             frag_lines = []
-            for frag in relevant_frags:
+            for frag in other_frags:
                 origin = frag.get('origin', 'unknown')
                 ftype = frag.get('type', '')
                 text = frag.get('text', '').strip()
@@ -315,8 +333,11 @@ Address these directly:
         reasoning_safe = reasoning.replace('{', '{{').replace('}', '}}')
         tailored_safe = tailored_resume.replace('{', '{{').replace('}', '}}')
 
-        prompt = f"""You are writing a cover letter for Fei Huang, a job applicant in the Netherlands.
-Write a letter that sounds like Fei wrote it himself — authentic, specific, human.
+        prompt = f"""Your task is NOT to write a cover letter. Your task is to answer in 150-250 words:
+"Why would this person find this role interesting, and how do they think about their work?"
+
+Write as Fei Huang — authentic, specific, human. This should read like a thoughtful
+person explaining their genuine interest, not a candidate reciting qualifications.
 
 ## Candidate Background
 - Based in the Netherlands since 2023 (MSc AI, VU Amsterdam, graduated Aug 2025)
@@ -324,7 +345,7 @@ Write a letter that sounds like Fei wrote it himself — authentic, specific, hu
 - Career path: Industrial Engineering (Tsinghua) -> Energy operations -> Food delivery analytics (Ele.me) -> Quant research (Baiquan) -> Fintech credit scoring (GLP) -> MSc AI -> Job search
 - Core philosophy: pragmatic engineer who values systems that work in production
 - Databricks Certified Data Engineer Professional (Feb 2026)
-{voice_section}{kb_section}
+{voice_section}{anchor_section}{kb_section}
 ## Job Context
 - Title: {title}
 - Company: {company}
@@ -340,16 +361,6 @@ Write a letter that sounds like Fei wrote it himself — authentic, specific, hu
 ## Evidence Pool (ONLY use these IDs for evidence_ids)
 {evidence_pool}
 
-## Available Narrative Components
-Narrative angles (pick ONE):
-{angles_str}
-
-Opening hooks:
-{hooks_str}
-
-Closer types:
-{closers_str}
-
 ## Tone & Voice Rules
 {tone_str}
 
@@ -360,38 +371,31 @@ Closer types:
 {banned_str}
 
 ## Output Format
-Return a single JSON object:
+Return a single JSON object with this structure:
 
-{{{{
-  "standard": {{{{
-    "opening_prose": "2-3 sentences. Anchor in something specific — a JD detail that resonated, or a connection to the company/domain. NOT a generic hook.",
-    "body_paragraphs": [
-      {{{{
-        "prose": "A narrative paragraph. Can be 2-6 sentences. Go DEEP on one angle.",
-        "evidence_ids": ["bullet_id_1", "bullet_id_2"]
-      }}}},
-      {{{{
-        "prose": "Different angle or honest reflection. Length MUST differ from previous paragraph.",
-        "evidence_ids": ["bullet_id_3"]
-      }}}}
+{{
+  "standard": {{
+    "paragraphs": [
+      {{"prose": "First paragraph — anchor in something specific about THIS role or company.", "evidence_ids": ["bullet_id_1"]}},
+      {{"prose": "Second paragraph — go deep on one angle. Show how you think.", "evidence_ids": ["bullet_id_2"]}},
+      {{"prose": "Optional third — a genuine curiosity, or understated closer.", "evidence_ids": []}}
     ],
-    "closer_prose": "1-3 sentences. Understated. A conversation opener, not a sales pitch.",
-    "narrative_angle": "one_of_the_angle_ids"
-  }}}},
-  "short": {{{{
-    "prose": "Concise ~150 word version for email/text box. Same voice, compressed.",
-    "evidence_ids": ["bullet_id_1", "bullet_id_2", "bullet_id_3"]
-  }}}}
-}}}}
+    "micro_story_id": null
+  }},
+  "short": {{
+    "prose": "100-150 word version. Same voice, compressed into one paragraph.",
+    "evidence_ids": ["bullet_id_1", "bullet_id_2"]
+  }}
+}}
 
 ## Rules
 1. evidence_ids MUST come from the Evidence Pool — use exact IDs
 2. Do NOT copy bullet text verbatim — paraphrase into narrative
 3. Company-specific statements MUST come from the JD — do NOT invent company facts
-4. Standard: ~250-350 words total. Short: ~120-170 words. Both flexible.
-5. Standard has 2-4 body_paragraphs (choose what feels natural, NOT always 2)
-6. narrative_angle must be one of: {', '.join(angles.keys())}
-7. Focus on 2-3 JD requirements DEEPLY — do NOT address every requirement
+4. Standard: 150-250 words, 2-3 paragraphs (flat array, no opening/body/closer separation)
+5. Short: 100-150 words, single paragraph
+6. Focus on 2-3 JD requirements DEEPLY — do NOT address every requirement
+7. If anchor material (micro-stories) is provided, pick ONE and build around it. Set micro_story_id to the ID you used. If none provided, set micro_story_id to null.
 8. If knowledge base has relevant fragments, USE them as inspiration
 9. Weave in Netherlands context naturally if it fits (not forced)
 10. Express ONE genuine curiosity or honest observation
@@ -621,6 +625,11 @@ Return ONLY the JSON object, no other text."""
     def _assemble_standard_text(self, spec: Dict) -> str:
         """Assemble full cover letter text from spec"""
         std = spec.get('standard', {})
+        # New format: flat paragraphs array
+        paragraphs = std.get('paragraphs', [])
+        if paragraphs:
+            return '\n\n'.join(p.get('prose', '') for p in paragraphs if p.get('prose'))
+        # Backward compat: old format with opening_prose + body_paragraphs + closer_prose
         parts = []
         parts.append(std.get('opening_prose', ''))
         for para in std.get('body_paragraphs', []):
