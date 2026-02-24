@@ -1,0 +1,315 @@
+# =============================================================================
+# COVER LETTER KNOWLEDGE BASE — Human-originated fragments
+# =============================================================================
+#
+# This file stores fragments extracted from handwritten and edited cover letters.
+# The AI CL generator uses these as material when composing new letters.
+#
+# Fragment types:
+#   company_observation  — Something noticed about a specific company (non-JD source)
+#   company_connection   — Personal connection to the company/industry
+#   personal_why         — Why you want this type of role / this specific opportunity
+#   career_narrative     — How you tell the story of your career path
+#   philosophical_insight — Deep reflections on work, technology, or craft
+#   honest_limitation    — Admissions of what you don't know or haven't done
+#   genuine_curiosity    — Real questions you have about a role or company
+#   growth_motivation    — What you want to learn or develop
+#   visa_context         — Netherlands visa/relocation context
+#   education_narrative  — How you describe your educational background
+#   production_wisdom    — Hard-won insights from building real systems
+#
+# Origin types:
+#   handwritten     — Directly from a CL you wrote yourself (highest weight)
+#   ai_edited       — AI-generated, then significantly edited by you
+#   voice_example   — From voice example files (style reference)
+#   ai_approved     — AI-generated, reviewed and approved without major edits
+#
+# role_types: which kinds of jobs this fragment is relevant for.
+#   Use [all] if universally applicable.
+# =============================================================================
+
+fragments:
+
+  # =========================================================================
+  # FROM PICNIC COVER LETTER (handwritten, ~Jan 2026)
+  # =========================================================================
+
+  - id: picnic_jd_quote_hook
+    source_company: "Picnic"
+    source_date: "2026-01"
+    origin: handwritten
+    type: company_observation
+    role_types: [data_scientist, ml_engineer]
+    text: >
+      When I read this job description, one line caught my attention:
+      "This role combines the skills of a consultant, software engineer,
+      and applied mathematician." That's exactly what I'm looking for,
+      and what my career has prepared me for.
+
+  - id: picnic_career_thread
+    source_company: "Picnic"
+    source_date: "2026-01"
+    origin: handwritten
+    type: career_narrative
+    role_types: [data_scientist, ml_engineer, data_engineer]
+    text: >
+      I spent years applying quantitative methods to real problems:
+      demand forecasting at an energy conglomerate, building ML pipelines
+      for credit scoring in fintech, and developing time-series models
+      for algorithmic trading. Each role was different, but the common
+      thread is turning real-world problems and messy data into systems
+      that work in production.
+
+  - id: picnic_domain_transfer
+    source_company: "Picnic"
+    source_date: "2026-01"
+    origin: handwritten
+    type: career_narrative
+    role_types: [data_scientist, ml_engineer]
+    text: >
+      Looking at [Company]'s ML challenges, I see problems I've worked
+      on before in different domains.
+
+  - id: picnic_production_gap
+    source_company: "Picnic"
+    source_date: "2026-01"
+    origin: handwritten
+    type: production_wisdom
+    role_types: [ml_engineer, data_engineer, data_scientist]
+    text: >
+      I understand the gap between a model that works in a notebook
+      and one that survives real-world traffic.
+
+  - id: picnic_amsterdam_available
+    source_company: "Picnic"
+    source_date: "2026-01"
+    origin: handwritten
+    type: visa_context
+    role_types: [all]
+    text: >
+      I've been based in Amsterdam since 2023 and am available to
+      start immediately.
+
+  # =========================================================================
+  # FROM ENECO COVER LETTER (handwritten, ~Jan 2026)
+  # =========================================================================
+
+  - id: eneco_energy_origin
+    source_company: "Eneco"
+    source_date: "2026-01"
+    origin: handwritten
+    type: company_connection
+    role_types: [quant, data_analyst, data_engineer]
+    text: >
+      My connection to energy started earlier than I realized -- my
+      first job was at Henan Energy, one of China's largest energy
+      conglomerates.
+
+  - id: eneco_market_philosophy
+    source_company: "Eneco"
+    source_date: "2026-01"
+    origin: handwritten
+    type: personal_why
+    role_types: [quant]
+    text: >
+      I'm drawn to trading not for the thrill or the money, but because
+      I've been that kind of person pursuing knowledge all my life, and
+      markets are the ultimate test of one's understanding of the world.
+
+  - id: eneco_intellectual_honesty
+    source_company: "Eneco"
+    source_date: "2026-01"
+    origin: handwritten
+    type: philosophical_insight
+    role_types: [quant, data_scientist, ml_engineer]
+    text: >
+      A hypothesis either survives contact with the market, or it
+      doesn't. That intellectual honesty is what I find compelling.
+
+  - id: eneco_backtested_vs_real
+    source_company: "Eneco"
+    source_date: "2026-01"
+    origin: handwritten
+    type: production_wisdom
+    role_types: [quant, data_engineer]
+    text: >
+      Experiences that taught me the difference between backtested
+      elegance and real-world execution.
+
+  - id: eneco_uq_connection
+    source_company: "Eneco"
+    source_date: "2026-01"
+    origin: handwritten
+    type: career_narrative
+    role_types: [quant, data_scientist, ml_engineer]
+    text: >
+      My Master's thesis on uncertainty quantification connects to
+      this -- understanding when a model's predictions can be trusted
+      matters as much as the predictions themselves.
+
+  - id: eneco_options_gap
+    source_company: "Eneco"
+    source_date: "2026-01"
+    origin: handwritten
+    type: honest_limitation
+    role_types: [quant]
+    text: >
+      China's options market remains underdeveloped, which limited my
+      exposure there. Joining [Company] would give me the opportunity
+      to work with option valuation and hedging at a level I couldn't
+      access before.
+
+  # =========================================================================
+  # FROM VOICE EXAMPLES (style reference, Feb 2026)
+  # =========================================================================
+
+  - id: ve_batch_to_streaming
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: career_narrative
+    role_types: [data_engineer]
+    text: >
+      At GLP, we ran nightly PySpark ETL jobs that processed the day's
+      loan applications and repayment data. It worked, until it didn't.
+      When the business needed real-time risk signals, the batch
+      architecture became the bottleneck.
+
+  - id: ve_infra_consequences
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: personal_why
+    role_types: [data_engineer]
+    text: >
+      What draws me to [Company] isn't just the tech stack. It's that
+      you seem to be at the stage where data infrastructure decisions
+      have real consequences.
+
+  - id: ve_first_data_hire
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: career_narrative
+    role_types: [data_engineer, data_scientist, ml_engineer]
+    text: >
+      I've seen both sides: the early-stage chaos of being the first
+      data hire at a fintech startup, where you own everything from
+      schema design to regulatory reporting, and the "we should have
+      built this differently" conversations that inevitably follow.
+
+  - id: ve_tool_vs_principle
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: production_wisdom
+    role_types: [data_engineer, ml_engineer]
+    text: >
+      The hard part is never the specific tool -- it's designing
+      pipelines that stay reliable when upstream data gets weird
+      and volume triples overnight.
+
+  - id: ve_indirect_path
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: career_narrative
+    role_types: [ml_engineer, data_scientist]
+    text: >
+      My path to ML was indirect. I spent years in fintech and
+      quantitative trading before going back to school. That detour
+      gave me something a direct CS-to-ML path might not: a deep
+      respect for when a model's predictions can be trusted and
+      when they can't.
+
+  - id: ve_thesis_why
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: career_narrative
+    role_types: [ml_engineer, data_scientist]
+    text: >
+      My thesis was about uncertainty quantification in deep
+      reinforcement learning. I tested five UQ methods across
+      150 training runs to figure out which ones actually produce
+      reliable confidence estimates rather than just numbers that
+      look like probabilities.
+
+  - id: ve_honest_domain_gap
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: honest_limitation
+    role_types: [all]
+    text: >
+      I'll be honest -- I'd need to learn the domain. But the
+      engineering pattern is one I know: messy real-world data in,
+      reliable predictions out, with enough validation in between
+      that you can sleep at night.
+
+  - id: ve_stakes_comparison
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: career_narrative
+    role_types: [ml_engineer, data_scientist]
+    text: >
+      At GLP, a wrong credit score meant approving bad loans. I
+      imagine the stakes in [domain] are similar, if not higher.
+
+  - id: ve_genuine_question
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: genuine_curiosity
+    role_types: [ml_engineer, data_scientist]
+    text: >
+      One thing I'm genuinely curious about: how do you approach
+      model validation in a regulated environment?
+
+  - id: ve_career_here
+    source_company: null
+    source_date: "2026-02"
+    origin: voice_example
+    type: visa_context
+    role_types: [all]
+    text: >
+      I'm currently in the Netherlands on a Zoekjaar visa, looking
+      to build my career here long-term.
+
+  # =========================================================================
+  # GENERAL REUSABLE FRAGMENTS
+  # =========================================================================
+
+  - id: general_tsinghua_ie
+    source_company: null
+    source_date: "2026-01"
+    origin: handwritten
+    type: education_narrative
+    role_types: [data_engineer, data_scientist, quant]
+    text: >
+      I studied Industrial Engineering at Tsinghua University, where
+      I learned logistics, operations research, and supply chain
+      management.
+
+  - id: general_vu_msc
+    source_company: null
+    source_date: "2026-01"
+    origin: handwritten
+    type: education_narrative
+    role_types: [ml_engineer, data_scientist]
+    text: >
+      Last year I completed my MSc in AI at VU Amsterdam, training
+      in deep learning, reinforcement learning, transformers, and
+      agents.
+
+  - id: general_databricks_cert
+    source_company: null
+    source_date: "2026-02"
+    origin: handwritten
+    type: education_narrative
+    role_types: [data_engineer]
+    text: >
+      I recently earned the Databricks Certified Data Engineer
+      Professional certification, which formalized patterns I'd
+      already been applying in practice.
