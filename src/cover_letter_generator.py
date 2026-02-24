@@ -178,21 +178,46 @@ class CoverLetterGenerator:
 
         return list(role_types)
 
+    def _extract_themes_from_jd(self, job: Dict) -> List[str]:
+        """Extract themes from JD text using theme_signals config"""
+        description = (job.get('description', '') or '').lower()
+        theme_signals = self.cl_config.get('theme_signals', {})
+        theme_scores = {}
+        for theme, signals in theme_signals.items():
+            score = sum(1 for s in signals if s.lower() in description)
+            if score > 0:
+                theme_scores[theme] = score
+        # Return themes sorted by score descending
+        return [t for t, _ in sorted(theme_scores.items(), key=lambda x: -x[1])]
+
     def _select_relevant_fragments(self, fragments: List[Dict],
-                                   role_types: List[str]) -> List[Dict]:
-        """Select knowledge base fragments relevant to the given role types"""
+                                   role_types: List[str],
+                                   themes: List[str] = None) -> List[Dict]:
+        """Select knowledge base fragments relevant to the given role types and themes"""
         relevant = []
         for frag in fragments:
             frag_roles = frag.get('role_types', [])
             if 'all' in frag_roles or any(rt in frag_roles for rt in role_types):
                 relevant.append(frag)
 
-        # Sort: handwritten first, then voice_example, then ai_edited
+        # Sort: micro_stories first (scored by theme match), then handwritten, then others
         origin_order = {
             'handwritten': 0, 'voice_example': 1,
             'ai_edited': 2, 'ai_approved': 3,
         }
-        relevant.sort(key=lambda f: origin_order.get(f.get('origin', ''), 99))
+
+        def sort_key(frag):
+            is_micro = frag.get('type') == 'micro_story'
+            theme_score = 0
+            if is_micro and themes:
+                frag_themes = frag.get('themes', [])
+                theme_score = sum(1 for t in themes if t in frag_themes)
+            # micro_stories with theme matches first, then by origin
+            return (0 if is_micro and theme_score > 0 else 1,
+                    -theme_score,
+                    origin_order.get(frag.get('origin', ''), 99))
+
+        relevant.sort(key=sort_key)
         return relevant
 
     # =========================================================================
@@ -370,6 +395,7 @@ Return a single JSON object:
 8. If knowledge base has relevant fragments, USE them as inspiration
 9. Weave in Netherlands context naturally if it fits (not forced)
 10. Express ONE genuine curiosity or honest observation
+11. NEVER claim the candidate lacks any skill or technology — the resume and evidence pool are NOT exhaustive lists of candidate skills. Phrases like "I don't have X experience" are FORBIDDEN.
 
 Return ONLY the JSON object, no other text."""
 
@@ -545,12 +571,14 @@ Return ONLY the JSON object, no other text."""
             print(f"[CoverLetter] Failed after 3 attempts")
             return None
 
-        # Extract response
-        if not response.content or not response.content[0].text:
-            print(f"[CoverLetter] Empty response from AI")
+        # Extract response — collect ALL text blocks (skip thinking blocks)
+        # Claude Opus 4.6 may insert thinking blocks between text blocks,
+        # so we must concatenate all text-type blocks to get the full output.
+        text_blocks = [b for b in response.content if getattr(b, 'type', None) == 'text']
+        raw_text = ''.join(b.text for b in text_blocks).strip()
+        if not raw_text:
+            print(f"[CoverLetter] Empty response from AI (no text blocks with content)")
             return None
-
-        raw_text = response.content[0].text
         tokens_used = (response.usage.input_tokens + response.usage.output_tokens
                        if response.usage else 0)
 
