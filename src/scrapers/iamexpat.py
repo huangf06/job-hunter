@@ -12,6 +12,7 @@ from src.scrapers.base import BaseScraper, load_blacklists
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://www.iamexpat.nl/career/jobs-netherlands"
+CATEGORY_PATH = "it-technology-positions"
 JOBS_PER_PAGE = 20
 
 
@@ -105,9 +106,11 @@ class IamExpatScraper(BaseScraper):
 
             for query_cfg in self.queries:
                 kw = query_cfg["keywords"]
-                logger.info("[IamExpat] Searching: %s", kw)
+                category = query_cfg.get("category", CATEGORY_PATH)
+                logger.info("[IamExpat] Searching: %s (category: %s)", kw, category)
                 for page_num in range(1, self.max_pages + 1):
-                    url = f"{BASE_URL}?search={kw.replace(' ', '+')}&page={page_num}"
+                    base = f"{BASE_URL}/{category}" if category else BASE_URL
+                    url = f"{base}?search={kw.replace(' ', '+')}&page={page_num}"
                     try:
                         cards = await self._scrape_listing_page(page, url)
                     except Exception as e:

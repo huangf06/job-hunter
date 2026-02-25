@@ -9,17 +9,14 @@
 #
 # NOTE: Booking.com uses iCIMS (not Greenhouse/Lever) — needs custom scraper
 # NOTE: Miro uses Greenhouse internally but doesn't expose public Board API
+# NOTE: Optiver/Backbase have valid GH boards but post jobs infrequently (0 at time of check)
+# NOTE: Uber, Nike, Snowflake, Confluent, HashiCorp, Notion — not on public GH/Lever API
 
 companies:
-  # === Greenhouse ===
+  # === Greenhouse — NL-headquartered / strong NL presence ===
   - name: Adyen
     ats: greenhouse
     board_token: adyen
-    location_filter: "Amsterdam"
-
-  - name: Databricks
-    ats: greenhouse
-    board_token: databricks
     location_filter: "Amsterdam"
 
   - name: MessageBird
@@ -27,10 +24,106 @@ companies:
     board_token: bird
     location_filter: "Netherlands"
 
+  - name: Catawiki
+    ats: greenhouse
+    board_token: catawiki
+    location_filter: "Netherlands"
+
+  - name: bol.com
+    ats: greenhouse
+    board_token: bolcom
+    location_filter: "Utrecht"
+
+  - name: Flow Traders
+    ats: greenhouse
+    board_token: flowtraders
+    location_filter: "Amsterdam"
+
+  - name: Sendcloud
+    ats: greenhouse
+    board_token: sendcloud
+    location_filter: "Eindhoven"
+
+  - name: Optiver
+    ats: greenhouse
+    board_token: optiver
+    location_filter: "Amsterdam"
+
+  - name: Backbase
+    ats: greenhouse
+    board_token: backbase
+    location_filter: "Amsterdam"
+
+  # === Greenhouse — international companies with Amsterdam/NL offices ===
+  - name: Databricks
+    ats: greenhouse
+    board_token: databricks
+    location_filter: "Amsterdam"
+
   - name: Elastic
     ats: greenhouse
     board_token: elastic
-    location_filter: "The Netherlands"
+    location_filter: "Netherlands"
+
+  - name: JetBrains
+    ats: greenhouse
+    board_token: jetbrains
+    location_filter: "Amsterdam"
+
+  - name: GitLab
+    ats: greenhouse
+    board_token: gitlab
+    location_filter: "Netherlands"
+
+  - name: ClickHouse
+    ats: greenhouse
+    board_token: clickhouse
+    location_filter: "Netherlands"
+
+  - name: Datadog
+    ats: greenhouse
+    board_token: datadog
+    location_filter: "Netherlands"
+
+  - name: Reddit
+    ats: greenhouse
+    board_token: reddit
+    location_filter: "Amsterdam"
+
+  - name: HelloFresh
+    ats: greenhouse
+    board_token: hellofresh
+    location_filter: "Netherlands"
+
+  - name: Flexport
+    ats: greenhouse
+    board_token: flexport
+    location_filter: "Amsterdam"
+
+  - name: Stripe
+    ats: greenhouse
+    board_token: stripe
+    location_filter: "Amsterdam"
+
+  - name: Grafana Labs
+    ats: greenhouse
+    board_token: grafanalabs
+    location_filter: "Netherlands"
+
+  - name: Samsara
+    ats: greenhouse
+    board_token: samsara
+    location_filter: "Netherlands"
+
+  - name: Lightspeed
+    ats: greenhouse
+    board_token: lightspeedhq
+    location_filter: "Netherlands"
+
+  - name: dbt Labs
+    ats: greenhouse
+    board_token: dbtlabsinc
+    location_filter: "Netherlands"
 
   # === Lever ===
   - name: Spotify

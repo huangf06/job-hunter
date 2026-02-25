@@ -17,14 +17,17 @@ profiles:
     enabled: true
     priority: 1
     queries:
-      - keywords: '"Machine Learning" OR "Deep Learning" OR "Computer Vision" OR "NLP" OR "Data Engineer" OR "MLOps" OR "AI Engineer" OR "LLM"'
+      - keywords: '"Machine Learning" OR "Deep Learning" OR "Computer Vision" OR "NLP" OR "Data Engineer" OR "MLOps" OR "AI Engineer" OR "LLM" OR "Analytics Engineer" OR "Data Consultant"'
         description: "ML/Data combined search"
 
     iamexpat:
       queries:
         - keywords: "data engineer"
-        - keywords: "machine learning"
-        - keywords: "MLOps"
+        - keywords: "analytics engineer"
+        - keywords: "machine learning engineer"
+        - keywords: "data analyst"
+        - keywords: "data scientist"
+        - keywords: "data consultant"
 
   # Profile 2: Backend/Software Engineering (Boolean search)
   backend_data:
@@ -39,7 +42,6 @@ profiles:
       queries:
         - keywords: "python developer"
         - keywords: "backend engineer"
-        - keywords: "software engineer"
 
   # Profile 3: Quant/Trading (Boolean search)
   quant:
