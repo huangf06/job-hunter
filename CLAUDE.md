@@ -126,7 +126,51 @@ python scripts/google_auth.py
 - **策略加成**: "黄金窗口" = 周二/三 10:00-11:30 双方同时巅峰
 - 个人能量曲线可在 `config/ai_config.yaml` → `interview_scheduler.candidate_energy` 调整
 
-### 7. CI/CD (GitHub Actions)
+### 7. 面试准备 (标准化工作流)
+
+收到面试通知后，使用标准化 7 阶段工作流生成完整面试档案 (~40 KB, ~15,000 字)。
+
+**触发方式:** 用户说 "帮我准备 [公司] 的面试" 或类似请求。
+
+**7 个阶段:**
+| 阶段 | 名称 | 操作 | 并行 Agent | 输出 |
+|------|------|------|-----------|------|
+| 0 | 情报收集 | Google Calendar 查询 + DB 查询 (JD、AI 分析、简历、申请状态) | 0 | 原始数据 |
+| 1 | 基础文件 | 创建目录 `YYYYMMDD_Company_Role/`，写入 01 (JD)、02 (AI 分析)、03 (已提交简历) | 0 | 文件 01-03 |
+| 2 | 公司调研 | 官网、融资、产品、领导层、Glassdoor、新闻、**GitHub org** | 2-3 | 调研笔记 |
+| 3 | 面试官调研 | LinkedIn、论文/出版物、职业轨迹、思维风格 | 1-2 | 面试官画像 |
+| 4 | 档案组装 | 写入 04 (公司深度)、05 (面试策略)、06 (速查表)、07 (学历) | 0 | 文件 04-07 |
+| 5 | 深度调研 | 公司 GitHub (take-home!)、团队组成、HN/技术论坛、技术博客 | 2-4 | 情报 |
+| 6 | 充实 + 简报 | 更新文件、写 08 (take-home 准备)、向用户呈现关键发现 | 0 | 最终档案 |
+
+**面试后:** 创建 `09_post_interview_notes.md` 记录面试经过和反思。
+
+**详细工作流:** `memory/interview_prep_workflow.md` (含检查清单、Agent 提示词、文件模板)
+**参考案例:** `interview_prep/20260225_Source_ag_Data_Engineer/00_process_log.md`
+
+**文件结构:**
+```
+interview_prep/YYYYMMDD_Company_Role/
+├── 00_process_log.md               ← 准备过程记录
+├── 01_job_description.md           ← 完整 JD + 元数据
+├── 02_ai_analysis.md               ← AI 评分、推理、建议
+├── 03_submitted_resume.md          ← 已提交简历内容 (+ CL)
+├── 04_company_deep_dive.md         ← 公司调研档案
+├── 05_interview_strategy.md        ← 叙事策略、Q&A、面试官画像
+├── 06_quick_reference.md           ← 面试时的速查表
+├── 07_transcript_and_education.md  ← 学历背景
+├── 08_take_home_prep.md            ← (多轮面试) 编程作业情报
+├── 09_post_interview_notes.md      ← (面试后) 复盘笔记
+└── Fei_Huang_Resume.pdf            ← 已提交简历副本
+```
+
+**高价值操作 (务必执行):**
+- 搜索公司 GitHub org — 经常有公开的 take-home assignment
+- 获取 careers page JD — LinkedIn 经常夸大要求 (Source.ag: 10+ 年 → 实际 4+ 年)
+- 查找面试官论文/学位论文 — 推断思维风格和价值观
+- **主动问用户** 是否与公司使命有个人联系
+
+### 8. CI/CD (GitHub Actions)
 流水线自动运行: `.github/workflows/job-pipeline.yml`
 - 定时触发: 每日自动爬取 + 处理 + AI 分析
 - 使用 Turso 云数据库，无需本地 DB
@@ -188,6 +232,9 @@ job-hunter/
 │
 ├── output/                     # 生成的简历
 ├── ready_to_send/              # --prepare 生成的投递材料 + checklist
+├── interview_prep/             # 面试准备档案 (按公司/日期归档)
+│   ├── README.md                   # 面试中心 + 工作流说明
+│   └── YYYYMMDD_Company_Role/      # 每次面试的完整档案 (文件 00-09)
 └── .gitignore
 ```
 
@@ -239,6 +286,11 @@ print(db.get_funnel_stats())
    ```bash
    python scripts/job_pipeline.py --finalize
    ```
+
+6. **收到面试通知 → 准备面试档案** (详见第 7 节):
+   - 触发: "帮我准备 XX 公司的面试"
+   - 输出: `interview_prep/YYYYMMDD_Company_Role/` 下 8-9 个文件
+   - 面试后: 补充 `09_post_interview_notes.md`
 
 ## 配置说明
 
