@@ -86,6 +86,17 @@ def get_db_stats() -> dict:
             """).fetchone()
             stats["today_analyzed"] = today_analyzed["cnt"] if today_analyzed else 0
 
+            # Today's high-score count (eligible for resume generation)
+            today_high = conn.execute("""
+                SELECT COUNT(*) as cnt
+                FROM job_analysis
+                WHERE DATE(analyzed_at) = DATE('now')
+                  AND ai_score >= 5.0
+                  AND tailored_resume IS NOT NULL
+                  AND tailored_resume != '{}'
+            """).fetchone()
+            stats["today_high_score"] = today_high["cnt"] if today_high else 0
+
             # Today's token usage
             today_tokens = conn.execute("""
                 SELECT COALESCE(SUM(tokens_used), 0) as total
@@ -134,6 +145,7 @@ def format_message(status: str, failed_step: str = "",
     db = db_stats or {}
     new_jobs = scrape.get("new_jobs", 0) if scrape else 0
     today_analyzed = db.get("today_analyzed", 0)
+    today_high_score = db.get("today_high_score", 0)
     today_tokens = db.get("today_tokens", 0)
     total_ready = db.get("total_ready", 0)
     new_ready = db.get("today_new_ready", [])
@@ -157,7 +169,10 @@ def format_message(status: str, failed_step: str = "",
     if new_jobs > 0:
         funnel_parts.append(f"+{new_jobs} new")
     if today_analyzed > 0:
-        funnel_parts.append(f"{today_analyzed} analyzed")
+        if today_high_score > 0 and today_high_score < today_analyzed:
+            funnel_parts.append(f"{today_analyzed} analyzed ({today_high_score} high-score)")
+        else:
+            funnel_parts.append(f"{today_analyzed} analyzed")
     if funnel_parts:
         lines.append(" → ".join(funnel_parts))
 
