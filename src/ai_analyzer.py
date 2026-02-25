@@ -35,6 +35,7 @@ except ImportError:
 from anthropic import Anthropic, RateLimitError, APITimeoutError, AuthenticationError, APIConnectionError, InternalServerError
 from src import TRANSFERABLE_SKIP_WORDS
 from src.db.job_db import JobDatabase, AnalysisResult
+from src.resume_validator import ResumeValidator
 
 
 class AIAnalyzer:
@@ -74,6 +75,7 @@ class AIAnalyzer:
         self.bullet_library = self._load_bullet_library()
         self.valid_bullets = self._extract_valid_bullets()  # Set of all valid bullet texts
         self.bullet_id_lookup = self._build_bullet_id_lookup()  # ID -> text
+        self.validator = ResumeValidator()  # Early validation to catch issues before saving
 
         print(f"[AI Analyzer] Using: {active} ({self.model})")
         print(f"[AI Analyzer] Loaded {len(self.bullet_id_lookup)} bullet IDs for resolution")
@@ -674,14 +676,39 @@ class AIAnalyzer:
             # Parse JSON from response
             parsed = self._parse_response(text)
             if not parsed:
+                # Retry: re-call API once for parse failures (transient API issues)
+                print(f"\n    [RETRY] Parse failed, retrying API call...")
+                time.sleep(2)
+                try:
+                    retry_resp = self.client.messages.create(
+                        model=self.model,
+                        max_tokens=self.max_tokens,
+                        temperature=self.temperature,
+                        messages=[{"role": "user", "content": prompt}]
+                    )
+                    if retry_resp and retry_resp.content and retry_resp.stop_reason != "max_tokens":
+                        retry_blocks = [b for b in retry_resp.content if getattr(b, 'type', None) == 'text']
+                        if retry_blocks:
+                            retry_text = ''.join(b.text for b in retry_blocks).strip()
+                            retry_usage = retry_resp.usage
+                            if retry_usage:
+                                tokens_used += getattr(retry_usage, 'input_tokens', 0) + getattr(retry_usage, 'output_tokens', 0)
+                            parsed = self._parse_response(retry_text)
+                            if parsed:
+                                text = retry_text
+                                print(f"    [RETRY] Parse succeeded on retry")
+                except Exception as retry_err:
+                    print(f"    [RETRY] Retry API call failed: {retry_err}")
+
+            if not parsed:
                 preview = text[:300].replace('\n', ' ')
                 print(f"  [WARN] Failed to parse AI response for {job_id}")
                 print(f"    Raw response preview: {preview}")
-                # Save sentinel to prevent infinite retry on unparseable responses
+                # Save sentinel — marked as parse failure for selective retry
                 return AnalysisResult(
                     job_id=job_id, ai_score=0.0,
                     recommendation='REJECTED',
-                    reasoning=f'Failed to parse AI response: {preview[:200]}',
+                    reasoning=f'[PARSE_FAIL] {preview[:200]}',
                     tailored_resume='{}',
                     model=self.model, tokens_used=tokens_used
                 )
@@ -709,6 +736,22 @@ class AIAnalyzer:
                     tailored = {}
                 else:
                     tailored['bio'] = assembled_bio
+
+            # v3.0: Early validation — reject before saving to keep counts accurate
+            if tailored:
+                validation = self.validator.validate(tailored, job)
+                if not validation.passed:
+                    for err in validation.errors:
+                        print(f"    [VALIDATION] {err}")
+                    val_reason = f"REJECTED: validation: {'; '.join(validation.errors[:3])}"
+                    rejection_reason = f"{rejection_reason} | {val_reason}" if rejection_reason else val_reason
+                    tailored = {}
+                else:
+                    if validation.warnings:
+                        for warn in validation.warnings:
+                            print(f"    [VALID WARN] {warn}")
+                    if validation.fixes:
+                        print(f"    [VALIDATION] Auto-fixes applied: {list(validation.fixes.keys())}")
 
             def _safe_float(val, default=0.0):
                 try:

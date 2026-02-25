@@ -1009,6 +1009,20 @@ class JobDatabase:
             )
             return cursor.rowcount
 
+    def clear_transient_failures(self) -> int:
+        """清除可重试的瞬态失败 (parse failure / truncation / empty response)，保留正常低分拒绝"""
+        with self._get_conn(sync_before=False) as conn:
+            cursor = conn.execute("""
+                DELETE FROM job_analysis
+                WHERE tailored_resume = '{}'
+                  AND (reasoning LIKE '[PARSE_FAIL]%'
+                       OR reasoning LIKE 'Failed to parse AI response:%'
+                       OR reasoning LIKE 'Response truncated%'
+                       OR reasoning LIKE 'Empty API response%'
+                       OR reasoning LIKE 'Analysis error:%')
+            """)
+            return cursor.rowcount
+
     # ==================== Cover Letter 操作 ====================
 
     def save_cover_letter(self, cl: CoverLetter):
