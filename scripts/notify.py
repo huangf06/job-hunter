@@ -86,14 +86,16 @@ def get_db_stats() -> dict:
             """).fetchone()
             stats["today_analyzed"] = today_analyzed["cnt"] if today_analyzed else 0
 
-            # Today's high-score count (eligible for resume generation)
+            # Today's high-score count (eligible, excluding already applied/skipped)
             today_high = conn.execute("""
                 SELECT COUNT(*) as cnt
-                FROM job_analysis
-                WHERE DATE(analyzed_at) = DATE('now')
-                  AND ai_score >= 5.0
-                  AND tailored_resume IS NOT NULL
-                  AND tailored_resume != '{}'
+                FROM job_analysis an
+                LEFT JOIN applications a ON an.job_id = a.job_id
+                WHERE DATE(an.analyzed_at) = DATE('now')
+                  AND an.ai_score >= 5.0
+                  AND an.tailored_resume IS NOT NULL
+                  AND an.tailored_resume != '{}'
+                  AND a.id IS NULL
             """).fetchone()
             stats["today_high_score"] = today_high["cnt"] if today_high else 0
 

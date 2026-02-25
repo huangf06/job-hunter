@@ -1094,6 +1094,8 @@ def main():
                         help='Show application tracker (status breakdown)')
     parser.add_argument('--reprocess', action='store_true',
                         help='Clear old filter/score results and reprocess all jobs with new rules')
+    parser.add_argument('--retry-failures', action='store_true',
+                        help='Clear transient AI failures (parse/truncation/empty) and re-analyze')
 
     # New AI-powered commands
     parser.add_argument('--ai-analyze', action='store_true',
@@ -1161,6 +1163,22 @@ def main():
         pipeline.filter_jobs()
         pipeline.score_jobs()
         pipeline.show_stats()
+        pipeline.db.final_sync()
+        return
+
+    # 重试瞬态失败 (parse failure / truncation / empty response)
+    if args.retry_failures:
+        if not DB_AVAILABLE:
+            print("错误: 数据库模块不可用")
+            sys.exit(1)
+
+        pipeline = JobPipeline()
+        cleared = pipeline.db.clear_transient_failures()
+        if cleared == 0:
+            print("[Retry] No transient failures found.")
+            return
+        print(f"[Retry] Cleared {cleared} transient failure(s), re-analyzing...")
+        pipeline.ai_analyze_jobs(limit=cleared + 10, model=args.model if hasattr(args, 'model') else None)
         pipeline.db.final_sync()
         return
 
@@ -1338,6 +1356,7 @@ def main():
     print("  --ready            Show ready-to-apply jobs")
     print("  --stats            Show funnel stats")
     print("  --reprocess        Clear and reprocess all jobs")
+    print("  --retry-failures   Clear transient AI failures and re-analyze")
     print("  --mark-applied ID  Mark job as applied")
     print("  --mark-all-applied Mark ALL ready jobs as applied + archive")
     print("  --update-status ID STATUS  Update status (rejected/interview/offer)")
