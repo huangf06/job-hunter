@@ -1073,6 +1073,94 @@ class JobPipeline:
         print("=" * 70)
 
 
+# =============================================================================
+# Gmail Command Handlers
+# =============================================================================
+
+def cmd_test_gmail():
+    """Test Gmail IMAP connection."""
+    try:
+        from src.gmail_client import GmailClient
+        with GmailClient() as client:
+            addr = client.test_connection()
+            print(f"\n[OK] Gmail IMAP connection successful: {addr}")
+    except ImportError as e:
+        print(f"\n[ERROR] Import error: {e}")
+        print("  Run: pip install imapclient>=3.0.0")
+    except ValueError as e:
+        print(f"\n[ERROR] Configuration error: {e}")
+        print("  Set GMAIL_EMAIL and GMAIL_APP_PASSWORD in .env file")
+    except Exception as e:
+        print(f"\n[ERROR] Connection failed: {e}")
+
+
+def cmd_read_email(subject_pattern: str, lookback_days: int = 7):
+    """Read and display a specific email by subject pattern."""
+    try:
+        from src.gmail_client import GmailClient, format_email_for_display
+        
+        print(f"\nSearching for email with subject: '{subject_pattern}'...")
+        
+        with GmailClient() as client:
+            email_data = client.get_email_by_subject(subject_pattern, lookback_days)
+            
+            if email_data:
+                print(format_email_for_display(email_data))
+            else:
+                print(f"\n[NOT FOUND] No email found with subject containing: '{subject_pattern}'")
+                print(f"  Try increasing --lookback-days (current: {lookback_days})")
+                
+    except ImportError as e:
+        print(f"\n[ERROR] Import error: {e}")
+        print("  Run: pip install imapclient>=3.0.0")
+    except ValueError as e:
+        print(f"\n[ERROR] Configuration error: {e}")
+        print("  Set GMAIL_EMAIL and GMAIL_APP_PASSWORD in .env file")
+    except Exception as e:
+        print(f"\n[ERROR] Error reading email: {e}")
+
+
+def cmd_search_emails(keyword: str, lookback_days: int = 7):
+    """Search and list emails by keyword."""
+    try:
+        from src.gmail_client import GmailClient
+        
+        print(f"\nSearching emails with keyword: '{keyword}'...")
+        
+        with GmailClient() as client:
+            emails = client.search_emails(
+                subject_keywords=[keyword],
+                lookback_days=lookback_days,
+                max_results=20
+            )
+            
+            if not emails:
+                print(f"\n[NOT FOUND] No emails found with keyword: '{keyword}'")
+                return
+            
+            print(f"\nFound {len(emails)} email(s):\n")
+            print("-" * 80)
+            
+            for i, email_data in enumerate(emails, 1):
+                subject = email_data.get('subject', 'N/A')[:60]
+                sender = email_data.get('sender', 'N/A')[:40]
+                date = email_data.get('date', 'N/A')[:30]
+                
+                print(f"{i}. {subject}")
+                print(f"   From: {sender}")
+                print(f"   Date: {date}")
+                print("-" * 80)
+                
+    except ImportError as e:
+        print(f"\n[ERROR] Import error: {e}")
+        print("  Run: pip install imapclient>=3.0.0")
+    except ValueError as e:
+        print(f"\n[ERROR] Configuration error: {e}")
+        print("  Set GMAIL_EMAIL and GMAIL_APP_PASSWORD in .env file")
+    except Exception as e:
+        print(f"\n[ERROR] Error searching emails: {e}")
+
+
 def main():
     """主函数"""
     import argparse
@@ -1144,6 +1232,16 @@ def main():
     parser.add_argument('--days', type=int, default=14,
                         help='Days ahead to search for slots (default: 14)')
 
+    # Gmail commands
+    parser.add_argument('--read-email', type=str, metavar='SUBJECT',
+                        help='Read email by subject pattern (e.g., "FareHarbor")')
+    parser.add_argument('--search-emails', type=str, metavar='KEYWORD',
+                        help='Search emails by keyword')
+    parser.add_argument('--lookback-days', type=int, default=7,
+                        help='Days to look back for email search (default: 7)')
+    parser.add_argument('--test-gmail', action='store_true',
+                        help='Test Gmail IMAP connection')
+
     args = parser.parse_args()
 
     # 重新处理所有职位 (清除旧结果)
@@ -1180,6 +1278,17 @@ def main():
         print(f"[Retry] Cleared {cleared} transient failure(s), re-analyzing...")
         pipeline.ai_analyze_jobs(limit=cleared + 10, model=args.model if hasattr(args, 'model') else None)
         pipeline.db.final_sync()
+        return
+
+    # Gmail commands (standalone, don't require DB)
+    if args.test_gmail:
+        cmd_test_gmail()
+        return
+    if args.read_email:
+        cmd_read_email(args.read_email, args.lookback_days)
+        return
+    if args.search_emails:
+        cmd_search_emails(args.search_emails, args.lookback_days)
         return
 
     # 新版数据库流水线
@@ -1380,6 +1489,12 @@ def main():
     print("  --suggest-availability COMPANY  Show all available slots")
     print("  --duration N       Interview duration in minutes (default: 60)")
     print("  --days N           Days ahead to search (default: 14)")
+    print()
+    print("  Gmail:")
+    print("  --read-email SUBJECT    Read email by subject pattern")
+    print("  --search-emails KEYWORD Search emails by keyword")
+    print("  --lookback-days N       Days to search back (default: 7)")
+    print("  --test-gmail            Test Gmail IMAP connection")
     print()
     print("  Options:")
     print("  --min-score N      Minimum score threshold")

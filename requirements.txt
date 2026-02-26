@@ -20,3 +20,6 @@ python-dotenv==1.2.1
 
 # Turso cloud database (libsql)
 libsql==0.1.11
+
+# Gmail IMAP client
+imapclient==3.1.0
