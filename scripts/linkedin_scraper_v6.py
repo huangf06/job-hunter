@@ -509,9 +509,18 @@ class LinkedInScraperV6:
             "keywords": keywords,
             "location": location,
             "f_TPR": defaults.get("date_posted", "r86400"),
-            "f_WT": defaults.get("workplace_type", "2,3"),
             "sortBy": defaults.get("sort_by", "DD")
         }
+
+        # Add job_type if specified (F=Full-time, P=Part-time, C=Contract, I=Internship, V=Volunteer)
+        if "job_type" in defaults:
+            params["f_JT"] = defaults["job_type"]
+
+        # Add workplace_type if specified (1=On-site, 2=Remote, 3=Hybrid)
+        # Note: LinkedIn 2026 update - new UI only has "Remote" toggle, recommend leaving unset
+        if "workplace_type" in defaults:
+            params["f_WT"] = defaults["workplace_type"]
+
         url = f"https://www.linkedin.com/jobs/search?{urlencode(params)}"
         print(f"  URL: {url[:80]}...")
 
