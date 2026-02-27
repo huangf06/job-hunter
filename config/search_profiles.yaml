@@ -24,12 +24,16 @@ profiles:
     queries:
       - keywords: '"Data Engineer" OR "Analytics Engineer" OR "Data Platform Engineer" OR "ETL Engineer"'
         description: "Data pipeline & platform roles"
+      - keywords: '"Data Infrastructure Engineer" OR "MLOps Engineer" OR "ML Platform Engineer"'
+        description: "Data infrastructure & ML platform roles"
 
     iamexpat:
       queries:
         - keywords: "data engineer"
         - keywords: "analytics engineer"
         - keywords: "data platform engineer"
+        - keywords: "mlops engineer"
+        - keywords: "ml platform engineer"
 
   # ============================================================
   # Group 2: ML Engineering (DIFFERENTIATION)
@@ -39,8 +43,8 @@ profiles:
     enabled: true
     priority: 1
     queries:
-      - keywords: '"Machine Learning Engineer" OR "ML Engineer" OR "AI Engineer" OR "MLOps Engineer"'
-        description: "ML systems & MLOps roles"
+      - keywords: '"Machine Learning Engineer" OR "ML Engineer" OR "AI Engineer" OR "AI Software Engineer"'
+        description: "ML systems & AI software roles"
 
     iamexpat:
       queries:
@@ -56,7 +60,7 @@ profiles:
     enabled: true
     priority: 2
     queries:
-      - keywords: '"Software Engineer" OR "Backend Engineer" OR "Python Developer" OR "Backend Developer"'
+      - keywords: '"Software Engineer" OR "Backend Engineer" OR "Python Developer" OR "Full Stack Engineer"'
         description: "General backend & Python roles"
 
     iamexpat:
@@ -64,6 +68,7 @@ profiles:
         - keywords: "python developer"
         - keywords: "backend engineer"
         - keywords: "software engineer"
+        - keywords: "full stack engineer"
 
   # ============================================================
   # Group 4: Data Science & Analytics (EDGE CASE)

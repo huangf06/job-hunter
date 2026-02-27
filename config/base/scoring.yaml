@@ -50,6 +50,16 @@ title_scoring:
       - "data scientist"
     weight: 2.5
 
+  # 研究岗位
+  research:
+    keywords:
+      - "research engineer"
+      - "applied scientist"
+      - "ml researcher"
+      - "research scientist"
+      - "machine learning researcher"
+    weight: 2.0
+
   # 数据工程
   data_engineering:
     keywords:
@@ -69,7 +79,7 @@ title_scoring:
   negative_title:
     senior:
       keywords: ["senior"]
-      weight: -0.5
+      weight: -1.0
     lead_staff:
       keywords: ["lead", "staff"]
       weight: -1.5
@@ -96,6 +106,16 @@ body_scoring:
     weight: 1.0
     max_total: 2.0
 
+  # 强化学习
+  reinforcement_learning:
+    keywords:
+      - "reinforcement learning"
+      - "rl"
+      - "policy gradient"
+      - "q-learning"
+    weight: 1.0
+    max_total: 1.0
+
   # 数据工具
   data_tools:
     keywords:
@@ -105,8 +125,8 @@ body_scoring:
       - "airflow"
       - "kafka"
       - "delta lake"
-    weight: 1.0
-    max_total: 2.0
+    weight: 1.5
+    max_total: 2.5
 
   # Cloud/MLOps
   cloud_mlops:
@@ -127,8 +147,10 @@ body_scoring:
       - "transformers"
       - "gpt"
       - "generative ai"
-    weight: 1.0
-    max_total: 1.0
+      - "bert"
+      - "language model"
+    weight: 1.5
+    max_total: 2.0
 
   # SQL
   sql:
@@ -241,6 +263,13 @@ target_companies:
     - "imc"
     - "flow traders"
     - "deepdesk"
+    - "uber"
+    - "databricks"
+    - "elastic"
+    - "mollie"
+    - "messagebird"
+    - "catawiki"
+    - "bunq"
 
   # Tier 2: 优先
   tier_2:
@@ -249,6 +278,8 @@ target_companies:
     - "rabobank"
     - "asml"
     - "philips"
+    - "exact"
+    - "vanderlande"
 
   # Tier 3: 关注
   tier_3:
@@ -257,6 +288,8 @@ target_companies:
     - "bol.com"
     - "shell"
     - "kpn"
+    - "takeaway.com"
+    - "rituals"
 
   # 目标公司加分
   bonus_scores:
