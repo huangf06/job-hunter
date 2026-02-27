@@ -601,7 +601,8 @@ class JobDatabase:
             if should_pre_sync:
                 try:
                     self._libsql_raw.sync()
-                except Exception as e:
+                except BaseException as e:
+                    # BaseException: KeyboardInterrupt / pyo3 PanicException
                     logger.warning("Turso pre-read sync failed (using local data): %s", e)
             # Health check: verify libsql can actually read data.
             # On Windows, libsql embedded replicas have a known bug where the
@@ -633,7 +634,8 @@ class JobDatabase:
                 if not self._batch_active and self._sync_mode == "full":
                     try:
                         self._libsql_raw.sync()
-                    except Exception as e:
+                    except BaseException as e:
+                        # BaseException: KeyboardInterrupt / pyo3 PanicException
                         logger.warning("Turso post-commit sync failed (data committed locally): %s", e)
             except BaseException:
                 conn.rollback()
@@ -673,7 +675,7 @@ class JobDatabase:
             if self._libsql_raw and self._sync_mode == "full":
                 try:
                     self._libsql_raw.sync()
-                except Exception as e:
+                except BaseException as e:
                     logger.warning("Turso batch sync failed: %s", e)
 
     def final_sync(self):
@@ -689,7 +691,11 @@ class JobDatabase:
         try:
             self._libsql_raw.sync()
             logger.info("Turso final sync complete")
-        except Exception as e:
+        except BaseException as e:
+            # Catch BaseException (not just Exception) because:
+            # - KeyboardInterrupt propagates into pyo3/Rust and causes panics
+            # - pyo3_runtime.PanicException inherits from BaseException
+            # Data is committed locally; Turso sync will catch up next run.
             logger.warning("Turso final sync failed: %s", e)
 
     def execute(self, sql: str, params: tuple = ()) -> list:
