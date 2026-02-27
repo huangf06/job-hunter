@@ -45,7 +45,7 @@ thresholds:
   rule_score_for_ai: 3.0
 
   # AI score thresholds for actions
-  ai_score_generate_resume: 5.0  # >= 5.0: generate tailored resume
+  ai_score_generate_resume: 4.0  # >= 4.0: generate tailored resume (lowered from 5.0 to include maybe zone)
   ai_score_apply_now: 7.0        # >= 7.0: mark as priority
 
 # =============================================================================
