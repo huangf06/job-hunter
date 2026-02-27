@@ -89,13 +89,13 @@ title_scoring:
 # =============================================================================
 
 body_scoring:
-  # Python
+  # Python (increased weight - core skill)
   python:
     keywords: ["python"]
-    weight: 1.0
-    max_total: 1.0
+    weight: 1.5
+    max_total: 1.5
 
-  # ML框架
+  # ML框架 (increased weight - core skill)
   ml_frameworks:
     keywords:
       - "pytorch"
@@ -103,8 +103,8 @@ body_scoring:
       - "scikit-learn"
       - "xgboost"
       - "lightgbm"
-    weight: 1.0
-    max_total: 2.0
+    weight: 1.5
+    max_total: 2.5
 
   # 强化学习
   reinforcement_learning:
@@ -168,7 +168,7 @@ body_scoring:
     weight: 1.5
     max_total: 1.5
 
-  # Visa赞助
+  # Visa赞助 (reduced weight to avoid masking skill mismatch)
   visa_sponsorship:
     keywords:
       - "visa sponsor"
@@ -180,8 +180,8 @@ body_scoring:
       - "work permit"
       - "international candidates"
       - "relocation package"
-    weight: 2.0
-    max_total: 2.0
+    weight: 1.5
+    max_total: 1.5
 
   # Short JD penalty: penalize very short descriptions
   short_jd:
@@ -207,6 +207,18 @@ body_scoring:
     "7-10 years":
       weight: -1.0
     max_total: -1.0
+
+  # 负面: 极高经验要求 (moved from hard reject to soft reject)
+  very_high_experience:
+    "8+ years":
+      weight: -2.0
+    "9+ years":
+      weight: -2.5
+    "10+ years":
+      weight: -2.5
+    "15+ years":
+      weight: -3.0
+    max_total: -2.5
 
   # PhD要求
   phd_required:
@@ -291,11 +303,11 @@ target_companies:
     - "takeaway.com"
     - "rituals"
 
-  # 目标公司加分
+  # 目标公司加分 (reduced to avoid masking skill mismatch)
   bonus_scores:
-    tier_1: 2.0
-    tier_2: 1.5
-    tier_3: 1.0
+    tier_1: 1.5
+    tier_2: 1.0
+    tier_3: 0.5
 
 # =============================================================================
 # 配置元数据

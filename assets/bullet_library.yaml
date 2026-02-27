@@ -650,6 +650,9 @@ bio_builder:
     options_trading:
       text: "derivatives pricing and automated trading systems"
       basis: "Deribit options system — Black-Scholes, Greeks, market making"
+    data_governance:
+      text: "data quality and governance frameworks"
+      basis: "GLP — data compliance reporting, Baiquan — cross-source data validation"
 
   closer_options:
     eager_company:

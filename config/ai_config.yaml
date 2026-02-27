@@ -201,6 +201,48 @@ prompts:
        - growth_potential: Career growth opportunity at this role
        - overall_score: Weighted average considering all factors
 
+    ## Scoring Guidelines (IMPORTANT - Be STRICT)
+
+    Most jobs should score 4-6, NOT 7-9. High scores are rare.
+
+    **Score Distribution Target:**
+    - 9-10: Perfect match (RARE, <5% of jobs)
+      - ALL required skills present at required level
+      - Experience level exact match
+      - Company/role highly aligned with career goals
+      - Example: "Data Engineer at Databricks requiring PySpark + Delta Lake + AWS"
+
+    - 7-8: Excellent match (10-15% of jobs)
+      - MOST required skills present
+      - Experience level close match (±1 year)
+      - Strong career growth potential
+      - Example: "ML Engineer requiring PyTorch + Python + cloud, candidate has all"
+
+    - 5-6: Good match (30-40% of jobs)
+      - Core skills present, some gaps in secondary skills
+      - Experience level reasonable (±2 years)
+      - Worth applying
+      - Example: "Data Engineer requiring Spark + Kafka, candidate has Spark but not Kafka"
+
+    - 3-4: Moderate match (30-40% of jobs)
+      - Significant skill gaps (missing 2+ required skills)
+      - Experience mismatch (too junior or too senior)
+      - Apply only if nothing better
+      - Example: "Senior role requiring 8+ years, candidate has 6 years"
+
+    - 1-2: Poor match (10-20% of jobs)
+      - Major skill gaps (missing core skills)
+      - Wrong experience level or domain
+      - Likely to be rejected
+      - Example: "Frontend role requiring React + TypeScript, candidate is backend"
+
+    **Negative Examples (Common Mistakes to Avoid):**
+    - If JD requires "5+ years Java" but candidate has 0 years Java → score 3-4 MAX (not 6-7)
+    - If JD requires "PhD in CS" but candidate has M.Sc. AI → score 4-5 MAX (not 7-8)
+    - If JD is 80% frontend (React, Angular) but candidate is backend → score 2-3 MAX (not 5-6)
+    - If JD requires "10+ years experience" but candidate has 6 years → score 3-4 MAX (not 6-7)
+    - If JD requires "native Dutch speaker" → score 0-1 (hard reject)
+
     2. **Tailor the resume** by selecting the most relevant content:
        - Bio: write 2-3 sentences if it adds value, or set to null
        - MUST select 2-3 different work experiences from different companies
