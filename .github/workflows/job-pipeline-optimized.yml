@@ -5,11 +5,12 @@ name: Job Pipeline v4.0 - Single Runner
 
 on:
   schedule:
-    # 每天3次：早中晚 (非整点，避开 GitHub Actions 高峰)
-    # 荷兰时间: 08:23 / 12:23 / 16:23 (CET) 或 09:23 / 13:23 / 17:23 (CEST)
-    - cron: '23 7,11,15 * * 1-5'
-    # 周末每天跑一次，防止错过周五/周六发布的职位
-    - cron: '23 8 * * 0,6'
+    # 每天2次：早上 + 下午 (非整点，避开 GitHub Actions 高峰)
+    # 荷兰时间: 09:37 / 15:37 (CET) 或 10:37 / 16:37 (CEST)
+    # 减少频率以降低 LinkedIn 反爬风险，同时覆盖主要发布时段
+    - cron: '37 8,14 * * 1-5'
+    # 周末中午一次，捕获周五晚/周六早发布的职位
+    - cron: '23 11 * * 0,6'
 
   workflow_dispatch:
     inputs:
