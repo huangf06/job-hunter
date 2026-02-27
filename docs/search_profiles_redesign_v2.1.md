@@ -1,12 +1,15 @@
-# Search Profiles Redesign - v2.1
+# Search Profiles Redesign - v2.1 (Updated)
 **Date:** 2026-02-27
+**Update:** Added Group 6 (ML Research) to maximize coverage
 **Backup:** `config/search_profiles.yaml.backup-*`
 
 ## 设计理念
 
 从"关键词堆砌"转向"职位类型分组"，按照 Fei 的背景和目标职位的核心技能来组织搜索。
 
-## 新配置（5 组）
+**核心原则：最大化覆盖率，用硬规则和 AI 评分来筛选，而不是在搜索阶段预先排除。**
+
+## 新配置（6 组）
 
 | Group | Profile Name | Keywords (OR count) | Priority | Target |
 |-------|-------------|---------------------|----------|--------|
@@ -15,8 +18,9 @@
 | 3 | backend_engineering | Software Engineer, Backend Engineer, Python Developer, Backend Developer (4) | 2 | 通用后端（保底） |
 | 4 | data_science | Data Scientist, Data Analyst, BI Engineer, Data Consultant (4) | 3 | 数据科学/分析（边缘） |
 | 5 | quant | Quantitative Researcher/Developer/Analyst, Quant Trader (4) | 1 | 量化交易（高价值） |
+| 6 | ml_research | ML Researcher, Research Engineer, Applied Scientist, Research Scientist (4) + Deep Learning, Computer Vision, NLP, LLM (4) | 2 | ML 研究（学术导向） |
 
-**Total:** 5 profiles, 5 queries, 20 OR conditions
+**Total:** 6 profiles, 7 queries, 28 OR conditions
 
 ## 旧配置（3 组）
 
@@ -45,10 +49,21 @@
 - **Group 4 (data_science)**：边缘匹配，可能偏分析但保留以防遗漏
 - **Group 5 (quant)**：独立保持，因为目标公司和要求完全不同
 
-### 4. 避免噪音关键词
-- **移除**：Deep Learning, Computer Vision, NLP, LLM（太学术，偏研究岗）
-- **保留**：ML Engineer, AI Engineer（工程导向）
-- **新增**：Data Platform Engineer, ETL Engineer, MLOps Engineer（更精准）
+### 4. 保留研究岗关键词（重要更新）
+
+**初始设计错误**：移除了 Deep Learning, Computer Vision, NLP, LLM
+**用户反馈**："我也可以做研究岗的不是吗？只要能帮助我找到职位，我什么都可以干。"
+
+**修正后的策略**：
+- ✅ 新增 Group 6 (ml_research)：专门覆盖研究导向的职位
+- ✅ 保留所有学术关键词：Deep Learning, Computer Vision, NLP, LLM
+- ✅ 新增研究职位名：ML Researcher, Research Engineer, Applied Scientist, Research Scientist
+- ✅ 最大化覆盖率：让硬规则和 AI 评分来筛选，而不是在搜索阶段预先排除
+
+**Fei 的研究背景支持**：
+- 硕士论文：Uncertainty Quantification in RL（150 training runs, 5 UQ methods, SLURM HPC）
+- 深度学习实战：PyTorch, TensorFlow, ML4QS 课程项目
+- 完全有资格申请 ML Research Engineer / Applied Scientist 岗位
 
 ## 预期效果
 
@@ -58,8 +73,8 @@
 
 ### 职位覆盖率
 - **旧配置**：18 个关键词，但 10 个在失败的 query 中
-- **新配置**：20 个关键词，分布在 5 个成功的 queries 中
-- **预期**：覆盖率提升 ~50%
+- **新配置**：28 个关键词，分布在 7 个成功的 queries 中
+- **预期**：覆盖率提升 ~100%（不仅修复了失败的 queries，还新增了研究岗关键词）
 
 ### 匹配质量
 - **旧配置**：混合了研究岗（Deep Learning, NLP）和工程岗
