@@ -783,6 +783,22 @@ class AIAnalyzer:
         except AuthenticationError as e:
             print(f"  [FATAL] Authentication failed: {e}")
             raise
+        except RateLimitError as e:
+            # Quota exhaustion — do NOT save sentinel, allow retry when quota resets
+            error_msg = str(e)
+            if 'DAILY_LIMIT_EXCEEDED' in error_msg or 'usage limit exceeded' in error_msg.lower():
+                print(f"  [QUOTA] Daily quota exhausted — skipping (will retry when quota resets)")
+                return None  # No sentinel, job remains unanalyzed
+            else:
+                # Other rate limits (per-minute, etc.) — save sentinel to avoid infinite retry
+                print(f"  [ERROR] Rate limit error: {error_msg[:200]}")
+                return AnalysisResult(
+                    job_id=job_id, ai_score=0.0,
+                    recommendation='REJECTED',
+                    reasoning=f'Rate limit: {error_msg[:200]}',
+                    tailored_resume='{}',
+                    model=self.model, tokens_used=0
+                )
         except Exception as e:
             print(f"  [ERROR] AI analysis failed for {job_id}: {ascii(str(e))}")
             # Save sentinel to prevent infinite retry on deterministic errors

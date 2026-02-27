@@ -1,6 +1,9 @@
-# LinkedIn Job Search Configuration
-# ==================================
-# Define multiple search profiles with boolean query combinations
+# LinkedIn Job Search Configuration v2.1
+# ======================================
+# 5-group strategy optimized for Fei's background:
+# - 6 years exp: data pipelines + ML systems + quant research
+# - Core skills: Python, SQL, Spark, PyTorch, data engineering
+# - Target: Data Engineer / ML Engineer / Analytics Engineer
 
 defaults:
   location: "Netherlands"
@@ -11,52 +14,112 @@ defaults:
 
 # Search profiles
 profiles:
-  # Profile 1: ML/AI/Data (Boolean search)
-  ml_data:
-    name: "ML & Data Engineering"
+  # ============================================================
+  # Group 1: Data Engineering Core (PRIMARY TARGET)
+  # ============================================================
+  data_engineering:
+    name: "Data Engineering Core"
     enabled: true
     priority: 1
     queries:
-      - keywords: '"Machine Learning" OR "Deep Learning" OR "Computer Vision" OR "NLP" OR "Data Engineer" OR "MLOps" OR "AI Engineer" OR "LLM" OR "Analytics Engineer" OR "Data Consultant"'
-        description: "ML/Data combined search"
+      - keywords: '"Data Engineer" OR "Analytics Engineer" OR "Data Platform Engineer" OR "ETL Engineer"'
+        description: "Data pipeline & platform roles"
 
     iamexpat:
       queries:
         - keywords: "data engineer"
         - keywords: "analytics engineer"
-        - keywords: "machine learning engineer"
-        - keywords: "data analyst"
-        - keywords: "data scientist"
-        - keywords: "data consultant"
+        - keywords: "data platform engineer"
 
-  # Profile 2: Backend/Software Engineering (Boolean search)
-  backend_data:
+  # ============================================================
+  # Group 2: ML Engineering (DIFFERENTIATION)
+  # ============================================================
+  ml_engineering:
+    name: "ML Engineering"
+    enabled: true
+    priority: 1
+    queries:
+      - keywords: '"Machine Learning Engineer" OR "ML Engineer" OR "AI Engineer" OR "MLOps Engineer"'
+        description: "ML systems & MLOps roles"
+
+    iamexpat:
+      queries:
+        - keywords: "machine learning engineer"
+        - keywords: "ml engineer"
+        - keywords: "mlops engineer"
+
+  # ============================================================
+  # Group 3: Backend Engineering (FALLBACK)
+  # ============================================================
+  backend_engineering:
     name: "Backend Engineering"
     enabled: true
     priority: 2
     queries:
-      - keywords: '"Python Developer" OR "Backend Engineer" OR "Software Engineer"'
-        description: "Backend combined search"
+      - keywords: '"Software Engineer" OR "Backend Engineer" OR "Python Developer" OR "Backend Developer"'
+        description: "General backend & Python roles"
 
     iamexpat:
       queries:
         - keywords: "python developer"
         - keywords: "backend engineer"
+        - keywords: "software engineer"
 
-  # Profile 3: Quant/Trading (Boolean search)
+  # ============================================================
+  # Group 4: Data Science & Analytics (EDGE CASE)
+  # ============================================================
+  data_science:
+    name: "Data Science & Analytics"
+    enabled: true
+    priority: 3
+    queries:
+      - keywords: '"Data Scientist" OR "Data Analyst" OR "BI Engineer" OR "Data Consultant"'
+        description: "Data science & analytics roles"
+
+    iamexpat:
+      queries:
+        - keywords: "data scientist"
+        - keywords: "data analyst"
+        - keywords: "data consultant"
+
+  # ============================================================
+  # Group 5: Quantitative (HIGH VALUE)
+  # ============================================================
   quant:
     name: "Quantitative & Trading"
     enabled: true
     priority: 1
     queries:
-      - keywords: '"Quantitative Researcher" OR "Quantitative Developer" OR "Quantitative Analyst" OR "Algorithmic Trading" OR "Quant Trader"'
-        description: "Quant combined search"
+      - keywords: '"Quantitative Researcher" OR "Quantitative Developer" OR "Quantitative Analyst" OR "Quant Trader"'
+        description: "Quant & trading roles"
 
     iamexpat:
       queries:
         - keywords: "quantitative"
 
-  # Profile 4: Quick test (single keyword for testing)
+  # ============================================================
+  # Legacy profiles (DISABLED, kept for reference)
+  # ============================================================
+  ml_data:
+    name: "[LEGACY] ML & Data Engineering"
+    enabled: false
+    priority: 99
+    queries:
+      - keywords: '"Machine Learning" OR "Deep Learning" OR "Computer Vision" OR "NLP"'
+        description: "[LEGACY] ML/AI core search"
+      - keywords: '"Data Engineer" OR "MLOps" OR "Analytics Engineer" OR "Data Consultant"'
+        description: "[LEGACY] Data Engineering search"
+      - keywords: '"AI Engineer" OR "LLM" OR "ML Engineer"'
+        description: "[LEGACY] AI/LLM search"
+
+  backend_data:
+    name: "[LEGACY] Backend Engineering"
+    enabled: false
+    priority: 99
+    queries:
+      - keywords: '"Python Developer" OR "Backend Engineer" OR "Software Engineer"'
+        description: "[LEGACY] Backend combined search"
+
   quick_test:
     name: "Quick Test"
     enabled: false
