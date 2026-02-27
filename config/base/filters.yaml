@@ -72,6 +72,7 @@ hard_reject_rules:
       - "analytics"
       - "scientist"
       - "research"
+      - "researcher"
       - "algorithm"
       - "deep learning"
       - "nlp"
@@ -79,8 +80,6 @@ hard_reject_rules:
       - "mlops"
       - "software"
       - "backend"
-      - "developer"
-      - "engineer"
     # 标题包含以下任一关键词直接拒绝 (优先于上面的白名单)
     title_reject_patterns:
       - "\\bpolicy\\b"
@@ -117,7 +116,6 @@ hard_reject_rules:
       - "\\bdotnet\\b|\\b\\.net\\b|\\bc#\\b"
       - "\\bjava\\b(?!.*(?:script|data|ml|machine learning|ai))"
       - "\\bruby\\b"
-      - "\\bfull\\s*stack\\b"
       - "\\breact\\b.*\\b(developer|engineer)\\b"
       - "\\bangular\\b.*\\b(developer|engineer)\\b"
     # 正文中不相关技术栈关键词 (>= threshold 个则拒绝)
