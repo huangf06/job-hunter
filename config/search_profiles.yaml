@@ -98,6 +98,25 @@ profiles:
         - keywords: "quantitative"
 
   # ============================================================
+  # Group 6: ML Research (ACADEMIC/RESEARCH-ORIENTED)
+  # ============================================================
+  ml_research:
+    name: "ML Research & Applied Science"
+    enabled: true
+    priority: 2
+    queries:
+      - keywords: '"Machine Learning Researcher" OR "Research Engineer" OR "Applied Scientist" OR "Research Scientist"'
+        description: "ML research & applied science roles"
+      - keywords: '"Deep Learning" OR "Computer Vision" OR "NLP" OR "LLM"'
+        description: "Specialized ML research areas"
+
+    iamexpat:
+      queries:
+        - keywords: "machine learning researcher"
+        - keywords: "research scientist"
+        - keywords: "applied scientist"
+
+  # ============================================================
   # Legacy profiles (DISABLED, kept for reference)
   # ============================================================
   ml_data:
