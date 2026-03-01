@@ -800,12 +800,17 @@ class AIAnalyzer:
                     model=self.model, tokens_used=0
                 )
         except Exception as e:
-            print(f"  [ERROR] AI analysis failed for {job_id}: {ascii(str(e))}")
+            error_msg = str(e)
+            # Insufficient balance (403) — transient billing issue, do NOT save sentinel
+            if 'INSUFFICIENT_BALANCE' in error_msg or 'Insufficient account balance' in error_msg:
+                print(f"  [BALANCE] Insufficient balance — skipping (will retry after top-up)")
+                return None  # No sentinel, job remains unanalyzed
+            print(f"  [ERROR] AI analysis failed for {job_id}: {ascii(error_msg)}")
             # Save sentinel to prevent infinite retry on deterministic errors
             return AnalysisResult(
                 job_id=job_id, ai_score=0.0,
                 recommendation='REJECTED',
-                reasoning=f'Analysis error: {str(e)[:200]}',
+                reasoning=f'Analysis error: {error_msg[:200]}',
                 tailored_resume='{}',
                 model=self.model, tokens_used=0
             )
@@ -886,6 +891,7 @@ class AIAnalyzer:
             print(f"  [WARN] Could not query daily token usage: {e} — starting from 0")
             total_tokens = 0
 
+        consecutive_none = 0  # Track consecutive None returns (quota/balance issues)
         with self.db.batch_mode():
             for i, job in enumerate(jobs):
                 title = job.get('title', '')[:45]
@@ -899,9 +905,14 @@ class AIAnalyzer:
                         self.db.save_analysis(result)
                         analyzed += 1
                         total_tokens += result.tokens_used
+                        consecutive_none = 0
                         print(f"-> {result.recommendation} ({result.ai_score:.1f})")
                     else:
-                        print("-> FAILED")
+                        consecutive_none += 1
+                        print("-> SKIPPED (transient)")
+                        if consecutive_none >= 3:
+                            print(f"\n[AI Analyzer] 3 consecutive failures (quota/balance) — stopping batch early.")
+                            break
                 except AuthenticationError:
                     print(f"\n[AI Analyzer] Authentication failed — stopping batch. Check API key.")
                     break
