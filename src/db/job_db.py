@@ -454,6 +454,7 @@ class JobDatabase:
         self._libsql_raw = None
         self._in_transaction = False
         self._batch_active = False
+        self._sync_disabled = False  # Set True after persistent WalConflict
         if self._turso_url:
             if not self._turso_token:
                 raise ValueError(
@@ -574,6 +575,74 @@ class JobDatabase:
         if 'submit_dir' not in existing:
             conn.execute("ALTER TABLE resumes ADD COLUMN submit_dir TEXT")
 
+    def _try_sync(self, context: str = "sync") -> None:
+        """Attempt Turso sync, disabling further syncs on persistent WalConflict.
+
+        On the first WalConflict, attempts to delete the local DB files and
+        reconnect fresh from Turso.  If recovery fails (or we're mid-transaction
+        and can't safely reset), disables sync for the rest of the session.
+        Local data is still committed and usable.
+        """
+        if self._sync_disabled or self._libsql_raw is None:
+            return
+        try:
+            self._libsql_raw.sync()
+        except BaseException as e:
+            err_msg = str(e)
+            if "WalConflict" not in err_msg:
+                # Non-WalConflict error — log and move on (original behavior)
+                logger.warning("Turso %s failed: %s", context, e)
+                return
+            # WalConflict — disable sync immediately to stop the spam
+            self._sync_disabled = True
+            # Only attempt destructive reset if we're NOT in a transaction
+            # (post-commit sync means data was just written to the local DB;
+            # deleting it would lose that data).
+            if self._in_transaction:
+                logger.warning(
+                    "Turso %s hit WalConflict mid-transaction — "
+                    "sync disabled for this session (local data preserved)",
+                    context,
+                )
+                return
+            logger.warning(
+                "Turso %s hit WalConflict — "
+                "attempting replica reset from Turso remote",
+                context,
+            )
+            # Try to rebuild local replica from remote
+            try:
+                import libsql
+                self._libsql_raw = None
+                # Delete all local DB files (db + WAL + metadata)
+                for suffix in ("", "-wal", "-shm", "-info",
+                               "-client_wal_index",
+                               "-client_wal_index-shm",
+                               "-client_wal_index-wal"):
+                    p = self.db_path.parent / (self.db_path.name + suffix)
+                    if p.exists():
+                        p.unlink()
+                        logger.info("Deleted %s for replica reset", p.name)
+                self._libsql_raw = libsql.connect(
+                    str(self.db_path),
+                    sync_url=self._turso_url,
+                    auth_token=self._turso_token,
+                )
+                self._libsql_raw.sync()
+                self._libsql_raw.execute("PRAGMA journal_mode=WAL")
+                self._libsql_raw.execute("PRAGMA busy_timeout=5000")
+                self._libsql_raw.execute("PRAGMA foreign_keys=ON")
+                self._sync_disabled = False  # recovery succeeded
+                logger.info(
+                    "Turso replica reset successful — sync re-enabled"
+                )
+            except Exception as reset_err:
+                logger.warning(
+                    "Turso replica reset failed (%s) — "
+                    "sync disabled for this session, using local data",
+                    reset_err,
+                )
+
     @contextmanager
     def _get_conn(self, *, sync_before=True):
         """获取数据库连接 (Turso embedded replica or local SQLite)
@@ -599,29 +668,30 @@ class JobDatabase:
                                and not self._batch_active
                                and self._sync_mode == "full")
             if should_pre_sync:
+                self._try_sync("pre-read sync")
+            # Re-check: _try_sync may have reset self._libsql_raw on
+            # WalConflict recovery failure.
+            if self._libsql_raw is None:
+                use_libsql = False
+            if use_libsql:
+                # Health check: verify libsql can actually read data.
+                # On Windows, libsql embedded replicas have a known bug where the
+                # connection appears valid but data reads fail with
+                # "file is not a database".  Detect this early and fall back to
+                # plain sqlite3 for the rest of the session.
                 try:
-                    self._libsql_raw.sync()
-                except BaseException as e:
-                    # BaseException: KeyboardInterrupt / pyo3 PanicException
-                    logger.warning("Turso pre-read sync failed (using local data): %s", e)
-            # Health check: verify libsql can actually read data.
-            # On Windows, libsql embedded replicas have a known bug where the
-            # connection appears valid but data reads fail with
-            # "file is not a database".  Detect this early and fall back to
-            # plain sqlite3 for the rest of the session.
-            try:
-                self._libsql_raw.execute(
-                    "SELECT 1 FROM sqlite_master LIMIT 1"
-                ).fetchone()
-            except (ValueError, Exception) as e:
-                if "file is not a database" in str(e):
-                    logger.warning(
-                        "libsql connection unusable (%s), "
-                        "falling back to local SQLite for this session", e)
-                    self._libsql_raw = None
-                    use_libsql = False
-                else:
-                    raise
+                    self._libsql_raw.execute(
+                        "SELECT 1 FROM sqlite_master LIMIT 1"
+                    ).fetchone()
+                except (ValueError, Exception) as e:
+                    if "file is not a database" in str(e):
+                        logger.warning(
+                            "libsql connection unusable (%s), "
+                            "falling back to local SQLite for this session", e)
+                        self._libsql_raw = None
+                        use_libsql = False
+                    else:
+                        raise
 
         if use_libsql:
             self._in_transaction = True
@@ -632,11 +702,7 @@ class JobDatabase:
                 # Sync after commit — skip if inside batch_mode() or
                 # startup_only mode (defers all syncs to final_sync()).
                 if not self._batch_active and self._sync_mode == "full":
-                    try:
-                        self._libsql_raw.sync()
-                    except BaseException as e:
-                        # BaseException: KeyboardInterrupt / pyo3 PanicException
-                        logger.warning("Turso post-commit sync failed (data committed locally): %s", e)
+                    self._try_sync("post-commit sync")
             except BaseException:
                 conn.rollback()
                 raise
@@ -673,10 +739,7 @@ class JobDatabase:
         finally:
             self._batch_active = False
             if self._libsql_raw and self._sync_mode == "full":
-                try:
-                    self._libsql_raw.sync()
-                except BaseException as e:
-                    logger.warning("Turso batch sync failed: %s", e)
+                self._try_sync("batch sync")
 
     def final_sync(self):
         """Push all local changes to Turso remote.
@@ -688,15 +751,9 @@ class JobDatabase:
         """
         if not self._libsql_raw:
             return
-        try:
-            self._libsql_raw.sync()
+        self._try_sync("final sync")
+        if not self._sync_disabled:
             logger.info("Turso final sync complete")
-        except BaseException as e:
-            # Catch BaseException (not just Exception) because:
-            # - KeyboardInterrupt propagates into pyo3/Rust and causes panics
-            # - pyo3_runtime.PanicException inherits from BaseException
-            # Data is committed locally; Turso sync will catch up next run.
-            logger.warning("Turso final sync failed: %s", e)
 
     def execute(self, sql: str, params: tuple = ()) -> list:
         """执行 SQL 并返回结果行（用于 ad-hoc 查询和数据修改）"""
