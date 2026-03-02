@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebius HR Screening - Deep Checklist Analysis</title>
+    <style>
+:root {
+    --primary: #1a365d;
+    --accent: #2c5282;
+    --text: #1a1a1a;
+    --muted: #555;
+    --light-bg: #f7fafc;
+    --border: #cbd5e0;
+    --green: #276749;
+    --green-bg: #f0fff4;
+    --red: #c53030;
+    --red-bg: #fff5f5;
+    --orange: #c05621;
+    --orange-bg: #fffaf0;
+    --yellow-bg: #fffff0;
+    --blue-bg: #ebf8ff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@page { size: A4; margin: 0.45in; }
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.4;
+    color: var(--text);
+    max-width: 8.27in;
+    margin: 0 auto;
+    padding: 0.45in;
+    background: white;
+}
+h1 {
+    font-size: 17pt;
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 3pt;
+}
+.subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 9.5pt;
+    margin-bottom: 14pt;
+    padding-bottom: 8pt;
+    border-bottom: 2pt solid var(--primary);
+}
+h2 {
+    font-size: 12.5pt;
+    color: white;
+    background: var(--primary);
+    padding: 5pt 10pt;
+    margin: 14pt 0 8pt 0;
+    page-break-after: avoid;
+}
+h3 {
+    font-size: 10.5pt;
+    color: var(--accent);
+    margin: 8pt 0 4pt 0;
+}
+.cn { color: var(--muted); font-size: 8.5pt; }
+.card {
+    background: var(--light-bg);
+    border: 1pt solid var(--border);
+    border-radius: 4pt;
+    padding: 7pt 9pt;
+    margin: 5pt 0;
+    page-break-inside: avoid;
+}
+.pass { background: var(--green-bg); border-left: 3pt solid var(--green); }
+.risk { background: var(--red-bg); border-left: 3pt solid var(--red); }
+.warn { background: var(--orange-bg); border-left: 3pt solid var(--orange); }
+.info { background: var(--blue-bg); border-left: 3pt solid var(--accent); }
+.script {
+    background: var(--yellow-bg);
+    border-left: 3pt solid var(--orange);
+    padding: 7pt 9pt;
+    margin: 5pt 0;
+    line-height: 1.5;
+    page-break-inside: avoid;
+}
+.script-label {
+    font-weight: bold;
+    color: var(--orange);
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    margin-bottom: 2pt;
+}
+.label {
+    display: inline-block;
+    padding: 1pt 6pt;
+    border-radius: 3pt;
+    font-size: 8pt;
+    font-weight: bold;
+    color: white;
+    margin-right: 4pt;
+}
+.label-pass { background: var(--green); }
+.label-risk { background: var(--red); }
+.label-warn { background: var(--orange); }
+.label-info { background: var(--accent); }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 5pt 0;
+    font-size: 9pt;
+}
+th {
+    background: var(--primary);
+    color: white;
+    padding: 4pt 6pt;
+    text-align: left;
+    font-size: 8.5pt;
+}
+td {
+    padding: 4pt 6pt;
+    border-bottom: 1pt solid var(--border);
+    vertical-align: top;
+}
+tr:nth-child(even) { background: var(--light-bg); }
+strong { color: var(--primary); }
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6pt;
+}
+</style>
+</head>
+<body>
+
+<h1>HR SCREENING CHECKLIST: DEEP ANALYSIS</h1>
+<div class="subtitle">Nebius Data Engineer &bull; Milly C. Muschitiello &bull; Feb 11, 2026 1:00 PM CET</div>
+
+<h2>PART 1: HOW HR SCREENING ACTUALLY WORKS</h2>
+<p class="cn">HR筛选的真实运作方式 — 理解游戏规则才能赢</p>
+
+<div class="card info">
+<strong>The Game:</strong> HR has a structured scorecard (checklist). Each item is scored Pass / Concern / Fail. They need enough "Pass" marks to forward you to the hiring manager. HR does NOT evaluate your technical depth &mdash; they check <em>signals</em>. Your job is to give them clear, checkable signals on every item.
+</div>
+
+<div class="card">
+<strong>Milly's Role:</strong> She is a recruiter, not an engineer. She will:
+<br>&bull; Follow a script of 8-12 questions in a fixed order
+<br>&bull; Type notes into an ATS (Applicant Tracking System) while you talk
+<br>&bull; Score each answer against pre-defined criteria from the hiring manager
+<br>&bull; Decide in the first 5 minutes if you're a "yes" or "maybe" &mdash; the rest confirms
+<br>&bull; Write a summary paragraph for the hiring manager within 1 hour after the call
+</div>
+
+<div class="card info">
+<strong>What She Reports to the Hiring Manager:</strong>
+<br>&bull; Communication quality (clear? structured? confident?)
+<br>&bull; Motivation level (why this role? why Nebius?)
+<br>&bull; Experience match (years, tools, domain)
+<br>&bull; Red flags (gaps, job-hopping, salary mismatch, visa issues)
+<br>&bull; Availability &amp; logistics (start date, location, work authorization)
+<br>&bull; Overall recommendation: <strong>Strong Yes / Yes / Maybe / No</strong>
+</div>
+
+<h2>PART 2: THE RECONSTRUCTED CHECKLIST</h2>
+<p class="cn">还原HR的评分清单 — 逐项拆解</p>
+
+<p>Based on the JD requirements, your resume, and standard HR screening practices at tech companies, here is the likely checklist Milly will use:</p>
+
+<table>
+<tr>
+    <th style="width:5%">#</th>
+    <th style="width:25%">Checklist Item</th>
+    <th style="width:15%">What HR Checks</th>
+    <th style="width:15%">Your Status</th>
+    <th style="width:40%">Risk &amp; Strategy</th>
+</tr>
+<tr>
+    <td>1</td>
+    <td><strong>Years of DE Experience</strong><br><span class="cn">数据工程年限</span></td>
+    <td>JD says 3+ years</td>
+    <td><span class="label label-warn">RISK</span></td>
+    <td>Resume shows ~2 yrs direct DE at GLP + adjacent roles. <strong>Strategy:</strong> Frame as "5+ years working with data pipelines across multiple roles" &mdash; count Baiquan + GLP + current project.</td>
+</tr>
+<tr>
+    <td>2</td>
+    <td><strong>Pipeline Orchestration</strong><br><span class="cn">管道编排工具</span></td>
+    <td>Airflow, Prefect, or Dagster</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>Airflow is on your resume. Mention it early and naturally. "I use Airflow daily in my current project."</td>
+</tr>
+<tr>
+    <td>3</td>
+    <td><strong>SQL + Python</strong><br><span class="cn">核心语言</span></td>
+    <td>Strong proficiency</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>Both prominently on resume. No action needed &mdash; this is a free checkbox.</td>
+</tr>
+<tr>
+    <td>4</td>
+    <td><strong>Distributed Processing</strong><br><span class="cn">分布式处理</span></td>
+    <td>Spark or similar</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>PySpark + Databricks on resume. Strong match. Mention "processing terabyte-scale datasets with Spark."</td>
+</tr>
+<tr>
+    <td>5</td>
+    <td><strong>Data Modeling</strong><br><span class="cn">数据建模</span></td>
+    <td>Understanding of principles</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>Delta Lake + Hive on resume implies modeling. If asked, say: "I design star schemas and medallion architectures in my lakehouse project."</td>
+</tr>
+<tr>
+    <td>6</td>
+    <td><strong>Work Authorization</strong><br><span class="cn">工作许可</span></td>
+    <td>Can work in NL legally?</td>
+    <td><span class="label label-warn">RISK</span></td>
+    <td>You need sponsorship (likely). Nebius sponsors (they're used to it as ex-Yandex). Say: "I have a valid residence permit as a recent graduate. I understand Nebius sponsors work visas and I'm happy to discuss the details."</td>
+</tr>
+<tr>
+    <td>7</td>
+    <td><strong>Location / Hybrid</strong><br><span class="cn">工作地点</span></td>
+    <td>Based in Amsterdam?</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>You're in Amsterdam. Free checkbox. "I'm already based in Amsterdam."</td>
+</tr>
+<tr>
+    <td>8</td>
+    <td><strong>Salary Expectations</strong><br><span class="cn">薪资期望</span></td>
+    <td>Within budget?</td>
+    <td><span class="label label-warn">RISK</span></td>
+    <td>If too high = instant reject. If too low = suspicion. <strong>Strategy:</strong> Deflect first. If pressed: "Based on my research, I'm targeting around 90-110K total compensation, but I'm flexible for the right opportunity."</td>
+</tr>
+<tr>
+    <td>9</td>
+    <td><strong>Career Gap</strong><br><span class="cn">职业空白期</span></td>
+    <td>2019-2023 (4 years)</td>
+    <td><span class="label label-risk">HIGH RISK</span></td>
+    <td>This is your #1 vulnerability. She WILL ask. See Part 3 for detailed strategy.</td>
+</tr>
+<tr>
+    <td>10</td>
+    <td><strong>Motivation / Why Nebius</strong><br><span class="cn">动机</span></td>
+    <td>Genuine interest?</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>Show you researched them. Mention: AI infrastructure, 355% revenue growth, Amsterdam HQ. "I'm excited about building data infrastructure for AI at scale."</td>
+</tr>
+<tr>
+    <td>11</td>
+    <td><strong>Communication Quality</strong><br><span class="cn">沟通能力</span></td>
+    <td>Clear, structured, confident</td>
+    <td><span class="label label-warn">RISK</span></td>
+    <td>English is your second language. <strong>Strategy:</strong> Use prepared scripts. Speak slowly. Use the STAR framework. Pause before answering. Quality > speed.</td>
+</tr>
+<tr>
+    <td>12</td>
+    <td><strong>Availability / Notice</strong><br><span class="cn">到岗时间</span></td>
+    <td>When can you start?</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>You're available immediately (no current employer). "I can start within 2-4 weeks, depending on the visa process."</td>
+</tr>
+<tr>
+    <td>13</td>
+    <td><strong>On-Call Willingness</strong><br><span class="cn">值班意愿</span></td>
+    <td>JD mentions on-call rotation</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>Just say yes. "Absolutely, I understand on-call is part of maintaining reliable data infrastructure."</td>
+</tr>
+<tr>
+    <td>14</td>
+    <td><strong>Culture Fit / Enthusiasm</strong><br><span class="cn">文化契合</span></td>
+    <td>Energy, curiosity, team player</td>
+    <td><span class="label label-pass">PASS</span></td>
+    <td>Smile. Show energy. Ask good questions at the end. Mention teamwork from GLP leadership experience.</td>
+</tr>
+</table>
+
+<div class="card info">
+<strong>Score Summary:</strong> 8 Pass, 4 Risk, 1 High Risk, 1 Warn. You need to convert the risks to passes. The next sections show you exactly how.
+</div>
+
+<h2>PART 3: CAREER GAP — YOUR #1 VULNERABILITY</h2>
+<p class="cn">职业空白期 — 你最大的弱点，也是最需要准备的问题</p>
+
+<div class="card risk">
+<strong>The Problem:</strong> Your resume shows work ending Aug 2019 and education starting Sep 2023. That's a <strong>4-year gap</strong>. HR is trained to flag gaps > 6 months. A 4-year gap is a major red flag that WILL be questioned.
+<br><br>
+<strong>What HR Fears:</strong>
+<br>&bull; Were you fired and couldn't find work?
+<br>&bull; Do you have outdated skills?
+<br>&bull; Will you leave again after a short time?
+<br>&bull; Is there something you're hiding?
+</div>
+
+<div class="card pass">
+<strong>Your Narrative (memorize this):</strong> The gap was a <em>deliberate life transition</em>, not unemployment. You need to tell a story with 3 beats:
+<br><br>
+<strong>Beat 1 — The Why:</strong> "After 6 years in China's tech industry, I made a deliberate decision to pursue a career transition into AI and data engineering in Europe."
+<br><br>
+<strong>Beat 2 — What You Did:</strong> "During that period, I was actively investing and managing a personal portfolio, which kept my analytical skills sharp. I also spent significant time learning Dutch and English, and preparing for my Master's program."
+<br><br>
+<strong>Beat 3 — The Result:</strong> "That investment in myself paid off — I was accepted into VU Amsterdam's AI program with an 8.2 GPA, earned my Databricks certification, and I'm now fully committed to building my career in data engineering here in the Netherlands."
+</div>
+
+<div class="script">
+<div class="script-label">FULL SCRIPT — Career Gap Answer (practice this exact wording)</div>
+"That's a great question. After six years in China's tech industry, I made a deliberate decision to transition my career to Europe. During that time, I managed personal investments, which kept my analytical and data skills active. I also focused on language preparation and applying to graduate programs. I was accepted at VU Amsterdam, where I completed my Master's in AI with an 8.2 GPA. Now with my Databricks certification and hands-on lakehouse project, I'm fully ready and committed to a data engineering career here in the Netherlands. I see this as a strength — I bring both the maturity of my earlier career and fresh, cutting-edge skills from my recent education."
+</div>
+
+<div class="card warn">
+<strong>RULES for the gap conversation:</strong>
+<br>&bull; <strong>Never apologize</strong> for the gap. Frame it as intentional.
+<br>&bull; <strong>Never say "I was unemployed"</strong> or "I took time off." Say "I was preparing for my career transition."
+<br>&bull; <strong>Keep it under 45 seconds.</strong> Long explanations = guilt signal.
+<br>&bull; <strong>End on the future,</strong> not the past. Pivot to "and now I'm ready to..."
+<br>&bull; <strong>If she probes deeper:</strong> "I also did independent research in quantitative analysis and kept up with the data engineering ecosystem. It was a very productive period."
+<br>&bull; <strong>Never mention 996</strong> or Chinese work culture negatively. It sounds like complaining.
+<br>&bull; <strong>Never mention political reasons</strong> for leaving China. Keep it purely career-focused.
+</div>
+
+<h3>The Language Learning Trap — A Memorable Moment</h3>
+<p class="cn">语言学习包袱 — 制造记忆点的三层结构</p>
+
+<div class="card info">
+<strong>Setup:</strong> In your gap answer, mention "language preparation" without specifying which language. This creates a natural hook for HR to ask.
+</div>
+
+<div class="card">
+<strong>Layer 1 (you say in gap answer):</strong> "...I also invested heavily in language preparation for my move to Europe."
+<br><br>
+<strong>Layer 2 (when she asks "What language?"):</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"Actually, English. This might surprise you, but in China, almost all professional work is conducted entirely in Chinese. Less than one percent of people in China can hold a professional conversation in English. So learning English to a working level was a major investment for me. On top of that, I also spent six months in Germany learning German."
+</div>
+
+<div class="card">
+<strong>Layer 3 (if she asks how you learned):</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I actually organized an online English speaking group myself, because there were so few opportunities to practice. We met every day for conversation practice. That's how I built my speaking skills."
+</div>
+
+<div class="card warn">
+<strong>Rules:</strong> Only reveal each layer when she asks. Don't volunteer Layer 2 or 3 unprompted. This keeps each answer fresh and maintains her interest. The "less than 1%" fact reframes your English level from "not fluent" to "trilingual achiever."
+</div>
+
+<h3>HR's 6 Probing Attacks on the Gap — And Your Defenses</h3>
+<p class="cn">HR对空白期的6种追问攻势及应对</p>
+
+<div class="card">
+<strong>Attack 1: "Why did you leave GLP in 2019?"</strong>
+<br><em>She checks: Were you fired? Did you have conflicts?</em>
+</div>
+<div class="script">
+<div class="script-label">DEFENSE</div>
+"After two years at GLP where I was promoted to team lead, I felt it was the right time to pursue my long-term goal of building an international career. I had always wanted to work in Europe, and I decided to take the leap."
+</div>
+
+<div class="card">
+<strong>Attack 2: "You went to Germany? What happened there?"</strong>
+<br><em>She checks: Why didn't you stay? What went wrong?</em>
+</div>
+<div class="script">
+<div class="script-label">DEFENSE</div>
+"Yes, I spent about six months in Germany learning the language and exploring the tech scene there. It was a valuable experience, but when COVID hit in early 2020, my plans were disrupted and I returned to China."
+<br><br><em>NOTE: Never say "visa expired" — use "COVID disrupted my plans." COVID is universally accepted.</em>
+</div>
+
+<div class="card">
+<strong>Attack 3: "What did you do during COVID? Why didn't you work?"</strong>
+<br><em>She checks: Were you just idle for 3 years?</em>
+</div>
+<div class="script">
+<div class="script-label">DEFENSE</div>
+"During the pandemic, I stayed productive. I managed a personal investment portfolio, which kept my analytical and data skills sharp. I also used that time for intensive self-study and preparing for graduate school applications. China had very strict lockdowns — policy reasons made it very difficult to pursue international opportunities, but I made the most of that period."
+<br><br><em>NOTE: "Policy reasons" = she understands China's zero-COVID. Don't elaborate further.</em>
+</div>
+
+<div class="card">
+<strong>Attack 4: "Why didn't you just find another job in China?"</strong>
+<br><em>She checks: Were you unable to find work?</em>
+</div>
+<div class="script">
+<div class="script-label">DEFENSE</div>
+"My goal was always to build my career in Europe, not to go back to the Chinese tech industry. I didn't want to start a new position in China knowing I would leave soon. Instead, I focused on preparing for the best possible Master's program, and that investment paid off — I was accepted at VU Amsterdam with an 8.2 GPA."
+</div>
+
+<div class="card">
+<strong>Attack 5: "How can we be sure you'll stay long-term?"</strong>
+<br><em>She checks: Flight risk? Will you leave after 1 year?</em>
+</div>
+<div class="script">
+<div class="script-label">DEFENSE</div>
+"That's a fair question. I've spent five years working toward this — learning languages, completing a Master's degree, getting certified. Amsterdam is my home now. I'm not exploring options; I'm building my career here. Nebius is exactly the kind of company where I want to grow long-term."
+</div>
+
+<div class="card">
+<strong>Attack 6: "So you haven't worked professionally since 2019?"</strong>
+<br><em>She checks: Are your skills outdated?</em>
+</div>
+<div class="script">
+<div class="script-label">DEFENSE</div>
+"I haven't been in a traditional employment role since 2019, that's correct. But I've been far from idle — I completed a rigorous Master's program in AI, earned a professional Databricks certification, and I'm currently building a production-grade data lakehouse. I'd say the last two years have been the most technically intensive of my career."
+</div>
+
+<h2>PART 4: EXPERIENCE YEARS — REFRAMING THE MATH</h2>
+<p class="cn">工作年限 — 如何重新计算让数字对你有利</p>
+
+<div class="card risk">
+<strong>The Problem:</strong> JD requires "3+ years of data engineering experience." Your resume shows:
+<br>&bull; GLP Technology: Data Scientist &amp; Team Lead (Jul 2017 - Aug 2019) = 2 years
+<br>&bull; Baiquan Investment: Quant Researcher (Jul 2015 - Jun 2017) = 2 years
+<br>&bull; Ele.me: Data Analyst (Sep 2013 - Jul 2015) = 2 years
+<br>&bull; Current: Financial Data Lakehouse project (Oct 2025 - Present) = 4 months
+<br><br>
+<strong>Strict DE count:</strong> ~2 years (GLP only). <strong>This doesn't meet the 3+ requirement.</strong>
+</div>
+
+<div class="card pass">
+<strong>The Reframe:</strong> Don't count by job title. Count by <em>what you actually did</em>.
+<br><br>
+<table>
+<tr><th>Role</th><th>DE-Relevant Work</th><th>Years</th></tr>
+<tr><td>GLP Technology</td><td>Built data pipelines, ETL, team leadership, production systems</td><td>2 yrs</td></tr>
+<tr><td>Baiquan Investment</td><td>Data pipelines for quant models, SQL optimization, data processing</td><td>2 yrs</td></tr>
+<tr><td>Ele.me/Alibaba</td><td>Large-scale data analysis, SQL, data modeling at Alibaba scale</td><td>2 yrs</td></tr>
+<tr><td>Lakehouse Project</td><td>Databricks, Spark, Delta Lake, Airflow — pure DE work</td><td>0.3 yr</td></tr>
+</table>
+<strong>Total DE-relevant experience: 6+ years</strong>
+</div>
+
+<div class="script">
+<div class="script-label">SCRIPT — When asked about years of experience</div>
+"I have over six years of experience working with data pipelines and data infrastructure across different roles. At GLP, I built and maintained production data pipelines and led a data team. At Baiquan, I designed data processing systems for quantitative research. And at Ele.me, part of Alibaba, I worked with large-scale data at one of China's biggest platforms. Combined with my current Databricks lakehouse project, I have deep, hands-on experience with the full data engineering stack."
+</div>
+
+<div class="card warn">
+<strong>KEY RULE:</strong> Never say "2 years of data engineering." Always say "6+ years working with data pipelines and infrastructure." HR writes down the number you say. Make it the right number.
+</div>
+
+<h2>PART 5: JOB TITLE MISMATCH — "DATA SCIENTIST" vs "DATA ENGINEER"</h2>
+<p class="cn">职位名称不匹配 — 如何解释</p>
+
+<div class="card risk">
+<strong>The Problem:</strong> Your most relevant role (GLP) has the title "Data Scientist &amp; Team Lead," not "Data Engineer." HR may wonder: are you a data scientist trying to switch to DE?
+</div>
+
+<div class="card pass">
+<strong>The Strategy:</strong> Explain that in Chinese tech companies (especially smaller ones), titles don't map 1:1 to Western conventions. Your actual work was DE work.
+</div>
+
+<div class="script">
+<div class="script-label">SCRIPT — If asked about the title difference</div>
+"Great question. At GLP, my title was Data Scientist, but in practice, about 70% of my work was what you'd call data engineering here in Europe — building ETL pipelines, maintaining data infrastructure, and leading the data platform team. In Chinese tech companies, especially at startups, titles are often broader. The actual work I did maps directly to this Data Engineer role."
+</div>
+
+<h2>PART 6: SALARY NEGOTIATION — THE CHESS GAME</h2>
+<p class="cn">薪资谈判 — 棋局策略</p>
+
+<div class="card info">
+<strong>HR's Goal:</strong> Determine if you're within budget BEFORE investing more interview time. If your number is way above budget, they'll reject you now to save everyone's time. If it's way below, they'll note it as a positive (cheap hire).
+<br><br>
+<strong>Your Goal:</strong> Stay in the game without anchoring too low. The real negotiation happens AFTER the offer, not now.
+</div>
+
+<div class="card warn">
+<strong>The 3-Step Salary Dance:</strong>
+<br><br>
+<strong>Step 1 — Deflect:</strong> "I'd love to learn more about the role and the team before discussing specific numbers. Could you share the budget range for this position?"
+<br><br>
+<strong>Step 2 — If she insists:</strong> "Based on my research of data engineering roles in Amsterdam, I'm looking at a total compensation in the range of 90 to 110 thousand euros. But I'm flexible — the role and growth opportunity matter more to me than the exact number."
+<br><br>
+<strong>Step 3 — If she gives a range:</strong> "That sounds reasonable. I'm sure we can find something that works for both sides."
+</div>
+
+<div class="card risk">
+<strong>NEVER DO:</strong>
+<br>&bull; Never give a single number (e.g., "I want 100K"). Always give a range.
+<br>&bull; Never say your current salary is zero (even though you're not employed). Say "I prefer to focus on the market rate for this role."
+<br>&bull; Never ask about salary first. Let her bring it up.
+<br>&bull; Never say "I'll take anything" — this signals desperation.
+</div>
+
+<h2>PART 7: MUST-HAVE &amp; NICE-TO-HAVE — DETAILED SCRIPTS</h2>
+<p class="cn">必备技能与加分项 — 逐项详细措辞</p>
+
+<div class="card info">
+<strong>Principle:</strong> Must-haves use <strong>present tense</strong> ("I use", "I work with") to signal current competence. Nice-to-haves use <strong>progressive tense</strong> ("I'm learning", "I'm expanding") to signal growth. Never use past tense "I used to..."
+</div>
+
+<h3>MUST-HAVES (she must check ALL of these)</h3>
+
+<div class="card">
+<strong>1. "3+ years of data engineering experience"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I have over six years of experience working with data pipelines and data infrastructure. At GLP I built production ETL systems and led the data team, at Baiquan I designed data pipelines for quantitative trading, and at Ele.me — part of Alibaba — I worked with data at massive scale. Plus my current lakehouse project on Databricks."
+</div>
+
+<div class="card">
+<strong>2. "Pipeline orchestration (Airflow, Prefect, Dagster)"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I use Airflow for pipeline orchestration in my current project. I'm also familiar with the concepts behind Prefect and Dagster — they solve similar problems with different approaches."
+</div>
+
+<div class="card">
+<strong>3. "Strong SQL and Python"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"Python and SQL are my primary tools — I use them every day. Python for pipeline development and data processing, SQL for data modeling and analysis."
+</div>
+
+<div class="card">
+<strong>4. "Distributed data processing (Apache Spark)"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I work with PySpark on Databricks, processing large-scale financial datasets. I'm comfortable with Spark's architecture — partitioning, shuffles, optimization."
+</div>
+
+<div class="card">
+<strong>5. "Data modeling principles"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"Yes, I design data models following the medallion architecture — bronze, silver, gold layers — in my lakehouse project. I also have experience with star schemas and dimensional modeling from my earlier roles."
+</div>
+
+<div class="card">
+<strong>6. "Data architectures and storage systems"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I've worked with both data warehouse and data lake architectures. Currently I'm building a lakehouse on Delta Lake, which combines the best of both. I also have experience with Hive and traditional relational databases."
+</div>
+
+<h3>NICE-TO-HAVES (bonus points, not required)</h3>
+
+<div class="card">
+<strong>7. "Real-time streaming"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I have some experience with Spark Structured Streaming for near-real-time processing. It's an area I'm actively looking to deepen — and I know it's important for modern data infrastructure."
+</div>
+
+<div class="card">
+<strong>8. "Infrastructure as Code (Terraform)"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I haven't used Terraform in production yet, but I understand the concept of Infrastructure as Code and I'm currently learning it. It's a natural next step given my Docker experience."
+</div>
+
+<div class="card">
+<strong>9. "Docker and Kubernetes"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"I use Docker regularly for containerizing my applications. For Kubernetes, I have foundational knowledge and I'm expanding it."
+</div>
+
+<div class="card">
+<strong>10. "GDPR, SOC2"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"Living and working in the Netherlands, I'm very aware of GDPR requirements. I understand the principles of data governance — access control, data minimization, audit trails. SOC2 is something I'd be happy to learn more about in a professional context."
+</div>
+
+<div class="card">
+<strong>11. "Data quality tools (Great Expectations)"</strong>
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"In my current project, I implement data validation checks at each pipeline stage. I'm familiar with Great Expectations as a framework and I'd be excited to use it in a production environment."
+</div>
+
+<div class="card">
+<strong>12. "Coding interviews"</strong> (if she mentions this)
+</div>
+<div class="script">
+<div class="script-label">SCRIPT</div>
+"That sounds great. I'm comfortable with coding challenges — I enjoy problem-solving."
+</div>
+
+<h2>PART 8: THE HIDDEN CHECKLIST — THINGS HR CHECKS BUT NEVER ASKS</h2>
+<p class="cn">隐藏清单 — HR默默观察但不会直接问的事</p>
+
+<table>
+<tr>
+    <th style="width:25%">Hidden Check</th>
+    <th style="width:35%">What They Observe</th>
+    <th style="width:40%">How to Win</th>
+</tr>
+<tr>
+    <td><strong>Punctuality</strong></td>
+    <td>Did you join on time?</td>
+    <td>Join Zoom 2-3 minutes early. Not 10 min early (awkward), not 1 min late (red flag).</td>
+</tr>
+<tr>
+    <td><strong>Camera &amp; Audio</strong></td>
+    <td>Professional setup?</td>
+    <td>Camera ON. Good lighting (face a window). Quiet background. Use headphones.</td>
+</tr>
+<tr>
+    <td><strong>Appearance</strong></td>
+    <td>Dressed appropriately?</td>
+    <td>Business casual. Collared shirt or clean sweater. No hoodies. Nebius is European tech — smart casual is fine.</td>
+</tr>
+<tr>
+    <td><strong>Energy Level</strong></td>
+    <td>Enthusiastic or flat?</td>
+    <td>Smile when greeting. Sit up straight. Nod while she speaks. Vary your tone — don't be monotone.</td>
+</tr>
+<tr>
+    <td><strong>Listening Skills</strong></td>
+    <td>Do you answer what was asked?</td>
+    <td>If unsure, paraphrase: "So you're asking about...?" This shows active listening AND buys time.</td>
+</tr>
+<tr>
+    <td><strong>Question Quality</strong></td>
+    <td>Did you ask smart questions?</td>
+    <td>Prepare 3 questions. Ask 2. Questions about team, tech stack, or growth show genuine interest.</td>
+</tr>
+<tr>
+    <td><strong>Red Flag Signals</strong></td>
+    <td>Complaining about past employers? Negative attitude?</td>
+    <td>NEVER say anything negative about past companies, bosses, or colleagues. Always positive framing.</td>
+</tr>
+<tr>
+    <td><strong>Follow-up Speed</strong></td>
+    <td>Did you send a thank-you email?</td>
+    <td>Send a short thank-you email within 2 hours after the call.</td>
+</tr>
+</table>
+
+<h2>PART 9: QUESTION-BY-QUESTION BATTLE PLAN</h2>
+<p class="cn">逐题作战计划 — 按出现概率排序</p>
+
+<div class="card" style="background: var(--red-bg);">
+<strong>Probability Legend:</strong>
+<span class="label label-risk">95%+</span> Almost certain
+<span class="label label-warn">70%+</span> Very likely
+<span class="label label-info">40%+</span> Possible
+</div>
+
+<h3><span class="label label-risk">95%</span> Q1: "Tell me about yourself"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Communication skills, career narrative, relevance to role
+<br><strong>Time Limit:</strong> 60-90 seconds MAX
+<br><strong>Trap:</strong> Going too long, starting from childhood, or being too technical
+</div>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"Hi Milly, thank you for taking the time today. I'm Fei, a data engineer based here in Amsterdam. I recently completed my Master's in Artificial Intelligence at VU Amsterdam with an 8.2 GPA, and I hold a Databricks Certified Data Engineer Professional certification. Before my Master's, I spent six years in China's tech industry, where I built data pipelines, led a data team at GLP Technology, and worked with large-scale data systems at Alibaba's Ele.me platform. Right now, I'm building a financial data lakehouse using Databricks, Spark, and Airflow. I'm very excited about this Data Engineer role at Nebius because I want to build data infrastructure for AI at scale, and Nebius is doing exactly that."
+</div>
+
+<h3><span class="label label-risk">95%</span> Q2: "Why are you interested in Nebius?"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Did you research us? Genuine motivation or just applying everywhere?
+<br><strong>Trap:</strong> Generic answers that could apply to any company
+</div>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"Three reasons. First, Nebius is building AI infrastructure at a massive scale — your GPU cloud platform and data centers in Finland and the US are really impressive. Second, the growth trajectory is incredible — 355% revenue growth year-over-year tells me this is a company with real momentum. And third, I love that Nebius is headquartered here in Amsterdam. I want to build my long-term career in the Netherlands, and joining a fast-growing AI company at this stage is a rare opportunity."
+</div>
+
+<h3><span class="label label-risk">95%</span> Q3: "Walk me through your background"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Career progression logic, gap explanation, relevance
+<br><strong>Trap:</strong> This is where the career gap comes up. She may ask it directly or wait for you to address it.
+<br><strong>Strategy:</strong> Address the gap PROACTIVELY. Don't wait for her to ask.
+</div>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"Sure. I started my career at Ele.me, which is part of Alibaba, doing data analysis at scale — millions of users, massive datasets. Then I moved to Baiquan Investment as a quant researcher, building data pipelines for trading models. After that, I joined GLP Technology where I was promoted to team lead, managing a data team and building production data systems. In 2019, I made a deliberate decision to transition my career to Europe. I spent time preparing — learning languages, managing investments, and applying to graduate programs. I was accepted at VU Amsterdam, completed my AI Master's with an 8.2 GPA, and now I'm fully focused on data engineering. My current project is a financial data lakehouse on Databricks with Spark and Airflow."
+</div>
+
+<h3><span class="label label-risk">95%</span> Q4: "Can you tell me about the gap in your resume?"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Honesty, explanation quality, red flags
+<br><strong>Trap:</strong> Over-explaining, being defensive, or sounding apologetic
+<br><strong>Strategy:</strong> Use the script from Part 3. Keep it under 45 seconds. End on the future.
+</div>
+
+<h3><span class="label label-warn">70%</span> Q5: "What are your salary expectations?"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Within budget? Realistic expectations?
+<br><strong>Strategy:</strong> Use the 3-step dance from Part 6.
+</div>
+
+<h3><span class="label label-warn">70%</span> Q6: "When can you start?"</h3>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"I'm available to start within two to four weeks. I don't have a notice period, so the timeline would mainly depend on any administrative processes on your side."
+</div>
+
+<h3><span class="label label-warn">70%</span> Q7: "Do you need visa sponsorship?"</h3>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"I currently have a valid residence permit in the Netherlands as a recent graduate. For long-term employment, I would need sponsorship, and I understand Nebius is a recognized sponsor. I'm happy to discuss the specifics whenever it's helpful."
+</div>
+
+<h3><span class="label label-warn">70%</span> Q8: "Why data engineering specifically?"</h3>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"Throughout my career, I've always been drawn to the infrastructure side of data. Building reliable pipelines, designing clean data models, making data accessible and trustworthy — that's what I find most rewarding. My Master's in AI gave me a strong understanding of what downstream consumers need, and that makes me a better data engineer. I want to build the foundation that AI systems depend on."
+</div>
+
+<h3><span class="label label-info">40%</span> Q9: "Tell me about a challenging project"</h3>
+<div class="script">
+<div class="script-label">WINNING ANSWER (STAR format)</div>
+<strong>Situation:</strong> "At GLP Technology, we had a critical data pipeline that was failing frequently and causing delays for the business team."
+<br><strong>Task:</strong> "I was asked to redesign the pipeline and make it reliable."
+<br><strong>Action:</strong> "I analyzed the failure patterns, redesigned the ETL architecture with better error handling and monitoring, and implemented automated alerts. I also documented the system so the team could maintain it."
+<br><strong>Result:</strong> "Pipeline reliability went from about 85% to over 99%. The business team got their reports on time, and I was promoted to team lead based on this work."
+</div>
+
+<h3><span class="label label-info">40%</span> Q10: "Do you have any questions for me?"</h3>
+<div class="card pass">
+<strong>HR Checks:</strong> Genuine interest, thoughtfulness, preparation
+<br><strong>ALWAYS ask questions.</strong> "No questions" = instant negative signal.
+<br><br>
+<strong>Ask these 2 (pick based on conversation flow):</strong>
+<br>1. "Could you tell me about the data engineering team? How large is it, and what's the team culture like?"
+<br>2. "What does the interview process look like after this call? I'd love to know what to prepare for."
+<br><br>
+<strong>Backup question:</strong>
+<br>3. "What are the biggest data engineering challenges Nebius is working on right now?"
+</div>
+
+<h3><span class="label label-warn">70%</span> Q11: "What are you doing right now?" / "Are you currently employed?"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Current status, are you employable, why aren't you working?
+<br><strong>Trap:</strong> Saying "I'm unemployed" or "I'm looking for a job"
+</div>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"I'm currently working on an independent project — a financial data lakehouse built on Databricks with Spark and Airflow. I'm also actively interviewing for data engineering roles. So I'm available to start quickly."
+</div>
+
+<h3><span class="label label-info">40%</span> Q12: "Are you interviewing with other companies?"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Competition level, urgency, how fast they need to move
+<br><strong>Strategy:</strong> Imply you have options, but Nebius is your top choice.
+</div>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"Yes, I'm in conversations with a few other companies in Amsterdam. But Nebius is my top choice because of the AI infrastructure focus and the growth trajectory. I'd love to prioritize this opportunity."
+</div>
+
+<h3><span class="label label-info">40%</span> Q13: "Where do you see yourself in 3-5 years?"</h3>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"In three to five years, I'd like to be a senior data engineer, ideally leading a team or owning a critical part of the data platform. I want to grow deep in data infrastructure, not jump to a different field. Nebius's growth means there will be plenty of opportunities to take on more responsibility."
+</div>
+
+<h3><span class="label label-info">40%</span> Q14: "What's your biggest weakness?"</h3>
+<div class="card">
+<strong>Strategy:</strong> She can already hear your English isn't native. Naming it shows self-awareness. Then reframe it as a non-issue.
+</div>
+<div class="script">
+<div class="script-label">WINNING ANSWER</div>
+"My English speaking is still a work in progress. I can communicate clearly, but I'm not as fluent as I'd like to be. That said, I improve every day, and I've found that in technical environments, clarity matters more than fluency."
+</div>
+
+<h3><span class="label label-info">40%</span> Q15: "Tell me more about your current project"</h3>
+<div class="card">
+<strong>HR Checks:</strong> Are you actually doing real work? Can you explain it clearly?
+<br><strong>Time Limit:</strong> 30 seconds. This is an elevator pitch, not a tech talk.
+</div>
+<div class="script">
+<div class="script-label">WINNING ANSWER (30-second elevator pitch)</div>
+"It's a data platform for financial market data. I ingest data from multiple sources, process it through a medallion architecture — bronze, silver, gold layers — using PySpark on Databricks. Airflow handles the orchestration, and everything runs in Docker containers. The goal is to provide clean, reliable data for investment analysis."
+</div>
+
+<h3><span class="label label-info">30%</span> Q16: When you get a question you didn't prepare for</h3>
+<div class="card warn">
+<strong>Don't panic. Use this phrase to buy time:</strong>
+</div>
+<div class="script">
+<div class="script-label">EMERGENCY SCRIPT</div>
+"That's a great question. Let me think about that for a moment..."
+<br><br>
+Then pause 3-5 seconds to organize your thoughts. HR will NOT penalize a brief pause. They WILL penalize rambling or incoherent answers. Silence is better than filler.
+</div>
+
+<h2>PART 10: WINNING THE GAME — STRATEGIC SUMMARY</h2>
+<p class="cn">制胜总结 — 战略要点</p>
+
+<div class="card pass">
+<strong>Your 5 Power Moves:</strong>
+<br><br>
+<strong>1. Control the narrative on the gap.</strong> Address it proactively in Q3 (background walkthrough). Don't wait for her to ask. This shows confidence and removes the elephant from the room.
+<br><br>
+<strong>2. Always say "6+ years" not "2 years."</strong> Count all data-related experience. HR writes down the number you say. Make it the right number.
+<br><br>
+<strong>3. Anchor on your freshest credentials.</strong> Lead with: VU Amsterdam (8.2 GPA) + Databricks cert + current lakehouse project. This signals "I'm current and capable" despite the gap.
+<br><br>
+<strong>4. Show you researched Nebius deeply.</strong> Mention: 355% growth, AI infrastructure, Amsterdam HQ, Finland data center. This puts you ahead of 90% of candidates who just say "I like your company."
+<br><br>
+<strong>5. End strong.</strong> Your closing statement and questions leave the last impression. Be warm, enthusiastic, and specific. "I'm very excited about this opportunity and I'd love to move forward."
+</div>
+
+<div class="card risk">
+<strong>Your 3 Danger Zones (avoid at all costs):</strong>
+<br><br>
+<strong>1. Don't ramble.</strong> Keep every answer under 90 seconds. HR has 30 minutes and 10+ questions. If you talk too long, she'll cut you off or run out of time for important questions.
+<br><br>
+<strong>2. Don't be negative.</strong> Never complain about past employers, the job market, visa difficulties, or your gap. Everything is positive framing.
+<br><br>
+<strong>3. Don't undersell yourself.</strong> You have a Master's from a top Dutch university, a professional certification, 6+ years of data experience, and you're already in Amsterdam. You are a STRONG candidate. Act like it.
+</div>
+
+<div class="card" style="background: var(--yellow-bg); border: 2pt solid var(--orange);">
+<strong style="color: var(--orange); font-size: 11pt;">THE GOLDEN RULE OF HR SCREENING:</strong>
+<br><br>
+HR's job is to find reasons to say NO. Your job is to give them zero reasons to say no, and multiple reasons to say yes. Every answer should end with a forward-looking, positive statement. Every risk should be reframed as a strength. The candidate who makes HR's job easiest (clear answers, no red flags, obvious enthusiasm) is the one who moves forward.
+</div>
+
+<h2>PART 11: POST-CALL CHECKLIST</h2>
+<p class="cn">通话结束后的行动清单</p>
+
+<div class="card">
+<strong>Within 5 minutes:</strong>
+<br>&bull; Write down every question she asked (while fresh in memory)
+<br>&bull; Note anything you wish you'd said differently
+<br><br>
+<strong>Within 2 hours — Send thank-you email to Milly:</strong>
+<br><br>
+<em>Subject: Thank you — Data Engineer Interview</em>
+<br><br>
+<em>Dear Milly,</em>
+<br><br>
+<em>Thank you for taking the time to speak with me today about the Data Engineer position at Nebius. I really enjoyed learning more about the team and the role.</em>
+<br><br>
+<em>After our conversation, I'm even more excited about the opportunity to contribute to Nebius's data infrastructure. My experience with data pipelines, Spark, and Airflow, combined with my recent Databricks certification, makes me confident I can make a strong contribution to the team.</em>
+<br><br>
+<em>I look forward to the next steps in the process. Please don't hesitate to reach out if you need any additional information.</em>
+<br><br>
+<em>Best regards,</em>
+<br><em>Fei Huang</em>
+</div>
+
+</html>

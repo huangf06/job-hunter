@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nebius Interview - Quick Reference Card</title>
+    <style>
+:root {
+    --primary: #1a365d;
+    --accent: #2c5282;
+    --text: #1a1a1a;
+    --muted: #555;
+    --light-bg: #f7fafc;
+    --border: #cbd5e0;
+    --green: #276749;
+    --red: #c53030;
+    --orange: #c05621;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@page { size: A4; margin: 0.2in; }
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 8pt;
+    line-height: 1.25;
+    color: var(--text);
+    max-width: 8.27in;
+    margin: 0 auto;
+    padding: 0.2in;
+    background: white;
+}
+h1 {
+    font-size: 12pt;
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 2pt;
+}
+.subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 8pt;
+    margin-bottom: 5pt;
+    padding-bottom: 4pt;
+    border-bottom: 2pt solid var(--primary);
+}
+h2 {
+    font-size: 9pt;
+    color: white;
+    background: var(--primary);
+    padding: 2pt 6pt;
+    margin: 4pt 0 3pt 0;
+}
+.grid { display: flex; gap: 6pt; }
+.grid > div { flex: 1; }
+.box {
+    border: 1pt solid var(--border);
+    padding: 3pt 5pt;
+    margin: 2pt 0;
+    font-size: 7.5pt;
+    line-height: 1.25;
+}
+.box-title {
+    font-weight: bold;
+    color: var(--accent);
+    font-size: 7.5pt;
+    margin-bottom: 1pt;
+}
+.emergency {
+    background: #fff5f5;
+    border: 1.5pt solid var(--red);
+    padding: 3pt 5pt;
+    margin: 2pt 0;
+}
+.emergency-title {
+    font-weight: bold;
+    color: var(--red);
+    font-size: 8pt;
+}
+.key-phrase {
+    background: #fffff0;
+    border-left: 2pt solid var(--orange);
+    padding: 2pt 5pt;
+    margin: 2pt 0;
+    font-size: 8pt;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+    margin: 2pt 0;
+}
+th {
+    background: var(--primary);
+    color: white;
+    padding: 3pt 5pt;
+    text-align: left;
+    font-size: 8pt;
+}
+td {
+    padding: 2pt 5pt;
+    border-bottom: 0.5pt solid var(--border);
+}
+ul { padding-left: 12pt; margin: 1pt 0; }
+li { margin-bottom: 0pt; font-size: 7.5pt; }
+.highlight { background: #fefcbf; padding: 0 2pt; font-weight: bold; }
+.cn { color: var(--muted); font-size: 7pt; }
+</style>
+</head>
+<body>
+
+<h1>NEBIUS HR SCREENING - CHEAT SHEET</h1>
+<div class="subtitle">Feb 11, 2026 | 1:00 PM CET | Milly C. Muschitiello | Keep this on screen during the call</div>
+
+<!-- ROW 1: Emergency + Key Numbers -->
+<div class="grid">
+<div>
+    <div class="emergency">
+        <div class="emergency-title">IF YOU DON'T UNDERSTAND:</div>
+        <ul>
+            <li>"Sorry, could you repeat that?"</li>
+            <li>"Could you rephrase that question?"</li>
+            <li>"Just to make sure I understand &mdash; are you asking about...?"</li>
+            <li>"That's a great question. Let me think for a moment."</li>
+        </ul>
+    </div>
+</div>
+<div>
+    <div class="box">
+        <div class="box-title">KEY NUMBERS</div>
+        <table>
+            <tr><td>Q3 Revenue</td><td><strong>$146M</strong> (+355% YoY)</td></tr>
+            <tr><td>Cash</td><td><strong>$4.79B</strong></td></tr>
+            <tr><td>Microsoft deal</td><td>Tens of <strong>billions</strong></td></tr>
+            <tr><td>Meta deal</td><td><strong>~$3B</strong> / 5 years</td></tr>
+            <tr><td>Q4 Earnings</td><td><strong>Feb 12</strong> (tomorrow!)</td></tr>
+            <tr><td>Employees</td><td><strong>2,000+</strong></td></tr>
+        </table>
+    </div>
+</div>
+</div>
+
+<!-- ROW 2: Self Intro + Why Nebius -->
+<h2>SELF INTRO (60 sec)</h2>
+<div class="key-phrase">
+    Hi Milly, thank you for taking the time to speak with me today.
+    My name is Fei Huang. I am a <span class="highlight">data engineer</span> based in Amsterdam.
+    I have about <span class="highlight">six years</span> of experience in <span class="highlight">fintech, quant finance, and e-commerce</span>.
+    I completed my <span class="highlight">Master's in AI</span> at VU Amsterdam (GPA 8.2)
+    and hold a <span class="highlight">Databricks Certified Data Engineer Professional</span> certification.
+    I work with <span class="highlight">Python, SQL, PySpark, Airflow, Delta Lake</span>.
+    I'm excited about Nebius because you're building <span class="highlight">AI infrastructure at incredible scale</span>.
+</div>
+
+<!-- ROW 3: Quick Answers Grid -->
+<h2>QUICK ANSWER REFERENCE</h2>
+<div class="grid">
+<div>
+    <div class="box">
+        <div class="box-title">WHY NEBIUS?</div>
+        <ol>
+            <li>AI infra at massive scale (NVIDIA, Microsoft, Meta)</li>
+            <li>Yandex &rarr; Nebius journey = vision + courage</li>
+            <li>Amsterdam = real HQ, not satellite</li>
+        </ol>
+    </div>
+    <div class="box">
+        <div class="box-title">BIGGEST STRENGTH</div>
+        <p><strong>Versatility</strong> &mdash; data analysis, quant dev, DE, ML. Can talk to different teams and understand their needs.</p>
+    </div>
+    <div class="box">
+        <div class="box-title">BIGGEST WEAKNESS</div>
+        <p>English speaking &mdash; "still a work in progress, but clarity matters more than fluency."</p>
+    </div>
+</div>
+<div>
+    <div class="box">
+        <div class="box-title">EXPERIENCE SUMMARY</div>
+        <ol>
+            <li><strong>Ele.me</strong> (Alibaba) &mdash; Data Analyst, Hadoop/Hive</li>
+            <li><strong>Baiquan</strong> &mdash; Quant Dev, market data pipelines</li>
+            <li><strong>GLP Tech</strong> &mdash; DE &amp; Team Lead, PySpark ETL</li>
+            <li><strong>VU Amsterdam</strong> &mdash; MSc AI, GPA 8.2</li>
+            <li><strong>Now</strong> &mdash; Lakehouse project + Databricks cert</li>
+        </ol>
+    </div>
+    <div class="box">
+        <div class="box-title">SALARY</div>
+        <p>Deflect first: "Could you share the budgeted range?"</p>
+        <p>If pressed: <strong>&euro;90K-110K</strong> total comp, flexible for the right opportunity.</p>
+    </div>
+</div>
+</div>
+
+<!-- ROW 4: Questions to Ask + Logistics -->
+<h2>YOUR QUESTIONS TO ASK</h2>
+<div class="grid">
+<div>
+    <div class="box">
+        <ol>
+            <li>How big is the DE team? What projects?</li>
+            <li>What's the tech stack for data engineering?</li>
+            <li>What's the interview process after this?</li>
+        </ol>
+    </div>
+</div>
+<div>
+    <div class="box">
+        <ol start="4">
+            <li>How does the team handle rapid growth?</li>
+            <li>Is the 30% ruling applicable?</li>
+        </ol>
+    </div>
+</div>
+</div>
+
+<!-- ROW 5: Closing + Reminders -->
+<h2>CLOSING STATEMENT</h2>
+<div class="key-phrase">
+    Thank you so much for your time today, Milly.
+    I really enjoyed learning more about Nebius and the Data Engineer role.
+    I'm very excited about this opportunity.
+    I believe my experience with <span class="highlight">data pipelines, Spark, and Airflow</span>
+    would be a great fit. I look forward to the next steps.
+</div>
+
+<div class="grid" style="margin-top:6pt">
+<div>
+    <div class="emergency">
+        <div class="emergency-title">NEVER SAY:</div>
+        <ul>
+            <li>"2 years" of DE &rarr; say <strong>"6+ years with data pipelines"</strong></li>
+            <li>"unemployed" / "took time off" &rarr; say <strong>"career transition to Europe"</strong></li>
+            <li>996 / Chinese work culture / politics</li>
+            <li>"I'll take anything" / current salary is zero</li>
+            <li>Anything negative about past employers</li>
+        </ul>
+    </div>
+</div>
+<div>
+    <div class="box" style="background:#fffff0; border-color:#c05621">
+        <div class="box-title" style="color:#c05621">KEY PHRASES TO REMEMBER</div>
+        <ul>
+            <li>Gap: "deliberate career transition" + "language preparation"</li>
+            <li>COVID: "policy reasons" (don't elaborate)</li>
+            <li>English: "less than 1% in China can speak it"</li>
+            <li>On-call: "Absolutely, I'm comfortable with that."</li>
+            <li>Other interviews: "in conversations with a few companies"</li>
+            <li>Start: "within 2-4 weeks"</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<div class="grid" style="margin-top:4pt">
+<div>
+    <div class="box" style="background:#f0fff4; border-color:#276749">
+        <div class="box-title" style="color:#276749">REMINDERS</div>
+        <ul>
+            <li>Speak <strong>slowly</strong>. Pause between ideas.</li>
+            <li>Look at the <strong>camera</strong>, not the screen.</li>
+            <li>Smile at start and end.</li>
+            <li><strong>It's OK to ask them to repeat.</strong></li>
+        </ul>
+    </div>
+</div>
+<div>
+    <div class="box">
+        <div class="box-title">NEBIUS = ?</div>
+        <ul>
+            <li>AI cloud platform on NVIDIA GPUs</li>
+            <li>Ex-Yandex, rebranded 2024</li>
+            <li>CEO: Arkady Volozh</li>
+            <li>HQ: Amsterdam (500+ people)</li>
+            <li>Products: AI Cloud, Token Factory, Tavily</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<div class="grid" style="margin-top:4pt">
+<div>
+    <div class="box" style="background:#ebf8ff; border-color:#2c5282">
+        <div class="box-title" style="color:#2c5282">LAKEHOUSE PROJECT (if asked)</div>
+        <p>Financial market data platform. Ingest from multiple sources &rarr; medallion architecture (bronze/silver/gold) &rarr; PySpark on Databricks. Airflow orchestration, Docker containers. Goal: clean, reliable data for investment analysis.</p>
+    </div>
+</div>
+<div>
+    <div class="box" style="background:#fffff0; border-color:#c05621">
+        <div class="box-title" style="color:#c05621">CAREER GAP QUICK SCRIPT</div>
+        <p>"Deliberate career transition to Europe. Managed investments, language preparation, grad school prep. COVID policy disrupted plans. Accepted at VU Amsterdam, 8.2 GPA, Databricks cert. Now fully committed to DE career in NL."</p>
+    </div>
+</div>
+</div>
+
+</body>
+</html>

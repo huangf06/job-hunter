@@ -1,8 +1,8 @@
 # Secrets
-.env
-config/linkedin_cookies.json
-config/credentials.json
-config/private/
+# .env
+# config/linkedin_cookies.json
+# config/credentials.json
+# config/private/
 
 # Data (DB + scrape dumps)
 data/jobs.db
@@ -42,8 +42,8 @@ Thumbs.db
 nul
 
 # Personal files
-materials/
-interview_prep/
+# materials/
+# interview_prep/
 
 # Temp files
 _tmp_*
