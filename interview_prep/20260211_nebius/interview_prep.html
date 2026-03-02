@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebius HR Screening - Interview Prep</title>
+    <style>
+:root {
+    --primary: #1a365d;
+    --accent: #2c5282;
+    --text: #1a1a1a;
+    --muted: #555;
+    --light-bg: #f7fafc;
+    --border: #cbd5e0;
+    --green: #276749;
+    --red: #c53030;
+    --orange: #c05621;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@page { size: A4; margin: 0.5in; }
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.45;
+    color: var(--text);
+    max-width: 8.27in;
+    margin: 0 auto;
+    padding: 0.5in;
+    background: white;
+}
+h1 {
+    font-size: 18pt;
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 4pt;
+    letter-spacing: 0.5pt;
+}
+.subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 10pt;
+    margin-bottom: 16pt;
+    padding-bottom: 10pt;
+    border-bottom: 2pt solid var(--primary);
+}
+h2 {
+    font-size: 13pt;
+    color: var(--primary);
+    margin: 16pt 0 8pt 0;
+    padding-bottom: 3pt;
+    border-bottom: 1.5pt solid var(--border);
+    page-break-after: avoid;
+}
+h3 {
+    font-size: 11pt;
+    color: var(--accent);
+    margin: 10pt 0 5pt 0;
+}
+.card {
+    background: var(--light-bg);
+    border: 1pt solid var(--border);
+    border-radius: 4pt;
+    padding: 8pt 10pt;
+    margin: 6pt 0;
+    page-break-inside: avoid;
+}
+.card-title {
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 10.5pt;
+    margin-bottom: 4pt;
+}
+.script {
+    background: #fffff0;
+    border-left: 3pt solid var(--orange);
+    padding: 8pt 10pt;
+    margin: 6pt 0;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    page-break-inside: avoid;
+}
+.script-label {
+    font-weight: bold;
+    color: var(--orange);
+    font-size: 9pt;
+    text-transform: uppercase;
+    margin-bottom: 3pt;
+}
+.question {
+    background: #fff5f5;
+    border-left: 3pt solid var(--red);
+    padding: 6pt 10pt;
+    margin: 6pt 0;
+    page-break-inside: avoid;
+}
+.question-text {
+    font-weight: bold;
+    color: var(--red);
+    font-size: 10.5pt;
+    margin-bottom: 4pt;
+}
+.answer {
+    background: #f0fff4;
+    border-left: 3pt solid var(--green);
+    padding: 6pt 10pt;
+    margin: 2pt 0 8pt 0;
+    page-break-inside: avoid;
+}
+.answer-label {
+    font-weight: bold;
+    color: var(--green);
+    font-size: 9pt;
+    text-transform: uppercase;
+    margin-bottom: 3pt;
+}
+.tip {
+    background: #ebf8ff;
+    border-left: 3pt solid var(--accent);
+    padding: 6pt 10pt;
+    margin: 6pt 0;
+    font-size: 9.5pt;
+}
+.tip-label {
+    font-weight: bold;
+    color: var(--accent);
+    font-size: 9pt;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6pt 0;
+    font-size: 9.5pt;
+}
+th {
+    background: var(--primary);
+    color: white;
+    padding: 5pt 8pt;
+    text-align: left;
+    font-size: 9pt;
+}
+td {
+    padding: 4pt 8pt;
+    border-bottom: 1pt solid var(--border);
+}
+tr:nth-child(even) { background: var(--light-bg); }
+ul, ol { padding-left: 16pt; margin: 4pt 0; }
+li { margin-bottom: 3pt; }
+.phonetic { color: var(--accent); font-style: italic; font-size: 9pt; }
+.page-break { page-break-before: always; }
+.two-col { display: flex; gap: 10pt; }
+.two-col > div { flex: 1; }
+.highlight { background: #fefcbf; padding: 1pt 3pt; font-weight: bold; }
+.cn { color: var(--muted); font-size: 9pt; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>NEBIUS - HR SCREENING INTERVIEW PREP</h1>
+<div class="subtitle">
+    Date: February 11, 2026 | 1:00 PM CET | Interviewer: Milly C. Muschitiello<br>
+    Role: Data Engineer | Location: Amsterdam (Hybrid)
+</div>
+
+<!-- ============================================ -->
+<!-- PART 0: INTERVIEW INFO                       -->
+<!-- ============================================ -->
+
+<div class="card">
+    <div class="card-title">INTERVIEW DETAILS</div>
+    <table>
+        <tr><td><strong>Company</strong></td><td>Nebius Group N.V. (NASDAQ: NBIS)</td></tr>
+        <tr><td><strong>Role</strong></td><td>Data Engineer - Amsterdam, Netherlands (Hybrid)</td></tr>
+        <tr><td><strong>Interviewer</strong></td><td>Milly C. Muschitiello (HR / Recruiter)</td></tr>
+        <tr><td><strong>Date &amp; Time</strong></td><td>Feb 11, 2026 at 1:00 PM CET</td></tr>
+        <tr><td><strong>Platform</strong></td><td>Zoom</td></tr>
+        <tr><td><strong>Interview Type</strong></td><td>HR Screening (first round, ~30 min)</td></tr>
+    </table>
+</div>
+
+<div class="tip">
+    <div class="tip-label">PRE-CALL CHECKLIST</div>
+    <ul>
+        <li>Test Zoom link 15 min early. Have backup: phone dial-in.</li>
+        <li>Quiet room, good lighting, clean background.</li>
+        <li>Have this cheat sheet open on a second screen or printed.</li>
+        <li>Water bottle nearby. Notepad and pen ready.</li>
+        <li>Phone on silent. Close all notifications.</li>
+    </ul>
+</div>
+
+<!-- ============================================ -->
+<!-- PART 1: SELF INTRODUCTION (60-90 seconds)    -->
+<!-- ============================================ -->
+
+<h2>PART 1: SELF INTRODUCTION</h2>
+<p class="cn">自我介绍背诵稿 - 控制在60-90秒，语速放慢，每句话之间停顿</p>
+
+<div class="script">
+    <div class="script-label">MEMORIZE THIS - "Tell me about yourself"</div>
+    <p>
+        Hi Milly, thank you for taking the time to speak with me today.
+    </p>
+    <p style="margin-top:6pt">
+        My name is Fei Huang. I am a <strong>data engineer</strong> based in Amsterdam.
+        I have about <strong>six years</strong> of experience working with data,
+        across <strong>fintech, quantitative finance, and e-commerce</strong>.
+    </p>
+    <p style="margin-top:6pt">
+        Most recently, I completed my <strong>Master's in Artificial Intelligence</strong>
+        at Vrije Universiteit Amsterdam, with a GPA of 8.2 out of 10.
+        I also hold a <strong>Databricks Certified Data Engineer Professional</strong> certification.
+    </p>
+    <p style="margin-top:6pt">
+        On the technical side, I work mainly with <strong>Python, SQL, PySpark, Airflow, and Delta Lake</strong>.
+        Right now I am building a <strong>financial data lakehouse</strong> project
+        using Spark, Delta Lake, and Medallion Architecture.
+    </p>
+    <p style="margin-top:6pt">
+        I am very excited about Nebius because you are building
+        <strong>AI infrastructure at an incredible scale</strong>.
+        The Data Engineer role is a great match for my skills,
+        and I would love to contribute to your data platform.
+    </p>
+</div>
+
+<div class="tip">
+    <div class="tip-label">SPEAKING TIPS FOR THIS SECTION</div>
+    <ul>
+        <li><strong>Pace:</strong> Read each paragraph, then PAUSE. Do not rush.</li>
+        <li><strong>Emphasis:</strong> Bold words = slightly louder and slower.</li>
+        <li><strong>Smile:</strong> Smile when you say "excited" and "great match".</li>
+        <li><strong>Practice:</strong> Time yourself. Should be 60-90 seconds.</li>
+    </ul>
+</div>
+
+<!-- ============================================ -->
+<!-- PART 2: HR QUESTIONS & ANSWERS               -->
+<!-- ============================================ -->
+
+<div class="page-break"></div>
+<h2>PART 2: COMMON HR QUESTIONS &amp; PREPARED ANSWERS</h2>
+<p class="cn">HR常见问题 - 红色=问题（对方可能说的话），绿色=你的回答</p>
+
+<!-- Q1 -->
+<div class="question">
+    <div class="question-text">Q1: "Why are you interested in Nebius?"</div>
+    <span class="cn">你为什么对Nebius感兴趣？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>Three reasons.</p>
+    <p style="margin-top:4pt">
+        <strong>First</strong>, Nebius is building AI infrastructure at a massive scale.
+        Your partnerships with NVIDIA, Microsoft, and Meta show that
+        you are at the center of the AI revolution. I want to be part of that.
+    </p>
+    <p style="margin-top:4pt">
+        <strong>Second</strong>, I really admire the company's journey.
+        Going from Yandex to Nebius, rebuilding as a global company
+        with startup energy but enterprise resources &mdash;
+        that takes real vision and courage.
+    </p>
+    <p style="margin-top:4pt">
+        <strong>Third</strong>, Amsterdam is the real headquarters, not a satellite office.
+        I live here, and I want to work at a company where
+        the important decisions happen around me.
+    </p>
+</div>
+
+<!-- Q2 -->
+<div class="question">
+    <div class="question-text">Q2: "Walk me through your experience" / "Tell me about your background"</div>
+    <span class="cn">介绍一下你的经历/背景</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        Sure. I started my career in Shanghai as a <strong>data analyst at Ele.me</strong>,
+        which is like the DoorDash of China. It was later acquired by Alibaba.
+        There I worked with large-scale user data on Hadoop and Hive.
+    </p>
+    <p style="margin-top:4pt">
+        Then I moved to <strong>Baiquan Investment</strong> as a quantitative developer.
+        I built market data pipelines and factor computation engines
+        for quantitative trading.
+    </p>
+    <p style="margin-top:4pt">
+        After that, I joined <strong>GLP Technology</strong> as a data engineer and team lead.
+        I built PySpark ETL pipelines, data quality frameworks,
+        and compliance reporting systems for a fintech company.
+    </p>
+    <p style="margin-top:4pt">
+        In 2023, I moved to Amsterdam for my <strong>Master's in AI</strong>
+        at Vrije Universiteit. I graduated in August 2025 with a GPA of 8.2.
+        Since then, I have been working on personal projects
+        and got my <strong>Databricks certification</strong>.
+    </p>
+</div>
+
+<!-- Q3 -->
+<div class="question">
+    <div class="question-text">Q3: "Why Data Engineering? Why not Data Science or ML?"</div>
+    <span class="cn">为什么选数据工程而不是数据科学或机器学习？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        Great question. I have experience in both areas,
+        but I find that I enjoy <strong>building reliable systems</strong> the most.
+    </p>
+    <p style="margin-top:4pt">
+        Data engineering is where I can combine my software skills
+        with my understanding of data and business needs.
+        I like making sure that data flows correctly, is clean,
+        and is ready for others to use.
+    </p>
+    <p style="margin-top:4pt">
+        My AI background actually helps me be a <strong>better data engineer</strong>,
+        because I understand what data scientists and ML engineers need
+        from the data platform.
+    </p>
+</div>
+
+<!-- Q4 -->
+<div class="question">
+    <div class="question-text">Q4: "What do you know about Nebius?"</div>
+    <span class="cn">你对Nebius了解多少？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        Nebius is an <strong>AI infrastructure company</strong> listed on NASDAQ.
+        You provide a full-stack AI cloud platform
+        built on large-scale NVIDIA GPU clusters.
+    </p>
+    <p style="margin-top:4pt">
+        The company was born from Yandex's international business
+        after the restructuring in 2024.
+        Your founder, Arkady Volozh, calls it
+        "a startup with two and a half billion dollars."
+    </p>
+    <p style="margin-top:4pt">
+        You are growing very fast &mdash;
+        <strong>355 percent revenue growth</strong> year over year in Q3 2025.
+        You have major partnerships with Microsoft and Meta.
+        And I know your Q4 earnings report comes out
+        on February 12th &mdash; tomorrow, actually.
+    </p>
+    <p style="margin-top:4pt">
+        Your headquarters is here in Amsterdam,
+        and you also have data centers in Finland, the US, and France.
+    </p>
+</div>
+
+<!-- Q5 -->
+<div class="question">
+    <div class="question-text">Q5: "What is your current situation? Are you working now?"</div>
+    <span class="cn">你现在的状态是什么？在工作吗？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        I graduated from my Master's program in August 2025.
+        Since then, I have been <strong>actively job searching</strong>
+        while working on personal projects to keep my skills sharp.
+    </p>
+    <p style="margin-top:4pt">
+        For example, I built a <strong>financial data lakehouse</strong>
+        using Databricks, Spark, Delta Lake, and Airflow.
+        I also got my <strong>Databricks Data Engineer Professional</strong> certification
+        in October 2025.
+    </p>
+    <p style="margin-top:4pt">
+        So I am available to start <strong>immediately</strong>.
+    </p>
+</div>
+
+<!-- Q6 -->
+<div class="question">
+    <div class="question-text">Q6: "What are your salary expectations?"</div>
+    <span class="cn">你的薪资期望是多少？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER (try to deflect first)</div>
+    <p>
+        I would love to learn more about the <strong>full compensation package</strong> first
+        &mdash; base salary, equity, and benefits.
+        Could you share the budgeted range for this role?
+    </p>
+    <p style="margin-top:6pt"><strong>If they insist on a number:</strong></p>
+    <p style="margin-top:4pt">
+        Based on my research and experience level,
+        I am looking at around <strong>110 to 130 thousand euros</strong>
+        in total compensation.
+        But I am flexible depending on the full package,
+        especially equity and benefits.
+    </p>
+</div>
+
+<div class="tip">
+    <div class="tip-label">SALARY CONTEXT (do not say these numbers out loud)</div>
+    <table>
+        <tr><th>Glassdoor Reference</th><th>Range</th></tr>
+        <tr><td>Software Engineer (Nebius NL)</td><td>&euro;86K - &euro;108K</td></tr>
+        <tr><td>Data Analyst (Nebius NL)</td><td>&euro;85K - &euro;121K</td></tr>
+        <tr><td>Senior Software Developer (Nebius NL)</td><td>&euro;105K - &euro;140K</td></tr>
+        <tr><td>Senior Software Engineer (Nebius NL)</td><td>&euro;136K - &euro;173K</td></tr>
+    </table>
+    <p style="margin-top:4pt">Remember: Nebius is NASDAQ-listed, so <strong>RSU/equity</strong> is part of the package. Ask about 30% ruling.</p>
+</div>
+
+<!-- Q7 -->
+<div class="question">
+    <div class="question-text">Q7: "Do you need visa sponsorship?" / "What is your work authorization?"</div>
+    <span class="cn">你需要签证担保吗？你的工作许可状态？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER (adapt to your actual situation)</div>
+    <p>
+        I currently have a <strong>search year visa</strong> (zoekjaar)
+        which allows me to work in the Netherlands.
+        For long-term employment, I would need a
+        <strong>highly skilled migrant visa</strong> (kennismigrant),
+        which I understand Nebius is a recognized sponsor for.
+    </p>
+</div>
+
+<!-- Q8 -->
+<div class="question">
+    <div class="question-text">Q8: "When can you start?"</div>
+    <span class="cn">你什么时候可以入职？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        I am available to start <strong>immediately</strong>.
+        I can begin as soon as the visa process is completed.
+    </p>
+</div>
+
+<!-- Q9 -->
+<div class="question">
+    <div class="question-text">Q9: "What is your biggest strength?"</div>
+    <span class="cn">你最大的优势是什么？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        I would say my biggest strength is my <strong>versatility</strong>.
+        I have worked across data analysis, quantitative development,
+        data engineering, and machine learning.
+    </p>
+    <p style="margin-top:4pt">
+        This means I can <strong>talk to different teams</strong>
+        and understand their needs.
+        When I build a data pipeline,
+        I think about who will use the data and how.
+    </p>
+</div>
+
+<!-- Q10 -->
+<div class="question">
+    <div class="question-text">Q10: "What is your biggest weakness?"</div>
+    <span class="cn">你最大的弱点是什么？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        I sometimes spend <strong>too much time</strong> trying to make things perfect
+        before shipping. I have learned to balance this
+        by setting clear deadlines for myself
+        and focusing on <strong>"good enough to ship, then iterate."</strong>
+    </p>
+</div>
+
+<!-- Q11 -->
+<div class="question">
+    <div class="question-text">Q11: "Why did you leave China?" / "Why Amsterdam?"</div>
+    <span class="cn">你为什么离开中国？为什么选阿姆斯特丹？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        I wanted to <strong>challenge myself internationally</strong>
+        and deepen my knowledge of AI.
+        Amsterdam has a great tech ecosystem
+        and a very international culture.
+    </p>
+    <p style="margin-top:4pt">
+        After completing my Master's here,
+        I decided to <strong>build my career in Europe</strong>.
+        I enjoy the work-life balance
+        and the collaborative culture in Dutch companies.
+    </p>
+</div>
+
+<!-- Q12 -->
+<div class="question">
+    <div class="question-text">Q12: "Tell me about a challenging project"</div>
+    <span class="cn">讲一个有挑战性的项目</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER (STAR format)</div>
+    <p>
+        <strong>Situation:</strong> At GLP Technology, we had data quality issues
+        in our credit scoring pipeline. Bad data was causing
+        wrong risk assessments.
+    </p>
+    <p style="margin-top:4pt">
+        <strong>Task:</strong> I was asked to build a data quality framework
+        to catch problems before they reached the scoring models.
+    </p>
+    <p style="margin-top:4pt">
+        <strong>Action:</strong> I designed a validation framework using PySpark
+        that checked data at every stage of the pipeline.
+        It included schema validation, null checks,
+        and business rule validation.
+    </p>
+    <p style="margin-top:4pt">
+        <strong>Result:</strong> We reduced data quality incidents by over 90 percent.
+        The framework became the standard for all new pipelines in the team.
+    </p>
+</div>
+
+<!-- Q13 -->
+<div class="question">
+    <div class="question-text">Q13: "How do you handle working in a team?" / "Describe your teamwork style"</div>
+    <span class="cn">你如何在团队中工作？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        At GLP, I was a <strong>team lead</strong> managing a small team.
+        I learned that good communication is the most important thing.
+    </p>
+    <p style="margin-top:4pt">
+        I like to have <strong>clear documentation</strong>,
+        regular check-ins, and open discussions.
+        I believe in giving people ownership of their work
+        while being available to help when needed.
+    </p>
+</div>
+
+<!-- Q14 -->
+<div class="question">
+    <div class="question-text">Q14: "Do you have experience with on-call rotations?"</div>
+    <span class="cn">你有on-call轮值经验吗？（JD里提到了这个）</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        Yes, at GLP I was part of the on-call rotation
+        for our data pipelines.
+        I am comfortable with monitoring, alerting,
+        and responding to production issues.
+        I understand that <strong>data reliability is critical</strong>,
+        especially for a company like Nebius
+        that serves enterprise customers.
+    </p>
+</div>
+
+<!-- Q15 -->
+<div class="question">
+    <div class="question-text">Q15: "Where do you see yourself in 3-5 years?"</div>
+    <span class="cn">你3-5年后的规划？</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR ANSWER</div>
+    <p>
+        In 3 to 5 years, I want to be a <strong>senior data engineer</strong>
+        or a <strong>tech lead</strong> in data infrastructure.
+    </p>
+    <p style="margin-top:4pt">
+        Nebius is growing so fast that I think there will be
+        many opportunities to take on more responsibility.
+        I want to grow with the company
+        and help build the data platform
+        that powers your AI cloud.
+    </p>
+</div>
+
+<!-- Q16 -->
+<div class="question">
+    <div class="question-text">Q16: "Do you have any questions for me?"</div>
+    <span class="cn">你有什么问题要问我吗？（一定要问！）</span>
+</div>
+<div class="answer">
+    <div class="answer-label">YOUR QUESTIONS (pick 3-4)</div>
+    <ol>
+        <li><strong>"How big is the data engineering team right now, and what projects are they working on?"</strong>
+            <br><span class="cn">数据工程团队多大？在做什么项目？</span></li>
+        <li><strong>"What does the tech stack look like for data engineering at Nebius?"</strong>
+            <br><span class="cn">数据工程的技术栈是什么？</span></li>
+        <li><strong>"What does the interview process look like after this call?"</strong>
+            <br><span class="cn">后续面试流程是什么？</span></li>
+        <li><strong>"Nebius is growing very fast. How does the team handle that growth?"</strong>
+            <br><span class="cn">公司增长这么快，团队怎么应对？</span></li>
+        <li><strong>"Is the 30% ruling applicable for this position?"</strong>
+            <br><span class="cn">这个职位适用30% ruling吗？</span></li>
+    </ol>
+</div>
+
+<!-- ============================================ -->
+<!-- PART 3: COMPANY KNOWLEDGE CHEAT SHEET        -->
+<!-- ============================================ -->
+
+<div class="page-break"></div>
+<h2>PART 3: NEBIUS COMPANY KNOWLEDGE</h2>
+<p class="cn">公司知识速查 - 面试中随时可能用到的关键信息</p>
+
+<div class="card">
+    <div class="card-title">COMPANY BASICS</div>
+    <table>
+        <tr><td><strong>Full Name</strong></td><td>Nebius Group N.V.</td></tr>
+        <tr><td><strong>Stock</strong></td><td>NASDAQ: NBIS</td></tr>
+        <tr><td><strong>HQ</strong></td><td>Amsterdam, Netherlands</td></tr>
+        <tr><td><strong>CEO</strong></td><td>Arkady Volozh <span class="phonetic">(ar-KAH-dee VOH-lozh)</span></td></tr>
+        <tr><td><strong>Employees</strong></td><td>2,000+</td></tr>
+        <tr><td><strong>Founded</strong></td><td>2024 (rebranded from Yandex N.V.)</td></tr>
+        <tr><td><strong>What they do</strong></td><td>Full-stack AI cloud platform on NVIDIA GPUs</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title">KEY NUMBERS (memorize these)</div>
+    <table>
+        <tr><td><strong>Q3 2025 Revenue</strong></td><td>$146.1 million (up 355% YoY)</td></tr>
+        <tr><td><strong>9-month 2025 Revenue</strong></td><td>$302.1 million (up 437% YoY)</td></tr>
+        <tr><td><strong>Cash Position</strong></td><td>$4.79 billion</td></tr>
+        <tr><td><strong>Microsoft Deal</strong></td><td>Multi-year, tens of billions of dollars</td></tr>
+        <tr><td><strong>Meta Deal</strong></td><td>~$3 billion over 5 years</td></tr>
+        <tr><td><strong>Q4 Earnings</strong></td><td>February 12, 2026 (day after your interview!)</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title">HISTORY TIMELINE</div>
+    <table>
+        <tr><td><strong>Pre-2022</strong></td><td>Yandex N.V. = "Google of Russia", $31B market cap</td></tr>
+        <tr><td><strong>2022</strong></td><td>Russia-Ukraine war &rarr; EU sanctions on Volozh</td></tr>
+        <tr><td><strong>Feb 2024</strong></td><td>Sold all Russian business for $5.4B</td></tr>
+        <tr><td><strong>Mar 2024</strong></td><td>Sanctions lifted, Volozh returns as CEO</td></tr>
+        <tr><td><strong>Oct 2024</strong></td><td>Rebranded to Nebius, relisted on NASDAQ</td></tr>
+        <tr><td><strong>2025</strong></td><td>Explosive growth: Microsoft, Meta, NVIDIA deals</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title">PRODUCTS &amp; BUSINESS UNITS</div>
+    <ul>
+        <li><strong>Nebius AI Cloud</strong> &mdash; Core product. GPU clusters for AI training &amp; inference.</li>
+        <li><strong>Token Factory</strong> &mdash; Production AI inference at scale.</li>
+        <li><strong>AI Studio</strong> &mdash; Inference-as-a-Service platform.</li>
+        <li><strong>Tavily</strong> &mdash; Recently acquired. Agentic search for AI agents.</li>
+        <li><strong>Avride</strong> &mdash; Autonomous vehicles (partnership with Uber).</li>
+        <li><strong>TripleTen</strong> &mdash; EdTech for tech career reskilling.</li>
+    </ul>
+</div>
+
+<div class="card">
+    <div class="card-title">DATA CENTERS</div>
+    <table>
+        <tr><td><strong>Mantsala, Finland</strong></td><td>Flagship. PUE 1.13. Heat recovery pioneer.</td></tr>
+        <tr><td><strong>Kansas City, USA</strong></td><td>5MW &rarr; 40MW expansion (~35K GPUs)</td></tr>
+        <tr><td><strong>New Jersey, USA</strong></td><td>US expansion</td></tr>
+        <tr><td><strong>Paris, France</strong></td><td>European expansion</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title">SUSTAINABILITY (good talking point)</div>
+    <ul>
+        <li>Custom servers use <strong>20% less energy</strong> than off-the-shelf</li>
+        <li>Finland data center: <strong>50+ GWh</strong> of heat recovered for district heating</li>
+        <li>PUE of <strong>1.13</strong> (world-class efficiency)</li>
+    </ul>
+</div>
+
+<!-- ============================================ -->
+<!-- PART 4: LISTENING COMPREHENSION HELP         -->
+<!-- ============================================ -->
+
+<div class="page-break"></div>
+<h2>PART 4: WHAT THE INTERVIEWER MIGHT SAY</h2>
+<p class="cn">面试官可能说的话 - 提前熟悉这些句式，面试时就能听懂</p>
+
+<h3>Opening &amp; Small Talk</h3>
+<table>
+    <tr><th>What they say</th><th>中文意思</th><th>How to respond</th></tr>
+    <tr><td>"Hi Fei, how are you doing today?"</td><td>你今天怎么样？</td><td>"I'm doing great, thank you! How about you?"</td></tr>
+    <tr><td>"Thanks for joining / hopping on the call"</td><td>谢谢你来参加这个电话</td><td>"Thank you for having me!"</td></tr>
+    <tr><td>"Can you hear me okay?"</td><td>你能听到我吗？</td><td>"Yes, I can hear you clearly."</td></tr>
+    <tr><td>"Let me just share a bit about the role first"</td><td>让我先介绍一下这个职位</td><td>Just listen and nod. Take notes.</td></tr>
+    <tr><td>"Before we dive in..."</td><td>在我们开始之前...</td><td>Listen carefully for context.</td></tr>
+    <tr><td>"So tell me a little bit about yourself"</td><td>介绍一下你自己</td><td>Use your prepared self-intro!</td></tr>
+</table>
+
+<h3>Probing Questions (follow-ups)</h3>
+<table>
+    <tr><th>What they say</th><th>中文意思</th><th>How to respond</th></tr>
+    <tr><td>"Can you elaborate on that?"</td><td>能详细说说吗？</td><td>Give more details with an example.</td></tr>
+    <tr><td>"Could you give me a specific example?"</td><td>能举个具体例子吗？</td><td>Use STAR format (Situation-Task-Action-Result).</td></tr>
+    <tr><td>"What was your role specifically?"</td><td>你具体负责什么？</td><td>Clarify YOUR contribution, not the team's.</td></tr>
+    <tr><td>"How did you handle that?"</td><td>你是怎么处理的？</td><td>Describe your actions step by step.</td></tr>
+    <tr><td>"What was the outcome?"</td><td>结果怎么样？</td><td>Give numbers if possible.</td></tr>
+    <tr><td>"What did you learn from that?"</td><td>你从中学到了什么？</td><td>Show growth and self-awareness.</td></tr>
+</table>
+
+<h3>Logistics &amp; Process</h3>
+<table>
+    <tr><th>What they say</th><th>中文意思</th><th>How to respond</th></tr>
+    <tr><td>"What's your notice period?"</td><td>你的离职通知期多长？</td><td>"I'm available immediately."</td></tr>
+    <tr><td>"Are you interviewing elsewhere?"</td><td>你在面试其他公司吗？</td><td>"Yes, I'm exploring a few opportunities, but Nebius is my top choice."</td></tr>
+    <tr><td>"What are your expectations in terms of compensation?"</td><td>你的薪资期望？</td><td>Use your prepared salary answer.</td></tr>
+    <tr><td>"Are you eligible to work in the Netherlands?"</td><td>你有荷兰工作许可吗？</td><td>Use your prepared visa answer.</td></tr>
+    <tr><td>"Do you have any questions for me?"</td><td>你有什么问题吗？</td><td>Use your prepared questions!</td></tr>
+</table>
+
+<h3>Closing Phrases</h3>
+<table>
+    <tr><th>What they say</th><th>中文意思</th><th>How to respond</th></tr>
+    <tr><td>"I'll get back to you within a week"</td><td>一周内给你回复</td><td>"That sounds great. I look forward to hearing from you."</td></tr>
+    <tr><td>"The next step would be a technical interview"</td><td>下一步是技术面试</td><td>"Wonderful, I'm looking forward to it."</td></tr>
+    <tr><td>"We'll be in touch"</td><td>我们会联系你的</td><td>"Thank you so much for your time today, Milly."</td></tr>
+    <tr><td>"Is there anything else you'd like to add?"</td><td>还有什么要补充的吗？</td><td>"Just that I'm very excited about this opportunity. Thank you!"</td></tr>
+</table>
+
+<!-- ============================================ -->
+<!-- PART 5: EMERGENCY PHRASES                    -->
+<!-- ============================================ -->
+
+<div class="page-break"></div>
+<h2>PART 5: EMERGENCY PHRASES</h2>
+<p class="cn">听不懂时的救命句式 - 背熟这些，面试时不会尴尬冷场</p>
+
+<div class="card">
+    <div class="card-title">WHEN YOU DON'T UNDERSTAND</div>
+    <table>
+        <tr><th>Situation</th><th>What to say</th></tr>
+        <tr><td>Didn't hear clearly</td><td><strong>"Sorry, could you repeat that? The audio cut out for a moment."</strong></td></tr>
+        <tr><td>Heard but didn't understand</td><td><strong>"Could you rephrase that question? I want to make sure I answer it correctly."</strong></td></tr>
+        <tr><td>Need time to think</td><td><strong>"That's a great question. Let me think about that for a moment."</strong></td></tr>
+        <tr><td>Not sure about the question</td><td><strong>"Just to make sure I understand &mdash; are you asking about...?"</strong></td></tr>
+        <tr><td>Technical audio issue</td><td><strong>"I think there might be a connection issue. Could you say that one more time?"</strong></td></tr>
+        <tr><td>Lost in a long question</td><td><strong>"Sorry, I want to give you a good answer. Could you break that down for me?"</strong></td></tr>
+    </table>
+</div>
+
+<div class="tip">
+    <div class="tip-label">KEY PRINCIPLE</div>
+    <p>It is <strong>100% okay</strong> to ask someone to repeat or rephrase. Native speakers do this all the time on Zoom calls. It shows you care about giving a good answer. <strong>Never pretend you understood when you didn't.</strong></p>
+</div>
+
+<div class="card">
+    <div class="card-title">FILLER PHRASES (buy yourself time)</div>
+    <ul>
+        <li>"That's a great question..." <span class="cn">（好问题...）</span></li>
+        <li>"Let me think about the best way to explain this..." <span class="cn">（让我想想怎么说最好...）</span></li>
+        <li>"So, to give you some context..." <span class="cn">（给你一些背景...）</span></li>
+        <li>"I would say..." <span class="cn">（我会说...）</span></li>
+        <li>"From my experience..." <span class="cn">（根据我的经验...）</span></li>
+    </ul>
+</div>
+
+<div class="card">
+    <div class="card-title">TRANSITION PHRASES (sound natural)</div>
+    <ul>
+        <li>"Building on that..." <span class="cn">（在此基础上...）</span></li>
+        <li>"Another thing I'd like to mention is..." <span class="cn">（另外我想提到的是...）</span></li>
+        <li>"To give you a concrete example..." <span class="cn">（举个具体例子...）</span></li>
+        <li>"What I found most interesting was..." <span class="cn">（我觉得最有意思的是...）</span></li>
+        <li>"The key takeaway was..." <span class="cn">（关键收获是...）</span></li>
+    </ul>
+</div>
+
+<!-- ============================================ -->
+<!-- PART 6: PRONUNCIATION GUIDE                  -->
+<!-- ============================================ -->
+
+<h2>PART 6: PRONUNCIATION GUIDE</h2>
+<p class="cn">关键词发音指南 - 确保这些词说得清楚准确</p>
+
+<div class="card">
+    <div class="card-title">COMPANY &amp; PEOPLE NAMES</div>
+    <table>
+        <tr><th>Word</th><th>Pronunciation</th><th>Notes</th></tr>
+        <tr><td>Nebius</td><td><strong>NEE-bee-us</strong></td><td>Like "nebula" + "-ius"</td></tr>
+        <tr><td>Arkady Volozh</td><td><strong>ar-KAH-dee VOH-lozh</strong></td><td>CEO's name</td></tr>
+        <tr><td>Yandex</td><td><strong>YAN-dex</strong></td><td>Former company name</td></tr>
+        <tr><td>NVIDIA</td><td><strong>en-VID-ee-uh</strong></td><td>GPU partner</td></tr>
+        <tr><td>Tavily</td><td><strong>TAV-ih-lee</strong></td><td>Recent acquisition</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-title">TECHNICAL TERMS</div>
+    <table>
+        <tr><th>Word</th><th>Pronunciation</th></tr>
+        <tr><td>Airflow</td><td><strong>AIR-flow</strong></td></tr>
+        <tr><td>Databricks</td><td><strong>DAY-tuh-bricks</strong></td></tr>
+        <tr><td>Delta Lake</td><td><strong>DEL-tuh Lake</strong></td></tr>
+        <tr><td>PySpark</td><td><strong>PIE-spark</strong></td></tr>
+        <tr><td>Medallion Architecture</td><td><strong>meh-DAL-yun</strong></td></tr>
+        <tr><td>ETL</td><td><strong>E-T-L</strong> (spell it out)</td></tr>
+        <tr><td>Kubernetes</td><td><strong>koo-ber-NET-eez</strong></td></tr>
+        <tr><td>Terraform</td><td><strong>TEHR-uh-form</strong></td></tr>
+        <tr><td>Schema</td><td><strong>SKEE-muh</strong></td></tr>
+        <tr><td>Pipeline</td><td><strong>PIPE-line</strong></td></tr>
+    </table>
+</div>
+
+<!-- ============================================ -->
+<!-- PART 7: PRACTICAL TIPS                       -->
+<!-- ============================================ -->
+
+<h2>PART 7: PRACTICAL TIPS &amp; REMINDERS</h2>
+
+<div class="card">
+    <div class="card-title">SPEAKING STRATEGY</div>
+    <ol>
+        <li><strong>Speak slowly.</strong> You are not in a race. Slow = confident.</li>
+        <li><strong>Use short sentences.</strong> One idea per sentence. Period. Next sentence.</li>
+        <li><strong>Pause between paragraphs.</strong> Let the interviewer process what you said.</li>
+        <li><strong>Use structure words.</strong> "First... Second... Third..." or "The situation was... My action was... The result was..."</li>
+        <li><strong>It's okay to be brief.</strong> A clear 30-second answer beats a rambling 3-minute one.</li>
+    </ol>
+</div>
+
+<div class="card">
+    <div class="card-title">BODY LANGUAGE ON ZOOM</div>
+    <ul>
+        <li>Look at the <strong>camera</strong>, not the screen (simulates eye contact).</li>
+        <li>Sit up straight. Lean slightly forward = engaged.</li>
+        <li>Nod when the interviewer speaks = "I'm listening."</li>
+        <li>Smile naturally, especially at the start and end.</li>
+        <li>Keep hands visible. Use small gestures when explaining.</li>
+    </ul>
+</div>
+
+<div class="card">
+    <div class="card-title">THINGS TO AVOID</div>
+    <ul>
+        <li><strong>Don't badmouth</strong> previous employers or China.</li>
+        <li><strong>Don't say "I don't know"</strong> &mdash; say "I haven't worked with that specifically, but I'm a fast learner and I've worked with similar tools like..."</li>
+        <li><strong>Don't give one-word answers.</strong> Always explain briefly.</li>
+        <li><strong>Don't interrupt.</strong> Wait for them to finish, then respond.</li>
+        <li><strong>Don't discuss politics</strong> (Yandex/Russia situation). Keep it factual and positive.</li>
+    </ul>
+</div>
+
+<div class="card">
+    <div class="card-title">CLOSING STRONG</div>
+    <div class="script">
+        <div class="script-label">MEMORIZE THIS - End of interview</div>
+        <p>
+            Thank you so much for your time today, Milly.
+            I really enjoyed learning more about Nebius and the Data Engineer role.
+            I am very excited about this opportunity,
+            and I believe my experience with data pipelines, Spark, and Airflow
+            would be a great fit for your team.
+            I look forward to the next steps.
+        </p>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PART 8: REHEARSAL PLAN                       -->
+<!-- ============================================ -->
+
+<h2>PART 8: REHEARSAL PLAN</h2>
+<p class="cn">排练计划</p>
+
+<div class="card">
+    <div class="card-title">TONIGHT (Feb 10)</div>
+    <ol>
+        <li>Read through this entire document once. <span class="cn">通读一遍</span></li>
+        <li>Memorize the self-introduction (Part 1). Say it out loud 5 times.</li>
+        <li>Memorize the closing statement. Say it out loud 3 times.</li>
+        <li>Practice Q1-Q6 answers out loud. Record yourself and listen back.</li>
+        <li>Review company knowledge (Part 3). Quiz yourself on key numbers.</li>
+        <li>Practice emergency phrases (Part 5) until they feel natural.</li>
+    </ol>
+</div>
+
+<div class="card">
+    <div class="card-title">TOMORROW MORNING (Feb 11)</div>
+    <ol>
+        <li>Wake up early. Do a full rehearsal of self-intro + all Q&amp;A.</li>
+        <li>Time your self-intro. Should be 60-90 seconds.</li>
+        <li>Review the cheat sheet one more time.</li>
+        <li>Test Zoom at 12:30 PM. Check audio, video, lighting.</li>
+        <li>Have water, notepad, and this cheat sheet ready.</li>
+        <li>Take 3 deep breaths before the call starts.</li>
+    </ol>
+</div>
+
+<div class="tip">
+    <div class="tip-label">FINAL REMINDER</div>
+    <p>This is an HR screening, not a technical interview. They want to know: Are you a good communicator? Are you motivated? Do you fit the team? <strong>Be warm, be clear, be enthusiastic.</strong> You already have the technical skills &mdash; now show them you're a great person to work with.</p>
+</div>
+
+</html>
