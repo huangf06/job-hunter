@@ -703,9 +703,14 @@ class JobDatabase:
                 # startup_only mode (defers all syncs to final_sync()).
                 if not self._batch_active and self._sync_mode == "full":
                     self._try_sync("post-commit sync")
-            except BaseException:
-                conn.rollback()
-                raise
+            except BaseException as e:
+                try:
+                    conn.rollback()
+                except Exception as rollback_err:
+                    # Turso stream may already be dead (502 → 404 stream not found)
+                    # Log but don't mask the original error
+                    logger.warning("Rollback failed (connection may be dead): %s", rollback_err)
+                raise e
             finally:
                 self._in_transaction = False
         else:
@@ -717,9 +722,12 @@ class JobDatabase:
                 conn.execute("PRAGMA foreign_keys=ON")
                 yield conn
                 conn.commit()
-            except BaseException:
-                conn.rollback()
-                raise
+            except BaseException as e:
+                try:
+                    conn.rollback()
+                except Exception as rollback_err:
+                    logger.warning("Rollback failed: %s", rollback_err)
+                raise e
             finally:
                 conn.close()
 
