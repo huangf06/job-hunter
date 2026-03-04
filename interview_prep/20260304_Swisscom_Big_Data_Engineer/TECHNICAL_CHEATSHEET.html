@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Swisscom Big Data Engineer - Technical Cheatsheet</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0.5cm;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 8pt;
+            line-height: 1.2;
+            margin: 0;
+            padding: 10px;
+            color: #000;
+        }
+        h1 {
+            font-size: 14pt;
+            margin: 0 0 5px 0;
+            border-bottom: 2px solid #000;
+            padding-bottom: 3px;
+        }
+        h2 {
+            font-size: 10pt;
+            margin: 8px 0 3px 0;
+            background: #e0e0e0;
+            padding: 2px 5px;
+        }
+        h3 {
+            font-size: 9pt;
+            margin: 5px 0 2px 0;
+            font-weight: bold;
+        }
+        p {
+            margin: 2px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 3px 0;
+            font-size: 7.5pt;
+        }
+        th, td {
+            border: 1px solid #666;
+            padding: 2px 4px;
+            text-align: left;
+        }
+        th {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 1px 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 7pt;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 4px;
+            margin: 3px 0;
+            font-size: 7pt;
+            line-height: 1.1;
+            overflow-x: auto;
+        }
+        ul {
+            margin: 2px 0;
+            padding-left: 15px;
+        }
+        li {
+            margin: 1px 0;
+        }
+        .two-column {
+            column-count: 2;
+            column-gap: 10px;
+        }
+        strong {
+            font-weight: bold;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Swisscom Big Data Engineer - Technical Cheatsheet</h1>
+<p><strong>Interview</strong>: 2026-03-04 10:00 CET | Yannis Klonatos (EPFL PhD, Query Optimization) + Mani</p>
+
+<hr>
+
+<h2>CORE NUMBERS</h2>
+<p><strong>Personal</strong>: 6 yrs exp | 8.2 GPA (VU Amsterdam AI) | 3K+ securities (Baiquan) | Databricks Professional (2026-01)</p>
+<p><strong>Project</strong>: 26 fields | Top 100 coins | 5-min pull | ~29K records/day | 30s trigger | 10-min watermark | 85% ↓ files | 6.7x faster | &lt;0.1% quarantine</p>
+<p><strong>Swisscom</strong>: Billions events/day | 2TB/day | 4-person team</p>
+
+<hr>
+
+<h2>SPARK INTERNALS</h2>
+
+<h3>Catalyst Optimizer (4 Phases)</h3>
+<ol style="margin: 2px 0; padding-left: 20px;">
+    <li><strong>Unresolved Logical Plan</strong>: Parse SQL/DataFrame → AST (no validation)</li>
+    <li><strong>Resolved Logical Plan</strong>: Catalog lookup → validate tables/columns/types</li>
+    <li><strong>Optimized Logical Plan</strong>: Rule-based optimization
+        <ul>
+            <li>Predicate Pushdown: Move filters to scan (file-level skip in Parquet)</li>
+            <li>Column Pruning: Read only needed columns (columnar storage benefit)</li>
+            <li>Constant Folding: Compute <code>100*2</code> at compile time → <code>200</code></li>
+            <li>Join Reordering: Small tables first (reduce intermediate results)</li>
+        </ul>
+    </li>
+    <li><strong>Physical Plan</strong>: Cost-based optimization (CBO)
+        <ul>
+            <li>Requires: <code>ANALYZE TABLE t COMPUTE STATISTICS FOR COLUMNS</code></li>
+            <li>Estimates: row count, data size, cardinality, min/max, null ratio</li>
+            <li>Selects: Broadcast vs Shuffle Hash vs Sort Merge Join</li>
+        </ul>
+    </li>
+</ol>
+
+<h3>Tungsten Execution Engine (3 Optimizations)</h3>
+<ol style="margin: 2px 0; padding-left: 20px;">
+    <li><strong>Off-heap Memory Management</strong>
+        <ul>
+            <li>Binary format (not Java objects) → 5-10x less memory</li>
+            <li>No GC overhead (JVM doesn't scan off-heap data)</li>
+            <li>Example: Row object ~100 bytes → binary ~13 bytes</li>
+        </ul>
+    </li>
+    <li><strong>Cache-aware Computation</strong>
+        <ul>
+            <li>Contiguous memory layout → high CPU cache hit rate</li>
+            <li>L1 cache ~1ns, main memory ~100ns (100x difference)</li>
+        </ul>
+    </li>
+    <li><strong>Whole-stage Code Generation</strong>
+        <ul>
+            <li>Fuse operators into single generated method</li>
+            <li>Eliminate virtual function calls (~10ns each)</li>
+            <li>JIT compiler can inline/optimize further</li>
+        </ul>
+    </li>
+</ol>
+
+<p><strong>Key Concept</strong>: "Abstraction Without Regret" (Yannis's LegoBase paper) — high-level code compiles to C-like performance</p>
+
+<hr>
+
+<h2>SHUFFLE MECHANISM</h2>
+
+<h3>How Shuffle Works</h3>
+<ol style="margin: 2px 0; padding-left: 20px;">
+    <li><strong>Map</strong>: Each executor processes local data → outputs (key, value) pairs</li>
+    <li><strong>Partition Calculation</strong>: <code>partition_id = hash(key) % num_partitions</code></li>
+    <li><strong>Shuffle Write</strong>: Write to local disk, grouped by partition</li>
+    <li><strong>Shuffle Read</strong>: Executors pull data over network</li>
+    <li><strong>Reduce</strong>: Process data within each partition</li>
+</ol>
+
+<h3>Three Costs</h3>
+<ul>
+    <li><strong>Disk I/O</strong>: Write intermediate data to disk (100x slower than memory)</li>
+    <li><strong>Network Transfer</strong>: Move data between executors (bandwidth bottleneck)</li>
+    <li><strong>Serialization</strong>: Convert objects to bytes and back (CPU overhead)</li>
+</ul>
+
+<h3>Key Insight</h3>
+<ul>
+    <li><strong>Partition ≠ Executor</strong>: Partition = logical data split, Executor = physical compute resource</li>
+    <li>One executor processes multiple partitions (typically 2-3x num cores)</li>
+    <li>Same key always goes to same partition (hash determinism)</li>
+</ul>
+
+<hr>
+
+<h2>JOIN STRATEGIES</h2>
+
+<table>
+    <tr>
+        <th>Strategy</th>
+        <th>When</th>
+        <th>Shuffle</th>
+        <th>Memory</th>
+        <th>Speed</th>
+    </tr>
+    <tr>
+        <td><strong>Broadcast Hash</strong></td>
+        <td>Small table &lt;10MB</td>
+        <td>❌</td>
+        <td>Small table fits in each executor</td>
+        <td>Fastest</td>
+    </tr>
+    <tr>
+        <td><strong>Shuffle Hash</strong></td>
+        <td>One table smaller</td>
+        <td>✅</td>
+        <td>Small table partition fits in memory</td>
+        <td>Fast</td>
+    </tr>
+    <tr>
+        <td><strong>Sort Merge</strong></td>
+        <td>Both tables large</td>
+        <td>✅</td>
+        <td>Only 2 pointers needed</td>
+        <td>Slow</td>
+    </tr>
+</table>
+
+<h3>Sort Merge Join Deep Dive</h3>
+<ol style="margin: 2px 0; padding-left: 20px;">
+    <li><strong>Shuffle</strong>: Both tables by join key → <code>hash(key) % num_partitions</code></li>
+    <li><strong>Sort</strong>: Within each partition, sort both tables by join key</li>
+    <li><strong>Merge</strong>: Two-pointer algorithm (like merging sorted arrays)
+        <ul>
+            <li>If <code>A.key == B.key</code> → match, output, advance B</li>
+            <li>If <code>A.key &lt; B.key</code> → advance A</li>
+            <li>If <code>A.key &gt; B.key</code> → advance B</li>
+        </ul>
+    </li>
+    <li><strong>Complexity</strong>: O(n log n) sort + O(n+m) merge</li>
+</ol>
+
+<p><strong>Why Sort?</strong> Enables linear scan (no backtracking), memory-efficient (no hash table)</p>
+
+<hr>
+
+<h2>DATA SKEW</h2>
+
+<h3>Detection</h3>
+<ul>
+    <li>Spark UI: Task duration/input size 10x+ difference</li>
+    <li>Code: <code>df.groupBy("key").count().orderBy("count", desc=True)</code></li>
+</ul>
+
+<h3>Solutions</h3>
+
+<table>
+    <tr>
+        <th>Method</th>
+        <th>Use Case</th>
+        <th>How</th>
+        <th>Trade-off</th>
+    </tr>
+    <tr>
+        <td><strong>Salting</strong></td>
+        <td>GroupBy skew</td>
+        <td>Add random suffix to hot keys → 2-stage aggregation</td>
+        <td>+1 stage, complex code</td>
+    </tr>
+    <tr>
+        <td><strong>Broadcast Join</strong></td>
+        <td>Join skew, small table</td>
+        <td>Avoid shuffle entirely</td>
+        <td>Small table must fit in memory</td>
+    </tr>
+    <tr>
+        <td><strong>Split Processing</strong></td>
+        <td>Few hot keys</td>
+        <td>Process hot keys separately, union</td>
+        <td>Manual key identification</td>
+    </tr>
+    <tr>
+        <td><strong>Increase Partitions</strong></td>
+        <td>Mild skew</td>
+        <td><code>spark.sql.shuffle.partitions = 1000</code></td>
+        <td>More scheduling overhead</td>
+    </tr>
+    <tr>
+        <td><strong>AQE (Spark 3.0+)</strong></td>
+        <td>General</td>
+        <td>Auto-detect & split skewed partitions</td>
+        <td>Limited for extreme skew</td>
+    </tr>
+</table>
+
+<hr>
+
+<h2>STREAMING CONCEPTS</h2>
+
+<h3>Checkpoint</h3>
+<ul>
+    <li><strong>Purpose</strong>: Exactly-once semantics + fault tolerance</li>
+    <li><strong>Contents</strong>: <code>offsets/</code> (batch ranges), <code>commits/</code> (completion markers), <code>state/</code> (stateful ops), <code>metadata</code></li>
+    <li><strong>Recovery</strong>: Read last commit → resume from last offset → reprocess uncommitted batches</li>
+    <li><strong>Location</strong>: S3/HDFS (reliable storage)</li>
+</ul>
+
+<h3>Watermarking</h3>
+<ul>
+    <li><strong>Formula</strong>: <code>watermark = max(event_time) - threshold</code></li>
+    <li><strong>Global Watermark</strong>: <code>min(all partition watermarks)</code> (slowest partition determines)</li>
+    <li><strong>Purpose</strong>: When to stop waiting for late data in event-time windows</li>
+    <li><strong>My Choice</strong>: 10-min watermark (based on P99 latency ~8 min)</li>
+    <li><strong>Trade-off</strong>: Larger → more complete but higher latency; Smaller → faster but drop late data</li>
+</ul>
+
+<hr>
+
+<h2>DATA ARCHITECTURE</h2>
+
+<h3>Medallion Architecture</h3>
+
+<table>
+    <tr>
+        <th>Layer</th>
+        <th>Format</th>
+        <th>Schema</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td><strong>Bronze</strong></td>
+        <td>JSON</td>
+        <td>Schema-on-read</td>
+        <td>Raw ingestion, audit trail, replay</td>
+    </tr>
+    <tr>
+        <td><strong>Silver</strong></td>
+        <td>Parquet</td>
+        <td>Enforced</td>
+        <td>Cleaned, validated, queryable</td>
+    </tr>
+    <tr>
+        <td><strong>Gold</strong></td>
+        <td>Parquet</td>
+        <td>Business views</td>
+        <td>Aggregated, denormalized</td>
+    </tr>
+</table>
+
+<p><strong>Principle</strong>: Never discard data. Bronze captures everything, Silver cleans, Gold aggregates.</p>
+
+<h3>Quarantine-and-Replay Pattern</h3>
+<pre>Bronze (all data) → Validation → Pass → Silver
+                              → Fail → Quarantine table
+                                    → Fix → Replay → Silver</pre>
+
+<h3>Star Schema vs Snowflake</h3>
+<ul>
+    <li><strong>Star</strong>: 1 fact table + N dimension tables (direct joins) → Simple queries, fast</li>
+    <li><strong>Snowflake</strong>: Dimensions normalized → Less storage, more joins</li>
+    <li><strong>Recommendation</strong>: Star for analytics (query speed &gt; storage)</li>
+</ul>
+
+<hr>
+
+<h2>SQL PATTERNS</h2>
+
+<h3>Window Functions</h3>
+<pre>-- Top N per group
+ROW_NUMBER() OVER (PARTITION BY category ORDER BY revenue DESC)
+
+-- Cumulative sum
+SUM(amount) OVER (ORDER BY date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+
+-- Previous/next row
+LAG(price, 1) OVER (ORDER BY date)
+LEAD(price, 1) OVER (ORDER BY date)</pre>
+
+<h3>SCD Type 2</h3>
+<pre>MERGE INTO dim_users target
+USING source_users source
+ON target.user_id = source.user_id AND target.is_current = true
+WHEN MATCHED AND target.name != source.name THEN
+  UPDATE SET is_current = false, valid_to = current_date()
+WHEN NOT MATCHED THEN
+  INSERT (user_id, name, is_current, valid_from, valid_to)
+  VALUES (source.user_id, source.name, true, current_date(), '9999-12-31')</pre>
+
+<hr>
+
+<h2>DELTA LAKE</h2>
+
+<h3>Z-ordering vs Liquid Clustering</h3>
+
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Z-ordering</th>
+        <th>Liquid Clustering</th>
+    </tr>
+    <tr>
+        <td>Introduced</td>
+        <td>2019</td>
+        <td>2023 (GA)</td>
+    </tr>
+    <tr>
+        <td>Optimization</td>
+        <td>Manual <code>OPTIMIZE ZORDER BY</code></td>
+        <td>Automatic</td>
+    </tr>
+    <tr>
+        <td>With Partitioning</td>
+        <td>✅ Compatible</td>
+        <td>❌ Mutually exclusive</td>
+    </tr>
+</table>
+
+<p><strong>My Choice</strong>: Z-ordering (learning project). Production → Liquid Clustering.</p>
+
+<hr>
+
+<h2>PERFORMANCE TUNING</h2>
+
+<h3>Partition Tuning</h3>
+<ul>
+    <li>Default: <code>spark.sql.shuffle.partitions = 200</code></li>
+    <li>Rule of thumb: 2-3x num cores (e.g., 12 cores → 24-36 partitions)</li>
+</ul>
+
+<h3>AQE (Adaptive Query Execution)</h3>
+<pre>spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")</pre>
+
+<hr>
+
+<h2>KAFKA & STREAMING</h2>
+
+<h3>Kafka Core Concepts</h3>
+<ul>
+    <li><strong>Topic</strong>: Logical channel (e.g., <code>network_events</code>)</li>
+    <li><strong>Partition</strong>: Physical split of topic (parallelism unit)</li>
+    <li><strong>Consumer Group</strong>: Consumers share partitions (each partition → 1 consumer)</li>
+    <li><strong>Offset</strong>: Position in partition (commit offset = mark as processed)</li>
+</ul>
+
+<h3>Exactly-Once Semantics</h3>
+<ol style="margin: 2px 0; padding-left: 20px;">
+    <li>Idempotent Producer: Deduplicate retries</li>
+    <li>Transactional Writes: Atomic commit across partitions</li>
+    <li>Checkpoint: Store offsets in reliable storage</li>
+    <li>Idempotent Sink: Use <code>MERGE</code> instead of <code>INSERT</code></li>
+</ol>
+
+<hr>
+
+<h2>INTERVIEW RESPONSES</h2>
+
+<h3>"Explain Spark query execution"</h3>
+<p>"Catalyst parses SQL to AST, resolves via catalog, optimizes with rule-based transformations like predicate pushdown and column pruning, then generates physical plans. CBO selects best plan using table statistics. Tungsten compiles to binary format with whole-stage code generation, eliminating virtual calls and enabling JIT optimization."</p>
+
+<h3>"How do you handle data skew?"</h3>
+<p>"Detect via Spark UI (10x task duration) or groupBy count. For GroupBy skew, use salting—add random suffix to hot keys, aggregate twice. For Join skew, broadcast small table or split hot keys for separate processing. Enable AQE for automatic runtime optimization."</p>
+
+<h3>"Explain checkpoint in Structured Streaming"</h3>
+<p>"Checkpoint stores offsets, commits, and state to S3. On failure, read last commit, resume from last offset, reprocess uncommitted batches. Enables exactly-once semantics and fault tolerance."</p>
+
+<h3>"Why Sort Merge Join over Hash Join?"</h3>
+<p>"Sort Merge is memory-efficient—only needs two pointers, no hash table. For very large tables where Hash Join causes OOM, Sort Merge scales arbitrarily. Trade-off: O(n log n) sort cost vs O(1) hash lookup."</p>
+
+<hr>
+
+<h2>QUESTIONS TO ASK</h2>
+
+<ol style="margin: 2px 0; padding-left: 20px;">
+    <li>"What's the data pipeline architecture—Lambda, Kappa, or custom? How do you handle late-arriving events?"</li>
+    <li>"With 4 people at this scale, how do you balance feature development vs operational maintenance?"</li>
+    <li>"What are the biggest technical challenges in the next 6-12 months?"</li>
+</ol>
+
+<hr>
+
+<h2>WEAKNESSES BRIDGE</h2>
+
+<ul>
+    <li><strong>Scala</strong>: "No production experience, but understand JVM + functional programming. PySpark API is functional. Confident I can ramp up quickly."</li>
+    <li><strong>Telecom</strong>: "Proven adaptability across 3 domains. Core data engineering challenges are universal: scale, quality, reliability."</li>
+    <li><strong>Gap (2019-2023)</strong>: "Deliberate career pivot: independent investing + language learning + grad school prep."</li>
+</ul>
+
+<hr>
+
+<p><strong>Key</strong>: Yannis values "why" over "how". Show trade-off thinking, not just API knowledge.</p>
+
+</body>
+</html>
