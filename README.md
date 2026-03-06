@@ -108,10 +108,6 @@ templates/
   cover_letter_template.html    # Cover letter template
   resume_master.html            # Reference layout
 
-practice/                       # Daily coding drill
-  log.md                            # Practice tracking log
-  day1_knn.py                       # KNN from scratch exercise
-
 interview_prep/                 # Interview dossiers (per company)
   YYYYMMDD_Company_Role/            # 00-09 standardized files
 ```
