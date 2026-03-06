@@ -171,8 +171,8 @@ interview_prep/YYYYMMDD_Company_Role/
 - **主动问用户** 是否与公司使命有个人联系
 
 ### 8. CI/CD (GitHub Actions)
-流水线自动运行: `.github/workflows/job-pipeline.yml`
-- 定时触发: 每日自动爬取 + 处理 + AI 分析
+流水线自动运行: `.github/workflows/job-pipeline-optimized.yml`
+- 定时触发: 工作日 3 次 (NL 时间 08:23 / 12:23 / 16:23)，周末 1 次
 - 使用 Turso 云数据库，无需本地 DB
 
 ## 文件结构
@@ -181,10 +181,15 @@ interview_prep/YYYYMMDD_Company_Role/
 job-hunter/
 ├── scripts/                    # CLI 入口
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
-│   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫
+│   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫 (boolean queries, CDP)
 │   ├── multi_scraper.py            # 多平台爬虫编排 (Greenhouse+Lever+IamExpat)
 │   ├── job_parser.py               # JD 解析器
-│   └── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
+│   ├── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
+│   ├── notify.py                   # Telegram 通知 (CI/CD)
+│   ├── notify_discord.py           # Discord 通知
+│   ├── svg_auto_optimizer.py       # SVG 简历自动优化 (Vision API 迭代)
+│   ├── generate_svg_preview.py     # SVG → PNG 预览
+│   └── svg_to_pdf.py              # SVG → PDF 转换
 │
 ├── src/                        # 可复用模块
 │   ├── __init__.py
@@ -195,6 +200,7 @@ job-hunter/
 │   ├── cover_letter_renderer.py    # Cover Letter 渲染
 │   ├── checklist_server.py         # 本地 checklist HTTP server
 │   ├── google_calendar.py          # Google Calendar REST 客户端 (通用)
+│   ├── gmail_client.py             # Gmail IMAP 客户端
 │   ├── interview_scheduler.py      # 智能面试调度 (日历+DB+评分)
 │   ├── scrapers/                   # 多平台爬虫模块
 │   │   ├── base.py                     # BaseScraper 抽象类
@@ -219,8 +225,9 @@ job-hunter/
 │   └── resume_master.html      # 完整参考简历
 │
 ├── assets/
-│   ├── bullet_library.yaml     # 已验证的经历库 (核心)
-│   └── cover_letter_config.yaml    # Cover Letter 配置
+│   ├── bullet_library.yaml     # 已验证的经历库 (50 bullets, 核心)
+│   ├── cover_letter_config.yaml    # Cover Letter 配置
+│   └── cl_knowledge_base.yaml      # CL 手写片段库
 │
 ├── data/
 │   ├── jobs.db                 # SQLite 数据库 (Turso embedded replica)
@@ -228,7 +235,11 @@ job-hunter/
 │
 ├── .github/
 │   └── workflows/
-│       └── job-pipeline.yml    # CI/CD 自动化流水线
+│       └── job-pipeline-optimized.yml  # CI/CD 自动化流水线
+│
+├── practice/                   # Live coding 练习
+│   ├── log.md                      # 每日练习记录
+│   └── day1_knn.py                 # KNN 基础练习
 │
 ├── output/                     # 生成的简历
 ├── ready_to_send/              # --prepare 生成的投递材料 + checklist
@@ -291,6 +302,12 @@ print(db.get_funnel_stats())
    - 触发: "帮我准备 XX 公司的面试"
    - 输出: `interview_prep/YYYYMMDD_Company_Role/` 下 8-9 个文件
    - 面试后: 补充 `09_post_interview_notes.md`
+
+7. **每日 Live Coding 练习** (1.5-2h, P0 优先级):
+   - 计划: `docs/plans/2026-03-06-live-coding-practice-plan.md`
+   - 记录: `practice/log.md`
+   - 平台: NeetCode 150 (neetcode.io) + LeetCode
+   - 重点: Arrays & Hashing → Two Pointers → Sorting (前 2 周)
 
 ## 配置说明
 
