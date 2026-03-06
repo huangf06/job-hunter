@@ -237,10 +237,6 @@ job-hunter/
 │   └── workflows/
 │       └── job-pipeline-optimized.yml  # CI/CD 自动化流水线
 │
-├── practice/                   # Live coding 练习
-│   ├── log.md                      # 每日练习记录
-│   └── day1_knn.py                 # KNN 基础练习
-│
 ├── output/                     # 生成的简历
 ├── ready_to_send/              # --prepare 生成的投递材料 + checklist
 ├── interview_prep/             # 面试准备档案 (按公司/日期归档)
@@ -304,8 +300,7 @@ print(db.get_funnel_stats())
    - 面试后: 补充 `09_post_interview_notes.md`
 
 7. **每日 Live Coding 练习** (1.5-2h, P0 优先级):
-   - 计划: `docs/plans/2026-03-06-live-coding-practice-plan.md`
-   - 记录: `practice/log.md`
+   - 独立项目: `C:\Users\huang\github\python-dojo`
    - 平台: NeetCode 150 (neetcode.io) + LeetCode
    - 重点: Arrays & Hashing → Two Pointers → Sorting (前 2 周)
 
