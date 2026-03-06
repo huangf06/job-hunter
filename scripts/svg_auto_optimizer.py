@@ -62,7 +62,7 @@ class SVGResumeGenerator:
         return svg_path
 
     def _generate_svg_content(self) -> str:
-        """Generate SVG content from data"""
+        """Generate complete SVG resume with dual-column layout"""
         # Load config for personal info
         config_path = PROJECT_ROOT / "config" / "ai_config.yaml"
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -74,48 +74,212 @@ class SVGResumeGenerator:
         phone = candidate.get('phone', '')
         location = candidate.get('location', '')
 
-        # Build SVG with proper structure
+        # Build SVG with dual-column layout
         svg_parts = [
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100">',
-            '  <style>',
-            '    text { font-family: Arial, sans-serif; }',
-            '  </style>',
-            '  <!-- Header -->',
-            f'  <text x="50" y="50" font-size="24" font-weight="bold">{name}</text>',
-            f'  <text x="50" y="75" font-size="12">{email} | {phone} | {location}</text>',
+            '  <defs>',
+            '    <style>',
+            '      text { font-family: Arial, sans-serif; }',
+            '      .header-name { font-size: 24px; font-weight: bold; fill: #1a1a1a; }',
+            '      .header-contact { font-size: 11px; fill: #555; }',
+            '      .section-title { font-size: 14px; font-weight: bold; fill: #2c5aa0; text-transform: uppercase; }',
+            '      .company-name { font-size: 13px; font-weight: bold; fill: #1a1a1a; }',
+            '      .job-title { font-size: 11px; font-weight: 600; fill: #333; }',
+            '      .period { font-size: 10px; fill: #666; }',
+            '      .bullet { font-size: 10px; fill: #333; }',
+            '      .skill-category { font-size: 10px; font-weight: bold; fill: #2c5aa0; }',
+            '      .skill-item { font-size: 9px; fill: #333; }',
+            '      .cert-box { fill: #e8f0f8; stroke: #2c5aa0; stroke-width: 1.5; }',
+            '      .cert-text { font-size: 10px; font-weight: bold; fill: #2c5aa0; }',
+            '    </style>',
+            '  </defs>',
             '',
-            '  <!-- Work Experience -->',
-            '  <text x="50" y="120" font-size="16" font-weight="bold">WORK EXPERIENCE</text>',
+            '  <!-- Header -->',
+            f'  <text x="40" y="40" class="header-name">{name}</text>',
+            f'  <text x="40" y="58" class="header-contact">{email} • {phone} • {location}</text>',
+            '  <line x1="40" y1="68" x2="760" y2="68" stroke="#ccc" stroke-width="1"/>',
+            '',
         ]
 
-        y_pos = 150
+        # Left column (work experience) - 65% width
+        left_x = 40
+        left_width = 480
+        y_pos = 95
+
+        svg_parts.append('  <!-- Left Column: Work Experience -->')
+        svg_parts.append(f'  <text x="{left_x}" y="{y_pos}" class="section-title">Work Experience</text>')
+        svg_parts.append(f'  <line x1="{left_x}" y1="{y_pos + 3}" x2="{left_x + 150}" y2="{y_pos + 3}" stroke="#2c5aa0" stroke-width="2"/>')
+        y_pos += 20
+
+        # Work experience entries
         work_exp = self.data.get('work_experience', {})
 
-        for company_key, company_data in work_exp.items():
-            if isinstance(company_data, dict):
-                company_name = company_data.get('company', '')
-                role = company_data.get('role', '')
-                period = company_data.get('period', '')
+        # Order: GLP, Independent, Baiquan, Henan, Aoshen, Eleme
+        company_order = ['glp_technology', 'independent_investor', 'baiquan_investment',
+                        'henan_energy', 'aoshen_business', 'eleme']
 
-                svg_parts.append(f'  <text x="50" y="{y_pos}" font-size="14" font-weight="bold">{company_name}</text>')
-                y_pos += 20
-                svg_parts.append(f'  <text x="50" y="{y_pos}" font-size="12">{role} | {period}</text>')
-                y_pos += 25
+        for company_key in company_order:
+            if company_key not in work_exp:
+                continue
 
-                bullets = company_data.get('bullets', [])
-                for bullet in bullets[:3]:  # Limit to 3 bullets per company
-                    content = bullet.get('content', '') if isinstance(bullet, dict) else str(bullet)
-                    # Wrap text if too long
-                    if len(content) > 80:
-                        content = content[:77] + '...'
-                    svg_parts.append(f'  <text x="60" y="{y_pos}" font-size="11">• {content}</text>')
-                    y_pos += 18
+            company_data = work_exp[company_key]
+            if not isinstance(company_data, dict):
+                continue
 
-                y_pos += 10  # Space between companies
+            # Company name
+            company_name = company_data.get('company', company_data.get('display_name', ''))
+            svg_parts.append(f'  <text x="{left_x}" y="{y_pos}" class="company-name">{self._escape_xml(company_name)}</text>')
+
+            # Period (right-aligned)
+            period = company_data.get('period', '')
+            svg_parts.append(f'  <text x="{left_x + left_width - 10}" y="{y_pos}" class="period" text-anchor="end">{period}</text>')
+            y_pos += 15
+
+            # Job title
+            titles = company_data.get('titles', {})
+            title = titles.get('default', '')
+            if title:
+                svg_parts.append(f'  <text x="{left_x}" y="{y_pos}" class="job-title">{self._escape_xml(title)}</text>')
+                y_pos += 14
+
+            # Bullets (max 2, prioritize quality over quantity)
+            bullets = company_data.get('verified_bullets', [])
+            bullet_count = 2  # Limit to 2 bullets per company for better spacing
+            for bullet in bullets[:bullet_count]:
+                if isinstance(bullet, dict):
+                    content = bullet.get('content', '')
+                    # Wrap long text
+                    wrapped_lines = self._wrap_text(content, 68)  # Slightly shorter lines
+                    for i, line in enumerate(wrapped_lines):
+                        if i == 0:
+                            # First line with bullet
+                            svg_parts.append(f'  <text x="{left_x + 5}" y="{y_pos}" class="bullet">• {self._escape_xml(line)}</text>')
+                        else:
+                            # Continuation lines without bullet, indented
+                            svg_parts.append(f'  <text x="{left_x + 15}" y="{y_pos}" class="bullet">{self._escape_xml(line)}</text>')
+                        y_pos += 14  # Increased line spacing
+
+                    y_pos += 5  # Extra space after each bullet
+
+            y_pos += 22  # Increased space between companies
+
+        # Right column (skills, certifications, education) - 35% width
+        right_x = 540
+        right_width = 220
+        right_y = 95
+
+        svg_parts.append('')
+        svg_parts.append('  <!-- Right Column: Skills & Education -->')
+
+        # Certification box
+        cert_data = self.data.get('certifications', [])
+        if cert_data:
+            cert = cert_data[0]
+            cert_name = cert.get('name', '')
+            cert_date = cert.get('date', '')
+
+            svg_parts.append(f'  <rect x="{right_x}" y="{right_y - 12}" width="{right_width}" height="42" class="cert-box" rx="3"/>')
+            svg_parts.append(f'  <text x="{right_x + 10}" y="{right_y + 2}" class="cert-text">CERTIFIED</text>')
+            svg_parts.append(f'  <text x="{right_x + 10}" y="{right_y + 16}" class="skill-item">{self._wrap_text(cert_name, 28)[0]}</text>')
+            if len(self._wrap_text(cert_name, 28)) > 1:
+                svg_parts.append(f'  <text x="{right_x + 10}" y="{right_y + 26}" class="skill-item">{self._wrap_text(cert_name, 28)[1]}</text>')
+            right_y += 50  # Increased spacing
+
+        # Skills section
+        svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="section-title">Skills</text>')
+        svg_parts.append(f'  <line x1="{right_x}" y1="{right_y + 3}" x2="{right_x + 60}" y2="{right_y + 3}" stroke="#2c5aa0" stroke-width="2"/>')
+        right_y += 15
+
+        skill_tiers = self.data.get('skill_tiers', {}).get('verified', {})
+
+        # Key skill categories for resume
+        skill_display = [
+            ('Languages & Core', skill_tiers.get('languages', [])),
+            ('Data Engineering', skill_tiers.get('data_engineering', [])[:6]),
+            ('ML/AI Frameworks', skill_tiers.get('ml', [])[:6]),
+            ('Cloud & DevOps', skill_tiers.get('cloud', [])),
+            ('Databases', skill_tiers.get('databases', [])),
+        ]
+
+        for category, skills in skill_display:
+            if not skills:
+                continue
+            svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="skill-category">{self._escape_xml(category)}</text>')
+            right_y += 12  # Increased from 11
+
+            # Display skills as comma-separated
+            skills_text = ', '.join(skills[:8])  # Max 8 skills per category
+            wrapped = self._wrap_text(skills_text, 28)
+            for line in wrapped[:2]:  # Max 2 lines per category
+                svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="skill-item">{self._escape_xml(line)}</text>')
+                right_y += 11  # Increased from 10
+            right_y += 6  # Increased from 5
+
+        # Education section
+        right_y += 10
+        svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="section-title">Education</text>')
+        svg_parts.append(f'  <line x1="{right_x}" y1="{right_y + 3}" x2="{right_x + 80}" y2="{right_y + 3}" stroke="#2c5aa0" stroke-width="2"/>')
+        right_y += 15
+
+        education = self.data.get('education', {})
+
+        # VU Amsterdam
+        vu = education.get('vu_amsterdam', {})
+        if vu:
+            svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="company-name">VU Amsterdam</text>')
+            right_y += 13  # Increased from 12
+            svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="skill-item">{vu.get("degree", "")}</text>')
+            right_y += 11  # Increased from 10
+            svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="period">{vu.get("period", "")} • GPA: {vu.get("gpa", "")}</text>')
+            right_y += 20  # Increased from 15
+
+        # Tsinghua
+        tsinghua = education.get('tsinghua', {})
+        if tsinghua:
+            svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="company-name">Tsinghua University</text>')
+            right_y += 13  # Increased from 12
+            svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="skill-item">{tsinghua.get("degree", "")}</text>')
+            right_y += 11  # Increased from 10
+            svg_parts.append(f'  <text x="{right_x}" y="{right_y}" class="period">{tsinghua.get("period", "")}</text>')
 
         svg_parts.append('</svg>')
         return '\n'.join(svg_parts)
+
+    def _escape_xml(self, text: str) -> str:
+        """Escape XML special characters"""
+        # Order matters: & must be escaped first!
+        return (text.replace('&', '&amp;')
+                   .replace('<', '&lt;')
+                   .replace('>', '&gt;')
+                   .replace('"', '&quot;')
+                   .replace("'", '&apos;'))
+
+    def _wrap_text(self, text: str, max_length: int) -> List[str]:
+        """Wrap text to multiple lines"""
+        if len(text) <= max_length:
+            return [text]
+
+        words = text.split()
+        lines = []
+        current_line = []
+        current_length = 0
+
+        for word in words:
+            word_length = len(word) + (1 if current_line else 0)
+            if current_length + word_length <= max_length:
+                current_line.append(word)
+                current_length += word_length
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+                current_length = len(word)
+
+        if current_line:
+            lines.append(' '.join(current_line))
+
+        return lines
 
     def apply_fixes(self, svg_content: str, fixes: List[Dict]) -> str:
         """Apply fixes to SVG content"""
