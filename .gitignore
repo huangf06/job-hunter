@@ -3,6 +3,7 @@
 # config/linkedin_cookies.json
 # config/credentials.json
 # config/private/
+config/todoist_config.json
 
 # Data (DB + scrape dumps)
 data/jobs.db

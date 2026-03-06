@@ -23,3 +23,6 @@ libsql==0.1.11
 
 # Gmail IMAP client
 imapclient==3.1.0
+
+# Todoist API
+todoist-api-python
