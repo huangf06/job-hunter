@@ -48,6 +48,11 @@ nul
 # Temp files
 _tmp_*
 
+# SVG optimizer artifacts
+iterations/
+templates/*.png
+templates/resume_svg*.svg
+
 # Claude Code local settings
 .claude/settings.local.json
 
