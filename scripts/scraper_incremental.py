@@ -375,6 +375,7 @@ class IncrementalScraper:
                 if not jobs:
                     break  # 没有更多职位了
 
+                page_jobs = []
                 for job in jobs:
                     job['search_profile'] = profile_name
                     job['search_query'] = keywords
@@ -389,7 +390,9 @@ class IncrementalScraper:
                         hwm_hit = True
                         break
 
-                query_jobs.extend(jobs)
+                    page_jobs.append(job)
+
+                query_jobs.extend(page_jobs)
 
                 if hwm_hit:
                     break
