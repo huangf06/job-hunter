@@ -340,6 +340,16 @@ class JobDatabase:
         created_at TEXT DEFAULT (datetime('now'))
     );
 
+    -- 爬取水位标记表 (增量爬取 High-Water Mark)
+    CREATE TABLE IF NOT EXISTS scrape_watermarks (
+        profile TEXT NOT NULL,
+        query TEXT NOT NULL,
+        hwm_url TEXT NOT NULL,
+        last_scraped_at TEXT NOT NULL,
+        jobs_found INTEGER DEFAULT 0,
+        PRIMARY KEY (profile, query)
+    );
+
     -- 索引
     CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company);
     CREATE INDEX IF NOT EXISTS idx_jobs_source ON jobs(source);
@@ -1140,6 +1150,30 @@ class JobDatabase:
                 params.append(limit)
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
+
+    # ==================== Watermark 操作 (增量爬取 HWM) ====================
+
+    def get_watermark(self, profile: str, query: str) -> Optional[str]:
+        """Get the high-water mark URL for a profile+query."""
+        with self._get_conn() as conn:
+            cursor = conn.execute(
+                "SELECT hwm_url FROM scrape_watermarks WHERE profile = ? AND query = ?",
+                (profile, query),
+            )
+            row = cursor.fetchone()
+            return row[0] if row else None
+
+    def set_watermark(self, profile: str, query: str, hwm_url: str, jobs_found: int = 0):
+        """Set/update the high-water mark for a profile+query."""
+        with self._get_conn() as conn:
+            conn.execute(
+                "INSERT INTO scrape_watermarks (profile, query, hwm_url, last_scraped_at, jobs_found) "
+                "VALUES (?, ?, ?, datetime('now'), ?) "
+                "ON CONFLICT(profile, query) DO UPDATE SET "
+                "hwm_url = excluded.hwm_url, last_scraped_at = excluded.last_scraped_at, "
+                "jobs_found = excluded.jobs_found",
+                (profile, query, hwm_url, jobs_found),
+            )
 
     # ==================== Application 操作 (original) ====================
 

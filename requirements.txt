@@ -1,5 +1,8 @@
 # Dependencies — pinned for reproducible CI builds
 
+# Daemon scheduler
+apscheduler>=3.10.0
+
 # Config parsing
 pyyaml==6.0.3
 
