@@ -692,8 +692,6 @@ class JobPipeline:
         """One-command: generate all materials + launch checklist server."""
         from src.checklist_server import generate_checklist, start_server
         from src.resume_renderer import ResumeRenderer
-        from src.cover_letter_generator import CoverLetterGenerator
-        from src.cover_letter_renderer import CoverLetterRenderer
 
         threshold = min_ai_score or self.ai_config.get('thresholds', {}).get(
             'ai_score_generate_resume', 5.0)
@@ -708,12 +706,10 @@ class JobPipeline:
         jobs = self.db.get_analyzed_jobs_for_resume(
             min_ai_score=threshold, limit=limit)
 
-        results = {"success": [], "failed": [], "cl_failed": []}
+        results = {"success": [], "failed": []}
 
         if jobs:
             print(f"\nGenerating materials for {len(jobs)} jobs...")
-            cl_gen = CoverLetterGenerator()
-            cl_renderer = CoverLetterRenderer()
 
             for job in jobs:
                 job_id = job['id']
@@ -732,14 +728,6 @@ class JobPipeline:
                     continue
 
                 results["success"].append(label)
-
-                # Cover letter (non-blocking: resume is saved even if CL fails)
-                try:
-                    cl_spec = cl_gen.generate(job_id)
-                    if cl_spec:
-                        cl_renderer.render(job_id)
-                except Exception as e:
-                    results["cl_failed"].append((label, str(e)))
         else:
             print("No new jobs need resume generation.")
 
@@ -792,13 +780,6 @@ class JobPipeline:
         if before_count > len(all_ready):
             print(f"  Skipped {before_count - len(all_ready)} jobs (resume files missing).")
 
-        # Enrich with source/description for CL scrutiny estimation
-        for job in all_ready:
-            full = self.db.get_job(job['id'])
-            if full:
-                job['source'] = full.get('source', '')
-                job['description'] = full.get('description', '')
-
         # Enrich with repost info
         repost_count = 0
         for job in all_ready:
@@ -833,10 +814,6 @@ class JobPipeline:
             print(f"  Failed:      {len(results['failed'])}")
             for label, err in results["failed"]:
                 print(f"    x {label}: {err[:80]}")
-        if results["cl_failed"]:
-            print(f"  CL warnings: {len(results['cl_failed'])}")
-            for label, err in results["cl_failed"]:
-                print(f"    ! {label}: {err[:80]}")
         print(f"  Total ready: {len(all_ready)}")
         if repost_count:
             print(f"  Reposts:     {repost_count} (already applied to same company+title)")
@@ -1343,7 +1320,6 @@ def main():
                                      model=args.model)
         elif args.generate:
             pipeline.generate_resumes(min_ai_score=args.min_score, limit=args.limit)
-            pipeline.generate_cover_letters_batch(min_ai_score=args.min_score, limit=args.limit)
         elif args.cover_letter:
             pipeline.generate_cover_letter(args.cover_letter,
                                            custom_requirements=args.requirements,
