@@ -358,29 +358,58 @@ class IncrementalScraper:
         for i, query in enumerate(queries):
             keywords = query.get('keywords', '')
             print(f"\n[Query {i+1}/{len(queries)}] {keywords[:60]}...")
-            
+
+            # Load HWM for this profile+query
+            hwm_url = self.db.get_watermark(profile_name, keywords)
+            if hwm_url:
+                print(f"  [HWM] Will stop at: ...{hwm_url[-40:]}")
+
+            first_job_url = None  # Track newest job for new HWM
+            hwm_hit = False
+            query_jobs = []
+
             # 只抓取前 N 页（增量模式）
             for page_num in range(1, self.max_pages_per_profile + 1):
                 jobs = await self.scrape_search_page(keywords, location, page_num)
-                
+
                 if not jobs:
                     break  # 没有更多职位了
-                    
+
                 for job in jobs:
                     job['search_profile'] = profile_name
                     job['search_query'] = keywords
-                    
-                all_jobs.extend(jobs)
-                
+
+                    # Record first job URL for new HWM
+                    if first_job_url is None and job.get('url'):
+                        first_job_url = job['url']
+
+                    # HWM check
+                    if hwm_url and job.get('url') == hwm_url:
+                        print(f"  [HWM] Hit watermark on page {page_num}, stopping")
+                        hwm_hit = True
+                        break
+
+                query_jobs.extend(jobs)
+
+                if hwm_hit:
+                    break
+
                 # 如果这一页全是已存在的职位，提前停止
                 urls = [j['url'] for j in jobs]
                 existing = self._preload_existing_jobs(urls)
                 if len(existing) == len(jobs):
                     print(f"  [STOP] Page {page_num} all duplicates, stopping early")
                     break
-                    
+
                 if page_num < self.max_pages_per_profile:
                     await asyncio.sleep(REQUEST_DELAY)
+
+            all_jobs.extend(query_jobs)
+
+            # Update HWM with first (newest) job from this scrape
+            if first_job_url:
+                self.db.set_watermark(profile_name, keywords, first_job_url, len(query_jobs))
+                print(f"  [HWM] Updated watermark: ...{first_job_url[-40:]}")
                     
         # 去重：同一职位可能出现在多个搜索词结果中
         seen_urls = set()
