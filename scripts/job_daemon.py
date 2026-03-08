@@ -49,9 +49,9 @@ async def scrape_and_process(profile_name: str, headless: bool = True):
         async with IncrementalScraper(
             headless=headless, max_pages_per_profile=4
         ) as scraper:
-            await scraper.run(profile=profile_name)
+            stats = await scraper.run(profile=profile_name)
 
-        new_count = scraper.stats.get('new_jobs', 0)
+        new_count = stats.get('new_jobs', 0)
         if new_count > 0:
             print(f"\n[Pipeline] Processing {new_count} new jobs...")
             from scripts.job_pipeline import JobPipeline
