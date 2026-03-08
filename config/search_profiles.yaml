@@ -1,6 +1,6 @@
 # LinkedIn Job Search Configuration v2.1
 # ======================================
-# 5-group strategy optimized for Fei's background:
+# 7-group strategy optimized for Fei's background:
 # - 6 years exp: data pipelines + ML systems + quant research
 # - Core skills: Python, SQL, Spark, PyTorch, data engineering
 # - Target: Data Engineer / ML Engineer / Analytics Engineer
@@ -13,6 +13,7 @@ defaults:
   # Leaving unset to capture all workplace types (Remote, Hybrid, On-site)
   sort_by: "DD"              # DD=Date, R=Relevance
   max_jobs: 999
+  daemon_interval_minutes: 360   # Default: P2 = every 6 hours
 
 # Search profiles
 profiles:
@@ -22,7 +23,8 @@ profiles:
   data_engineering:
     name: "Data Engineering Core"
     enabled: true
-    priority: 1
+    priority: 0
+    daemon_interval_minutes: 60
     queries:
       - keywords: '"Data Engineer" OR "Analytics Engineer" OR "Data Platform Engineer" OR "ETL Engineer"'
         description: "Data pipeline & platform roles"
@@ -45,7 +47,8 @@ profiles:
   ml_engineering:
     name: "ML Engineering"
     enabled: true
-    priority: 1
+    priority: 0
+    daemon_interval_minutes: 60
     queries:
       - keywords: '"Machine Learning Engineer" OR "ML Engineer" OR "AI Engineer" OR "AI Software Engineer"'
         description: "ML systems & AI software roles"
@@ -63,8 +66,9 @@ profiles:
     name: "Backend Engineering"
     enabled: true
     priority: 2
+    daemon_interval_minutes: 360
     queries:
-      - keywords: '"Software Engineer" OR "Backend Engineer" OR "Python Developer" OR "Full Stack Engineer"'
+      - keywords: '"Backend Engineer" OR "Python Developer" OR "Software Engineer"'
         description: "General backend & Python roles"
 
     iamexpat:
@@ -72,7 +76,6 @@ profiles:
         - keywords: "python developer"
         - keywords: "backend engineer"
         - keywords: "software engineer"
-        - keywords: "full stack engineer"
 
   # ============================================================
   # Group 4: Data Science & Analytics (EDGE CASE)
@@ -80,7 +83,8 @@ profiles:
   data_science:
     name: "Data Science & Analytics"
     enabled: true
-    priority: 3
+    priority: 2
+    daemon_interval_minutes: 360
     queries:
       - keywords: '"Data Scientist" OR "Data Analyst" OR "BI Engineer" OR "Data Consultant"'
         description: "Data science & analytics roles"
@@ -97,7 +101,8 @@ profiles:
   quant:
     name: "Quantitative & Trading"
     enabled: true
-    priority: 1
+    priority: 2
+    daemon_interval_minutes: 360
     queries:
       - keywords: '"Quantitative Researcher" OR "Quantitative Developer" OR "Quantitative Analyst" OR "Quant Trader"'
         description: "Quant & trading roles"
@@ -112,7 +117,8 @@ profiles:
   ml_research:
     name: "ML Research & Applied Science"
     enabled: true
-    priority: 2
+    priority: 1
+    daemon_interval_minutes: 120
     queries:
       - keywords: '"Machine Learning Researcher" OR "Research Engineer" OR "Applied Scientist" OR "Research Scientist"'
         description: "ML research & applied science roles"
@@ -125,6 +131,23 @@ profiles:
         - keywords: "research scientist"
         - keywords: "applied scientist"
         - keywords: "research engineer"
+
+  # ============================================================
+  # Group 7: Backend + AI/Data Context (INTERVIEW-PROVEN)
+  # ============================================================
+  backend_ai_data:
+    name: "Software Engineer - AI/Data Focus"
+    enabled: true
+    priority: 1                      # P1: 2 interviews (Source.ag, TomTom)
+    daemon_interval_minutes: 120     # Every 2 hours
+    queries:
+      - keywords: '"Software Engineer" AND ("Data" OR "AI" OR "Machine Learning" OR "Platform")'
+        description: "Software engineer roles with data/AI context"
+
+    iamexpat:
+      queries:
+        - keywords: "software engineer data"
+        - keywords: "software engineer ai"
 
   # ============================================================
   # Legacy profiles (DISABLED, kept for reference)
