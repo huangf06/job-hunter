@@ -103,30 +103,43 @@ work_experience:
     period: "Jul. 2017 - Aug. 2019"
 
     titles:
-      default: "Data Scientist & Team Lead"
+      default: "Lead Data Engineer"
+      data_engineer: "Lead Data Engineer"
+      data_scientist: "Data Scientist & Team Lead"
+      ml_engineer: "Data Scientist & Team Lead"
+
+    # Per-role technical skills line (Toni CV format: listed below bullets)
+    technical_skills: "Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI"
 
     verified_bullets:
 
+      # FLAGSHIP — DE + ML templates
       - id: glp_founding_member
-        content: "Spearheaded credit scoring infrastructure as the first data hire at a consumer lending startup — owned the full ML lifecycle from data ingestion through feature engineering, model training and deployment, and portfolio monitoring, enabling automated credit decisions."
+        content: "Built credit risk data infrastructure end-to-end as the founding technical member of a lending fintech — owned the full pipeline from data ingestion and credit bureau integration through automated decision engine and portfolio monitoring, enabling data-driven lending decisions."
+        content_zh: "作为一家借贷金融科技公司的创始技术成员，从零搭建了完整的信用风控数据基础设施——全权负责从数据采集、征信报告对接，到自动化决策引擎和贷后监控的全链路，支撑数据驱动的信贷决策。"
 
-      - id: glp_portfolio_monitoring
-        content: "Built portfolio risk monitoring system tracking delinquency rates, repayment trends, and early warning indicators across the consumer loan book; insights directly informed collection strategy adjustments, reducing exposure to deteriorating segments."
+      # FLAGSHIP — strongest technical depth (replaces glp_data_compliance)
+      - id: glp_decision_engine
+        content: "Engineered automated credit decision engine with 29 rejection rules across 4 risk dimensions (delinquency, borrower segment, debt ratio, inquiry frequency), classifying applicants into 36 segments; built first-delinquency scorecard model with 19 weighted features for early risk detection."
+        content_zh: "设计并实现了自动化信贷决策引擎，包含 29 条拒绝规则，覆盖 4 个风险维度（逾期、客群、负债、查询），将申请人分类为 36 个细分客群；构建了首逾评分卡模型（19 个加权特征），用于早期风险识别。"
 
-      - id: glp_pyspark
-        content: "Designed and implemented PySpark ETL pipelines processing consumer credit data across the full loan lifecycle — from application ingestion through repayment tracking; provided technical mentorship to junior analyst on distributed data processing patterns."
-
+      # CORE — DE template
       - id: glp_data_engineer
-        content: "Engineered automated data pipeline and quality framework for consumer lending operations, implementing schema validation and integrity checks across loan origination and repayment flows — ensuring clean inputs for credit scoring models."
+        content: "Developed ETL pipeline ingesting 30+ daily data tables into cloud data warehouse; built credit bureau report parser (7 iterative versions) transforming nested JSON into 6 structured analytical tables — serving as the primary data source for risk models and decision engine."
+        content_zh: "开发了 ETL 管道，每日从生产系统采集 30+ 张业务表导入云数据仓库；构建了征信报告 JSON 解析器（迭代 7 个版本），将嵌套 JSON 转换为 6 张结构化分析表——作为风控模型和决策引擎的核心数据源。"
 
-      - id: glp_data_compliance
-        content: "Established compliance reporting framework for consumer lending operations, automating regulatory submissions and audit trail generation for credit decisioning outputs."
+      # CORE — ML template
+      - id: glp_portfolio_monitoring
+        content: "Built portfolio risk monitoring system tracking delinquency rates and repayment trends across the loan book; integrated third-party fraud detection API for first-repayment early warning alerts with automated anomaly flagging."
+        content_zh: "搭建了贷后风险监控系统，跟踪贷款组合的逾期率和还款趋势；集成第三方反欺诈 API 实现首次还款预警，自动标记异常。"
 
       - id: glp_payment_collections
         content: "Integrated payment gateway APIs for automated repayment processing; designed tiered collection policies based on delinquency severity, bridging data insights with operational execution."
+        content_zh: "对接支付网关 API 实现自动化还款处理；根据逾期严重程度设计分级催收策略，将数据洞察与运营执行打通。"
 
       - id: glp_generalist
         content: "Served as cross-functional bridge between risk modeling, product, and operations at early-stage fintech; collaborated with legal and external vendors to translate business requirements into technical solutions."
+        content_zh: "在早期金融科技公司中担任风控建模、产品和运营之间的跨部门桥梁；与法务和外部供应商协作，将业务需求转化为技术方案。"
 
   # ---------------------------------------------------------------------------
   # INDEPENDENT INVESTOR / CAREER TRANSITION (Sep 2019 - Aug 2023)
@@ -584,11 +597,11 @@ allowed_skill_categories:
 
 title_options:
   glp_technology:
-    default: "Data Scientist & Team Lead"
-    data_engineer: "Data Engineer & Team Lead"
+    default: "Lead Data Engineer"
+    data_engineer: "Lead Data Engineer"
     data_scientist: "Data Scientist & Team Lead"
-    ml_engineer: "ML Engineer & Team Lead"
-    risk_analyst: "Credit Risk Analyst & Team Lead"
+    ml_engineer: "Data Scientist & Team Lead"
+    risk_analyst: "Credit Risk Analyst"
   baiquan_investment:
     default: "Quantitative Researcher"
     data_engineer: "Quantitative Developer"
