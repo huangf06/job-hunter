@@ -370,29 +370,25 @@ projects:
     verified_bullets:
 
       - id: thesis_uq_framework
+        narrative_role: headline
         content: "Developed a benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN superiority with 31% lower CRPS (p < 0.001) over ensemble and dropout baselines."
 
       - id: thesis_noise_paradox
+        narrative_role: headline
         content: "Discovered a 'noise paradox' where moderate observation noise unexpectedly improves ensemble-based uncertainty estimates; designed 6-stage reproducible evaluation pipeline with automated calibration benchmarking across multiple RL environments."
 
       - id: thesis_calibration
+        narrative_role: optional
         content: "Applied temperature scaling and Bayesian methods to calibrate agent confidence; evaluated post-hoc calibration impact across distributional, ensemble, and dropout-based UQ approaches with rigorous statistical testing."
 
   # ---------------------------------------------------------------------------
   # CRYPTO OPTIONS TRADING SYSTEM
   # ---------------------------------------------------------------------------
-  deribit_options:
-    title: "Automated Crypto Options Trading System"
-    institution: "Personal Project"
-    period: "Oct. 2025 - Present"
-
-    verified_bullets:
-
-      - id: deribit_options_system
-        content: "Architected automated options trading system featuring self-implemented Black-Scholes pricing engine (full Greeks, IV solver), edge-based market-making strategy, and multi-layered risk management (position limits, Greeks constraints, drawdown control); currently in paper-trading validation."
-
-      - id: deribit_risk_management
-        content: "Designed risk management framework enforcing portfolio-level constraints (delta, gamma, vega limits), per-trade stop-loss, daily loss caps, and maximum drawdown controls; implemented Kelly-inspired position sizing adjusted for implied volatility."
+  # DEPRECATED (v4.0): Candidate cannot recall project details; indefensible in interview
+  # deribit_options:
+  #   title: "Automated Crypto Options Trading System"
+  #   institution: "Personal Project"
+  #   period: "Oct. 2025 - Present"
 
   # ---------------------------------------------------------------------------
   # NLP COURSE PROJECTS
@@ -405,9 +401,11 @@ projects:
     verified_bullets:
 
       - id: nlp_poem_generator
+        narrative_role: optional
         content: "Developed LLM-powered text generation application leveraging GPT-2 and Hugging Face Transformers; implemented prompt engineering with controllable style parameters and deployed as interactive web application via Flask."
 
       - id: nlp_dependency_parsing
+        narrative_role: optional
         content: "Implemented neural dependency parsing model using PyTorch; achieved 89.12% UAS through systematic hyperparameter tuning."
 
   # ---------------------------------------------------------------------------
@@ -423,11 +421,11 @@ projects:
     verified_bullets:
 
       - id: expedia_ltr
-        narrative_role: depth_prover
-        content: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered temporal, behavioral, and aggregation features (price normalization, competitor rates, estimated position); achieved NDCG@5 = 0.392 on Kaggle evaluation — VU course project, collaborated with 2 teammates."
+        narrative_role: headline
+        content: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered temporal, behavioral, and aggregation features (price normalization, competitor rates, estimated position); achieved NDCG@5 = 0.392 on Kaggle evaluation."
 
         # Alternative version with more technical detail (for ML-heavy roles)
-        # content: "Developed learning-to-rank hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered 50+ features (temporal, price normalization by search_id, competitor rates, estimated position) and optimized label gains [0,1,5] for click/booking prediction; achieved NDCG@5 = 0.392 on Kaggle test set, outperforming XGBoost+SVD ensemble (0.374) — VU course project, team of 3."
+        # content: "Developed learning-to-rank hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered 50+ features (temporal, price normalization by search_id, competitor rates, estimated position) and optimized label gains [0,1,5] for click/booking prediction; achieved NDCG@5 = 0.392 on Kaggle test set, outperforming XGBoost+SVD ensemble (0.374)."
 
   # ---------------------------------------------------------------------------
   # ML4QS: IMU SENSOR CLASSIFICATION
@@ -442,11 +440,11 @@ projects:
     verified_bullets:
 
       - id: ml4qs_pipeline
-        narrative_role: depth_prover
+        narrative_role: optional
         content: "Built end-to-end ML pipeline for IMU sensor classification (4 subjects, 6 activities); implemented Kalman Filter on 12 sensor channels for noise reduction; engineered 576+ features using FFT (time + frequency domain) with 3 window sizes; achieved 65% person classification and 94-99% sex prediction accuracy using LightGBM and LSTM — team of 4, 856 LOC + 8 notebooks."
 
       - id: ml4qs_deep_learning
-        narrative_role: depth_prover
+        narrative_role: optional
         content: "Implemented bidirectional LSTM neural network for time-series classification on sensor data; applied Optuna hyperparameter tuning and leave-one-subject-out validation; benchmarked deep learning against gradient boosting approaches."
 
   # ---------------------------------------------------------------------------
@@ -460,6 +458,7 @@ projects:
     verified_bullets:
 
       - id: graphsage_ppi
+        narrative_role: optional
         content: "Implemented and benchmarked GraphSAGE (LSTM aggregation) and Graph Attention Networks (8-head GAT) for multi-label node classification on the PPI biological network dataset using PyTorch Geometric; evaluated trade-offs between neighbor sampling and attention-based message passing."
 
   # ---------------------------------------------------------------------------
@@ -474,11 +473,11 @@ projects:
     verified_bullets:
 
       - id: neuroevo_robotics
-        narrative_role: depth_prover
+        narrative_role: optional
         content: "Conducted evolutionary robotics research implementing CPPN-NEAT algorithm for co-evolving robot morphology and CPG neural controllers; validated sensor-driven evolution hypothesis through controlled experiments with fitness tracking over 50 generations — published research paper with video demonstrations (586 Python files, ~1,500 LOC)."
 
       - id: neuroevo_system
-        narrative_role: depth_prover
+        narrative_role: optional
         content: "Built modular robot evolution system using Revolve2 framework and MultiNEAT library; integrated Mujoco physics simulator for realistic locomotion evaluation; implemented custom CPPN genotype for encoding both body structure and neural network parameters."
 
   # ---------------------------------------------------------------------------
@@ -492,11 +491,11 @@ projects:
     verified_bullets:
 
       - id: bioinfo_hmm
-        narrative_role: depth_prover
+        narrative_role: optional
         content: "Implemented Hidden Markov Models from scratch including Viterbi algorithm (most likely state sequence), Forward-Backward algorithm (probability computation), and Baum-Welch training (parameter estimation) for gene prediction and protein structure analysis — 886 LOC with CLI interface."
 
       - id: bioinfo_alignment
-        narrative_role: depth_prover
+        narrative_role: optional
         content: "Built production-ready sequence alignment tools implementing Needleman-Wunsch (global), Smith-Waterman (local), and semi-global alignment with PAM250/BLOSUM62 substitution matrices and affine gap penalties; implemented Burrows-Wheeler Transform with O(n) suffix array construction for genome pattern matching — 2,330 total LOC with 200-page documentation."
 
   # ---------------------------------------------------------------------------
@@ -510,11 +509,11 @@ projects:
     verified_bullets:
 
       - id: dnn_scratch
-        narrative_role: foundation
+        narrative_role: optional
         content: "Built 3-layer deep neural network from scratch using NumPy (no frameworks); implemented forward/backward propagation, gradient descent, and cost functions; achieved 99% training accuracy and 70% test accuracy on image classification — 10,448 LOC across 3 progressive assignments demonstrating ML fundamentals."
 
       - id: dnn_architecture
-        narrative_role: foundation
+        narrative_role: optional
         content: "Implemented neural network components from first principles: sigmoid/tanh/ReLU activations, L2 regularization, mini-batch gradient descent, and Xavier initialization; debugged gradient computation through numerical gradient checking."
 
   # ---------------------------------------------------------------------------
@@ -529,9 +528,11 @@ projects:
     verified_bullets:
 
       - id: ec_robotics
+        narrative_role: optional
         content: "Researched impact of proprioceptive sensors on evolutionary robot performance using Revolve2 framework and MuJoCo physics simulation; evolved robots over 100 generations with NEAT algorithm."
 
       - id: ec_statistical_analysis
+        narrative_role: optional
         content: "Conducted rigorous statistical analysis using two-way repeated measures ANOVA; demonstrated significant performance improvement (p < 0.01) in sensor-equipped robots."
 
   # ---------------------------------------------------------------------------
@@ -545,15 +546,19 @@ projects:
     verified_bullets:
 
       - id: lakehouse_streaming
+        narrative_role: optional
         content: "Architected end-to-end data lakehouse on Databricks processing real-time financial market feeds via Auto Loader and Structured Streaming; implemented schema evolution and checkpoint-based fault tolerance ensuring zero data loss during upstream changes."
 
       - id: lakehouse_quality
+        narrative_role: optional
         content: "Engineered data quality framework with quarantine-and-replay pattern isolating malformed records across Bronze/Silver/Gold Medallion Architecture layers — achieving automated recovery without manual intervention."
 
       - id: lakehouse_optimization
+        narrative_role: optional
         content: "Optimized Delta Lake storage via Z-ordering and compaction, reducing query latency for downstream analysis."
 
       - id: lakehouse_orchestration
+        narrative_role: optional
         content: "Integrated Airflow for orchestration and Docker for consistent deployment across environments."
 
   # ---------------------------------------------------------------------------
@@ -567,12 +572,15 @@ projects:
     verified_bullets:
 
       - id: greenhouse_etl_pipeline
+        narrative_role: headline
         content: "Built batch ETL pipeline ingesting 3,842 JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing."
 
       - id: greenhouse_data_quality
+        narrative_role: optional
         content: "Engineered 6-check data quality framework (completeness, validity, range consistency, duplicates, IQR-based anomaly detection, station status) with severity-ranked quality flags; anomalies preserved through Gold layer aggregations for analyst traceability rather than silently dropped."
 
       - id: greenhouse_aggregations
+        narrative_role: optional
         content: "Implemented multi-granularity time-series aggregations (15-minute, hourly, daily) with quality-aware filtering and 5 pre-built analytical queries; architected for production scale targeting 72M rows/day (1,000 greenhouses × 50 sensors at 1-minute resolution)."
 
   # ---------------------------------------------------------------------------
@@ -586,6 +594,7 @@ projects:
     verified_bullets:
 
       - id: lifeos_system
+        narrative_role: optional
         content: "Architected personal productivity platform orchestrating 5 external services (Todoist, Notion, Eudic, Telegram, Logseq) with automated daily workflows via GitHub Actions; built end-to-end vocabulary pipeline: dictionary sync, flashcard generation (genanki), and mobile delivery via Telegram Bot API."
 
   # ---------------------------------------------------------------------------
@@ -599,6 +608,7 @@ projects:
     verified_bullets:
 
       - id: job_hunter_system
+        narrative_role: optional
         content: "Built end-to-end job application pipeline leveraging LLM APIs (Claude) for resume personalization; designed multi-stage processing (web scraping via Playwright, rule-based filtering, AI scoring, Jinja2 template rendering to PDF) with SQLite backend, YAML-driven configuration, and configurable quality gates."
 
   # ---------------------------------------------------------------------------
@@ -612,18 +622,23 @@ projects:
     verified_bullets:
 
       - id: bsc_java_production
+        narrative_role: optional
         content: "Developed production-grade Java web application using JDK 1.6 and Struts framework with B/S architecture; implemented Struts2 interceptor mechanism for flexible controller proxy logic."
 
       - id: bsc_data_pipeline_sql
+        narrative_role: optional
         content: "Designed and managed relational database with 11 core tables in SQL Server; built DAO (Data Access Objects) and data transformation utilities to optimize backend data extraction and preprocessing."
 
       - id: bsc_security_rbac
+        narrative_role: optional
         content: "Implemented Role-Based Access Control (RBAC) system with dedicated permission validation classes (CheckUserAble) and online status monitoring to prevent unauthorized data operations."
 
       - id: bsc_domain_modeling
+        narrative_role: optional
         content: "Modeled complex cross-domain business logic for academic affairs, financial budgeting, and employment data management systems."
 
       - id: bsc_testing_monitoring
+        narrative_role: optional
         content: "Conducted comprehensive functional and usability testing (trial run); proposed fault tolerance optimization strategies demonstrating early awareness of system health monitoring."
 
 # =============================================================================
