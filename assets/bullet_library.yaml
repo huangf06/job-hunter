@@ -1,5 +1,5 @@
 # =============================================================================
-# VERIFIED BULLET LIBRARY v3.0 — High-Impact Rewrite (2026-02-08)
+# VERIFIED BULLET LIBRARY v4.0 — Narrative Architecture (2026-03-10)
 # =============================================================================
 # Single source of truth for resume content. Each bullet reflects real work.
 # System consumes: id + content per bullet. All other fields are structural.
@@ -24,6 +24,18 @@
 #   - UPDATED ML4QS with verified metrics (65% person, 94-99% sex, 576 features)
 #   - DEPRECATED old evolutionary_robotics (replaced with research version)
 #   - ENHANCED Independent Investor bullet with Stock project evidence (83K+ records, 3,600+ stocks) (up from 38)
+#
+# v4.0 CHANGES (2026-03-10) — Narrative Architecture:
+#   - REWRITTEN Henan Energy headlines (ingest/validate/consolidate + €32M framework)
+#   - REWRITTEN Ele.me headlines (drop EUR amount, use detection scale + cross-team unlocking)
+#   - UPDATED Baiquan pipeline ending + added 5-person team context
+#   - REWRITTEN Independent bullets (pure technical, removed defensive language)
+#   - REWRITTEN Expedia (removed self-deprecating "course project" labels)
+#   - DEPRECATED Deribit options (candidate cannot recall project)
+#   - DEPRECATED indie_market_analysis (too vague)
+#   - ADDED narrative_role: headline/optional tags to ALL bullets
+#   - CONVERTED currency amounts to EUR for European market
+#   - Default title for Henan Energy changed to "Business Analyst"
 #
 # CANONICAL TIMELINE REFERENCE: profiles/Profile2.0.pdf
 #
