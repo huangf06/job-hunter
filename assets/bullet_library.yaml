@@ -183,21 +183,21 @@ work_experience:
     recommended_sequences:
       data_engineer: ["indie_quant_research"]  # Single bullet, context only
       data_analyst: ["indie_quant_research", "indie_skill_development"]
-      quant_researcher: ["indie_quant_research", "indie_market_analysis"]
+      quant_researcher: ["indie_quant_research", "indie_skill_development"]
 
     verified_bullets:
 
       - id: indie_quant_research
-        narrative_role: context_setter
-        content: "Conducted independent quantitative research on Chinese equity markets, building automated data pipeline (83K+ records, 3,600+ stocks) to track institutional flows and high-momentum patterns; developed Python-based analysis tools using Tushare API and MySQL — maintained technical proficiency while deepening market microstructure understanding."
+        narrative_role: headline
+        content: "Built automated equity research pipeline processing 83K+ daily records across 3,600+ stocks via Tushare API and MySQL; implemented institutional flow tracking and momentum signal detection for systematic market analysis."
 
       - id: indie_skill_development
-        narrative_role: extension
-        content: "Pursued self-directed learning in advanced topics (machine learning, reinforcement learning, German language) while preparing for graduate studies — admitted to M.Sc. AI program at VU Amsterdam in 2023."
+        narrative_role: optional
+        content: "Self-directed study in data science and machine learning, pivoting to AI after the emergence of large language models; admitted to M.Sc. AI program at VU Amsterdam in 2023."
 
-      - id: indie_market_analysis
-        narrative_role: breadth
-        content: "Analyzed macroeconomic trends, industry dynamics, and company fundamentals through systematic research of investment reports and financial data — developed holistic understanding of market mechanisms and economic cycles."
+      # DEPRECATED (v4.0): Too vague, indefensible in interview
+      # - id: indie_market_analysis
+      #   content: "Analyzed macroeconomic trends..."
 
       # DEPRECATED: Too personal or vague for resume
       # - id: pt_personal_trading (too specific, invites questions about returns)
@@ -210,7 +210,7 @@ work_experience:
   # ---------------------------------------------------------------------------
   baiquan_investment:
     company: "Baiquan Investment"
-    company_type: "Quantitative hedge fund"
+    company_type: "Quantitative hedge fund, 5-person team"
     location: "Beijing, China"
     period: "Jul. 2015 - Jun. 2017"
 
@@ -231,19 +231,19 @@ work_experience:
     verified_bullets:
 
       - id: bq_de_pipeline
-        narrative_role: context_setter
-        content: "Built end-to-end market data ingestion pipeline processing 3,000+ A-share securities and 5+ years of tick-level futures data from multiple vendor feeds; implemented corporate action handling and deduplication logic ensuring data integrity for quantitative research."
+        narrative_role: headline
+        content: "Built end-to-end market data ingestion pipeline processing 3,000+ A-share securities and 5+ years of tick-level futures data from multiple vendor feeds; implemented corporate action handling and deduplication logic ensuring data integrity for all downstream research and live trading."
 
       - id: bq_de_backtest_infra
-        narrative_role: depth_prover
+        narrative_role: optional
         content: "Architected event-driven backtesting framework (Python + MATLAB) supporting strategy simulation, walk-forward validation, and 15+ performance metrics — adopted as core research infrastructure by the investment team."
 
       - id: bq_factor_research
-        narrative_role: foundation
+        narrative_role: headline
         content: "Built systematic alpha research pipeline applying Fama-MacBeth regression to validate 4 factor families (value, momentum, money flow, event-driven) across 3,000+ securities — validated factors integrated into the fund's live portfolio."
 
       - id: bq_futures_strategy
-        narrative_role: depth_prover
+        narrative_role: headline
         content: "Developed and deployed R-Breaker intraday trading strategy for CSI index futures from research through live production — achieved 14.6% annualized return with real capital."
 
       # DEPRECATED: Merged into bq_de_pipeline and bq_factor_research
@@ -263,7 +263,7 @@ work_experience:
     period: "Jul. 2010 - Aug. 2013"
 
     titles:
-      default: "Business Supervisor"
+      default: "Business Analyst"
       supply_chain: "Supply Chain & Operations Supervisor"
       data_analyst: "Business Analyst"
       data_engineer: "Data Operations Analyst"
@@ -273,26 +273,25 @@ work_experience:
     # Recommended bullet sequences by job template
     recommended_sequences:
       data_engineer: ["he_data_automation", "he_supply_chain_analytics", "he_data_quality"]
-      data_analyst: ["he_supply_chain_analytics", "he_performance_evaluation", "he_data_automation"]
-      supply_chain: ["he_supply_chain_analytics", "he_operations_management", "he_performance_evaluation"]
+      data_analyst: ["he_supply_chain_analytics", "he_data_automation", "he_data_quality"]
       data_governance: ["he_data_quality", "he_data_standardization", "he_data_automation"]
 
     verified_bullets:
 
       - id: he_data_automation
-        narrative_role: depth_prover
-        content: "Built automated data aggregation pipeline consolidating operational data from 12+ subsidiaries, reducing manual processing time by 92% (2 days → 2 hours) through VBA-based ETL automation — early-stage data engineering using available technology before modern tools existed."
+        narrative_role: headline
+        content: "Built automated pipeline to ingest, validate, and consolidate non-standardized Excel reports from 20+ business units into unified operational reporting, reducing monthly processing from 2 days to under 2 hours."
 
       - id: he_supply_chain_analytics
-        narrative_role: foundation
-        content: "Designed and implemented supply chain analytics system tracking inventory and sales across Fortune 500 company (200B RMB revenue), generating 261M RMB ($42M) in profit over 3 years through data-driven optimization of procurement timing and product mix."
+        narrative_role: headline
+        content: "Designed the group's supply chain analytics framework from scratch, tracking daily sales and inventory to guide procurement and sales timing; optimization guided by this framework contributed to €32M in documented profit improvements across business units over 3 years."
 
       - id: he_data_quality
-        narrative_role: extension
+        narrative_role: optional
         content: "Established data quality framework and validation rules for multi-source data ingestion, implementing anomaly detection to catch errors, non-standard formats, and data fabrication — built feedback loops to production teams for continuous improvement."
 
       - id: he_data_standardization
-        narrative_role: breadth
+        narrative_role: optional
         content: "Led data governance initiative across 20+ business units, standardizing data formats and reporting processes — achieved 7 successful implementations through consulting engagements and user training."
 
       # DEPRECATED: Replaced with evidence-backed, data-focused bullets
@@ -335,19 +334,19 @@ work_experience:
     verified_bullets:
 
       - id: eleme_fraud_detection
-        narrative_role: depth_prover
-        content: "Built anti-fraud detection system identifying 51,000+ suspicious order clusters using 3 pattern detection algorithms (same-phone matching, high-frequency users, repeat orders) — protected 651K RMB in GMV and prevented fraudulent subsidy claims across 2.2M+ users."
+        narrative_role: headline
+        content: "Built anti-fraud detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern algorithms (same-phone, high-frequency, repeat-order matching), preventing fraudulent subsidy claims during hyper-growth."
 
       - id: eleme_sql_optimization
-        narrative_role: foundation
-        content: "Optimized 90+ Hadoop/Hive SQL queries through partition pruning and subquery pushdown, achieving 5x query speedup (500GB → 100GB scanned) — enabled cross-functional teams to access real-time analytics on 30+ data warehouse tables."
+        narrative_role: headline
+        content: "Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, cutting scan volume 5x (500GB → 100GB) and unlocking real-time analytics on 30+ warehouse tables for fraud detection, operations, and marketing teams."
 
       - id: eleme_user_segmentation
-        narrative_role: extension
+        narrative_role: optional
         content: "Engineered SQL-based user segmentation pipeline analyzing 2.2M+ users across 4 behavioral cohorts (dual-screen, payment method, campaign engagement, geographic) — delivered actionable customer profiles adopted by marketing for targeted red packet campaigns."
 
       - id: eleme_bi_dashboards
-        narrative_role: breadth
+        narrative_role: optional
         content: "Built 5 automated BI email reports (third-party delivery, red packets, fresh food stores, payment methods, campus performance) delivering daily metrics to cross-functional stakeholders — streamlined ad-hoc data requests and reduced manual reporting overhead."
 
       # DEPRECATED: Replaced with evidence-backed bullets
@@ -743,7 +742,7 @@ title_options:
   eleme:
     default: "Data Analyst"
   henan_energy:
-    default: "Business Supervisor"
+    default: "Business Analyst"
     data_analyst: "Business Analyst"
 
 # =============================================================================
