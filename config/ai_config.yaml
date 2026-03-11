@@ -280,7 +280,7 @@ prompts:
             "location": "Shanghai, China",
             "title": "Data Scientist & Team Lead",
             "date": "Jul. 2017 -- Aug. 2019",
-            "bullets": ["glp_founding_member", "glp_portfolio_monitoring", "glp_pyspark"]
+            "bullets": ["glp_founding_member", "glp_decision_engine", "glp_data_engineer"]
           }},
           {{
             "company": "Baiquan Investment",
@@ -324,9 +324,9 @@ prompts:
     ## Important Rules
 
     ### CONTENT SELECTION PRINCIPLE
-    Include ALL content that is relevant to the JD. Exclude content that doesn't strengthen the application.
-    The resume can be 1-2 pages — do NOT artificially cut content to fit 1 page.
-    Sections order: Education → Projects → Experience → Skills → Interests.
+    Select content that builds the strongest possible narrative for THIS specific job.
+    Quality over quantity — 3 well-chosen bullets that tell a coherent story beat 5 relevant-but-disconnected bullets.
+    The resume can be 1-2 pages. Sections order: Education → Projects → Experience → Skills → Interests.
     Education and Interests are static. You control: bio (optional), experiences, projects, skills.
 
     ### BIO RULES (STRUCTURED FORMAT)
@@ -359,6 +359,39 @@ prompts:
     - Second project: 1-2 bullets
     - Third project (if relevant): 1 bullet
 
+    ### NARRATIVE COMPOSITION (CRITICAL FOR RESUME QUALITY)
+
+    A hiring manager reads each experience section for 10-15 seconds. They ask:
+    1. "Who was this person at this company?" → answered by the FIRST bullet
+    2. "What's the most impressive thing they did?" → answered by the SECOND bullet
+    3. "What else supports this?" → answered by remaining bullets
+
+    Your bullet selection and ordering must answer these questions IN THIS ORDER.
+
+    #### Narrative Roles
+    Each bullet has a narrative_role tag shown in parentheses. Use these to compose sections:
+
+    | Role | What it does | Where to place |
+    |------|-------------|----------------|
+    | context_setter | Establishes scope, seniority, why this matters | FIRST in section |
+    | depth_prover | Technical crown jewel, interview hook | SECOND (or first if no context_setter) |
+    | foundation | Engineering infrastructure powering the above | After depth_prover |
+    | extension | System evolution, broader reach | Late in section |
+    | breadth | Cross-functional, leadership | Last, only if space allows |
+
+    Composition rules:
+    1. Each section with 2+ bullets MUST lead with a context_setter or depth_prover — NEVER start with foundation or breadth
+    2. NEVER select 2 bullets with the same narrative_role in one section
+    3. If a RECOMMENDED SEQUENCE is shown for a section, follow that ordering
+    4. Vary sentence openings across bullets within a section — if one starts with "Built", the next MUST use a different verb pattern (not "Built/Developed/Engineered/Designed")
+
+    #### Cross-Section Strategy
+    Each experience section should contribute something UNIQUE to the overall resume:
+    - The most JD-relevant experience gets 3-4 bullets and carries the narrative weight
+    - Less relevant experiences get 1-2 bullets showing a different strength
+    - Do NOT demonstrate the same skill/achievement across multiple sections
+    - Together, all sections should cover: technical depth + engineering capability + business awareness
+
     ### SKILLS FORMAT
     - Provide 4-6 categories from this ALLOWED list ONLY:
       {allowed_skill_categories_list}
@@ -389,7 +422,7 @@ prompts:
     In the JSON output, put ONLY the bullet ID string, NOT the full text.
     The system will automatically look up the verified text from the library.
 
-    Example: "bullets": ["glp_founding_member", "glp_pyspark"]
+    Example: "bullets": ["glp_founding_member", "glp_decision_engine"]
 
     Do NOT:
     - Copy the bullet text into the JSON — use the ID only
@@ -400,8 +433,8 @@ prompts:
     ### OTHER RULES
     1. Use ONLY bullet IDs from the provided bullet library - do not fabricate
     2. MUST include 2-3 different work experiences from different companies
-    3. Select bullets that best match the JD requirements
-    4. Include ALL relevant bullets for a position — do not cut for space
+    3. Select bullets that best match the JD requirements AND form a coherent narrative per section
+    4. Prefer narrative composition over exhaustive coverage — omit a relevant bullet if it breaks the narrative flow
     5. Scoring criteria:
        - 8-10: Excellent match, should apply immediately
        - 6-7: Good match, worth applying

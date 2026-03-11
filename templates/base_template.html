@@ -138,6 +138,16 @@ body {
     margin-bottom: 2pt;
     text-align: left;
 }
+.exp-tech-skills {
+    font-size: 9pt;
+    color: var(--text-muted);
+    margin-top: 1pt;
+    padding-left: 14pt;
+}
+.exp-tech-skills .tech-label {
+    font-weight: bold;
+    color: var(--primary-color);
+}
 .career-note {
     font-size: 9.5pt;
     color: var(--text-muted);
@@ -306,6 +316,11 @@ body {
                 <li>{{ bullet }}</li>
                 {% endfor %}
             </ul>
+            {% if exp.technical_skills %}
+            <div class="exp-tech-skills">
+                <span class="tech-label">Technical Skills:</span> {{ exp.technical_skills }}
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
         {% if career_note %}

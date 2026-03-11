@@ -54,8 +54,13 @@ def svg_to_pdf(svg_path: Path, pdf_path: Path):
         print(f"PDF generated: {pdf_path}")
 
 if __name__ == "__main__":
-    svg_file = PROJECT_ROOT / "templates" / "resume_svg_final.svg"
-    pdf_file = PROJECT_ROOT / "output" / "Fei_Huang_Resume_SVG.pdf"
+    # 支持命令行参数
+    if len(sys.argv) >= 3:
+        svg_file = Path(sys.argv[1])
+        pdf_file = Path(sys.argv[2])
+    else:
+        svg_file = PROJECT_ROOT / "templates" / "resume_svg_final.svg"
+        pdf_file = PROJECT_ROOT / "output" / "Fei_Huang_Resume_SVG.pdf"
 
     # 确保输出目录存在
     pdf_file.parent.mkdir(parents=True, exist_ok=True)
