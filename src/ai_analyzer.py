@@ -147,13 +147,26 @@ class AIAnalyzer:
 
                 sections.append(f"\n### {company}")
                 sections.append(f"Location: {location} | Period: {period} | Title: {title}")
+
+                # Recommended sequences (if defined)
+                rec_seqs = exp_data.get('recommended_sequences', {})
+                if rec_seqs:
+                    seq_lines = []
+                    for role_type, seq in rec_seqs.items():
+                        short_ids = [s.split('_', 1)[-1] if '_' in s else s for s in seq]
+                        seq_lines.append(f"  {role_type}: {' → '.join(short_ids)}")
+                    sections.append("Recommended bullet sequences (follow ordering when applicable):")
+                    sections.extend(seq_lines)
+
                 sections.append("Available bullets:")
 
                 for bullet in exp_data.get('verified_bullets', []):
                     if isinstance(bullet, dict) and 'content' in bullet:
                         bid = bullet.get('id', '')
                         prefix = f"[{bid}] " if bid else ""
-                        sections.append(f"  - {prefix}{bullet['content']}")
+                        role = bullet.get('narrative_role', '')
+                        role_tag = f"({role}) " if role else ""
+                        sections.append(f"  - {prefix}{role_tag}{bullet['content']}")
 
             # Projects
             sections.append("\n## PROJECTS (you MUST select 1-3 projects)")
@@ -173,7 +186,9 @@ class AIAnalyzer:
                     if isinstance(bullet, dict) and 'content' in bullet:
                         bid = bullet.get('id', '')
                         prefix = f"[{bid}] " if bid else ""
-                        sections.append(f"  - {prefix}{bullet['content']}")
+                        role = bullet.get('narrative_role', '')
+                        role_tag = f"({role}) " if role else ""
+                        sections.append(f"  - {prefix}{role_tag}{bullet['content']}")
 
             # Extract v3.0 config blocks for dynamic prompt construction
             self._skill_tiers = self._parsed_bullets.get('skill_tiers', {})
@@ -405,6 +420,27 @@ class AIAnalyzer:
             proj['bullets'] = resolved
 
         return tailored, errors
+
+    def _inject_technical_skills(self, tailored: Dict):
+        """Inject per-experience technical_skills from bullet library (static data).
+
+        Looks up each experience's company name in the bullet library and adds
+        the technical_skills field if defined. This is NOT AI-generated — it comes
+        directly from bullet_library.yaml to ensure accuracy.
+        """
+        work_exp = self._parsed_bullets.get('work_experience', {})
+        # Build company name → technical_skills lookup
+        company_tech = {}
+        for key, data in work_exp.items():
+            if isinstance(data, dict) and 'technical_skills' in data:
+                company_name = data.get('company', '')
+                if company_name:
+                    company_tech[company_name.lower()] = data['technical_skills']
+
+        for exp in (tailored.get('experiences') or []):
+            company = (exp.get('company') or '').lower()
+            if company in company_tech:
+                exp['technical_skills'] = company_tech[company]
 
     def _assemble_bio(self, bio_spec, job: Dict) -> tuple:
         """Assemble bio text from structured specification.
@@ -718,6 +754,8 @@ class AIAnalyzer:
 
             # Resolve bullet IDs to verified text (skip unknown, keep valid)
             tailored, bullet_errors = self._resolve_bullet_ids(tailored)
+            # Inject per-experience technical_skills from bullet library (static, not AI-generated)
+            self._inject_technical_skills(tailored)
             rejection_reason = ''
             if bullet_errors:
                 for err in bullet_errors:

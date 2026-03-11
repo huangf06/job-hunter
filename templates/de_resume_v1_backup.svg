@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
+  <!-- A4 page: 595 x 842 pt (210 x 297 mm) -->
+  <!-- Design: Pixel-match Toni Kendel CV layout with v4.0 narrative bullets -->
+
+  <rect width="595" height="842" fill="#ffffff"/>
+
+  <!-- ========== HEADER ========== -->
+  <text x="30" y="60" font-family="Georgia, serif" font-size="48" font-weight="bold" fill="#000000">Fei Huang</text>
+
+  <text x="565" y="40" font-family="Arial, sans-serif" font-size="11" fill="#333333" text-anchor="end">Amsterdam, Netherlands</text>
+  <text x="565" y="56" font-family="Arial, sans-serif" font-size="11" fill="#333333" text-anchor="end">(+31) 6 45 038 614</text>
+  <text x="565" y="72" font-family="Arial, sans-serif" font-size="11" fill="#333333" text-anchor="end">huangf06@gmail.com</text>
+
+  <!-- Header divider -->
+  <line x1="30" y1="86" x2="565" y2="86" stroke="#cccccc" stroke-width="0.5"/>
+
+  <!-- ========== BIO ========== -->
+  <text x="30" y="108" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1B3A5C" letter-spacing="1.5">BIO</text>
+
+  <text x="30" y="128" font-family="Arial, sans-serif" font-size="11" fill="#333333">
+    <tspan x="30" dy="0">Data engineer with 6 years building <tspan font-weight="bold">production data systems</tspan> — from ingesting market feeds for <tspan font-weight="bold">3,000+</tspan></tspan>
+    <tspan x="30" dy="16"><tspan font-weight="bold">securities</tspan> to designing <tspan font-weight="bold">credit scoring pipelines</tspan> from scratch as a startup's <tspan font-weight="bold">first data hire</tspan>. M.Sc. in AI (VU</tspan>
+    <tspan x="30" dy="16">Amsterdam, <tspan font-weight="bold">8.2/10</tspan>). <tspan font-weight="bold">Databricks Certified Data Engineer Professional</tspan>.</tspan>
+  </text>
+
+  <!-- Bio-to-columns divider -->
+  <line x1="30" y1="172" x2="565" y2="172" stroke="#cccccc" stroke-width="0.5"/>
+
+  <!-- ================================================================ -->
+  <!-- LEFT COLUMN (x=40, width ~280)                                   -->
+  <!-- ================================================================ -->
+
+  <!-- ========== EDUCATION ========== -->
+  <text x="40" y="168" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1B3A5C" letter-spacing="1.5">EDUCATION</text>
+
+  <!-- VU Amsterdam -->
+  <text x="40" y="186" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">Vrije Universiteit Amsterdam</text>
+  <text x="40" y="200" font-family="Arial, sans-serif" font-size="10" fill="#333333"><tspan font-style="italic">M.Sc. in Artificial Intelligence</tspan> (GPA: <tspan font-weight="bold">8.2/10</tspan>)</text>
+  <text x="40" y="212" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">SEPTEMBER 2023 – AUGUST 2025</text>
+  <text x="40" y="226" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">Thesis: Uncertainty Quantification in Deep RL.</text>
+  <text x="40" y="239" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">Coursework: Data Mining (9.0), Deep Learning (9.5),</text>
+  <text x="40" y="252" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">Algorithms in Sequence Analysis (9.0).</text>
+
+  <!-- Tsinghua -->
+  <text x="40" y="272" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">Tsinghua University <tspan font-size="9.5" font-weight="normal" fill="#666666" font-style="italic">(#1 in China, Top 20 globally)</tspan></text>
+  <text x="40" y="286" font-family="Arial, sans-serif" font-size="10" fill="#333333"><tspan font-style="italic">B.Eng. in Industrial Engineering</tspan></text>
+  <text x="40" y="298" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">SEPTEMBER 2006 – JULY 2010</text>
+
+  <!-- ========== PROFESSIONAL EXPERIENCE ========== -->
+  <text x="40" y="322" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1B3A5C" letter-spacing="1.5">PROFESSIONAL EXPERIENCE</text>
+
+  <!-- GLP Technology -->
+  <text x="40" y="340" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">GLP Technology, Shanghai — <tspan font-style="italic" font-weight="normal">Lead Data Engineer</tspan></text>
+  <text x="40" y="352" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">JULY 2017 – AUGUST 2019</text>
+
+  <text x="40" y="368" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Joined a lending fintech as its <tspan font-weight="bold">first technical hire</tspan>; designed and built the complete <tspan font-weight="bold">credit risk data</tspan></tspan>
+    <tspan x="40" dy="13"><tspan font-weight="bold">platform from scratch</tspan> — from raw data ingestion through automated decisioning to post-loan</tspan>
+    <tspan x="40" dy="13">monitoring.</tspan>
+  </text>
+
+  <text x="40" y="410" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Engineered the core <tspan font-weight="bold">decision engine</tspan>: 29 rejection rules across 4 risk dimensions, <tspan font-weight="bold">36-segment</tspan></tspan>
+    <tspan x="40" dy="13"><tspan font-weight="bold">borrower classification</tspan>, and an early-delinquency scorecard combining 19 weighted features for</tspan>
+    <tspan x="40" dy="13">first-payment default prediction.</tspan>
+  </text>
+
+  <text x="40" y="452" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Built the <tspan font-weight="bold">data foundation</tspan> powering all risk systems: daily <tspan font-weight="bold">ETL of 30+ production tables</tspan> into AWS</tspan>
+    <tspan x="40" dy="13">Redshift, plus a credit bureau report parser transforming deeply nested JSON into 5 structured</tspan>
+    <tspan x="40" dy="13">analytical tables.</tspan>
+  </text>
+
+  <!-- Baiquan Investment -->
+  <text x="40" y="498" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">Baiquan Investment, Beijing — <tspan font-style="italic" font-weight="normal">Quantitative Developer</tspan></text>
+  <text x="40" y="510" font-family="Arial, sans-serif" font-size="9.5" fill="#666666" font-style="italic">Quantitative hedge fund, 5-person team</text>
+  <text x="40" y="522" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">JULY 2015 – JUNE 2017</text>
+
+  <text x="40" y="538" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Built <tspan font-weight="bold">end-to-end market data ingestion pipeline</tspan> processing <tspan font-weight="bold">3,000+ A-share securities</tspan> and 5+ years</tspan>
+    <tspan x="40" dy="13">of tick-level futures data; implemented corporate action handling and deduplication logic ensuring</tspan>
+    <tspan x="40" dy="13">data integrity for all downstream research and live trading.</tspan>
+  </text>
+
+  <text x="40" y="580" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Built systematic <tspan font-weight="bold">alpha research pipeline</tspan> applying <tspan font-weight="bold">Fama-MacBeth regression</tspan> to validate 4 factor</tspan>
+    <tspan x="40" dy="13">families across 3,000+ securities — validated factors integrated into the fund's <tspan font-weight="bold">live portfolio</tspan>.</tspan>
+  </text>
+
+  <!-- Ele.me -->
+  <text x="40" y="618" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">Ele.me <tspan font-size="10" font-weight="normal" fill="#666666" font-style="italic">(acquired by Alibaba)</tspan>, Shanghai — <tspan font-style="italic" font-weight="normal">Data Analyst</tspan></text>
+  <text x="40" y="630" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">SEPTEMBER 2013 – JULY 2015</text>
+
+  <text x="40" y="646" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Built <tspan font-weight="bold">anti-fraud detection system</tspan> identifying <tspan font-weight="bold">51,000+ suspicious order clusters</tspan> across 2.2M+ users</tspan>
+    <tspan x="40" dy="13">using 3 pattern algorithms, preventing fraudulent subsidy claims during hyper-growth.</tspan>
+  </text>
+
+  <text x="40" y="676" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Optimized <tspan font-weight="bold">90+ Hadoop/Hive queries</tspan> through partition pruning and subquery pushdown, cutting scan</tspan>
+    <tspan x="40" dy="13">volume <tspan font-weight="bold">5x (500GB → 100GB)</tspan> and unlocking real-time analytics on 30+ warehouse tables.</tspan>
+  </text>
+
+  <!-- Henan Energy -->
+  <text x="40" y="714" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">Henan Energy <tspan font-size="10" font-weight="normal" fill="#666666" font-style="italic">(Fortune Global 500)</tspan>, Zhengzhou — <tspan font-style="italic" font-weight="normal">Business Analyst</tspan></text>
+  <text x="40" y="726" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">JULY 2010 – AUGUST 2013</text>
+
+  <text x="40" y="742" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="40" dy="0">Built <tspan font-weight="bold">automated pipeline</tspan> to ingest, validate, and consolidate non-standardized Excel reports from</tspan>
+    <tspan x="40" dy="13">30+ subsidiaries into a unified SQL Server database, enabling executive dashboards tracking 50+</tspan>
+    <tspan x="40" dy="13">KPIs across the group's coal, power, and chemical operations.</tspan>
+  </text>
+
+  <!-- ================================================================ -->
+  <!-- RIGHT COLUMN (x=330, width ~225)                                 -->
+  <!-- ================================================================ -->
+
+  <!-- ========== SELECTED PROJECTS ========== -->
+  <text x="330" y="168" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1B3A5C" letter-spacing="1.5">SELECTED PROJECTS</text>
+
+  <!-- Greenhouse Sensor Pipeline -->
+  <text x="330" y="186" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">Greenhouse Sensor Data Pipeline</text>
+  <text x="330" y="198" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">2026</text>
+
+  <text x="330" y="214" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="330" dy="0">Built batch <tspan font-weight="bold">ETL pipeline</tspan> ingesting 3,842</tspan>
+    <tspan x="330" dy="13">JSON sensor snapshots through</tspan>
+    <tspan x="330" dy="13"><tspan font-weight="bold">Bronze/Silver/Gold Medallion</tspan></tspan>
+    <tspan x="330" dy="13"><tspan font-weight="bold">Architecture</tspan> using <tspan font-weight="bold">PySpark</tspan> and <tspan font-weight="bold">Delta</tspan></tspan>
+    <tspan x="330" dy="13"><tspan font-weight="bold">Lake</tspan>; designed Entity-Attribute-Value</tspan>
+    <tspan x="330" dy="13">model for schema-free sensor</tspan>
+    <tspan x="330" dy="13">extensibility and implemented SHA-256</tspan>
+    <tspan x="330" dy="13">file-level hashing for idempotent</tspan>
+    <tspan x="330" dy="13">reprocessing.</tspan>
+  </text>
+
+  <!-- Thesis -->
+  <text x="330" y="336" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#000000">M.Sc. Thesis: UQ in Deep RL</text>
+  <text x="330" y="348" font-family="Arial, sans-serif" font-size="8.5" fill="#666666" letter-spacing="0.5">FEBRUARY 2025 – AUGUST 2025</text>
+
+  <text x="330" y="364" font-family="Arial, sans-serif" font-size="9.5" fill="#333333">
+    <tspan x="330" dy="0">Developed benchmarking framework</tspan>
+    <tspan x="330" dy="13">evaluating <tspan font-weight="bold">5 uncertainty quantification</tspan></tspan>
+    <tspan x="330" dy="13"><tspan font-weight="bold">methods</tspan> for Deep RL across <tspan font-weight="bold">150+</tspan></tspan>
+    <tspan x="330" dy="13"><tspan font-weight="bold">training runs</tspan> on HPC (SLURM);</tspan>
+    <tspan x="330" dy="13">demonstrated QR-DQN superiority with</tspan>
+    <tspan x="330" dy="13"><tspan font-weight="bold">31% lower CRPS</tspan> (p &lt; 0.001) over</tspan>
+    <tspan x="330" dy="13">ensemble and dropout baselines.</tspan>
+  </text>
+
+  <!-- ========== TECHNICAL SKILLS ========== -->
+  <text x="330" y="458" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1B3A5C" letter-spacing="1.5">TECHNICAL SKILLS</text>
+
+  <text x="330" y="476" font-family="Arial, sans-serif" font-size="10" fill="#333333">
+    <tspan font-weight="bold">Languages &amp; Core: </tspan><tspan>Python (Expert), SQL</tspan>
+    <tspan x="330" dy="14">(Expert), Bash</tspan>
+  </text>
+
+  <text x="330" y="508" font-family="Arial, sans-serif" font-size="10" fill="#333333">
+    <tspan font-weight="bold">Data Engineering: </tspan><tspan>PySpark, Spark, Delta</tspan>
+    <tspan x="330" dy="14">Lake, Databricks, ETL/ELT, Auto Loader,</tspan>
+    <tspan x="330" dy="14">Structured Streaming, Schema Evolution,</tspan>
+    <tspan x="330" dy="14">Medallion Architecture</tspan>
+  </text>
+
+  <text x="330" y="570" font-family="Arial, sans-serif" font-size="10" fill="#333333">
+    <tspan font-weight="bold">Cloud &amp; DevOps: </tspan><tspan>AWS (Redshift, S3, EMR),</tspan>
+    <tspan x="330" dy="14">Docker, Airflow, CI/CD, Git</tspan>
+  </text>
+
+  <text x="330" y="602" font-family="Arial, sans-serif" font-size="10" fill="#333333">
+    <tspan font-weight="bold">Databases: </tspan><tspan>PostgreSQL, MySQL, Hadoop, Hive</tspan>
+  </text>
+
+  <text x="330" y="620" font-family="Arial, sans-serif" font-size="10" fill="#333333">
+    <tspan font-weight="bold">ML/AI: </tspan><tspan>Pandas, NumPy, PyTorch, XGBoost,</tspan>
+    <tspan x="330" dy="14">LightGBM, scikit-learn, A/B Testing</tspan>
+  </text>
+
+  <!-- ========== CERTIFICATIONS ========== -->
+  <text x="330" y="666" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1B3A5C" letter-spacing="1.5">CERTIFICATIONS</text>
+
+  <text x="330" y="684" font-family="Arial, sans-serif" font-size="10" fill="#333333">
+    <tspan font-weight="bold">Databricks Certified Data Engineer</tspan>
+    <tspan x="330" dy="14"><tspan font-weight="bold">Professional</tspan> (2026)</tspan>
+  </text>
+
+  <!-- ========== LANGUAGES ========== -->
+  <text x="330" y="726" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1B3A5C" letter-spacing="1.5">LANGUAGES</text>
+
+  <text x="330" y="744" font-family="Arial, sans-serif" font-size="10" fill="#333333">English — Fluent | Mandarin — Native</text>
+
+</svg>

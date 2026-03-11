@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842">
+  <defs>
+    <style>
+      .page { fill: #ffffff; }
+      .name { font-family: Georgia, serif; font-size: 40px; font-weight: 700; fill: #000000; }
+      .contact { font-family: Arial, sans-serif; font-size: 8.8px; fill: #333333; text-anchor: end; }
+      .section { font-family: Arial, sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; fill: #1B3A5C; }
+      .school { font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; fill: #000000; }
+      .jobline { font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; fill: #000000; }
+      .body { font-family: Arial, sans-serif; font-size: 9px; fill: #333333; }
+      .bullet { font-family: Arial, sans-serif; font-size: 8.35px; fill: #333333; }
+      .meta { font-family: Arial, sans-serif; font-size: 7.4px; fill: #666666; letter-spacing: 0.45px; }
+      .label { font-family: Arial, sans-serif; font-size: 8.2px; font-weight: 700; fill: #333333; }
+      .rule { stroke: #cccccc; stroke-width: 0.7; }
+      .rule-soft { stroke: #d8d8d8; stroke-width: 0.7; }
+    </style>
+  </defs>
+
+  <rect class="page" width="595" height="842"/>
+
+  <text class="name" x="40" y="58">Fei Huang</text>
+  <text class="contact" x="555" y="31">Amsterdam, NL</text>
+  <text class="contact" x="555" y="43">+31 645 038 614</text>
+  <text class="contact" x="555" y="55">huangf06@gmail.com</text>
+
+  <line class="rule" x1="40" y1="78" x2="555" y2="78"/>
+
+  <text class="section" x="40" y="95">BIO</text>
+  <text class="body" x="40" y="109">
+    <tspan x="40" dy="0">Data engineer with 6 years building </tspan>
+    <tspan font-weight="700">production data systems</tspan>
+    <tspan> - from ingesting market feeds for </tspan>
+    <tspan font-weight="700">3,000+ securities</tspan>
+    <tspan x="40" dy="12">to designing </tspan>
+    <tspan font-weight="700">credit scoring pipelines</tspan>
+    <tspan> from scratch as a startup's </tspan>
+    <tspan font-weight="700">first data hire</tspan>
+    <tspan>. M.Sc. in AI (VU Amsterdam, </tspan>
+    <tspan font-weight="700">8.2/10</tspan>
+    <tspan>).</tspan>
+    <tspan x="40" dy="12">Databricks Certified Data Engineer Professional with strong data quality and system reliability focus.</tspan>
+  </text>
+
+  <line class="rule-soft" x1="40" y1="142" x2="555" y2="142"/>
+
+  <text class="section" x="40" y="165">EDUCATION</text>
+  <text class="school" x="40" y="181">VU Amsterdam</text>
+  <text class="body" x="40" y="193">M.Sc. in Artificial Intelligence</text>
+  <text class="meta" x="40" y="204">SEP 2023 - AUG 2025</text>
+  <text class="bullet" x="40" y="216">Thesis: Uncertainty Quantification in Deep RL</text>
+  <text class="bullet" x="40" y="227">Coursework: Data Mining (9.0), Deep Learning (9.5), Sequence Analysis (9.0)</text>
+
+  <text class="school" x="40" y="245">Tsinghua University</text>
+  <text class="body" x="40" y="257">B.Eng. in Industrial Engineering</text>
+  <text class="meta" x="40" y="268">SEP 2006 - JUL 2010</text>
+  <text class="bullet" x="40" y="280">Top university in China with strong quantitative and systems training.</text>
+
+  <text class="section" x="40" y="306">PROFESSIONAL EXPERIENCE</text>
+
+  <text class="jobline" x="40" y="322">GLP Technology, Shanghai <tspan font-weight="400">- </tspan><tspan font-style="italic">Lead Data Engineer</tspan></text>
+  <text class="meta" x="40" y="333">JUL 2017 - AUG 2019</text>
+  <text class="bullet" x="40" y="347">
+    <tspan x="40" dy="0">&#8226; First technical hire at a lending fintech; built the credit risk data platform from raw</tspan>
+    <tspan x="56" dy="12">data ingestion through automated decisioning and post-loan monitoring.</tspan>
+  </text>
+  <text class="bullet" x="40" y="377">
+    <tspan x="40" dy="0">&#8226; Engineered the core decision engine with 29 rejection rules, 36 borrower segments,</tspan>
+    <tspan x="56" dy="12">and a 19-feature early-delinquency scorecard for first-payment default prediction.</tspan>
+  </text>
+  <text class="bullet" x="40" y="407">
+    <tspan x="40" dy="0">&#8226; Built daily ETL for 30+ production tables into AWS Redshift and a bureau parser that</tspan>
+    <tspan x="56" dy="12">converted nested JSON reports into 5 analytical tables.</tspan>
+  </text>
+  <text class="bullet" x="40" y="437"><tspan class="label">Technical Skills:</tspan><tspan> Python, PySpark, AWS, SQL, ETL, Credit Risk</tspan></text>
+
+  <text class="jobline" x="40" y="465">Baiquan Investment, Beijing <tspan font-weight="400">- </tspan><tspan font-style="italic">Quantitative Developer</tspan></text>
+  <text class="meta" x="40" y="476">JUL 2015 - JUN 2017</text>
+  <text class="bullet" x="40" y="490">
+    <tspan x="40" dy="0">&#8226; Built market data ingestion pipelines for 3,000+ A-share securities and 5+ years of</tspan>
+    <tspan x="56" dy="12">tick-level futures data, with corporate action handling and deduplication.</tspan>
+  </text>
+  <text class="bullet" x="40" y="520">
+    <tspan x="40" dy="0">&#8226; Built a systematic alpha research pipeline using Fama-MacBeth regression to validate</tspan>
+    <tspan x="56" dy="12">4 factor families; validated signals were integrated into the live portfolio.</tspan>
+  </text>
+  <text class="bullet" x="40" y="550"><tspan class="label">Technical Skills:</tspan><tspan> Python, NumPy, Pandas, SQL, Factor Modeling, Backtesting</tspan></text>
+
+  <text class="jobline" x="40" y="578">Ele.me, Shanghai <tspan font-weight="400">- </tspan><tspan font-style="italic">Data Analyst</tspan></text>
+  <text class="meta" x="40" y="589">SEP 2013 - JUL 2015</text>
+  <text class="bullet" x="40" y="603">
+    <tspan x="40" dy="0">&#8226; Built an anti-fraud system that identified 51,000+ suspicious order clusters across</tspan>
+    <tspan x="56" dy="12">2.2M+ users using 3 pattern algorithms during hyper-growth.</tspan>
+  </text>
+  <text class="bullet" x="40" y="633">
+    <tspan x="40" dy="0">&#8226; Optimized 90+ Hadoop/Hive queries, cutting scan volume 5x and enabling real-time</tspan>
+    <tspan x="56" dy="12">analytics across 30+ warehouse tables for operations and fraud teams.</tspan>
+  </text>
+  <text class="bullet" x="40" y="663"><tspan class="label">Technical Skills:</tspan><tspan> SQL, Hadoop, Hive, Python</tspan></text>
+
+  <text class="jobline" x="40" y="691">Henan Energy, Zhengzhou <tspan font-weight="400">- </tspan><tspan font-style="italic">Business Analyst</tspan></text>
+  <text class="meta" x="40" y="702">JUL 2010 - AUG 2013</text>
+  <text class="bullet" x="40" y="716">
+    <tspan x="40" dy="0">&#8226; Built an automated pipeline to ingest, validate, and consolidate Excel reports from</tspan>
+    <tspan x="56" dy="12">20+ business units, reducing monthly processing from 2 days to under 2 hours.</tspan>
+  </text>
+  <text class="bullet" x="40" y="746"><tspan class="label">Technical Skills:</tspan><tspan> Excel, VBA, Data Automation, SQL, Data Quality</tspan></text>
+
+  <text class="section" x="334" y="165">SELECTED PROJECTS</text>
+  <text class="jobline" x="334" y="181">Greenhouse Sensor Data Pipeline</text>
+  <text class="meta" x="334" y="192">2026</text>
+  <text class="bullet" x="334" y="206">
+    <tspan x="334" dy="0">&#8226; Built batch ETL for 3,842 JSON sensor snapshots using PySpark and Delta Lake in a</tspan>
+    <tspan x="350" dy="12">Bronze/Silver/Gold medallion design with idempotent SHA-256 reprocessing.</tspan>
+  </text>
+  <text class="bullet" x="334" y="236"><tspan class="label">Technical Skills:</tspan><tspan> PySpark, Delta Lake, Medallion Architecture</tspan></text>
+
+  <text class="jobline" x="334" y="264">M.Sc. Thesis: UQ in Deep RL</text>
+  <text class="meta" x="334" y="275">FEB 2025 - AUG 2025</text>
+  <text class="bullet" x="334" y="289">
+    <tspan x="334" dy="0">&#8226; Built a benchmarking framework for 5 uncertainty-quantification methods across 150+</tspan>
+    <tspan x="350" dy="12">HPC runs; QR-DQN achieved 31% lower CRPS than ensemble and dropout baselines.</tspan>
+  </text>
+  <text class="bullet" x="334" y="319"><tspan class="label">Technical Skills:</tspan><tspan> PyTorch, Deep RL, Statistical Testing, HPC/SLURM</tspan></text>
+
+  <text class="section" x="334" y="355">TECHNICAL SKILLS</text>
+  <text class="body" x="334" y="371"><tspan class="label">Languages &amp; Core:</tspan><tspan> Python (Expert), SQL (Expert), Bash</tspan></text>
+  <text class="body" x="334" y="389"><tspan class="label">Data Engineering:</tspan><tspan> PySpark, Spark, Delta Lake, Databricks, ETL/ELT</tspan></text>
+  <text class="body" x="334" y="407"><tspan class="label">Cloud &amp; DevOps:</tspan><tspan> AWS, Docker, Airflow, CI/CD, Git</tspan></text>
+  <text class="body" x="334" y="425"><tspan class="label">Databases:</tspan><tspan> PostgreSQL, MySQL, Hadoop, Hive</tspan></text>
+  <text class="body" x="334" y="443"><tspan class="label">ML/AI:</tspan><tspan> Pandas, NumPy, PyTorch, XGBoost, LightGBM, scikit-learn</tspan></text>
+
+  <text class="section" x="334" y="479">CERTIFICATIONS</text>
+  <text class="body" x="334" y="495">Databricks Certified Data Engineer Professional (2026)</text>
+
+  <text class="section" x="334" y="527">LANGUAGES</text>
+  <text class="body" x="334" y="543">English - Fluent</text>
+  <text class="body" x="334" y="557">Mandarin - Native</text>
+</svg>

@@ -1,0 +1,689 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="595pt"
+   height="842pt"
+   viewBox="0 0 595 842"
+   role="img"
+   aria-label="Fei Huang Data Engineer resume in Toni Kendel layout"
+   version="1.1"
+   id="svg103"
+   sodipodi:docname="de_resume_toni_v2.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview103"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="pt"
+     inkscape:zoom="1.6166865"
+     inkscape:cx="366.18107"
+     inkscape:cy="524.22037"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg103" />
+  <defs
+     id="defs1">
+    <rect
+       x="41.442791"
+       y="383.50045"
+       width="364.32543"
+       height="675.45563"
+       id="rect15" />
+    <style
+       id="style1"><![CDATA[
+      .page { fill:#efefef; }
+
+      .name {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 36px;
+        font-weight: 700;
+        fill:#201919;
+      }
+
+      .contact {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#222222;
+      }
+
+      .contact-bold {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#222222;
+      }
+
+      .section {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        fill:#2646a5;
+        letter-spacing: 0.2px;
+      }
+
+      .bio {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#555555;
+      }
+
+      .bio-bold {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#555555;
+      }
+
+      .org {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#211b1b;
+      }
+
+      .place {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#211b1b;
+      }
+
+      .role {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 10px;
+        font-style: italic;
+        font-weight: 400;
+        fill:#332a2a;
+      }
+
+      .body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#555555;
+      }
+
+      .body-bold {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#555555;
+      }
+
+      .date {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 7px;
+        font-weight: 400;
+        fill:#666666;
+        letter-spacing: 0.15px;
+      }
+    ]]></style>
+  </defs>
+  <text
+     class="name"
+     x="51.56"
+     y="77.18"
+     id="text1">Fei Huang</text>
+  <text
+     class="contact"
+     x="310.28"
+     y="50.05"
+     id="text2">Amsterdam, Netherlands</text>
+  <text
+     class="contact-bold"
+     x="310.28"
+     y="61.28"
+     id="text3">(+31) 6 45 03 8614</text>
+  <text
+     class="contact-bold"
+     x="310.28"
+     y="72.97"
+     id="text4">huangf06@gmail.com</text>
+  <text
+     class="contact"
+     x="310.28"
+     y="84.20"
+     id="text5">linkedin.com/in/huangf06</text>
+  <text
+     class="section"
+     x="45.830002"
+     y="105"
+     id="text6">BIO</text>
+  <text
+     class="bio"
+     x="45.830002"
+     y="122.3"
+     id="text7"><tspan
+       id="tspan6">First-principles Data Engineer who understands problems deeply, designs reliable systems, and builds them</tspan></text>
+  <text
+     class="bio"
+     x="45.830002"
+     y="135.39999"
+     id="text8"><tspan
+       id="tspan7">end to end. Deep thinker and problem solver with 6 years building production data workflow and systems.</tspan></text>
+  <text
+     class="bio"
+     x="45.830002"
+     y="148.5"
+     id="text9"><tspan
+       id="tspan8">M.Sc. in Artificial Intelligence; Databricks Certified Data Engineer Professional.</tspan></text>
+  <text
+     class="section"
+     x="45.830002"
+     y="170.5"
+     id="text11">EDUCATION</text>
+  <text
+     x="45.474354"
+     y="186.41267"
+     id="text12"><tspan
+       class="org"
+       id="tspan11">Vrije Universiteit Amsterdam</tspan><tspan
+       class="place"
+       id="tspan12">, The Netherlands</tspan></text>
+  <text
+     x="45.474354"
+     y="199.41267"
+     id="text13"><tspan
+       class="role"
+       id="tspan13">M.Sc. in Artificial Intelligence (GPA: 8.2/10)</tspan></text>
+  <text
+     class="date"
+     x="45.474354"
+     y="212.41267"
+     id="text14">SEPTEMBER 2023 - AUGUST 2025</text>
+  <text
+     x="45.474354"
+     y="230.41266"
+     id="text18"><tspan
+       class="org"
+       id="tspan18">Tsinghua University</tspan><tspan
+       class="place"
+       id="tspan19">(#1 in China, Top 20 globally)</tspan></text>
+  <text
+     x="45.474354"
+     y="243.41266"
+     id="text20"><tspan
+       class="role"
+       id="tspan20">B.Eng. in Industrial Engineering</tspan></text>
+  <text
+     class="date"
+     x="45.474354"
+     y="256.41266"
+     id="text21">SEPTEMBER 2006 - JULY 2010</text>
+  <text
+     class="section"
+     x="45.474354"
+     y="277.41266"
+     id="text23">EXPERIENCE</text>
+  <text
+     x="45.474354"
+     y="293.91266"
+     id="text25"><tspan
+       class="org"
+       id="tspan23">GLP Technology</tspan><tspan
+       class="place"
+       id="tspan24">, Shanghai -</tspan><tspan
+       class="role"
+       id="tspan25">Lead Data Engineer</tspan></text>
+  <text
+     class="date"
+     x="45.474354"
+     y="305.91266"
+     id="text26">JULY 2017 - AUGUST 2019</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="318.71265"
+     id="text27">Joined a lending fintech as its first technical data hire;</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="331.81265"
+     id="text28">built the credit risk data platform from scratch, from</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="344.91266"
+     id="text29">ingestion and transformation to automated decisioning</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="358.01266"
+     id="text30">and post-loan monitoring.</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="371.11267"
+     id="text31">Built daily ETL for 30+ production tables into AWS</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="384.21265"
+     id="text32">Redshift and transformed nested bureau JSON into 5</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="397.31268"
+     id="text33">structured analytical tables.</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="410.41266"
+     id="text34">Engineered the production decision layer with 29 rules</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="423.51263"
+     id="text35">across 4 risk dimensions, 36 borrower segments, and</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="436.61267"
+     id="text36">an early-delinquency scorecard.</text>
+  <text
+     class="body"
+     x="49.974354"
+     y="472.11267"
+     id="text38"
+     style="white-space:pre;inline-size:256.799;display:inline"
+     xml:space="preserve"
+     transform="translate(-4.5,-21)"><tspan
+       x="49.974354"
+       y="472.11267"
+       id="tspan9"><tspan
+   style="font-weight:700"
+   id="tspan5">Tech Skills:</tspan> Python, SQL, PySpark, AWS, Redshift</tspan></text>
+  <text
+     x="45.474354"
+     y="472.01263"
+     id="text41"><tspan
+       class="org"
+       id="tspan39">BQ Investment</tspan><tspan
+       class="place"
+       id="tspan40">, Beijing -</tspan><tspan
+       class="role"
+       id="tspan41">Quantitative Developer</tspan></text>
+  <text
+     class="date"
+     x="45.474354"
+     y="484.01263"
+     id="text42">JULY 2015 - JUNE 2017</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="496.81268"
+     id="text43">Built end-to-end market data ingestion pipeline</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="509.91266"
+     id="text44">processing 3,000+ A-share securities and 5+ years of</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="523.01263"
+     id="text45">tick-level futures data from multiple vendor feeds;</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="536.11267"
+     id="text46">implemented corporate action handling and</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="549.21265"
+     id="text46b">deduplication logic ensuring data integrity for all</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="562.31268"
+     id="text46c">downstream research and live trading.</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="575.41266"
+     id="text49">multi-factor analysis across 3,000+ securities; validated</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="588.91266"
+     id="text49b">outputs were used in the fund's live portfolio process.</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="601.91266"
+     id="text51"><tspan
+       x="45.474354"
+       id="tspan50"
+       dy="0"><tspan
+   style="font-weight:bold"
+   id="tspan1">Tech Skills:</tspan> Python, NumPy, Pandas, SQL, Market Data</tspan></text>
+  <text
+     x="45.474354"
+     y="607.91266"
+     id="text54"><tspan
+       class="org"
+       id="tspan52">Ele.me</tspan><tspan
+       class="place"
+       id="tspan53">, Shanghai -</tspan><tspan
+       class="role"
+       id="tspan54">Data Analyst</tspan></text>
+  <text
+     class="date"
+     x="45.474354"
+     y="619.91266"
+     id="text55">SEPTEMBER 2013 - JULY 2015</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="632.71265"
+     id="text56">Optimized 90+ Hadoop/Hive queries through partition</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="645.81268"
+     id="text57">pruning and subquery pushdown, cutting scan volume</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="658.91266"
+     id="text58">5x (500GB → 100GB) and unlocking real-time analytics</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="672.01263"
+     id="text59">on 30+ warehouse tables for fraud detection,</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="685.11267"
+     id="text59b">operations, and marketing teams.</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="698.21265"
+     id="text60">Built anti-fraud detection system identifying 51,000+</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="711.31268"
+     id="text61">suspicious order clusters across 2.2M+ users using 3</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="724.41266"
+     id="text62">pattern algorithms, preventing fraudulent subsidy</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="737.51263"
+     id="text62b">claims during hyper-growth.</text>
+  <text
+     class="body"
+     x="45.474354"
+     y="751.81268"
+     id="text62c"><tspan
+       x="45.474354"
+       dy="0"
+       id="tspan62c"><tspan
+   style="font-weight:bold"
+   id="tspan62d">Tech Skills:</tspan> Python, SQL, Hadoop, Hive, Query Optimization</tspan></text>
+  <!-- Right column continues professional experience -->
+  <text
+     class="section"
+     x="310.09"
+     y="169.5"
+     id="text71">PROJECTS</text>
+  <text
+     x="310.09"
+     y="184.5"
+     id="text72"><tspan
+       class="org"
+       id="tspan71">Greenhouse Sensor Data Pipeline</tspan></text>
+  <text
+     class="date"
+     x="310.09"
+     y="196.5"
+     id="text73">2026</text>
+  <text
+     class="body"
+     x="310.09"
+     y="209.3"
+     id="text74">Built a batch ETL pipeline ingesting 3,842 JSON sensor</text>
+  <text
+     class="body"
+     x="310.09"
+     y="222.39999"
+     id="text75">snapshots through Bronze, Silver, and Gold Delta Lake</text>
+  <text
+     class="body"
+     x="310.09"
+     y="235.5"
+     id="text76">layers using PySpark; implemented idempotent</text>
+  <text
+     class="body"
+     x="310.09"
+     y="248.60001"
+     id="text77">reprocessing and an extensible schema design.</text>
+  <text
+     class="body"
+     x="310.09"
+     y="263.10001"
+     id="text79"
+     style="white-space:pre;inline-size:263.175;display:inline"
+     xml:space="preserve"><tspan
+       x="310.09"
+       y="263.10001"
+       id="tspan17"><tspan
+   style="font-weight:700"
+   id="tspan16">Tech Skills:</tspan> PySpark, Delta Lake,Medallion Architecture</tspan></text>
+  <text
+     x="310.09"
+     y="284"
+     id="text80"><tspan
+       sodipodi:role="line"
+       id="tspan10"
+       x="310.09"
+       y="284"><tspan
+         class="org"
+         id="tspan80">M.Sc. Thesis: Uncertainty Quantification</tspan></tspan><tspan
+       sodipodi:role="line"
+       id="tspan14"
+       x="310.09"
+       y="299"><tspan
+         class="org"
+         id="tspan15">in Deep Reinforcement Learning</tspan></tspan></text>
+  <text
+     class="date"
+     x="310.09"
+     y="311"
+     id="text81">FEBRUARY 2025 - AUGUST 2025</text>
+  <text
+     class="body"
+     x="310.09"
+     y="323.79999"
+     id="text82">Built a reproducible benchmarking pipeline for 150+</text>
+  <text
+     class="body"
+     x="310.09"
+     y="336.89999"
+     id="text83">Deep RL training runs on HPC, with automated</text>
+  <text
+     class="body"
+     x="310.09"
+     y="350"
+     id="text84">experiment tracking, calibration analysis, and</text>
+  <text
+     class="body"
+     x="310.09"
+     y="363.10001"
+     id="text85">statistical comparison across 5 UQ methods.</text>
+  <text
+     class="body"
+     x="310.09"
+     y="377.60001"
+     id="text87"><tspan
+       x="310.09"
+       dy="0"
+       id="tspan86"><tspan
+   class="body-bold"
+   id="tspan85">Tech Skills:</tspan> Experiment Design, HPC,</tspan><tspan
+       x="310.09"
+       dy="13.1"
+       id="tspan87">Statistical Evaluation</tspan></text>
+  <text
+     x="310.09"
+     y="409"
+     id="text87d"><tspan
+       class="org"
+       id="tspan87d">Job Search Operations Platform</tspan></text>
+  <text
+     class="date"
+     x="310.09"
+     y="421"
+     id="text87e">2025 - PRESENT</text>
+  <text
+     class="body"
+     x="310.09"
+     y="433.79999"
+     id="text87f">Designed operational controls for long-running</text>
+  <text
+     class="body"
+     x="310.09"
+     y="446.89999"
+     id="text87g">workflow maintenance, including scrape watermarks,</text>
+  <text
+     class="body"
+     x="310.09"
+     y="460"
+     id="text87h">YAML rules, checklist state management, rejection-</text>
+  <text
+     class="body"
+     x="310.09"
+     y="473.10001"
+     id="text87i">history detection, and cold-data archival.</text>
+  <text
+     class="body"
+     x="310.09"
+     y="486.20001"
+     id="text87i2">Built on SQLite with Turso embedded-replica sync and</text>
+  <text
+     class="body"
+     x="310.09"
+     y="499.29999"
+     id="text87i3">scheduled incremental runs on GitHub Actions.</text>
+  <text
+     class="body"
+     x="310.09"
+     y="513.79999"
+     id="text87j"><tspan
+       x="310.09"
+       dy="0"
+       id="tspan87j"><tspan
+   class="body-bold"
+   id="tspan87k">Tech Skills:</tspan> Incremental Scraping, GitHub Actions,</tspan><tspan
+       x="310.09"
+       dy="13.1"
+       id="tspan87l">Turso, State Management</tspan></text>
+  <text
+     class="section"
+     x="310.09"
+     y="544.5"
+     id="text88">TECHNICAL SKILLS</text>
+  <text
+     class="body"
+     x="310.09"
+     y="559"
+     id="text89"><tspan
+       x="310.09"
+       dy="0"
+       id="tspan89"><tspan
+   class="body-bold"
+   id="tspan88">Languages &amp; Core:</tspan> Python, SQL, Bash</tspan></text>
+  <text
+     class="body"
+     x="310.09"
+     y="572.09998"
+     id="text91"><tspan
+       x="310.09"
+       dy="0"
+       id="tspan91"><tspan
+   style="font-weight:bold"
+   id="tspan113">Data Engineering</tspan>: PySpark, Delta Lake</tspan></text>
+  <text
+     class="body"
+     x="310.09"
+     y="585.20001"
+     id="text92">Databricks, ETL/ELT, Medallion Architecture</text>
+  <text
+     class="body"
+     x="310.09"
+     y="598.29999"
+     id="text93"><tspan
+       x="310.09"
+       dy="0"
+       id="tspan93"><tspan
+   class="body-bold"
+   id="tspan92">Cloud &amp; DevOps:</tspan> AWS, Docker, Airflow,,CI/CD,Git</tspan></text>
+  <text
+     class="body"
+     x="310.09"
+     y="612.5"
+     id="text95"><tspan
+       x="310.09"
+       dy="0"
+       id="tspan95">Databases: PostgreSQL,MySQL, Hive, Redshift</tspan></text>
+  <text
+     class="body"
+     x="310.09"
+     y="633.09998"
+     id="text96" />
+  <text
+     class="body"
+     x="310.09"
+     y="626.70001"
+     id="text97"><tspan
+       x="310.09"
+       id="tspan97"
+       dy="0"><tspan
+   style="font-weight:bold"
+   id="tspan2">Analytical &amp; ML:</tspan> Pandas, NumPy,,scikit-learn</tspan></text>
+  <text
+     class="body"
+     x="310.09"
+     y="659.29999"
+     id="text98" />
+  <text
+     class="section"
+     x="310.09"
+     y="644.70001"
+     id="text99">CERTIFICATIONS</text>
+  <text
+     class="body"
+     x="310.09"
+     y="659.20001"
+     id="text100">Databricks Certified Data Engineer Professional</text>
+  <text
+     class="section"
+     x="310.09"
+     y="676.70001"
+     id="text102">LANGUAGES</text>
+  <text
+     class="body"
+     x="310.09"
+     y="691.20001"
+     id="text103">English - Fluent | Mandarin - Native</text>
+</svg>

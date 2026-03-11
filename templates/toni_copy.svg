@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="595pt" height="842pt" viewBox="0 0 595 842"
+     role="img" aria-label="Toni Kendel CV verification copy fixed overlaps">
+
+  <defs>
+    <style><![CDATA[
+      .page { fill:#efefef; }
+
+      .name {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 36px;
+        font-weight: 700;
+        fill:#201919;
+      }
+
+      .contact {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#222222;
+      }
+
+      .contact-bold {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#222222;
+      }
+
+      .section {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        fill:#2646a5;
+        letter-spacing: 0.2px;
+      }
+
+      .bio {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#555555;
+      }
+
+      .bio-bold {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#555555;
+      }
+
+      .org {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#211b1b;
+      }
+
+      .place {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#211b1b;
+      }
+
+      .role {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 10px;
+        font-style: italic;
+        font-weight: 400;
+        fill:#332a2a;
+      }
+
+      .body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 400;
+        fill:#555555;
+      }
+
+      .body-bold {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        fill:#555555;
+      }
+
+      .date {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 7px;
+        font-weight: 400;
+        fill:#666666;
+        letter-spacing: 0.15px;
+      }
+    ]]></style>
+  </defs>
+
+  <!-- HEADER -->
+  <text class="name" x="51.56" y="77.18">Toni Kendel</text>
+
+  <text class="contact" x="310.28" y="50.05">Hickorylaan 192</text>
+  <text class="contact" x="310.28" y="61.28">3545CT, Utrecht</text>
+  <text class="contact-bold" x="310.28" y="72.97">(+31) 6 21 65 7387</text>
+  <text class="contact-bold" x="310.28" y="84.20">kendeltoni@gmail.com</text>
+
+  <!-- BIO -->
+  <text class="section" x="51.83" y="121.50">BIO</text>
+
+  <text class="bio" x="51.83" y="138.80">
+    <tspan class="bio-bold">Data Engineer</tspan>
+    <tspan> with expertise in building </tspan>
+    <tspan class="bio-bold">scalable data platforms in cloud environments</tspan>
+    <tspan>. Skilled in </tspan>
+    <tspan class="bio-bold">Python,</tspan>
+  </text>
+  <text class="bio" x="51.83" y="151.90">
+    <tspan class="bio-bold">Azure, and Databricks</tspan>
+    <tspan> for processing </tspan>
+    <tspan class="bio-bold">large amounts of data</tspan>
+    <tspan> from various systems. </tspan>
+    <tspan class="bio-bold">Eager</tspan>
+    <tspan> to contribute to</tspan>
+  </text>
+  <text class="bio" x="51.83" y="165.00">
+    <tspan>maritime infrastructure by leveraging data to </tspan>
+    <tspan class="bio-bold">deliver impact for sustainable initiatives.</tspan>
+  </text>
+
+  <!-- EDUCATION -->
+  <text class="section" x="51.83" y="188.00">EDUCATION</text>
+
+  <!-- Education 1 -->
+  <text x="51.83" y="210.00">
+    <tspan class="org">Vrije Universiteit Amsterdam</tspan>
+    <tspan class="place">, The</tspan>
+  </text>
+  <text x="51.83" y="223.50">
+    <tspan class="place">Netherlands — </tspan>
+    <tspan class="role">Masters in Artificial Intelligence</tspan>
+  </text>
+  <text class="date" x="51.83" y="236.00">SEPTEMBER 2023 - AUGUST 2025</text>
+  <text class="body" x="51.83" y="248.50">
+    <tspan class="body-bold">Master</tspan>
+    <tspan> thesis on the topic of automated segmentation of</tspan>
+  </text>
+  <text class="body" x="51.83" y="261.60">pancreatic cancer in MRI scans using a foundational</text>
+  <text class="body" x="51.83" y="274.70">model.</text>
+
+  <!-- Education 2 -->
+  <text x="51.83" y="298.50">
+    <tspan class="org">University of Applied Sciences Velika</tspan>
+  </text>
+  <text x="51.83" y="312.00">
+    <tspan class="org">Gorica</tspan>
+    <tspan class="place">, Croatia — </tspan>
+    <tspan class="role">Professional baccalaureus</tspan>
+  </text>
+  <text x="51.83" y="325.50">
+    <tspan class="role">engineer of Information Technology</tspan>
+  </text>
+  <text class="date" x="51.83" y="338.00">OCTOBER 2016 - OCTOBER 2019</text>
+
+  <!-- PROFESSIONAL EXPERIENCE -->
+  <text class="section" x="51.83" y="357.00">PROFESSIONAL EXPERIENCE</text>
+
+  <!-- Blue Harvest -->
+  <text x="51.83" y="373.50">
+    <tspan class="org">Blue Harvest</tspan>
+    <tspan class="place">, Amsterdam — </tspan>
+    <tspan class="role">Software Engineer</tspan>
+  </text>
+  <text class="date" x="51.83" y="385.50">FEBRUARY 2020 - AUGUST 2023</text>
+  <text class="body" x="51.83" y="398.30">Worked as a consultant to support clients with software</text>
+  <text class="body" x="51.83" y="411.40">engineering projects including topics like computer</text>
+  <text class="body" x="51.83" y="424.50">
+    <tspan>vision, </tspan>
+    <tspan class="body-bold">data analysis, data science</tspan>
+    <tspan>. Also supported the</tspan>
+  </text>
+  <text class="body" x="51.83" y="437.60">team once a week on internal projects around <tspan class="body-bold">data</tspan></text>
+  <text class="body" x="51.83" y="450.70"><tspan class="body-bold">engineering</tspan><tspan> and data science.</tspan></text>
+  <text class="body" x="51.83" y="465.20"><tspan class="body-bold">Technical Skills: Python, Azure, ADF, Databricks,</tspan></text>
+  <text class="body" x="51.83" y="478.30"><tspan class="body-bold">Computer Vision, DevOps.</tspan></text>
+  <text class="body" x="51.83" y="492.80"><tspan class="body-bold">Soft Skills:</tspan><tspan> Flexibility, Problem Solving, Collaboration,</tspan></text>
+  <text class="body" x="51.83" y="505.90">Teamwork, Ability to Explain Complex Concepts</text>
+
+  <!-- ABN AMRO -->
+  <text x="51.83" y="527.80">
+    <tspan class="org">ABN AMRO</tspan>
+    <tspan class="place">, Amsterdam — </tspan>
+    <tspan class="role">Data Engineer</tspan>
+  </text>
+  <text class="date" x="51.83" y="539.80">FEBRUARY 2023 – AUGUST 2023</text>
+  <text class="body" x="51.83" y="552.60">Helped expanding and maintaining the companies</text>
+  <text class="body" x="51.83" y="565.70">service of processing vast amounts of data, its storage,</text>
+  <text class="body" x="51.83" y="578.80">
+    <tspan>and </tspan>
+    <tspan class="body-bold">BI report generation</tspan>
+    <tspan> in the cloud while maintaining</tspan>
+  </text>
+  <text class="body" x="51.83" y="591.90">the CI/CD and IaC infrastructure. Focused on delivery</text>
+  <text class="body" x="51.83" y="605.00">speed, code quality and improving team maturity.</text>
+  <text class="body" x="51.83" y="619.50"><tspan class="body-bold">Technical Skills: Python, Azure, ADF, Databricks,</tspan></text>
+  <text class="body" x="51.83" y="632.60"><tspan class="body-bold">DevOps, IaC, Power BI.</tspan></text>
+  <text class="body" x="51.83" y="647.10"><tspan class="body-bold">Soft Skills:</tspan><tspan> Adaptability, Flexibility, Critical Thinking,</tspan></text>
+  <text class="body" x="51.83" y="660.20">Collaboration, Teamwork, Ability to Explain Complex</text>
+  <text class="body" x="51.83" y="673.30">Concepts, Time Management, Communication.</text>
+
+  <!-- NN -->
+  <text x="51.83" y="700.00">
+    <tspan class="org">NN</tspan>
+    <tspan class="place">, Den Haag — </tspan>
+    <tspan class="role">Data Engineer</tspan>
+  </text>
+  <text class="date" x="51.83" y="712.00">SEPTEMBER 2022 – JANUARY 2023</text>
+  <text class="body" x="51.83" y="724.80">Hired as a senior consultant to develop the <tspan class="body-bold">CI/CD</tspan></text>
+  <text class="body" x="51.83" y="737.90"><tspan class="body-bold">infrastructure</tspan><tspan> and for translating data related business</tspan></text>
+  <text class="body" x="51.83" y="751.00">requirements into Azure Data Factory pipelines for</text>
+  <text class="body" x="51.83" y="764.10">ingestion and transformation.</text>
+  <text class="body" x="51.83" y="778.60"><tspan class="body-bold">Technical Skills: Python, Azure,ADF, IaC, DevOps.</tspan></text>
+  <text class="body" x="51.83" y="793.10"><tspan class="body-bold">Soft Skills:</tspan><tspan> Adaptability, Problem Solving, Collaboration,</tspan></text>
+  <text class="body" x="51.83" y="806.20">Teamwork, Organization, Resilience, Communication.</text>
+
+  <!-- RIGHT COLUMN -->
+  <!-- IKEA -->
+  <text x="310.09" y="210.00">
+    <tspan class="org">IKEA</tspan>
+    <tspan class="place">, Malmo — </tspan>
+    <tspan class="role">Lead Transformation Engineer</tspan>
+  </text>
+  <text class="date" x="310.09" y="223.00">MAY 2021 - AUGUST 2022</text>
+  <text class="body" x="310.09" y="235.80">Worked on developing a SaaS adapter while focusing on</text>
+  <text class="body" x="310.09" y="248.90">delivery, code quality to ingest data from different</text>
+  <text class="body" x="310.09" y="262.00">
+    <tspan>sources and </tspan>
+    <tspan class="body-bold">transform</tspan>
+    <tspan> it to the required </tspan>
+    <tspan class="body-bold">schema</tspan>
+    <tspan>. After</tspan>
+  </text>
+  <text class="body" x="310.09" y="275.10">the transformation it is passed to a storage where it gets</text>
+  <text class="body" x="310.09" y="288.20">picked up and imported into an MDM system as a result</text>
+  <text class="body" x="310.09" y="301.30">creating their “golden source of truth”.</text>
+  <text class="body" x="310.09" y="315.80"><tspan class="body-bold">Technical Skills: Java, Azure, IaC, Kafka, DevOps.</tspan></text>
+  <text class="body" x="310.09" y="330.30"><tspan class="body-bold">Soft Skills:</tspan><tspan> Adaptability, Flexibility, Problem Solving,</tspan></text>
+  <text class="body" x="310.09" y="343.40">Collaboration, Teamwork, Leadership, Time Management,</text>
+  <text class="body" x="310.09" y="356.50">Organization, Initiative, Communication.</text>
+
+  <!-- ING 1 -->
+  <text x="310.09" y="373.50">
+    <tspan class="org">ING</tspan>
+    <tspan class="place">, Amsterdam — </tspan>
+    <tspan class="role">Data Scientist</tspan>
+  </text>
+  <text class="date" x="310.09" y="385.50">JULY 2020 – APRIL 2021</text>
+  <text class="body" x="310.09" y="398.30">Automated the identification extraction of specific data</text>
+  <text class="body" x="310.09" y="411.40">from customer documents using a CNN, computer</text>
+  <text class="body" x="310.09" y="424.50">vision and text extraction enabling them to streamline</text>
+  <text class="body" x="310.09" y="437.60">their process and optimize their cost.</text>
+  <text class="body" x="310.09" y="452.10"><tspan class="body-bold">Technical Skills: Python, Azure,</tspan><tspan> Machine learning,</tspan></text>
+  <text class="body" x="310.09" y="465.20">Computer Vision.</text>
+  <text class="body" x="310.09" y="479.70"><tspan class="body-bold">Soft Skills:</tspan><tspan> Adaptability, Problem Solving,</tspan></text>
+  <text class="body" x="310.09" y="492.80">Collaboration, Teamwork, Curiosity.</text>
+
+  <!-- ING 2 -->
+  <text x="310.09" y="527.80">
+    <tspan class="org">ING</tspan>
+    <tspan class="place">, Amsterdam — </tspan>
+    <tspan class="role">Data Scientist</tspan>
+  </text>
+  <text class="date" x="310.09" y="539.80">FEBRUARY 2020 – MAY 2020</text>
+  <text class="body" x="310.09" y="552.60">Developed a signature extraction solution to extract</text>
+  <text class="body" x="310.09" y="565.70">information from Dutch ID's and passports for</text>
+  <text class="body" x="310.09" y="578.80">enabling optimization during the processing of</text>
+  <text class="body" x="310.09" y="591.90">mortgage applications.</text>
+  <text class="body" x="310.09" y="606.40"><tspan class="body-bold">Technical Skills: Python, Computer Vision.</tspan></text>
+  <text class="body" x="310.09" y="620.90"><tspan class="body-bold">Soft Skills:</tspan><tspan> Adaptability, Flexibility, Problem</tspan></text>
+  <text class="body" x="310.09" y="634.00">Solving, Collaboration, Temwork.</text>
+
+  <!-- TECHNICAL SKILLS -->
+  <text class="section" x="310.09" y="654.00">TECHNICAL SKILLS</text>
+  <text class="body" x="310.09" y="668.50">
+    <tspan>Back-end(Java, </tspan>
+    <tspan class="body-bold">Python</tspan>
+    <tspan>, PHP, Django, Laravel),</tspan>
+  </text>
+  <text class="body" x="310.09" y="681.60">
+    <tspan class="body-bold">Azure</tspan>
+    <tspan>, ADF, Terraform, </tspan>
+    <tspan class="body-bold">Databricks</tspan>
+    <tspan>, </tspan>
+    <tspan class="body-bold">SQL</tspan>
+    <tspan>, NoSQL,</tspan>
+  </text>
+  <text class="body" x="310.09" y="694.70">
+    <tspan>REST APIs, </tspan>
+    <tspan class="body-bold">Kafka</tspan>
+    <tspan>, </tspan>
+    <tspan class="body-bold">CI/CD</tspan>
+    <tspan>, </tspan>
+    <tspan class="body-bold">Agile Scrum</tspan>
+    <tspan>, R,</tspan>
+  </text>
+  <text class="body" x="310.09" y="707.80">
+    <tspan class="body-bold">OpenCV, Pandas</tspan>
+    <tspan>, PyTorch, </tspan>
+    <tspan class="body-bold">PowerBI.</tspan>
+  </text>
+
+  <!-- LANGUAGES -->
+  <text class="section" x="310.09" y="731.50">LANGUAGES</text>
+  <text class="body" x="310.09" y="746.00">English – Fluent I Dutch – Novice I German – Fluent</text>
+</svg>
