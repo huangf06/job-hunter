@@ -28,6 +28,14 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 from pathlib import Path
 
+# Auto-load .env so credentials work without manual export
+PROJECT_ROOT = Path(__file__).parent.parent
+try:
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_ROOT / ".env", override=True)
+except ImportError:
+    pass  # dotenv not installed, rely on env vars directly
+
 logger = logging.getLogger(__name__)
 
 # Optional import - gracefully handle if not installed
@@ -166,16 +174,20 @@ class GmailClient:
         subject_keywords: List[str] = None,
         lookback_days: int = 30,
         max_results: int = 50,
-        unread_only: bool = False
+        unread_only: bool = False,
+        folder: str = '[Gmail]/All Mail'
     ) -> List[Dict[str, Any]]:
         """
         Search emails using UIDs.
 
         Args:
-            subject_keywords: Filter by subject keywords (case-insensitive)
+            subject_keywords: Filter by subject keywords (case-insensitive).
+                Uses server-side IMAP SUBJECT search for efficiency.
             lookback_days: How many days back to search
             max_results: Maximum emails to return
             unread_only: If True, only search unread emails
+            folder: IMAP folder to search. Defaults to '[Gmail]/All Mail'
+                which includes archived emails. Use 'INBOX' for inbox only.
 
         Returns:
             List of email dicts with: uid, message_id, subject, sender, date, body
@@ -183,15 +195,27 @@ class GmailClient:
         if not self.client:
             raise ConnectionError("Not connected to IMAP server")
 
-        self.client.select_folder('INBOX')
+        self.client.select_folder(folder)
 
         since_date = datetime.now() - timedelta(days=lookback_days)
-        criteria = ['SINCE', since_date]
-        if unread_only:
-            criteria.insert(0, 'UNSEEN')
 
-        uids = self.client.search(criteria)
-        logger.info(f"Found {len(uids)} emails since {since_date.strftime('%d-%b-%Y')}")
+        # Build server-side search criteria for each keyword (OR logic)
+        # and intersect with date + read status
+        all_uids = set()
+        base_criteria = ['SINCE', since_date]
+        if unread_only:
+            base_criteria.insert(0, 'UNSEEN')
+
+        if subject_keywords:
+            for kw in subject_keywords:
+                criteria = base_criteria + ['SUBJECT', kw]
+                uids = self.client.search(criteria)
+                all_uids.update(uids)
+        else:
+            all_uids = set(self.client.search(base_criteria))
+
+        uids = sorted(all_uids)
+        logger.info(f"Found {len(uids)} emails since {since_date.strftime('%d-%b-%Y')} in {folder}")
 
         if not uids:
             return []
@@ -219,12 +243,6 @@ class GmailClient:
                 sender = self._decode_header_value(msg.get("From", ""))
                 date_str = msg.get("Date", "")
                 rfc822_message_id = msg.get("Message-ID", "")
-
-                # Filter by subject keywords if provided
-                if subject_keywords:
-                    subject_lower = subject.lower()
-                    if not any(kw.lower() in subject_lower for kw in subject_keywords):
-                        continue
 
                 body = self._extract_body(msg)
 
