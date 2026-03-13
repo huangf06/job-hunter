@@ -34,20 +34,20 @@ on:
         required: false
         default: false
         type: boolean
-      ai_limit:
-        description: 'Max jobs for AI analysis (empty = auto)'
-        required: false
-        default: ''
-        type: string
-
+      # TEMP DISABLED: restore after pipeline fix
+      # ai_limit:
+      #   description: 'Max jobs for AI analysis (empty = auto)'
+      #   required: false
+      #   default: ''
+      #   type: string
 env:
   PYTHONUNBUFFERED: '1'
   TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
   TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
   TURSO_SYNC_MODE: 'startup_only'
-  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-  ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
-
+  # TEMP DISABLED: restore after pipeline fix
+  # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  # ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
 jobs:
   pipeline:
     runs-on: ubuntu-latest
@@ -161,24 +161,24 @@ jobs:
       # ==========================================
       # Step 3: AI 分析 (只处理高分新职位)
       # ==========================================
-      - name: AI Analysis
-        id: ai
-        run: |
-          LIMIT="${{ github.event.inputs.ai_limit }}"
-
-          if [ -z "$LIMIT" ]; then
-            NEW_JOBS="${{ steps.scrape.outputs.new_jobs_count }}"
-            NEW_JOBS="${NEW_JOBS:-0}"
-            LIMIT=$((NEW_JOBS + 20))
-            echo "Auto-limit: $LIMIT (new: $NEW_JOBS + backlog: 20)"
-          fi
-
-          echo "=== Running AI analysis (limit: $LIMIT) ==="
-          python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
-
       # ==========================================
       # Step 4: 通知
       # ==========================================
+      # TEMP DISABLED: restore after pipeline fix
+      # - name: AI Analysis
+      #   id: ai
+      #   run: |
+      #     LIMIT="${{ github.event.inputs.ai_limit }}"
+      #
+      #     if [ -z "$LIMIT" ]; then
+      #       NEW_JOBS="${{ steps.scrape.outputs.new_jobs_count }}"
+      #       NEW_JOBS="${NEW_JOBS:-0}"
+      #       LIMIT=$((NEW_JOBS + 20))
+      #       echo "Auto-limit: $LIMIT (new: $NEW_JOBS + backlog: 20)"
+      #     fi
+      #
+      #     echo "=== Running AI analysis (limit: $LIMIT) ==="
+      #     python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
       - name: Send Telegram notification
         if: always()
         continue-on-error: true
@@ -191,8 +191,8 @@ jobs:
           [ "${{ steps.scrape.outcome }}" == "failure" ] && FAILED_STEPS="scrape"
           [ "${{ steps.score.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }score"
           [ "${{ steps.multi_scrape.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }multi-scrape"
-          [ "${{ steps.ai.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-analyze"
-
+          # TEMP DISABLED: restore after pipeline fix
+          # [ "${{ steps.ai.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-analyze"
           if [ -n "$FAILED_STEPS" ]; then
             python scripts/notify.py --status failure --failed-step "$FAILED_STEPS"
           else
