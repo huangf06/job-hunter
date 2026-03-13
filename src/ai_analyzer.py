@@ -35,6 +35,7 @@ except ImportError:
 from anthropic import Anthropic, RateLimitError, APITimeoutError, AuthenticationError, APIConnectionError, InternalServerError
 from src import TRANSFERABLE_SKIP_WORDS
 from src.db.job_db import JobDatabase, AnalysisResult
+from src.language_guidance import format_language_guidance_for_prompt
 from src.resume_validator import ResumeValidator
 
 
@@ -570,6 +571,7 @@ class AIAnalyzer:
         prompt_template = self.config.get('prompts', {}).get('analyzer', '')
         if not prompt_template:
             raise ValueError("No analyzer prompt template found in config")
+        language_guidance = format_language_guidance_for_prompt("experience_bullet")
 
         prompt_settings = self.config.get('prompt_settings', {})
         ai_thresholds = self.config.get('ai_recommendation_thresholds', {})
@@ -613,7 +615,7 @@ class AIAnalyzer:
         title_ctx_safe = title_context.replace('{', '{{').replace('}', '}}')
         bio_cstr_safe = bio_constraints.replace('{', '{{').replace('}', '}}')
 
-        return prompt_template.format(
+        prompt_body = prompt_template.format(
             bullet_library=bullet_lib_safe,
             job_title=job_title,
             job_company=job_company,
@@ -628,6 +630,7 @@ class AIAnalyzer:
             bio_domain_claims_list=domain_claims_str,
             allowed_skill_categories_list=cat_str,
         )
+        return f"{language_guidance}\n\n{prompt_body}"
 
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
         """分析单个职位: 评分 + 简历定制"""

@@ -48,7 +48,7 @@ def generate_preview(svg_path: Path, output_path: Path):
         print(f"Preview generated: {output_path}")
 
 if __name__ == "__main__":
-    svg_file = PROJECT_ROOT / "templates" / "resume_svg_final.svg"
-    preview_file = PROJECT_ROOT / "templates" / "preview_final.png"
+    svg_file = PROJECT_ROOT / "templates" / "Fei_Huang_DE_Resume.svg"
+    preview_file = PROJECT_ROOT / "templates" / "Fei_Huang_DE_Resume_preview.png"
 
     generate_preview(svg_file, preview_file)

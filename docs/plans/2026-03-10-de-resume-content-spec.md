@@ -86,7 +86,14 @@ Use this as the canonical DE bio:
 
 ## Experience
 
-The DE baseline should prioritize four core work experiences. Independent research remains part of the content library, but is optional for the default one-page version.
+The DE baseline includes five work experiences in hybrid chronological order: GLP Technology (most recent professional role) at top, followed by Independent Quantitative Researcher (2019-2023 gap explanation), then remaining roles in reverse chronological order.
+
+**Experience ordering (updated 2026-03-11):**
+1. GLP Technology (Jul 2017 - Aug 2019)
+2. Independent Quantitative Researcher (Sep 2019 - Aug 2023)
+3. BQ Investment (Jul 2015 - Jun 2017)
+4. Ele.me (Sep 2013 - Jul 2015)
+5. Henan Energy (Jul 2010 - Aug 2013)
 
 ### 1. GLP Technology, Shanghai
 
@@ -214,24 +221,28 @@ Default exclusions:
 Content library status:
 
 - Keep in the content baseline
-- Omit by default from the standard one-page DE template
+- **Include by default** in the standard one-page DE template (updated 2026-03-11 based on reviewer feedback)
 
 Available bullet:
 
-- `indie_quant_research`
+- `indie_quant_research` (primary, use this one)
 
 Optional supporting bullet:
 
-- `indie_skill_development`
+- `indie_skill_development` (omit in DE template)
 
 Usage rule:
 
-- Include this section only when timeline explanation is necessary or when a slightly longer version is acceptable
+- Include this section with single `indie_quant_research` bullet by default
+- Position immediately after GLP Technology to maintain chronological continuity
+- Omit only when space is critically constrained
 
 Rationale:
 
-- The section is defendable and useful for continuity
-- It is not strong enough to displace the core DE work experience in the default one-page version
+- Addresses the 2019-2023 timeline gap that reviewers flagged as problematic
+- The `indie_quant_research` bullet demonstrates real DE skills (83K+ daily records, 3,600+ stocks, Tushare API, MySQL)
+- Positioned after GLP (not at bottom) maintains narrative flow and keeps strongest DE experience at top
+- Single bullet keeps it concise without overcompensating
 
 ## Projects
 
@@ -273,14 +284,17 @@ Default exclusions:
 
 Not enabled in the default DE baseline.
 
-Candidates:
+Candidate:
 
 - `lakehouse_streaming`
-- `job_hunter_system`
 
 Usage rule:
 
 - Only include a third project when a JD strongly rewards additional systems-building evidence and the page can still remain disciplined
+
+**Excluded projects:**
+
+- `job_hunter_system` / Multi-Source Application Tracking — removed based on reviewer feedback (2026-03-11) as it reads as job-hunt automation rather than production DE work
 
 ## Skills
 
@@ -354,7 +368,8 @@ Keep:
 
 The DE content baseline should explicitly exclude these items from the standard one-page template:
 
-- Entire `Independent Quantitative Researcher` section by default
+- `indie_skill_development` bullet (keep only `indie_quant_research`)
+- `job_hunter_system` / Multi-Source Application Tracking project
 - `Deribit options` project
 - `bq_futures_strategy`
 - `bq_de_backtest_infra`
@@ -373,7 +388,7 @@ The DE content baseline should explicitly exclude these items from the standard 
 
 If content exceeds one page, trim in this order:
 
-1. Omit `Independent Quantitative Researcher`
+1. Reduce `Independent Quantitative Researcher` to zero bullets (omit section entirely)
 2. Keep only one thesis bullet
 3. Keep only one Henan Energy bullet
 4. Do not expand project count beyond two
@@ -383,14 +398,14 @@ Priority order from highest to lowest:
 
 1. Final Bio
 2. GLP three bullets
-3. Baiquan two bullets
-4. Ele.me two bullets
-5. Greenhouse project
-6. Education
-7. Skills
-8. Thesis project
-9. Henan Energy
-10. Independent Quantitative Researcher
+3. Independent Quantitative Researcher (one bullet)
+4. Baiquan two bullets
+5. Ele.me two bullets
+6. Greenhouse project
+7. Education
+8. Skills
+9. Thesis project
+10. Henan Energy
 
 ## Canonical DE Baseline Summary
 
@@ -398,8 +413,9 @@ The standard DE template should contain:
 
 - One canonical DE bio
 - Two education entries
-- Four core work experiences:
+- Five work experiences:
   - GLP Technology
+  - Independent Quantitative Researcher (one bullet)
   - BQ Investment
   - Ele.me
   - Henan Energy

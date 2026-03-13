@@ -1,0 +1,1553 @@
+===== de_resume_toni_v10.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with 6 years building production data systems — from ingesting market feeds for 3,000+
+securities to designing credit risk pipelines from scratch as a startup's first data hire. M.Sc. in AI (VU
+Amsterdam, 8.2/10) brings rigorous thinking to pipeline design, data quality, and system reliability.
+Databricks Certified Data Engineer Professional.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Hired as first technical hire to build credit risk data
+platform from zero. Designed end-to-end architecture: S3
+ingestion → Redshift warehouse → Airflow orchestration
+→ automated decisioning → post-loan monitoring,
+supporting 100% of loan approvals.
+Built core data foundation: daily ETL pipeline ingesting
+30+ production tables into Redshift, plus custom parser
+transforming nested PBOC credit bureau JSON (5-level
+hierarchy) into 5 normalized analytical tables, enabling
+risk analysts to query credit history in SQL instead of
+manual PDF review.
+Designed and deployed automated risk decision engine:
+29 rejection rules across 4 risk dimensions (overdue, debt,
+customer segment, query patterns), 36-segment borrower
+classification, and custom scorecard model (19 weighted
+features) predicting first-payment default — processing
+100% of applications with <2-second latency.
+Tech Skills: Python, SQL, PySpark, AWS, Airflow
+BQ Investment (Hedge Fund) - Quantitative Developer
+JULY 2015 - JUNE 2017
+Built market data infrastructure ingesting 3,000+
+securities and 5+ years of tick-level futures data from
+multiple vendor APIs (Wind, CSMAR). Implemented data
+quality framework: deduplication, completeness validation,
+cross-source reconciliation, and automated alerting —
+ensuring 99.9% data freshness SLA for live trading
+systems.
+Tech Skills: Python, NumPy, Pandas, SQL, MATLAB
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Designed and deployed anti-fraud detection system
+identifying 51,000+ suspicious order clusters across 2.2M+
+users using pattern analysis (phone collision, high-
+frequency orders, geographic clustering). Integrated into
+daily monitoring dashboards, preventing ¥650K+ in
+fraudulent GMV monthly.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing scan volume 5x
+(500GB → 100GB) and query latency from 10+ minutes to
+<2 minutes — enabling cross-functional teams to run ad-
+hoc analysis without data engineering support.
+Tech Skills: Python, SQL, Hadoop, Query Optimization
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Built automated reporting system for 60+ business units:
+designed data ingestion workflows, implemented validation
+rules, and created Excel/VBA pipelines to consolidate
+financial and operational metrics — reducing monthly close
+cycle from 2 days to 2 hours and eliminating manual
+errors.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL (designed
+experiment framework processing 2.6M training steps
+across 12 environments)
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built production-ready PySpark ETL pipeline processing
+IoT sensor data through Medallion Architecture (Bronze/
+Silver/Gold). Implemented 6-layer data quality framework
+with severity-ranked flags, idempotent processing, and
+schema evolution support — designed to scale to 72M
+rows/day with zero data loss.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Architected streaming data lakehouse on Databricks
+processing real-time financial market feeds (Auto Loader +
+Structured Streaming). Designed quarantine-and-replay
+pattern for malformed records: isolate at Bronze → analyze
+→ replay through Silver/Gold — achieving 100%
+automated recovery without manual intervention or data
+loss.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Languages & Core: Python (Expert), SQL (Expert), Bash
+Data Engineering: PySpark, Spark, Delta Lake,
+Databricks, ETL/ELT, Medallion Architecture, Data Quality,
+Airflow, Schema Evolution, Idempotent Processing
+Cloud & Infrastructure: AWS, Docker, CI/CD, Git
+Databases & Warehouses: PostgreSQL, MySQL, Hive,
+Redshift
+Analytics & ML (supporting): Pandas, NumPy, PyTorch,
+scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v11.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with 6 years building production pipelines — from credit risk decisioning systems as a
+startup's first technical hire to market data infrastructure for quantitative trading. M.Sc. in AI (VU
+Amsterdam, 8.2/10) brings rigorous thinking to pipeline design, data quality, and system reliability.
+Databricks Certified Data Engineer Professional.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Hired as first technical hire to build credit risk data
+platform from zero. Designed end-to-end architecture: S3
+ingestion → Redshift warehouse → Airflow orchestration
+→ automated decisioning → post-loan monitoring,
+supporting 100% of loan approvals.
+Built core data foundation: daily ETL pipeline ingesting
+30+ production tables into Redshift, plus custom parser
+transforming nested PBOC credit bureau JSON (5-level
+hierarchy) into 5 normalized analytical tables, enabling
+risk analysts to query credit history in SQL instead of
+manual PDF review.
+Designed and deployed automated risk decision engine:
+29 rejection rules across 4 risk dimensions (overdue, debt,
+customer segment, query patterns), 36-segment borrower
+classification, and custom scorecard model (19 weighted
+features) predicting first-payment default — processing
+100% of applications with sub-second latency.
+Tech Skills: Python, SQL, PySpark, AWS, Airflow
+BQ Investment (Hedge Fund) - Quantitative Developer
+JULY 2015 - JUNE 2017
+Built market data infrastructure ingesting 3,000+
+securities and 5+ years of tick-level futures data from
+multiple vendor APIs (Wind, CSMAR). Implemented data
+quality framework: deduplication, completeness validation,
+cross-source reconciliation — ensuring reliable data feeds
+for live trading and quantitative research systems.
+Tech Skills: Python, NumPy, Pandas, SQL, MATLAB
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Designed and deployed anti-fraud detection system
+identifying 51,000+ suspicious order clusters across 2.2M+
+users using pattern analysis (phone collision, high-
+frequency orders, geographic clustering). Integrated into
+daily monitoring dashboards, preventing ¥650K+ in
+fraudulent GMV.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing data scanned
+by 80% and enabling cross-functional teams to run ad-hoc
+analysis without data engineering support.
+Tech Skills: Python, SQL, Hadoop, Query Optimization
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Built automated reporting system for 60+ business units:
+designed data ingestion workflows, implemented validation
+rules, and created Excel/VBA pipelines to consolidate
+financial and operational metrics — reducing monthly close
+cycle from 2 days to 2 hours and eliminating manual
+errors.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL (designed
+experiment framework processing 2.6M training steps
+across 12 environments)
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built production-ready PySpark ETL pipeline processing
+IoT sensor data through Medallion Architecture (Bronze/
+Silver/Gold). Implemented 6-layer data quality framework
+with severity-ranked flags, idempotent processing, and
+schema evolution support — designed to scale to 72M
+rows/day with zero data loss.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Architected streaming data lakehouse on Databricks
+processing real-time financial market feeds (Auto Loader +
+Structured Streaming). Designed quarantine-and-replay
+pattern for malformed records: isolate at Bronze → analyze
+→ replay through Silver/Gold — achieving 100%
+automated recovery without manual intervention or data
+loss.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Languages & Core: Python (Expert), SQL (Expert), Bash
+Data Engineering: PySpark, Spark, Delta Lake,
+Databricks, ETL/ELT, Medallion Architecture, Data Quality,
+Airflow, Schema Evolution, Idempotent Processing
+Cloud & Infrastructure: AWS, Docker, CI/CD, Git
+Databases & Warehouses: PostgreSQL, MySQL, Hive,
+Redshift
+Analytics & ML (supporting): Pandas, NumPy, PyTorch,
+scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v12.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with 5+ years building production pipelines — from credit risk decisioning systems as a
+startup's founding data engineer to market data infrastructure for quantitative trading. M.Sc. in AI (VU
+Amsterdam, 8.2/10) brings rigorous thinking to pipeline design, data quality, and system reliability.
+Databricks Certified Data Engineer Professional.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Hired as founding data engineer to build credit risk data
+platform from zero. Designed end-to-end architecture: S3
+ingestion → Redshift warehouse → Airflow orchestration
+→ automated decisioning → post-loan monitoring,
+processing all loan applications with real-time decisioning.
+Built core data foundation: daily ETL pipeline ingesting
+30+ production tables into Redshift, plus custom parser
+transforming nested PBOC credit bureau JSON (5-level
+hierarchy) into 5 normalized analytical tables, enabling
+risk analysts to query credit history in SQL instead of
+manual PDF review.
+Designed and deployed automated risk decision engine:
+29 rejection rules across 4 risk dimensions (overdue, debt,
+customer segment, query patterns), 36-segment borrower
+classification, and custom scorecard model (19 weighted
+features) predicting first-payment default — processing all
+applications in real-time production environment.
+Tech Skills: Python, SQL, PySpark, AWS, Airflow
+BQ Investment (Hedge Fund) - Quantitative Developer
+JULY 2015 - JUNE 2017
+Built market data infrastructure ingesting 3,000+
+securities and 5+ years of tick-level futures data from
+Wind and CSMAR vendor APIs. Implemented data quality
+framework: deduplication, completeness validation, cross-
+source reconciliation — ensuring reliable data feeds for
+live trading and quantitative research systems.
+Tech Skills: Python, NumPy, Pandas, SQL, MATLAB
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Designed and deployed anti-fraud detection system
+identifying 51,000+ suspicious order clusters across 2.2M+
+users using pattern analysis (phone collision, high-
+frequency orders, geographic clustering). Integrated into
+daily monitoring dashboards, preventing ¥650K+ in
+fraudulent GMV.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing data scanned
+by an estimated 80% (500GB → 100GB) and enabling
+faster ad-hoc analysis on 30+ warehouse tables.
+Tech Skills: Python, SQL, Hadoop, Query Optimization
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Built automated reporting system for 60+ business units:
+designed data ingestion workflows, implemented validation
+rules, and created Excel/VBA pipelines to consolidate
+financial and operational metrics — reducing monthly close
+cycle from 2 days to 2 hours and eliminating manual
+errors.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL (designed
+experiment framework processing 2.6M training steps
+across 12 environments)
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built production-ready PySpark ETL pipeline processing
+IoT sensor data through Medallion Architecture (Bronze/
+Silver/Gold). Implemented 6-layer data quality framework
+with severity-ranked flags, idempotent processing, and
+schema evolution support — architected for high-volume
+processing (72M rows/day theoretical capacity).
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Architected streaming data lakehouse on Databricks
+processing real-time financial market feeds (Auto Loader +
+Structured Streaming). Designed quarantine-and-replay
+pattern for malformed records: isolate at Bronze → analyze
+→ replay through Silver/Gold — achieving 100%
+automated recovery without manual intervention or data
+loss.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Languages & Core: Python (Expert), SQL (Expert), Bash
+Data Engineering: PySpark, Spark, Delta Lake,
+Databricks, ETL/ELT, Medallion Architecture, Data Quality,
+Airflow, Schema Evolution, Idempotent Processing
+Cloud & Infrastructure: AWS, Docker, CI/CD, Git
+Databases & Warehouses: PostgreSQL, MySQL, Hive,
+Redshift
+Analytics & ML (supporting): Pandas, NumPy, PyTorch,
+scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v13.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with 5+ years of experience building production data pipelines, from credit risk engines
+to market data infrastructure. Former founding data engineer at a fintech startup. M.Sc. in Artificial
+Intelligence from VU Amsterdam. Strong in architecture design, data quality, and system reliability.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Built the credit risk data platform as the founding data
+engineer, designing end-to-end architecture for S3
+ingestion, Redshift warehousing, Airflow orchestration,
+automated decisioning, and post-loan monitoring.
+Built the core data layer by ingesting 30+ production
+tables into Redshift and transforming nested PBOC credit
+bureau JSON into 5 normalized analytical tables, creating a
+reliable and queryable credit data model for downstream
+risk decisioning.
+Designed and deployed an automated risk decision engine
+with 29 rejection rules, 36 borrower segments, and a
+custom scorecard with 19 features to predict first-payment
+default and support real-time credit decisions.
+Tech Skills: Python, SQL, AWS, Redshift, Airflow, Docker
+BQ Investment (Hedge Fund) - Quant Developer
+JULY 2015 - JUNE 2017
+Built market data infrastructure for 3,000+ securities and
+5+ years of tick-level futures data from multiple vendor
+feeds. Implemented a data quality framework
+covering deduplication, completeness validation, and cross-
+source reconciliation, ensuring reliable feeds for live
+trading and quantitative research.
+Tech Skills: Python, SQL, SAS, MATLAB, Data Quality
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Designed and operationalized an anti-fraud detection
+system that identified 51,000+ suspicious order clusters
+across 2.2M+ users using phone collision, high-frequency
+order, and geographic pattern analysis.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing data scanned
+by an estimated 80% (500GB to 100GB) and accelerating
+analysis across 30+ warehouse tables.
+Tech Skills: Python, SQL, Hadoop, Hive, Tableau
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Built a pipeline to ingest, validate, and consolidate non-
+standard Excel reports from 70+ business units, reducing
+monthly processing from 2 days to under 2 hours.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL; built an
+experimental framework processing 2.6M training steps
+across 12 environments.
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark ETL pipeline for IoT sensor data using
+Medallion Architecture (Bronze/Silver/Gold). Implemented
+a 6-layer data quality framework with severity-ranked
+flags, idempotent processing, and schema evolution
+support, designed for high-volume processing at up to
+72M rows/day.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Architected a streaming data lakehouse on Databricks for
+real-time financial market feeds using Auto Loader and
+Structured Streaming. Designed a quarantine-and-replay
+pattern for malformed records, isolating errors at Bronze
+and replaying clean data through Silver/Gold without
+manual intervention or data loss.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Programming: Python (Expert), SQL (Expert), Bash
+Data Engineering: PySpark, Delta Lake, Databricks,
+Airflow, Redshift, Hive, ETL/ELT, Medallion Architecture,
+Data Quality, Schema Evolution, Idempotent Processing
+Infrastructure: AWS, Docker, Git
+ML & Analytics: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v14.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with experience building production pipelines and data systems for credit risk and
+market data. Former founding data engineer at a fintech startup, with hands-on work in ingestion,
+warehousing, orchestration, data quality, and decision-support systems. M.Sc. in AI from VU Amsterdam.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Built the credit risk data platform as the founding data
+engineer, covering data ingestion, Redshift
+warehousing, Airflow orchestration, automated
+decisioning, and post-loan monitoring.
+Developed the core data layer by loading 30+ production
+tables into Redshift and transforming nested PBOC credit
+bureau JSON into 5 normalized analytical tables for
+downstream risk analysis and decision support.
+Built an automated risk decision engine with 29 rejection
+rules, 36 borrower segments, and a 19-feature
+scorecard to support production credit decisions and
+first-payment-default assessment.
+Tech Skills: Python, SQL, AWS, Redshift, Airflow, Docker
+BQ Investment (Hedge Fund) - Quant Developer
+JULY 2015 - JUNE 2017
+Built market data pipelines for 3,000+ securities and 5+
+years of tick-level futures data from multiple vendor
+feeds.
+Implemented data quality checks for deduplication,
+completeness validation, and cross-source
+reconciliation, supporting reliable feeds for trading and
+research workflows.
+Tech Skills: Python, SQL, MATLAB, Data Quality
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Built an anti-fraud detection workflow that identified
+51,000+ suspicious order clusters across 2.2M+ users
+using phone-collision, high-frequency-order, and
+geographic-pattern analysis.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing scanned data
+by about 80% (500GB to 100GB) across 30+ warehouse
+tables.
+Tech Skills: Python, SQL, Hadoop, Hive, Tableau
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Built a pipeline to ingest, validate, and consolidate non-
+standard Excel reports from 70+ business units, reducing
+monthly processing time from 2 days to under 2 hours.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL; built an
+experimental framework across 12 environments.
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark ETL pipeline for IoT sensor data using
+Bronze/Silver/Gold layers in Delta Lake.
+Implemented data quality checks, idempotent
+processing, and schema-evolution handling for
+replayable batch ingestion at production-style scale.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Built a Databricks-based streaming pipeline for financial
+market feeds using Auto Loader and Structured
+Streaming.
+Implemented a quarantine-and-replay pattern to isolate
+malformed records at Bronze and reprocess clean data
+through downstream layers.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Programming: Python, SQL, Bash
+Data Engineering: PySpark, Spark, Delta Lake,
+Databricks, Airflow, Redshift, Hive, ETL/ELT, Data
+Quality, Schema Evolution, Idempotent Processing
+Infrastructure: AWS, Docker, Git
+Analytics / ML: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v15.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with experience building production data pipelines and data systems for credit risk and
+market data. Former founding data engineer at a fintech startup, with hands-on work in ingestion,
+data warehousing, orchestration, data quality, and decision-support systems. M.Sc. in AI from VU Amsterdam.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Built the credit risk data platform as the founding data
+engineer, covering data ingestion, Redshift
+warehousing, Airflow orchestration, automated
+decisioning, and post-loan monitoring.
+Developed the core data layer by loading 30+ production
+tables into Redshift and transforming nested PBOC credit
+bureau JSON into 5 normalized analytical tables for
+downstream risk analysis and decision support.
+Built an automated risk decision engine with 29 rejection
+rules, 36 borrower segments, and a 19-feature
+scorecard to support production credit decisions and
+first-payment-default assessment.
+Tech Skills: Python, SQL, AWS, Redshift, Airflow, Docker
+BQ Investment (Hedge Fund) - Quant Developer
+JULY 2015 - JUNE 2017
+Built market data pipelines for 3,000+ securities and 5+
+years of tick-level futures data from multiple vendor
+feeds.
+Implemented data quality checks for deduplication,
+completeness validation, and cross-source
+reconciliation, supporting reliable feeds for trading and
+research workflows.
+Tech Skills: Python, SQL, MATLAB, Data Quality
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Built an anti-fraud detection workflow that identified
+51,000+ suspicious order clusters across 2.2M+ users
+using phone-collision, high-frequency-order, and
+geographic-pattern analysis.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing scanned data
+by about 80% (500GB to 100GB) across 30+ warehouse
+tables.
+Tech Skills: Python, SQL, Hadoop, Hive, Tableau
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Built a pipeline to ingest, validate, and consolidate non-
+standard Excel reports from 70+ business units, reducing
+monthly processing time from 2 days to under 2 hours.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL; built an
+experimental framework across 12 environments.
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark ETL pipeline for IoT sensor data using
+Bronze/Silver/Gold layers in Delta Lake.
+Implemented data quality checks, idempotent
+processing, and schema-evolution handling for
+replayable batch processing.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Built a Databricks-based streaming pipeline for financial
+market feeds using Auto Loader and Structured
+Streaming.
+Implemented a quarantine-and-replay pattern to isolate
+malformed records at Bronze and reprocess clean data
+through downstream layers.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Programming: Python, SQL, Bash
+Data Engineering: PySpark, Spark, Delta Lake,
+Databricks, Airflow, Redshift, Hive, ETL/ELT, Batch and
+Streaming Pipelines, Data Quality, Schema Evolution
+Infrastructure: AWS, Docker, Git
+Analytics / ML: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v16.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with experience building production data pipelines and data systems across credit risk
+and market data. Former founding data engineer at a fintech startup, with hands-on work in ingestion,
+data warehousing, orchestration, data quality, and decision-support systems. M.Sc. in AI from VU Amsterdam.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Built the credit risk data platform as the founding data engineer,
+covering data ingestion, Redshift warehousing, Airflow
+orchestration, automated decisioning, and post-loan monitoring.
+Developed the core data layer by loading 30+ production tables
+into Redshift and transforming nested PBOC credit bureau JSON
+into 5 normalized analytical tables for downstream risk analysis
+and decision support.
+Built an automated risk decision engine with 29 rejection rules,
+36 borrower segments, and a 19-feature scorecard for
+production credit decisions and first-payment-default assessment.
+Tech Skills: Python, SQL, AWS, Redshift, Airflow, Docker
+BQ Investment (Hedge Fund) - Quant Developer
+JULY 2015 - JUNE 2017
+Built market data pipelines for 3,000+ securities and 5+ years
+of tick-level futures data from multiple vendor feeds.
+Implemented data quality checks for deduplication, completeness
+validation, and cross-source reconciliation, supporting reliable
+feeds for trading and research workflows.
+Tech Skills: Python, SQL, MATLAB, Data Quality
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Built an anti-fraud detection workflow that identified 51,000+
+suspicious order clusters across 2.2M+ users using phone
+collision, high-frequency order, and geographic-pattern analysis.
+Optimized 90+ Hadoop/Hive queries through partition pruning
+and subquery pushdown, reducing scanned data by about 80%
+(500GB to 100GB) across 30+ warehouse tables.
+Tech Skills: Python, SQL, Hadoop, Hive, Tableau
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Built a pipeline to ingest, validate, and consolidate non-standard
+Excel reports from 70+ business units, reducing monthly
+processing time from 2 days to under 2 hours.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL; built an
+experimental framework across 12 environments.
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark ETL pipeline for IoT sensor data using
+Bronze/Silver/Gold layers in Delta Lake.
+Implemented data quality checks, idempotent processing,
+and schema-evolution handling for replayable batch ingestion.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Built a Databricks-based streaming pipeline for financial
+market feeds using Auto Loader and Structured Streaming.
+Implemented a quarantine-and-replay pattern to isolate
+malformed records at Bronze and reprocess clean data
+through downstream layers.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Programming: Python, SQL, Bash
+Data Engineering: PySpark, Spark, Delta Lake, Databricks,
+Airflow, Redshift, Hive, ETL/ELT, Batch and Streaming Pipelines,
+Data Quality, Schema Evolution, Idempotent Processing
+Infrastructure: AWS, Docker, Git
+Analytics / ML: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v17.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with experience building production data pipelines and data systems for credit risk and
+market data. Former founding data engineer at a fintech startup, with hands-on work in ingestion,
+data warehousing, orchestration, data quality, and decision-support systems. M.Sc. in AI from VU Amsterdam.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Built the credit risk data platform as the founding data
+engineer, covering data ingestion, Redshift
+warehousing, Airflow orchestration, automated
+decisioning, and post-loan monitoring.
+Developed the core data layer by loading 30+ production
+tables into Redshift and transforming nested PBOC credit
+bureau JSON into 5 normalized analytical tables for
+downstream risk analysis and decision support.
+Implemented an automated risk decision engine with 29
+rejection rules, 36 borrower segments, and a 19-feature
+scorecard for production credit decisions and first-
+payment-default assessment.
+Tech Skills: Python, SQL, AWS, Redshift, Airflow, Docker
+BQ Investment (Hedge Fund) - Quant Developer
+JULY 2015 - JUNE 2017
+Developed market data pipelines for 3,000+ securities
+and 5+ years of tick-level futures data from multiple
+vendor feeds.
+Implemented data quality checks for deduplication,
+completeness validation, and cross-source
+reconciliation, supporting reliable feeds for trading and
+research workflows.
+Tech Skills: Python, SQL, MATLAB, Data Quality
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Developed an anti-fraud detection workflow that
+identified 51,000+ suspicious order clusters across 2.2M+
+users using phone-collision, high-frequency-order, and
+geographic-pattern analysis.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing scanned data
+by about 80% (500GB to 100GB) across 30+ warehouse
+tables.
+Tech Skills: Python, SQL, Hadoop, Hive, Tableau
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Created a pipeline to ingest, validate, and consolidate
+non-standard Excel reports from 70+ business units,
+reducing monthly processing time from 2 days to under
+2 hours.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL; developed
+an experimental framework across 12 environments.
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Developed a PySpark ETL pipeline for IoT sensor data
+using Bronze/Silver/Gold layers in Delta Lake.
+Implemented data quality checks, idempotent
+processing, and schema-evolution handling for
+replayable batch processing.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Designed a Databricks-based streaming pipeline for
+financial market feeds using Auto Loader and Structured
+Streaming.
+Implemented a quarantine-and-replay pattern to isolate
+malformed records at Bronze and reprocess clean data
+through downstream layers.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Programming: Python, SQL, Bash
+Data Engineering: PySpark, Spark, Delta Lake,
+Databricks, Airflow, Redshift, Hive, ETL/ELT, Batch and
+Streaming Pipelines, Data Quality, Schema Evolution
+Infrastructure: AWS, Docker, Git
+Analytics / ML: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v18.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data engineer with experience building production data pipelines and data systems for credit risk and
+market data. Former founding data engineer at a fintech startup, with hands-on work in ingestion,
+data warehousing, orchestration, data quality, and decision-support systems. M.Sc. in AI from VU Amsterdam.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Built the credit risk data platform as the founding data
+engineer, covering data ingestion, Redshift
+warehousing, Airflow orchestration, automated
+decisioning, and post-loan monitoring.
+Developed the core data layer by loading 30+ production
+tables into Redshift and transforming nested PBOC credit
+bureau JSON into 5 normalized analytical tables for
+downstream risk analysis and decision support.
+Implemented an automated risk decision engine with 29
+rejection rules, 36 borrower segments, and a 19-feature
+scorecard for production credit decisions and first-
+payment-default assessment.
+Tech Skills: Python, SQL, AWS, Redshift, Airflow, Docker
+BQ Investment (Hedge Fund) - Quant Developer
+JULY 2015 - JUNE 2017
+Engineered market data pipelines for 3,000+ securities
+and 5+ years of tick-level futures data from multiple
+vendor feeds.
+Introduced data quality checks for deduplication,
+completeness validation, and cross-source
+reconciliation, supporting reliable feeds for trading and
+research workflows.
+Tech Skills: Python, SQL, MATLAB, Data Quality
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Developed an anti-fraud detection workflow that
+identified 51,000+ suspicious order clusters across 2.2M+
+users using phone-collision, high-frequency-order, and
+geographic-pattern analysis.
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, reducing scanned data
+by 80% (500GB to 100GB) across 30+ warehouse tables.
+Tech Skills: Python, SQL, Hadoop, Hive, Tableau
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Created a pipeline to ingest, validate, and consolidate
+non-standard Excel reports from 70+ business units,
+reducing monthly processing time from 2 days to 2 hours.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Uncertainty Quantification in Deep RL; built an
+experimental framework across 12 environments.
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark ETL pipeline for IoT sensor data
+using Bronze/Silver/Gold layers in Delta Lake.
+Implemented data quality checks, idempotent
+processing, and schema-evolution handling for
+replayable batch processing.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Engineered a Databricks-based streaming pipeline for
+financial market feeds using Auto Loader and Structured
+Streaming.
+Implemented a quarantine-and-replay pattern to isolate
+malformed records at Bronze and reprocess clean data
+through downstream layers.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Programming: Python, SQL, Bash
+Data Engineering: PySpark, Spark, Delta Lake,
+Databricks, Airflow, Redshift, Hive, ETL/ELT, Batch and
+Streaming Pipelines, Data Quality, Schema Evolution
+Infrastructure: AWS, Docker, Git
+Analytics / ML: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v2.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+linkedin.com/in/huangf06
+BIO
+First-principles Data Engineer who understands problems deeply, designs reliable systems, and builds them
+end to end. Deep thinker and problem solver with 6 years building production data workflow and systems.
+M.Sc. in Artificial Intelligence; Databricks Certified Data Engineer Professional.
+EDUCATION
+Vrije Universiteit Amsterdam , The Netherlands
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University (#1 in China, Top 20 globally)
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+EXPERIENCE
+GLP Technology , Shanghai - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Joined a lending fintech as its first technical data hire;
+built the credit risk data platform from scratch, from
+ingestion and transformation to automated decisioning
+and post-loan monitoring.
+Built daily ETL for 30+ production tables into AWS
+Redshift and transformed nested bureau JSON into 5
+structured analytical tables.
+Engineered the production decision layer with 29 rules
+across 4 risk dimensions, 36 borrower segments, and
+an early-delinquency scorecard.
+BQ Investment , Beijing - Quantitative Developer
+JULY 2015 - JUNE 2017
+Built end-to-end market data ingestion pipeline
+processing 3,000+ A-share securities and 5+ years of
+tick-level futures data from multiple vendor feeds;
+implemented corporate action handling and
+deduplication logic ensuring data integrity for all
+downstream research and live trading.
+multi-factor analysis across 3,000+ securities; validated
+outputs were used in the fund's live portfolio process.
+Ele.me , Shanghai - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, cutting scan volume
+5x (500GB → 100GB) and unlocking real-time analytics
+on 30+ warehouse tables for fraud detection,
+operations, and marketing teams.
+Built anti-fraud detection system identifying 51,000+
+suspicious order clusters across 2.2M+ users using 3
+pattern algorithms, preventing fraudulent subsidy
+claims during hyper-growth.
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a batch ETL pipeline ingesting 3,842 JSON sensor
+snapshots through Bronze, Silver, and Gold Delta Lake
+layers using PySpark; implemented idempotent
+reprocessing and an extensible schema design.
+FEBRUARY 2025 - AUGUST 2025
+Built a reproducible benchmarking pipeline for 150+
+Deep RL training runs on HPC, with automated
+experiment tracking, calibration analysis, and
+statistical comparison across 5 UQ methods.
+Statistical Evaluation
+Job Search Operations Platform
+2025 - PRESENT
+Designed operational controls for long-running
+workflow maintenance, including scrape watermarks,
+YAML rules, checklist state management, rejection-
+history detection, and cold-data archival.
+Built on SQLite with Turso embedded-replica sync and
+scheduled incremental runs on GitHub Actions.
+Turso, State Management
+TECHNICAL SKILLS
+Databricks, ETL/ELT, Medallion Architecture
+Databases: PostgreSQL,MySQL, Hive, Redshift
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v3.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+linkedin.com/in/huangf06
+BIO
+First-principles Data Engineer who understands problems deeply, designs reliable systems, and builds them
+end to end. Deep thinker and problem solver with 6 years building production data workflow and systems.
+M.Sc. in Artificial Intelligence; Databricks Certified Data Engineer Professional.
+EDUCATION
+Vrije Universiteit Amsterdam , The Netherlands
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University (#1 in China, Top 20 globally)
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+EXPERIENCE
+GLP Technology , Shanghai - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Joined a lending fintech as its first technical data hire;
+built the credit risk data platform from scratch, from
+ingestion and transformation to automated decisioning
+and post-loan monitoring.
+Built daily ETL for 30+ production tables into AWS
+Redshift and transformed nested bureau JSON into 5
+structured analytical tables.
+Engineered the production decision layer with 29 rules
+across 4 risk dimensions, 36 borrower segments, and
+an early-delinquency scorecard.
+BQ Investment , Beijing - Quantitative Developer
+JULY 2015 - JUNE 2017
+Built end-to-end market data ingestion pipeline
+processing 3,000+ A-share securities and 5+ years of
+tick-level futures data from multiple vendor feeds;
+implemented corporate action handling and
+deduplication logic ensuring data integrity for all
+downstream research and live trading.
+multi-factor analysis across 3,000+ securities; validated
+outputs were used in the fund's live portfolio process.
+Ele.me , Shanghai - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Optimized 90+ Hadoop/Hive queries through partition
+pruning and subquery pushdown, cutting scan volume
+5x (500GB → 100GB) and unlocking real-time analytics
+on 30+ warehouse tables for fraud detection,
+operations, and marketing teams.
+Built anti-fraud detection system identifying 51,000+
+suspicious order clusters across 2.2M+ users using 3
+pattern algorithms, preventing fraudulent subsidy
+claims during hyper-growth.
+HENAN ENERGY GROUP
+Data Operations Analyst Jul. 2010 - Aug. 2013
+• Built automated pipeline to ingest, validate, and
+consolidate non-standardized Excel reports from 20+
+business units into unified operational reporting, reducing
+monthly processing from 2 days to under 2 hours.
+• Designed the group's supply chain analytics framework
+from scratch, tracking daily sales and inventory to guide
+procurement and sales timing; optimization guided by this
+framework contributed to €32M in documented profit
+improvements across business units over 3 years.
+INDEPENDENT QUANTITATIVE RESEARCHER
+Independent Researcher Sep. 2019 - Aug. 2023
+• Built automated equity research pipeline processing
+83K+ daily records across 3,600+ stocks via Tushare API
+and MySQL; implemented institutional flow tracking and
+momentum signal detection for systematic market analysis.
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a batch ETL pipeline ingesting 3,842 JSON sensor
+snapshots through Bronze, Silver, and Gold Delta Lake
+layers using PySpark; implemented idempotent
+reprocessing and an extensible schema design.
+FEBRUARY 2025 - AUGUST 2025
+Built a reproducible benchmarking pipeline for 150+
+Deep RL training runs on HPC, with automated
+experiment tracking, calibration analysis, and
+statistical comparison across 5 UQ methods.
+Statistical Evaluation
+Job Search Operations Platform
+2025 - PRESENT
+Designed operational controls for long-running
+workflow maintenance, including scrape watermarks,
+YAML rules, checklist state management, rejection-
+history detection, and cold-data archival.
+Built on SQLite with Turso embedded-replica sync and
+scheduled incremental runs on GitHub Actions.
+Turso, State Management
+TECHNICAL SKILLS
+Databricks, ETL/ELT, Medallion Architecture
+Databases: PostgreSQL,MySQL, Hive, Redshift
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v4.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+linkedin.com/in/huangf06
+BIO
+First-principles Data Engineer who understands complex problems, designs reliable systems, and builds them
+end to end. Deep thinker and problem solver with 9 years building production data systems and pipelines.
+M.Sc. in Artificial Intelligence; Databricks Certified Data Engineer Professional.
+EXPERIENCE
+GLP Technology , Shanghai - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+First technical data hire; built credit risk data platform
+end-to-end, from ingestion to automated decisioning.
+Built daily ETL for 30+ production tables into AWS
+Redshift; transformed nested bureau JSON into 5
+structured analytical tables.
+Engineered production decision layer with 29 rules
+across 4 risk dimensions, 36 customer segments, and
+early-delinquency scorecard.
+BQ Investment , Beijing - Quantitative Developer
+JULY 2015 - JUNE 2017
+Built market data pipeline processing 3,000+ securities
+and 5+ years of tick-level futures from multiple vendor
+feeds; implemented corporate action handling,
+deduplication, and cross-source validation ensuring
+data integrity for all downstream research and trading.
+Ele.me , Shanghai - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Optimized 90+ Hadoop/Hive queries, cutting scan
+volume 5x (500GB → 100GB) and unlocking real-time
+analytics for fraud, operations, and marketing teams.
+Built anti-fraud system identifying 51,000+ suspicious
+clusters across 2.2M+ users, preventing fraudulent
+promotional credit claims during hyper-growth.
+Henan Energy Group , Zhengzhou - Business Analyst
+JULY 2010 - AUGUST 2013
+Built VBA-based ETL pipeline consolidating operational
+data from 12+ subsidiaries at Fortune 500 company
+(#328, 200B RMB revenue), reducing processing time
+92% (2 days → 2 hours).
+Designed supply chain analytics system generating
+$42M profit over 3 years through data
+driven procurement & sales optimization.
+Independent Quant Researcher , Zhengzhou
+SEPTEMBER 2019 - AUGUST 2023
+Built equity research pipeline processing 83K+ daily
+records across 3,600+ instruments, maintaining
+production data engineering skills during academic
+transition.
+EDUCATION
+Vrije Universiteit Amsterdam , NL
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University (#1 in China, Top 20 globally)
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a batch ETL pipeline ingesting 3,842 JSON sensor
+snapshots through Bronze, Silver, and Gold Delta Lake
+layers using PySpark; implemented idempotent
+reprocessing and an extensible schema design.
+FEBRUARY 2025 - AUGUST 2025
+Designed controlled benchmark evaluating 3 uncertainty
+quantification methods across 150 independent Deep
+RL training runs (3 methods × 5 noise levels × 10 seeds)
+Discovered method-specific 'noise paradox' where
+moderate noise improves ensemble diversity.
+Job Search Operations Platform
+2025 - PRESENT
+Designed operational controls for long-running
+workflow maintenance, including scrape watermarks,
+YAML rules, checklist state management, rejection-
+history detection, and cold-data archival.
+Built on SQLite with Turso embedded-replica sync and
+scheduled incremental runs on GitHub Actions.
+CI/CD, Web Scraping, Github Actions
+TECHNICAL SKILLS
+Databricks, ETL/ELT, Medallion Architecture
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v5.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+linkedin.com/in/huangf06
+github.com/huangf06
+BIO
+Data Engineer with 9 years of experience building data platforms, pipelines, and decision systems end to end.
+Strong at breaking down complex problems from first principles, designing reliable architectures, and turning
+ideas into working solutions. M.Sc. in Artificial Intelligence; Databricks Certified Data Engineer Professional.
+EXPERIENCE
+GLP Technology , Shanghai - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+First data hire at a fintech startup; built the credit risk
+data platform from scratch, covering ingestion,
+automated decisioning, and monitoring.
+Developed daily ETL pipelines loading 30+ production
+tables into AWS Redshift; transformed nested credit
+bureau JSON data into 5 structured analytical tables.
+Engineered a production decision engine with 29 rules
+spanning 4 risk dimensions and 36 customer segments,
+supported by an early-delinquency scorecard.
+BQ Investment , Beijing - Quantitative Developer
+JULY 2015 - JUNE 2017
+Built market data pipelines processing 3,000+ securities
+and 5+ years of tick-level futures data from multiple
+vendor feeds; implemented deduplication, completeness
+checks, and cross-source validation to ensure data
+integrity for downstream research and trading.
+Ele.me , Shanghai - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Optimized 90+ Hadoop/Hive queries, reducing scan
+volume 5x (500GB to 100GB) and significantly improving
+analytics turnaround for fraud, operations, and marketing.
+Built an anti-fraud system that identified 51,000+
+suspicious clusters across 2.2M+ users, preventing
+fraudulent promotional credit claims during hyper-growth.
+Henan Energy Group , Zhengzhou - Business Analyst
+JULY 2010 - AUGUST 2013
+Built a pipeline to ingest, validate, and consolidate
+non-standard Excel reports from over 100 units, reducing
+monthly processing from 2 days to under 2 hours.
+Designed the group's supply chain analytics framework;
+decisions informed by it contributed to $32M in profit
+improvements over 3 years.
+Independent Quant Researcher , Zhengzhou
+SEPTEMBER 2019 - AUGUST 2023
+Built equity research pipeline for 3,600+ instruments,
+supporting institutional flow analysis and momentum-
+based market research.
+Developed strategy testing infrastructure, including
+event-driven backtesting, walk-forward validation,
+and performance evaluation.
+EDUCATION
+Vrije Universiteit Amsterdam , NL
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Benchmarking uncertainty methods in Deep RL
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University (#1 in China, Top 20 globally)
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional | 2026
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark batch ETL pipeline for 3.8K+ greenhouse
+sensor snapshots across Bronze, Silver, and Gold Delta
+Lake layers; implemented 6 quality checks with a
+flag-not-drop model and replayable batch processing.
+Designed for schema evolution and scaling to 72M rows/day.
+Automated Job Search Pipeline
+2025 - PRESENT
+Built an automated job search pipeline from scratch with
+scrape watermarks, YAML rules, checklist state management,
+and duplicate-application prevention.
+Powered by SQLite with Turso embedded-replica sync,
+incremental scraping, and scheduled GitHub Actions runs.
+CI/CD, Web Scraping, GitHub Actions
+TECHNICAL SKILLS
+Databricks, ETL/ELT, Medallion Architecture
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v6.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data Engineer with production experience building ETL pipelines, data platforms, and automated
+decisioning systems across fintech, e-commerce, and supply chain. Recently completed M.Sc. in AI
+(VU Amsterdam, 8.2 GPA), adding modern ML systems context to production data engineering experience.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Designed and deployed a credit risk data platform on
+AWS Redshift, ingesting 30+ production tables daily via
+Airflow-orchestrated ETL pipelines.
+Developed daily ETL pipelines loading 30+ production
+tables into AWS Redshift; transformed nested credit
+bureau JSON data into 5 structured analytical tables.
+Engineered a production decision engine with 29 rules
+spanning 4 risk dimensions and 36 customer segments,
+supported by an early-delinquency scorecard.
+BQ Investment (Hedge Fund) - Data Engineer
+JULY 2015 - JUNE 2017
+Built market data pipelines ingesting 3,000+ securities
+and 5+ years of tick-level futures data from multiple
+vendor feeds; implemented deduplication, completeness
+checks, and cross-source validation to ensure data
+quality for downstream research and trading systems.
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Optimized 90+ Hadoop/Hive queries, reducing scan
+volume 5x (500GB to 100GB) and cutting turnaround
+from hours to minutes for fraud, operations, and marketing.
+Built an anti-fraud system that identified 51,000+
+suspicious clusters across 2.2M+ users, preventing
+fraudulent promotional credit claims during hyper-growth.
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Automated supply chain reporting for 100+ business
+units, reducing monthly processing from 2 days to 2 hours
+via Excel/VBA pipelines and data validation workflows.
+Independent Investor - Self-Employed
+SEPTEMBER 2019 - AUGUST 2023
+Managed personal investment portfolio while preparing
+for graduate studies in AI.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Benchmarking uncertainty quantification methods
+for deep reinforcement learning
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional (2026)
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark batch ETL pipeline with Bronze/Silver/Gold
+data modeling, replayable processing, and explicit data
+quality checks for sensor telemetry ingestion. Implemented
+6 validation rules with flag-not-drop pattern to preserve
+audit trail. Designed to tolerate additive schema changes.
+Multi-Source Application Tracking Pipeline
+2025 - PRESENT
+Built a Python data pipeline that ingests records from
+multiple external sources, applies rule-based classification,
+and maintains auditable application-state history with
+duplicate detection. Powered by SQLite with Turso
+embedded-replica sync and scheduled CI/CD runs.
+TECHNICAL SKILLS
+Databricks, ETL/ELT, Medallion Architecture
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v7.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data Engineer with production experience building ETL pipelines, data platforms, and automated
+decisioning systems across fintech, e-commerce, and supply chain. Recently completed M.Sc. in AI
+(VU Amsterdam, 8.2 GPA), adding modern ML systems context to production data engineering experience.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Designed and deployed a credit risk data platform on
+AWS Redshift, ingesting 30+ production tables daily via
+Airflow-orchestrated ETL pipelines.
+Developed daily ETL pipelines loading 30+ production
+tables into AWS Redshift; transformed nested credit
+bureau JSON data into 5 structured analytical tables.
+Engineered a production decision engine with 29 rules
+spanning 4 risk dimensions and 36 customer segments,
+supported by an early-delinquency scorecard.
+Self-Employed - Quantitative Researcher
+SEPTEMBER 2019 - AUGUST 2023
+Built automated equity research pipeline processing
+83K+ daily records across 3,600+ stocks via Tushare API
+and MySQL; implemented institutional flow tracking and
+momentum signal detection for systematic market
+analysis.
+BQ Investment (Hedge Fund) - Data Engineer
+JULY 2015 - JUNE 2017
+Built market data pipelines ingesting 3,000+ securities
+and 5+ years of tick-level futures data from multiple
+vendor feeds; implemented deduplication, completeness
+checks, and cross-source validation to ensure data
+quality for downstream research and trading systems.
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Optimized 90+ Hadoop/Hive queries, reducing scan
+volume 5x (500GB to 100GB) and cutting turnaround
+from hours to minutes for fraud, operations, and marketing.
+Built an anti-fraud system that identified 51,000+
+suspicious clusters across 2.2M+ users, preventing
+fraudulent promotional credit claims during hyper-growth.
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Automated supply chain reporting for 100+ business
+units, reducing monthly processing from 2 days to 2 hours
+via Excel/VBA pipelines and data validation workflows.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Benchmarking uncertainty quantification methods
+for deep reinforcement learning
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built a PySpark batch ETL pipeline with Bronze/Silver/Gold
+data modeling, replayable processing, and explicit data
+quality checks for sensor telemetry ingestion. Implemented
+6 validation rules with flag-not-drop pattern to preserve
+audit trail. Designed to tolerate additive schema changes.
+TECHNICAL SKILLS
+Databricks, ETL/ELT, Medallion Architecture
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v8.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data Engineer with production experience building ETL pipelines, data platforms, and automated
+decisioning systems across fintech, e-commerce, and supply chain. Recently completed M.Sc. in AI
+(VU Amsterdam, 8.2 GPA), adding modern ML systems context to production data engineering experience.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Joined as first technical hire; designed and built the
+complete credit risk data platform from scratch — from
+raw data ingestion through automated decisioning to
+post-loan monitoring.
+Built the data foundation: daily ETL of 30+ production
+tables into AWS Redshift, plus a credit bureau report
+parser transforming deeply nested JSON into 5 structured
+analytical tables.
+Engineered the core decision engine: 29 rejection rules
+across 4 risk dimensions, 36-segment borrower
+classification, and an early-delinquency scorecard
+combining 19 weighted features for first-payment default
+prediction.
+Tech Skills: Python, SQL, PySpark, AWS, Airflow
+Self-Employed - Quantitative Researcher
+SEPTEMBER 2019 - AUGUST 2023
+Built automated equity research pipeline processing China
+A-share market data; implemented institutional flow
+tracking and momentum signal detection for systematic
+analysis.
+BQ Investment (Hedge Fund) - Data Engineer
+JULY 2015 - JUNE 2017
+Built market data pipelines ingesting 3,000+ securities
+and 5+ years of tick-level futures data from multiple
+vendor feeds; implemented deduplication, completeness
+checks, and cross-source validation to ensure data
+quality for downstream research and trading systems.
+Tech Skills: Python, NumPy, Pandas, SQL, MATLAB
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Built anti-fraud detection system identifying 51,000+
+suspicious clusters across 2.2M+ users; optimized 90+
+Hadoop/Hive queries reducing scan volume 5x (500GB →
+100GB), unlocking real-time analytics for fraud,
+operations, and marketing teams.
+Tech Skills: Python, SQL, Hadoop, Query Optimization
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Automated operational performance reporting for 60+
+business units, reducing monthly processing from 2 days
+to 2 hours via Excel/VBA pipelines and data validation
+workflows.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Benchmarking uncertainty quantification methods
+for deep reinforcement learning
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built PySpark batch ETL pipeline processing 3,842 JSON
+sensor snapshots through Bronze/Silver/Gold Medallion
+Architecture; implemented 6-check data quality framework
+with severity-ranked flags preserved through Gold layer
+for analyst traceability, designed for production scale
+targeting 72M rows/day.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Architected end-to-end data lakehouse on Databricks
+processing real-time financial market feeds via Auto
+Loader and Structured Streaming; engineered data quality
+framework with quarantine-and-replay pattern isolating
+malformed records across Bronze/Silver/Gold layers —
+achieving automated recovery without manual intervention.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Core Languages: Python, SQL, Bash
+Data Engineering: PySpark, Delta Lake
+Databricks, ETL/ELT, Medallion Architecture
+Cloud & DevOps: AWS, Docker, Airflow, CI/CD, Git
+Databases: PostgreSQL, MySQL, Hive, Redshift
+Analytical & ML: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
+
+===== de_resume_toni_v9.svg =====
+Fei Huang
+Amsterdam, Netherlands
+(+31) 6 45 03 8614
+huangf06@gmail.com
+LinkedIn | GitHub
+BIO
+Data Engineer with production experience building ETL pipelines, data platforms, and automated
+decisioning systems across fintech, e-commerce, and supply chain. Recently completed M.Sc. in AI
+(VU Amsterdam, 8.2 GPA), adding modern ML systems context to production data engineering experience.
+EXPERIENCE
+GLP Technology (Fintech) - Lead Data Engineer
+JULY 2017 - AUGUST 2019
+Joined as first technical hire; designed and built the
+complete credit risk data platform from scratch — from
+raw data ingestion through automated decisioning to
+post-loan monitoring.
+Built the data foundation: daily ETL of 30+ production
+tables into AWS Redshift, plus a credit bureau report
+parser transforming deeply nested JSON into 5 structured
+analytical tables.
+Engineered the core decision engine: 29 rejection rules
+across 4 risk dimensions, 36-segment borrower
+classification, and an early-delinquency scorecard
+combining 19 weighted features for first-payment default
+prediction.
+Tech Skills: Python, SQL, PySpark, AWS, Airflow
+Self-Employed - Quantitative Researcher
+SEPTEMBER 2019 - AUGUST 2023
+Built automated equity research pipeline processing China
+A-share market data; implemented institutional flow
+tracking and momentum signal detection for systematic
+analysis.
+BQ Investment (Hedge Fund) - Data Engineer
+JULY 2015 - JUNE 2017
+Built market data pipelines ingesting 3,000+ securities
+and 5+ years of tick-level futures data from multiple
+vendor feeds; implemented deduplication, completeness
+checks, and cross-source validation to ensure data
+quality for downstream research and trading systems.
+Tech Skills: Python, NumPy, Pandas, SQL, MATLAB
+Ele.me (Alibaba Group) - Data Analyst
+SEPTEMBER 2013 - JULY 2015
+Built anti-fraud detection system identifying 51,000+
+suspicious clusters across 2.2M+ users; optimized 90+
+Hadoop/Hive queries reducing scan volume 5x (500GB →
+100GB), unlocking real-time analytics for fraud,
+operations, and marketing teams.
+Tech Skills: Python, SQL, Hadoop, Query Optimization
+Henan Energy Group - Business Analyst
+JULY 2010 - AUGUST 2013
+Automated operational performance reporting for 60+
+business units, reducing monthly processing from 2 days
+to 2 hours via Excel/VBA pipelines and data validation
+workflows.
+EDUCATION
+Vrije Universiteit Amsterdam
+M.Sc. in Artificial Intelligence (GPA: 8.2/10)
+Thesis: Benchmarking uncertainty quantification methods
+for deep reinforcement learning
+SEPTEMBER 2023 - AUGUST 2025
+Tsinghua University
+B.Eng. in Industrial Engineering
+SEPTEMBER 2006 - JULY 2010
+CERTIFICATIONS
+Databricks Certified Data Engineer Professional
+PROJECTS
+Greenhouse Sensor Data Pipeline
+2026
+Built PySpark batch ETL pipeline processing 3,842 JSON
+sensor snapshots through Bronze/Silver/Gold Medallion
+Architecture; implemented 6-check data quality framework
+with severity-ranked flags preserved through Gold layer
+for analyst traceability, designed for production scale
+targeting 72M rows/day.
+Tech Skills: PySpark, Delta Lake, Medallion Architecture
+Financial Data Lakehouse
+2025 - PRESENT
+Architected end-to-end data lakehouse on Databricks
+processing real-time financial market feeds via Auto
+Loader and Structured Streaming; engineered data quality
+framework with quarantine-and-replay pattern isolating
+malformed records across Bronze/Silver/Gold layers —
+achieving automated recovery without manual intervention.
+Tech Skills: Databricks, Structured Streaming, Auto Loader
+TECHNICAL SKILLS
+Core Languages: Python, SQL, Bash
+Data Engineering: PySpark, Delta Lake
+Databricks, ETL/ELT, Medallion Architecture
+Cloud & DevOps: AWS, Docker, Airflow, CI/CD, Git
+Databases: PostgreSQL, MySQL, Hive, Redshift
+Analytical & ML: Pandas, NumPy, PyTorch, scikit-learn
+LANGUAGES
+English - Fluent | Mandarin - Native
