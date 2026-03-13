@@ -40,6 +40,7 @@ except ImportError:
 
 from anthropic import Anthropic, RateLimitError, APITimeoutError, APIConnectionError, InternalServerError
 from src.db.job_db import JobDatabase, CoverLetter
+from src.language_guidance import format_language_guidance_for_prompt
 
 
 class CoverLetterGenerator:
@@ -332,8 +333,11 @@ Address these directly:
         description_safe = description.replace('{', '{{').replace('}', '}}')
         reasoning_safe = reasoning.replace('{', '{{').replace('}', '}}')
         tailored_safe = tailored_resume.replace('{', '{{').replace('}', '}}')
+        language_guidance = format_language_guidance_for_prompt("cover_letter")
 
-        prompt = f"""Your task is NOT to write a cover letter. Your task is to answer in 150-250 words:
+        prompt = f"""{language_guidance}
+
+Your task is NOT to write a cover letter. Your task is to answer in 150-250 words:
 "Why would this person find this role interesting, and how do they think about their work?"
 
 Write as Fei Huang — authentic, specific, human. This should read like a thoughtful

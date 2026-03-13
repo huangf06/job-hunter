@@ -1,0 +1,85 @@
+global_tone:
+  style:
+    - calm
+    - credible
+    - specific
+    - engineering-first
+    - moderately concise
+  priorities:
+    - trust
+    - clarity
+    - relevance
+    - sharpness
+  discouraged:
+    - salesy
+    - inflated
+    - over-clever
+    - self-congratulatory
+    - keyword-stuffed
+
+content_types:
+  resume_summary:
+    guidance:
+      - Keep to 2-3 sentences.
+      - Lead with role fit and strongest factual differentiators.
+      - Keep academic context subordinate to production work.
+      - Avoid abstract self-branding.
+  experience_bullet:
+    guidance:
+      - Prefer one clear action per bullet.
+      - Emphasize ownership, implementation depth, controls, or downstream use.
+      - Avoid stacking too many claims in one sentence.
+      - Vary bullet roles within an experience section.
+  project_bullet:
+    guidance:
+      - Describe implemented mechanisms rather than perfect outcomes.
+      - Prefer concrete engineering nouns over promotional language.
+      - Avoid absolute claims unless explicitly verified.
+  cover_letter:
+    guidance:
+      - Keep the tone natural, restrained, and specific.
+      - Connect fit to real work patterns instead of generic enthusiasm.
+      - Avoid buzzword stacking and canned transitions.
+  analysis_output:
+    guidance:
+      - Be direct and diagnostic.
+      - Prefer short factual sentences.
+      - Prioritize signal over polish.
+
+verb_architecture:
+  ownership_platform_scope:
+    preferred_verbs:
+      - Built
+      - Established
+      - Created
+    usage_note: Keep Built rare and reserve it for the highest-value scope statements.
+  data_layer_pipeline_implementation:
+    preferred_verbs:
+      - Developed
+      - Engineered
+      - Implemented
+    usage_note: Avoid overusing a single verb in adjacent bullets.
+  controls_mechanisms_quality_logic:
+    preferred_verbs:
+      - Implemented
+      - Introduced
+      - Designed
+  optimization:
+    preferred_verbs:
+      - Optimized
+      - Improved
+      - Reduced
+  enablement_support:
+    preferred_verbs:
+      - Enabled
+      - Supported
+      - Provided
+    usage_note: Often stronger in the second half of a bullet than as the opening verb.
+
+anti_patterns:
+  discouraged:
+    - Repeating the same opening verb across many bullets
+    - Abstract self-branding
+    - Perfect-outcome language without evidence
+    - Decorative architecture words without operational detail
+    - Summary language that competes with experience for attention
