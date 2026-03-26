@@ -1,0 +1,30 @@
+Subject: Follow-up: Addressing the investment concern
+
+Hi Jorrit,
+
+Thank you for taking the time yesterday.
+
+I've been reflecting on our conversation, particularly around the investment concern.
+
+The real question is: Can I deliver value fast enough within an acceptable timeframe?
+
+I'd propose a 3-month approach under the standard probation period (proeftijd): I can pick up tasks from day 1—learning on the job and ramping up to full complexity as I get familiar with the codebase and workflows.
+
+What you get:
+- A motivated engineer with senior ownership and strong fundamentals
+- Lower risk than hiring a Senior directly (€5500 vs €7000+)
+- Output from week 1 without extra investment
+
+What I get:
+- Local work experience
+- Cultural and communication fit validation
+- Opportunity to prove myself
+
+I'm already studying TypeScript and React on my own to hit the ground running.
+
+Would this be worth discussing?
+
+Either way, I appreciate the time and insights you've shared.
+
+Best,
+Fei
