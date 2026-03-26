@@ -727,6 +727,11 @@ class AIAnalyzer:
             # Only pass --model if explicitly configured (skip to use Claude Code's default)
             if self.model and self.model != 'default':
                 cmd.extend(['--model', self.model])
+            # Strip ANTHROPIC_BASE_URL/API_KEY from env — they may point to an
+            # expired proxy and would override Claude Code's native auth.
+            clean_env = os.environ.copy()
+            clean_env.pop('ANTHROPIC_BASE_URL', None)
+            clean_env.pop('ANTHROPIC_API_KEY', None)
             result = subprocess.run(
                 cmd,
                 input=prompt,
@@ -734,6 +739,7 @@ class AIAnalyzer:
                 text=True,
                 timeout=300,
                 encoding='utf-8',
+                env=clean_env,
             )
             if result.returncode != 0:
                 stderr = (result.stderr or '')[:500]
