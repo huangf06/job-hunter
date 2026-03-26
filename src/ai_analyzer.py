@@ -65,14 +65,19 @@ class AIAnalyzer:
         self.max_tokens = model_config.get('max_tokens', 8192)
         self.temperature = model_config.get('temperature', 0.3)
 
-        # Load API credentials from env
-        env_key = model_config.get('env_key', 'ANTHROPIC_API_KEY')
-        env_url = model_config.get('env_url', 'ANTHROPIC_BASE_URL')
-        self.api_key = os.environ.get(env_key)
-        self.base_url = os.environ.get(env_url)
-        self.auth_type = model_config.get('auth_type', 'api_key')
-
-        self.client = self._init_client()
+        # Load API credentials from env (not needed for claude_code provider)
+        if self.provider != 'claude_code':
+            env_key = model_config.get('env_key', 'ANTHROPIC_API_KEY')
+            env_url = model_config.get('env_url', 'ANTHROPIC_BASE_URL')
+            self.api_key = os.environ.get(env_key)
+            self.base_url = os.environ.get(env_url)
+            self.auth_type = model_config.get('auth_type', 'api_key')
+            self.client = self._init_client()
+        else:
+            self.api_key = None
+            self.base_url = None
+            self.auth_type = None
+            self.client = None
         self.bullet_library = self._load_bullet_library()
         self.valid_bullets = self._extract_valid_bullets()  # Set of all valid bullet texts
         self.bullet_id_lookup = self._build_bullet_id_lookup()  # ID -> text
@@ -632,13 +637,157 @@ class AIAnalyzer:
         )
         return f"{language_guidance}\n\n{prompt_body}"
 
+    def _post_parse_analysis(self, job_id: str, job: Dict, parsed: Dict,
+                              tokens_used: int, prompt: str = '') -> AnalysisResult:
+        """Shared post-parse processing for both API and Claude Code paths."""
+        scoring = parsed.get('scoring') or {}
+        tailored = parsed.get('tailored_resume') or {}
+
+        # Resolve bullet IDs to verified text (skip unknown, keep valid)
+        tailored, bullet_errors = self._resolve_bullet_ids(tailored)
+        # Inject per-experience technical_skills from bullet library (static, not AI-generated)
+        self._inject_technical_skills(tailored)
+        rejection_reason = ''
+        if bullet_errors:
+            for err in bullet_errors:
+                print(f"    [BULLET WARN] {err}")
+            print(f"    [WARN] {len(bullet_errors)} unknown bullet(s) skipped — validator will check minimums")
+
+        # Assemble bio from structured spec (or pass through string/null)
+        if tailored:
+            bio_spec = tailored.get('bio')
+            assembled_bio, bio_errors = self._assemble_bio(bio_spec, job)
+            if bio_errors:
+                for err in bio_errors:
+                    print(f"    [BIO ERROR] {err}")
+                print(f"    [REJECTED] Bio assembly failed — resume will not generate")
+                rejection_reason = f"REJECTED: {'; '.join(bio_errors)}"
+                tailored = {}
+            else:
+                tailored['bio'] = assembled_bio
+
+        # v3.0: Early validation — reject before saving to keep counts accurate
+        if tailored:
+            validation = self.validator.validate(tailored, job)
+            if not validation.passed:
+                for err in validation.errors:
+                    print(f"    [VALIDATION] {err}")
+                val_reason = f"REJECTED: validation: {'; '.join(validation.errors[:3])}"
+                rejection_reason = f"{rejection_reason} | {val_reason}" if rejection_reason else val_reason
+                tailored = {}
+            else:
+                if validation.warnings:
+                    for warn in validation.warnings:
+                        print(f"    [VALID WARN] {warn}")
+                if validation.fixes:
+                    print(f"    [VALIDATION] Auto-fixes applied: {list(validation.fixes.keys())}")
+
+        def _safe_float(val, default=0.0):
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                return default
+
+        reasoning = scoring.get('reasoning', '')
+        recommendation = scoring.get('recommendation', 'SKIP')
+        if rejection_reason:
+            reasoning = f"{reasoning} | {rejection_reason}" if reasoning else rejection_reason
+            recommendation = 'REJECTED'
+
+        return AnalysisResult(
+            job_id=job_id,
+            ai_score=_safe_float(scoring.get('overall_score', 0)),
+            skill_match=_safe_float(scoring.get('skill_match', 0)),
+            experience_fit=_safe_float(scoring.get('experience_fit', 0)),
+            growth_potential=_safe_float(scoring.get('growth_potential', 0)),
+            recommendation=recommendation,
+            reasoning=reasoning,
+            tailored_resume=json.dumps(tailored, ensure_ascii=False),
+            model=self.model,
+            tokens_used=tokens_used
+        )
+
+    def _analyze_via_claude_code(self, prompt: str) -> Optional[str]:
+        """Call Claude Code CLI to analyze a job.
+
+        Writes the prompt to a temp file, invokes `claude -p`, and returns
+        the raw text output (expected to be JSON).
+        """
+        import subprocess
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.txt', delete=False, encoding='utf-8'
+        ) as f:
+            f.write(prompt)
+            prompt_path = f.name
+
+        try:
+            cmd = [
+                'claude', '-p', prompt,
+                '--output-format', 'text',
+                '--model', self.model,
+                '--max-turns', '1',
+            ]
+            # For long prompts, use stdin instead of argv
+            result = subprocess.run(
+                ['claude', '-p', '--output-format', 'text',
+                 '--model', self.model, '--max-turns', '1'],
+                input=prompt,
+                capture_output=True,
+                text=True,
+                timeout=300,
+                encoding='utf-8',
+            )
+            if result.returncode != 0:
+                stderr = result.stderr[:500] if result.stderr else ''
+                print(f"    [CLAUDE_CODE] CLI error (rc={result.returncode}): {stderr}")
+                return None
+            return result.stdout.strip()
+        except subprocess.TimeoutExpired:
+            print(f"    [CLAUDE_CODE] CLI timed out after 300s")
+            return None
+        except FileNotFoundError:
+            print(f"    [CLAUDE_CODE] 'claude' CLI not found in PATH")
+            return None
+        finally:
+            os.unlink(prompt_path)
+
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
         """分析单个职位: 评分 + 简历定制"""
         job_id = job['id']
         prompt = self._build_prompt(job)
 
         try:
-            # Unified Anthropic SDK format — with retry for transient errors
+            # ── Claude Code CLI provider ──
+            if self.provider == 'claude_code':
+                text = self._analyze_via_claude_code(prompt)
+                if not text:
+                    return AnalysisResult(
+                        job_id=job_id, ai_score=0.0,
+                        recommendation='REJECTED',
+                        reasoning='Claude Code CLI returned empty response',
+                        tailored_resume='{}',
+                        model=self.model, tokens_used=0,
+                    )
+                tokens_used = 0  # CLI doesn't report token usage
+                # Fall through to JSON parsing below
+                parsed = self._parse_response(text)
+                if not parsed:
+                    preview = text[:300].replace('\n', ' ')
+                    print(f"  [WARN] Failed to parse Claude Code response for {job_id}")
+                    print(f"    Raw response preview: {preview}")
+                    return AnalysisResult(
+                        job_id=job_id, ai_score=0.0,
+                        recommendation='REJECTED',
+                        reasoning=f'[PARSE_FAIL] {preview[:200]}',
+                        tailored_resume='{}',
+                        model=self.model, tokens_used=0,
+                    )
+                # Jump to post-parse processing (shared with API path)
+                return self._post_parse_analysis(job_id, job, parsed, tokens_used, prompt)
+
+            # ── Anthropic SDK provider ──
             response = None
             for attempt in range(3):
                 try:
@@ -752,74 +901,7 @@ class AIAnalyzer:
                     model=self.model, tokens_used=tokens_used
                 )
 
-            scoring = parsed.get('scoring') or {}
-            tailored = parsed.get('tailored_resume') or {}
-
-            # Resolve bullet IDs to verified text (skip unknown, keep valid)
-            tailored, bullet_errors = self._resolve_bullet_ids(tailored)
-            # Inject per-experience technical_skills from bullet library (static, not AI-generated)
-            self._inject_technical_skills(tailored)
-            rejection_reason = ''
-            if bullet_errors:
-                for err in bullet_errors:
-                    print(f"    [BULLET WARN] {err}")
-                print(f"    [WARN] {len(bullet_errors)} unknown bullet(s) skipped — validator will check minimums")
-
-            # Assemble bio from structured spec (or pass through string/null)
-            if tailored:
-                bio_spec = tailored.get('bio')
-                assembled_bio, bio_errors = self._assemble_bio(bio_spec, job)
-                if bio_errors:
-                    for err in bio_errors:
-                        print(f"    [BIO ERROR] {err}")
-                    print(f"    [REJECTED] Bio assembly failed — resume will not generate")
-                    rejection_reason = f"REJECTED: {'; '.join(bio_errors)}"
-                    tailored = {}
-                else:
-                    tailored['bio'] = assembled_bio
-
-            # v3.0: Early validation — reject before saving to keep counts accurate
-            if tailored:
-                validation = self.validator.validate(tailored, job)
-                if not validation.passed:
-                    for err in validation.errors:
-                        print(f"    [VALIDATION] {err}")
-                    val_reason = f"REJECTED: validation: {'; '.join(validation.errors[:3])}"
-                    rejection_reason = f"{rejection_reason} | {val_reason}" if rejection_reason else val_reason
-                    tailored = {}
-                else:
-                    if validation.warnings:
-                        for warn in validation.warnings:
-                            print(f"    [VALID WARN] {warn}")
-                    if validation.fixes:
-                        print(f"    [VALIDATION] Auto-fixes applied: {list(validation.fixes.keys())}")
-
-            def _safe_float(val, default=0.0):
-                try:
-                    return float(val)
-                except (TypeError, ValueError):
-                    return default
-
-            reasoning = scoring.get('reasoning', '')
-            recommendation = scoring.get('recommendation', 'SKIP')
-            if rejection_reason:
-                reasoning = f"{reasoning} | {rejection_reason}" if reasoning else rejection_reason
-                recommendation = 'REJECTED'
-
-            result = AnalysisResult(
-                job_id=job_id,
-                ai_score=_safe_float(scoring.get('overall_score', 0)),
-                skill_match=_safe_float(scoring.get('skill_match', 0)),
-                experience_fit=_safe_float(scoring.get('experience_fit', 0)),
-                growth_potential=_safe_float(scoring.get('growth_potential', 0)),
-                recommendation=recommendation,
-                reasoning=reasoning,
-                tailored_resume=json.dumps(tailored, ensure_ascii=False),
-                model=self.model,
-                tokens_used=tokens_used
-            )
-
-            return result
+            return self._post_parse_analysis(job_id, job, parsed, tokens_used, prompt)
 
         except AuthenticationError as e:
             print(f"  [FATAL] Authentication failed: {e}")
