@@ -44,10 +44,7 @@ env:
   PYTHONUNBUFFERED: '1'
   TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
   TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-  TURSO_SYNC_MODE: 'startup_only'
-  # TEMP DISABLED: restore after pipeline fix
-  # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-  # ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+  # DB_TRANSPORT: http (auto-detected from TURSO_DATABASE_URL)
 jobs:
   pipeline:
     runs-on: ubuntu-latest
@@ -66,16 +63,6 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ hashFiles('requirements.txt') }}
-
-      - name: Cache embedded replica DB
-        uses: actions/cache@v4
-        with:
-          path: |
-            data/jobs.db
-            data/jobs.db-*
-          key: turso-replica-v3-${{ github.run_id }}
-          restore-keys: |
-            turso-replica-v3-
 
       - name: Install dependencies
         run: |
