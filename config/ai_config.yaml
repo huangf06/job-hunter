@@ -19,7 +19,7 @@ models:
   # Claude Code CLI (local use — no API key needed, uses Claude Code's auth)
   claude_code:
     provider: "claude_code"
-    model: "claude-sonnet-4-6"
+    model: "default"  # uses whatever model Claude Code is configured with
     max_tokens: 8192
     temperature: 0.3
 

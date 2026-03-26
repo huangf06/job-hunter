@@ -710,29 +710,25 @@ class AIAnalyzer:
     def _analyze_via_claude_code(self, prompt: str) -> Optional[str]:
         """Call Claude Code CLI to analyze a job.
 
-        Writes the prompt to a temp file, invokes `claude -p`, and returns
-        the raw text output (expected to be JSON).
+        Pipes the prompt via stdin to `claude -p` and returns the raw text
+        output (expected to be JSON).
         """
+        import shutil
         import subprocess
         import tempfile
 
-        with tempfile.NamedTemporaryFile(
-            mode='w', suffix='.txt', delete=False, encoding='utf-8'
-        ) as f:
-            f.write(prompt)
-            prompt_path = f.name
+        claude_bin = shutil.which('claude')
+        if not claude_bin:
+            print(f"    [CLAUDE_CODE] 'claude' CLI not found in PATH")
+            return None
 
         try:
-            cmd = [
-                'claude', '-p', prompt,
-                '--output-format', 'text',
-                '--model', self.model,
-                '--max-turns', '1',
-            ]
-            # For long prompts, use stdin instead of argv
+            cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '1']
+            # Only pass --model if explicitly configured (skip to use Claude Code's default)
+            if self.model and self.model != 'default':
+                cmd.extend(['--model', self.model])
             result = subprocess.run(
-                ['claude', '-p', '--output-format', 'text',
-                 '--model', self.model, '--max-turns', '1'],
+                cmd,
                 input=prompt,
                 capture_output=True,
                 text=True,
@@ -740,18 +736,17 @@ class AIAnalyzer:
                 encoding='utf-8',
             )
             if result.returncode != 0:
-                stderr = result.stderr[:500] if result.stderr else ''
-                print(f"    [CLAUDE_CODE] CLI error (rc={result.returncode}): {stderr}")
+                stderr = (result.stderr or '')[:500]
+                stdout_preview = (result.stdout or '')[:200]
+                print(f"    [CLAUDE_CODE] CLI error (rc={result.returncode}): {stderr} {stdout_preview}")
                 return None
             return result.stdout.strip()
         except subprocess.TimeoutExpired:
             print(f"    [CLAUDE_CODE] CLI timed out after 300s")
             return None
         except FileNotFoundError:
-            print(f"    [CLAUDE_CODE] 'claude' CLI not found in PATH")
+            print(f"    [CLAUDE_CODE] 'claude' CLI not found at {claude_bin}")
             return None
-        finally:
-            os.unlink(prompt_path)
 
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
         """分析单个职位: 评分 + 简历定制"""
