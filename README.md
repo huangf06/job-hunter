@@ -1,12 +1,11 @@
 # Job Hunter v2.0
 
-Automated job hunting pipeline: scrape multi-platform → hard filter → rule score → AI analysis (Claude Opus) → tailored resume + cover letter → application tracking + interview prep.
+Automated job hunting pipeline: unified scrape → hard filter → rule score → AI analysis (Claude Opus) → tailored resume + cover letter → application tracking + interview prep.
 
 ```
 Scrape ──▶ Hard Filter ──▶ Rule Score ──▶ AI Analyze ──▶ Render Resume ──▶ Track
 (LinkedIn,     │                          (Claude Opus)   (Jinja2 + PDF)   (checklist
  Greenhouse,  rejected                    + Cover Letter                    + calendar)
- Lever,
  IamExpat)
 ```
 
@@ -27,9 +26,12 @@ TURSO_AUTH_TOKEN=...
 ## Daily Workflow
 
 ```bash
-# 1. Scrape jobs (LinkedIn + multi-platform)
-python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db --cdp
-python scripts/multi_scraper.py --all
+# 1. Scrape jobs (default daily path: LinkedIn + Greenhouse)
+python scripts/scrape.py --all --save-to-db
+python scripts/scrape.py --all --profile data_engineering --save-to-db
+
+# Optional low-frequency backfill
+python scripts/scrape.py --platform iamexpat --save-to-db
 
 # 2. Process (import → filter → rule score)
 python scripts/job_pipeline.py --process
@@ -63,8 +65,7 @@ Say "帮我准备 XX 公司的面试" to trigger the standardized 7-phase workfl
 ```
 scripts/                        # CLI entry points
   job_pipeline.py                   # Main pipeline (unified CLI)
-  linkedin_scraper_v6.py            # LinkedIn scraper (boolean queries, CDP)
-  multi_scraper.py                  # Multi-platform orchestrator
+  scrape.py                         # Unified scraper entry point
   google_auth.py                    # Google OAuth (Calendar + Gmail)
   job_parser.py                     # JD text parser
   notify.py                         # Telegram notifications (CI/CD)
@@ -86,7 +87,9 @@ src/                            # Reusable modules
   scrapers/                         # Multi-platform scrapers
     base.py                             # Abstract base class
     greenhouse.py                       # Greenhouse ATS API
-    lever.py                            # Lever ATS API
+    linkedin.py                         # LinkedIn orchestration
+    linkedin_browser.py                 # LinkedIn browser/session layer
+    linkedin_parser.py                  # LinkedIn parser helpers
     iamexpat.py                         # IamExpat (Playwright)
   db/
     job_db.py                       # SQLite + Turso cloud sync
@@ -136,7 +139,7 @@ SQLite locally, synced to Turso cloud for CI/CD (embedded replica pattern).
 
 ## CI/CD
 
-GitHub Actions runs the pipeline 3x daily on weekdays (NL time 08:23 / 12:23 / 16:23) and once on weekends. See `.github/workflows/job-pipeline-optimized.yml`.
+GitHub Actions runs the main pipeline for LinkedIn + Greenhouse on the regular schedule. IamExpat is retained as a separate low-frequency backfill source. See `.github/workflows/job-pipeline-optimized.yml`.
 
 ## Notes
 
