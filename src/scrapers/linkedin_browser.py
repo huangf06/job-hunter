@@ -69,6 +69,16 @@ class LinkedInBrowser:
         self.browser = None
         self.context = None
         self.page = None
+        self.diagnostics = {
+            "session_status": "unknown",
+            "last_stage": "init",
+            "last_url": "",
+            "challenge_marker": "",
+            "cards_found": 0,
+            "detail_fetch_failures": 0,
+            "cookies_path": str(self.cookies_path),
+            "cookies_loaded": 0,
+        }
 
     async def __aenter__(self):
         self.playwright = await async_playwright().start()
@@ -93,7 +103,9 @@ class LinkedInBrowser:
         return False
 
     async def _load_cookies(self) -> None:
+        self.diagnostics["last_stage"] = "load_cookies"
         if not self.cookies_path.exists():
+            self.diagnostics["session_status"] = "cookies_missing"
             raise LinkedInSessionError(f"LinkedIn cookies file not found: {self.cookies_path}")
 
         with open(self.cookies_path, "r", encoding="utf-8") as f:
@@ -107,17 +119,24 @@ class LinkedInBrowser:
                 valid_cookies.append(cookie)
 
         if not valid_cookies:
+            self.diagnostics["session_status"] = "cookies_malformed"
             raise LinkedInSessionError("LinkedIn cookies file is empty or malformed")
 
         if not any(cookie.get("name") == "li_at" for cookie in valid_cookies):
+            self.diagnostics["session_status"] = "cookies_missing_li_at"
             raise LinkedInSessionError("LinkedIn session cookie li_at is missing")
 
         await self.context.add_cookies(valid_cookies)
+        self.diagnostics["session_status"] = "cookies_loaded"
+        self.diagnostics["cookies_loaded"] = len(valid_cookies)
 
     async def validate_session(self) -> bool:
+        self.diagnostics["last_stage"] = "validate_session"
         await self._goto("https://www.linkedin.com/feed/", timeout=30000)
         if self._is_auth_url(self.page.url):
+            self.diagnostics["session_status"] = "auth_redirect"
             raise LinkedInSessionError(f"LinkedIn session expired: redirected to {self.page.url}")
+        self.diagnostics["session_status"] = "ok"
         await self._raise_if_challenge_page()
         return True
 
@@ -132,6 +151,7 @@ class LinkedInBrowser:
         job_type: str | None = None,
         workplace_type: str | None = None,
     ) -> list[dict]:
+        self.diagnostics["last_stage"] = "search"
         params = {
             "keywords": keywords,
             "location": location,
@@ -146,9 +166,11 @@ class LinkedInBrowser:
         await self._goto(f"https://www.linkedin.com/jobs/search?{urlencode(params)}", timeout=45000)
         await self._wait_for_cards()
         cards = await self._extract_cards()
+        self.diagnostics["cards_found"] = len(cards)
         return cards[:max_jobs] if max_jobs > 0 else cards
 
     async def fetch_job_description(self, url: str) -> dict:
+        self.diagnostics["last_stage"] = "detail_fetch"
         await self._goto(url, timeout=30000)
         payload = {
             "json_ld_description": await self._extract_json_ld_description(),
@@ -172,21 +194,31 @@ class LinkedInBrowser:
             payload["detail_text"] = (await self.page.inner_text("body")).strip()
         except Exception:
             payload["detail_text"] = ""
+            self.diagnostics["detail_fetch_failures"] += 1
         return payload
 
     async def _goto(self, url: str, *, timeout: int) -> None:
+        self.diagnostics["last_url"] = url
         try:
             await self.page.goto(url, wait_until="domcontentloaded", timeout=timeout)
         except PlaywrightTimeout as exc:
+            self.diagnostics["last_stage"] = "navigation_timeout"
             raise LinkedInBrowserError(f"Timed out loading LinkedIn page: {url}") from exc
 
+        self.diagnostics["last_url"] = self.page.url
         if self._is_auth_url(self.page.url):
+            self.diagnostics["session_status"] = "auth_redirect"
             raise LinkedInSessionError(f"LinkedIn redirected to auth page: {self.page.url}")
         await self._raise_if_challenge_page()
 
     async def _raise_if_challenge_page(self) -> None:
+        self.diagnostics["last_stage"] = "challenge_check"
+        self.diagnostics["last_url"] = self.page.url or self.diagnostics.get("last_url", "")
         url = (self.page.url or "").lower()
         if any(marker in url for marker in CHALLENGE_URL_MARKERS):
+            matched_marker = next(marker for marker in CHALLENGE_URL_MARKERS if marker in url)
+            self.diagnostics["session_status"] = "challenge"
+            self.diagnostics["challenge_marker"] = f"url:{matched_marker}"
             logger.warning("[LinkedIn] Challenge URL detected: url=%s", self.page.url)
             raise LinkedInCaptchaError("LinkedIn CAPTCHA or challenge page detected")
 
@@ -198,6 +230,8 @@ class LinkedInBrowser:
         for marker in VISIBLE_CHALLENGE_MARKERS:
             index = body_text.find(marker)
             if index >= 0:
+                self.diagnostics["session_status"] = "challenge"
+                self.diagnostics["challenge_marker"] = f"text:{marker}"
                 snippet_start = max(0, index - 160)
                 snippet_end = min(len(body_text), index + 160)
                 snippet = body_text[snippet_start:snippet_end].replace("\n", " ")
@@ -294,6 +328,16 @@ class LinkedInBrowserStub:
         self.search_results_by_query = search_results_by_query or {}
         self.failures_by_query = failures_by_query or {}
         self.description_payloads_by_url = description_payloads_by_url or {}
+        self.diagnostics = {
+            "session_status": "ok" if session_valid and not captcha_detected else "unknown",
+            "last_stage": "stub",
+            "last_url": "",
+            "challenge_marker": "",
+            "cards_found": 0,
+            "detail_fetch_failures": 0,
+            "cookies_path": "stub",
+            "cookies_loaded": 0,
+        }
 
     async def __aenter__(self):
         return self
@@ -303,16 +347,27 @@ class LinkedInBrowserStub:
 
     async def validate_session(self) -> bool:
         if self.captcha_detected:
+            self.diagnostics["session_status"] = "challenge"
+            self.diagnostics["last_stage"] = "validate_session"
             raise LinkedInCaptchaError("LinkedIn CAPTCHA or challenge page detected")
         if not self.session_valid:
+            self.diagnostics["session_status"] = "auth_redirect"
+            self.diagnostics["last_stage"] = "validate_session"
             raise LinkedInSessionError("LinkedIn session expired (stub)")
+        self.diagnostics["session_status"] = "ok"
+        self.diagnostics["last_stage"] = "validate_session"
         return True
 
     async def search_jobs(self, keywords: str, **kwargs) -> list[dict]:
+        self.diagnostics["last_stage"] = "search"
         failure = self.failures_by_query.get(keywords)
         if failure:
             raise failure
-        return list(self.search_results_by_query.get(keywords, []))
+        results = list(self.search_results_by_query.get(keywords, []))
+        self.diagnostics["cards_found"] = len(results)
+        return results
 
     async def fetch_job_description(self, url: str) -> dict:
+        self.diagnostics["last_stage"] = "detail_fetch"
+        self.diagnostics["last_url"] = url
         return dict(self.description_payloads_by_url.get(url, {}))

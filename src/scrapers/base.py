@@ -41,6 +41,7 @@ class ScrapeReport:
     targets_failed: int = 0
     errors: List[str] = field(default_factory=list)
     target_errors: List[Dict[str, str]] = field(default_factory=list)
+    diagnostics: Dict = field(default_factory=dict)
 
     @property
     def is_healthy(self) -> bool:
@@ -67,6 +68,7 @@ class ScrapeReport:
             "targets_failed": self.targets_failed,
             "errors": list(self.errors),
             "target_errors": list(self.target_errors),
+            "diagnostics": dict(self.diagnostics),
             "is_healthy": self.is_healthy,
             "severity": self.severity,
         }
@@ -83,6 +85,7 @@ class BaseScraper(ABC):
         self._target_errors: List[Dict[str, str]] = []
         self._run_errors: List[str] = []
         self._target_counts = {"attempted": 0, "succeeded": 0, "failed": 0}
+        self._diagnostics: Dict = {}
 
     @abstractmethod
     def scrape(self) -> List[Dict]:
@@ -116,6 +119,10 @@ class BaseScraper(ABC):
         self._target_errors = []
         self._run_errors = []
         self._target_counts = {"attempted": 0, "succeeded": 0, "failed": 0}
+        self._diagnostics = {}
+
+    def update_diagnostics(self, **values) -> None:
+        self._diagnostics.update(values)
 
     def _build_report(self, jobs: List[Dict]) -> ScrapeReport:
         counts = self._target_counts.copy()
@@ -131,6 +138,7 @@ class BaseScraper(ABC):
             targets_failed=counts["failed"],
             errors=list(self._run_errors),
             target_errors=list(self._target_errors),
+            diagnostics=dict(self._diagnostics),
         )
 
     def _is_known_duplicate(self, job: Dict, seen_job_ids: set[str], existing_job_ids: set[str]) -> bool:

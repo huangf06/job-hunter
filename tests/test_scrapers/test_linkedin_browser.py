@@ -41,3 +41,8 @@ def test_challenge_detection_raises_on_visible_security_check_text():
 
     with pytest.raises(LinkedInCaptchaError):
         asyncio.run(browser._raise_if_challenge_page())
+
+    assert browser.diagnostics["session_status"] == "challenge"
+    assert browser.diagnostics["last_stage"] == "challenge_check"
+    assert browser.diagnostics["last_url"] == "https://www.linkedin.com/checkpoint/challenge/"
+    assert browser.diagnostics["challenge_marker"] == "url:/checkpoint/challenge"
