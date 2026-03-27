@@ -686,6 +686,25 @@ class JobDatabase:
             cursor = conn.execute("SELECT 1 FROM jobs WHERE id = ?", (job_id,))
             return cursor.fetchone() is not None
 
+    def find_existing_job_ids(self, urls: List[str]) -> set[str]:
+        """Batch-check which scraped URLs already exist in jobs."""
+        job_ids = [self.generate_job_id(url) for url in urls if url]
+        if not job_ids:
+            return set()
+
+        existing_ids: set[str] = set()
+        chunk_size = 900
+        with self._get_conn() as conn:
+            for i in range(0, len(job_ids), chunk_size):
+                chunk = job_ids[i:i + chunk_size]
+                placeholders = ",".join(["?"] * len(chunk))
+                cursor = conn.execute(
+                    f"SELECT id FROM jobs WHERE id IN ({placeholders})",
+                    chunk,
+                )
+                existing_ids.update(row[0] for row in cursor.fetchall())
+        return existing_ids
+
     def filter_urls_needing_jd(self, urls: List[str]) -> List[str]:
         """批量过滤，返回需要抓取JD的URL列表
 

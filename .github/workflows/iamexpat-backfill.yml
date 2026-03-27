@@ -1,0 +1,48 @@
+name: IamExpat Backfill
+
+on:
+  # schedule:                        # frozen — IamExpat demoted to manual-only backfill
+  #   - cron: '17 4 * * 0'
+  workflow_dispatch:
+
+env:
+  PYTHONUNBUFFERED: '1'
+  TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+  TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run IamExpat backfill
+        run: |
+          python scripts/scrape.py --platform iamexpat --save-to-db
+
+      - name: Upload scrape stats
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iamexpat-backfill-stats-${{ github.run_id }}
+          path: data/scrape_metrics.json
+          retention-days: 7
+          if-no-files-found: ignore
