@@ -1,5 +1,7 @@
 # Architecture Overview
 
+> **Full pipeline block architecture**: See `docs/plans/2026-03-27-pipeline-block-architecture.md` for the complete 6-block design (A→F), data flow, DB schema, and rebuild priority.
+
 ## Block A Scraper Layer
 
 Block A now uses a unified scraper entry point:
@@ -38,4 +40,4 @@ Operational guidance lives in:
 - `data/scrape_metrics.json` remains the Phase 1 metrics artifact.
 - Top-level `new_jobs` is preserved for notifications and workflow compatibility.
 - Job dedup continues to use `JobDatabase.generate_job_id()` on normalized URLs.
-- Downstream rule scoring, AI analysis, and notification flow remain unchanged.
+- Downstream hard filter, AI analysis, and notification flow are being rebuilt block-by-block (see pipeline block architecture doc).
