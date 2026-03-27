@@ -27,10 +27,10 @@ AMSTERDAM = ZoneInfo("Europe/Amsterdam")
 
 
 def load_scrape_metrics() -> dict:
-    """Load scrape metrics from JSON file written by scraper."""
+    """Load unified scrape metrics while keeping Phase 1 new_jobs compatibility."""
     metrics_path = PROJECT_ROOT / "data" / "scrape_metrics.json"
     if metrics_path.exists():
-        with open(metrics_path) as f:
+        with open(metrics_path, encoding="utf-8") as f:
             return json.load(f)
     return {}
 
@@ -250,6 +250,16 @@ def send_telegram(message: str, bot_token: str, chat_id: str) -> bool:
         return False
 
 
+def send_telegram_message(message: str) -> bool:
+    """Compatibility wrapper for internal callers that only provide the message body."""
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+    if not bot_token or not chat_id:
+        print("[notify] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set, skipping")
+        return False
+    return send_telegram(message, bot_token, chat_id)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pipeline Telegram notification")
     parser.add_argument("--status", required=True, choices=["success", "failure"],
@@ -275,14 +285,7 @@ def main():
         print("[notify] Dry run — not sending")
         return
 
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
-
-    if not bot_token or not chat_id:
-        print("[notify] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set, skipping")
-        return
-
-    send_telegram(message, bot_token, chat_id)
+    send_telegram_message(message)
 
 
 if __name__ == "__main__":

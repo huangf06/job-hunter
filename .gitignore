@@ -1,6 +1,6 @@
 # Secrets
 # .env
-# config/linkedin_cookies.json
+config/linkedin_cookies.json
 # config/credentials.json
 # config/private/
 config/todoist_config.json

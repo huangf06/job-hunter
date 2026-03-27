@@ -35,31 +35,17 @@
 
 ## 核心命令
 
-### 1. 爬取 LinkedIn 职位
+### 1. 统一抓取职位
 ```bash
-python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db --cdp
+python scripts/scrape.py --all --save-to-db
+python scripts/scrape.py --all --profile data_engineering --save-to-db
 ```
-- `--profile`: 搜索配置 (ml_data, backend_data, quant)
-- `--save-to-db`: 保存到 SQLite 数据库 (默认不保存)
-- `--cdp`: 连接已有浏览器 (Chrome 端口 9222)
+- `--profile`: 仅接受启用中的 profile
+- `--save-to-db`: 保存到 SQLite 数据库
+- `--dry-run`: 只计算 would-insert，不写库
 
-### 1b. 多平台爬取 (Greenhouse + Lever + IamExpat)
-```bash
-# 运行所有非 LinkedIn 平台
-python scripts/multi_scraper.py --all
-
-# 只运行 ATS (Greenhouse + Lever)
-python scripts/multi_scraper.py --platform ats
-
-# 只运行 IamExpat
-python scripts/multi_scraper.py --platform iamexpat
-
-# 指定搜索 profile
-python scripts/multi_scraper.py --platform iamexpat --profile ml_data
-```
-
+`--all` 运行 LinkedIn + Greenhouse (主链路)。IamExpat 已冻结，仅保留手动 backfill: `--platform iamexpat`。
 目标公司配置: `config/target_companies.yaml`
-IamExpat 搜索词: `config/search_profiles.yaml` 各 profile 下的 `iamexpat.queries`
 
 ### 2. 处理职位流水线
 ```bash
@@ -181,8 +167,7 @@ interview_prep/YYYYMMDD_Company_Role/
 job-hunter/
 ├── scripts/                    # CLI 入口
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
-│   ├── linkedin_scraper_v6.py      # LinkedIn 爬虫 (boolean queries, CDP)
-│   ├── multi_scraper.py            # 多平台爬虫编排 (Greenhouse+Lever+IamExpat)
+│   ├── scrape.py                   # 统一爬虫 CLI
 │   ├── job_parser.py               # JD 解析器
 │   ├── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
 │   ├── notify.py                   # Telegram 通知 (CI/CD)
@@ -205,7 +190,9 @@ job-hunter/
 │   ├── scrapers/                   # 多平台爬虫模块
 │   │   ├── base.py                     # BaseScraper 抽象类
 │   │   ├── greenhouse.py               # Greenhouse ATS API
-│   │   ├── lever.py                    # Lever ATS API
+│   │   ├── linkedin.py                 # LinkedIn 编排
+│   │   ├── linkedin_browser.py         # LinkedIn 浏览器/会话层
+│   │   ├── linkedin_parser.py          # LinkedIn 解析 helpers
 │   │   └── iamexpat.py                 # IamExpat Jobs (Playwright)
 │   └── db/
 │       ├── __init__.py
@@ -214,7 +201,7 @@ job-hunter/
 ├── config/
 │   ├── ai_config.yaml          # AI 配置 (模型、阈值、prompt)
 │   ├── search_profiles.yaml    # 搜索配置 (LinkedIn + IamExpat)
-│   ├── target_companies.yaml   # 目标公司 ATS 配置 (Greenhouse + Lever)
+│   ├── target_companies.yaml   # 目标公司 ATS 配置 (Greenhouse)
 │   └── base/                   # 基础配置
 │       ├── filters.yaml            # 硬规则 v2.0
 │       └── scoring.yaml            # 评分规则 v2.0
@@ -269,9 +256,9 @@ print(db.get_funnel_stats())
 
 ## 日常工作流
 
-1. **每日爬取** (建议早上):
+1. **每日抓取** (建议早上):
    ```bash
-   python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db
+   python scripts/scrape.py --all --save-to-db
    ```
 
 2. **处理新职位**:

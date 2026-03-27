@@ -149,38 +149,6 @@ profiles:
         - keywords: "software engineer data"
         - keywords: "software engineer ai"
 
-  # ============================================================
-  # Legacy profiles (DISABLED, kept for reference)
-  # ============================================================
-  ml_data:
-    name: "[LEGACY] ML & Data Engineering"
-    enabled: false
-    priority: 99
-    queries:
-      - keywords: '"Machine Learning" OR "Deep Learning" OR "Computer Vision" OR "NLP"'
-        description: "[LEGACY] ML/AI core search"
-      - keywords: '"Data Engineer" OR "MLOps" OR "Analytics Engineer" OR "Data Consultant"'
-        description: "[LEGACY] Data Engineering search"
-      - keywords: '"AI Engineer" OR "LLM" OR "ML Engineer"'
-        description: "[LEGACY] AI/LLM search"
-
-  backend_data:
-    name: "[LEGACY] Backend Engineering"
-    enabled: false
-    priority: 99
-    queries:
-      - keywords: '"Python Developer" OR "Backend Engineer" OR "Software Engineer"'
-        description: "[LEGACY] Backend combined search"
-
-  quick_test:
-    name: "Quick Test"
-    enabled: false
-    priority: 99
-    queries:
-      - keywords: "data engineer"
-        description: "Quick test search"
-    max_jobs_override: 10
-
 # Company blacklist (recruiting agencies, outsourcing, etc.)
 company_blacklist:
   - "Hays"

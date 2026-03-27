@@ -83,7 +83,9 @@ class GreenhouseScraper(BaseScraper):
                     if self._matches_location(raw, loc_filter):
                         all_jobs.append(self._to_job_dict(raw, name))
                         matched += 1
+                self.record_target_success(name)
                 logger.info("[Greenhouse] %s: %d jobs (filtered from %d)", name, matched, len(raw_jobs))
             except Exception as e:
+                self.record_target_failure(name, e)
                 logger.error("[Greenhouse] %s failed: %s", name, e)
         return all_jobs
