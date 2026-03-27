@@ -30,8 +30,8 @@ The scraper layer is organized around a synchronous `BaseScraper.run()` contract
 
 Operational guidance lives in:
 
-- [block-a-operations.md](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/docs/runbooks/block-a-operations.md)
-- [block-a-checklist.md](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/docs/runbooks/block-a-checklist.md)
+- `docs/runbooks/block-a-operations.md`
+- `docs/runbooks/block-a-checklist.md`
 
 ## Compatibility Notes
 

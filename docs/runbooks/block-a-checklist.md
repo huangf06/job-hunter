@@ -2,7 +2,7 @@
 
 ## When Daily Scrape Looks Wrong
 
-1. Open [data/scrape_metrics.json](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/data/scrape_metrics.json).
+1. Open `data/scrape_metrics.json`.
 2. Check `total.severity`.
 3. Identify which platform has `errors` or `targets_failed > 0`.
 4. Rerun only the failing platform with `--dry-run`.
