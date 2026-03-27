@@ -67,8 +67,13 @@ def test_run_platforms_logs_elapsed_time(monkeypatch):
     )
 
     assert reports == {
-        "linkedin": {"source": "linkedin", "found": 1, "dry_run": True},
-        "greenhouse": {"source": "greenhouse", "found": 1, "dry_run": True},
+        "linkedin": {"source": "linkedin", "found": 1, "dry_run": True, "diagnostics": {"elapsed_seconds": 2.5}},
+        "greenhouse": {
+            "source": "greenhouse",
+            "found": 1,
+            "dry_run": True,
+            "diagnostics": {"elapsed_seconds": 7.5},
+        },
     }
     assert built_platforms == [
         ("linkedin", "data_engineering"),
@@ -78,3 +83,34 @@ def test_run_platforms_logs_elapsed_time(monkeypatch):
         "Platform linkedin completed in 2.50s severity=n/a found=1 new=0",
         "Platform greenhouse completed in 7.50s severity=n/a found=1 new=0",
     ]
+
+
+def test_emit_metrics_preserves_platform_diagnostics():
+    scrape = load_scrape_module()
+    output_path = Path(__file__).resolve().parent / "tmp_scrape_metrics.json"
+
+    try:
+        metrics = scrape.emit_metrics(
+            {
+                "linkedin": {
+                    "source": "linkedin",
+                    "found": 2,
+                    "new": 1,
+                    "severity": "warning",
+                    "diagnostics": {
+                        "session_status": "challenge",
+                        "last_stage": "validate_session",
+                        "elapsed_seconds": 12.5,
+                    },
+                }
+            },
+            output_path=output_path,
+        )
+
+        assert metrics["platforms"]["linkedin"]["diagnostics"] == {
+            "session_status": "challenge",
+            "last_stage": "validate_session",
+            "elapsed_seconds": 12.5,
+        }
+    finally:
+        output_path.unlink(missing_ok=True)

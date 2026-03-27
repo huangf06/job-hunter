@@ -150,6 +150,8 @@ def run_platforms(platforms: list[str], profile: str | None, save_to_db: bool, d
         serialized_report = serialize_report(report)
         platform_reports[platform] = serialized_report
         elapsed = time.perf_counter() - started_at
+        diagnostics = serialized_report.setdefault("diagnostics", {})
+        diagnostics["elapsed_seconds"] = round(elapsed, 2)
         logger.info(
             "Platform %s completed in %.2fs severity=%s found=%d new=%d",
             platform,

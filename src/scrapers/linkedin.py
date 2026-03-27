@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from datetime import datetime
 from pathlib import Path
 
@@ -58,12 +59,28 @@ class LinkedInScraper(BaseScraper):
     async def _scrape_async(self) -> list[dict]:
         defaults = self.config.get("defaults", {})
         jobs: list[dict] = []
+        query_diagnostics: list[dict] = []
+        profile_scope = [name for name, _ in self._iter_active_profiles()]
 
         async with self.browser as browser:
             try:
                 await browser.validate_session()
             except (LinkedInSessionError, LinkedInCaptchaError, LinkedInBrowserError) as exc:
                 self.record_error(exc)
+                browser_diag = dict(getattr(browser, "diagnostics", {}))
+                browser_diag["last_stage"] = "validate_session"
+                if isinstance(exc, LinkedInCaptchaError):
+                    browser_diag["session_status"] = "challenge"
+                elif isinstance(exc, LinkedInSessionError):
+                    browser_diag.setdefault("session_status", "auth_redirect")
+                self.update_diagnostics(
+                    profile_scope=profile_scope,
+                    query_count=0,
+                    query_successes=0,
+                    query_failures=0,
+                    queries=[],
+                    **browser_diag,
+                )
                 return []
 
             for profile_name, profile in self._iter_active_profiles():
@@ -82,18 +99,55 @@ class LinkedInScraper(BaseScraper):
                             workplace_type=defaults.get("workplace_type"),
                         )
                         parsed_jobs = parse_search_cards(cards)
+                        jobs_enriched = 0
                         for job in parsed_jobs:
                             payload = await browser.fetch_job_description(job["url"])
                             description = extract_job_description(payload)
                             if description:
                                 job["description"] = description
+                                jobs_enriched += 1
                             job["scraped_at"] = datetime.now().isoformat()
                             job["search_profile"] = profile_name
                             job["search_query"] = keywords
                         jobs.extend(parsed_jobs)
+                        browser_diag = copy.deepcopy(getattr(browser, "diagnostics", {}))
+                        query_diagnostics.append(
+                            {
+                                "profile": profile_name,
+                                "query": keywords,
+                                "status": "ok",
+                                "cards_found": len(cards),
+                                "jobs_enriched": jobs_enriched,
+                                "last_stage": browser_diag.get("last_stage", ""),
+                                "last_url": browser_diag.get("last_url", ""),
+                                "error": "",
+                            }
+                        )
                         self.record_target_success(keywords)
                     except Exception as exc:
+                        browser_diag = copy.deepcopy(getattr(browser, "diagnostics", {}))
+                        query_diagnostics.append(
+                            {
+                                "profile": profile_name,
+                                "query": keywords,
+                                "status": "error",
+                                "cards_found": browser_diag.get("cards_found", 0),
+                                "jobs_enriched": 0,
+                                "last_stage": browser_diag.get("last_stage", ""),
+                                "last_url": browser_diag.get("last_url", ""),
+                                "error": str(exc),
+                            }
+                        )
                         self.record_target_failure(keywords, exc)
+            browser_diag = dict(getattr(browser, "diagnostics", {}))
+            self.update_diagnostics(
+                profile_scope=profile_scope,
+                query_count=len(query_diagnostics),
+                query_successes=sum(1 for item in query_diagnostics if item["status"] == "ok"),
+                query_failures=sum(1 for item in query_diagnostics if item["status"] == "error"),
+                queries=query_diagnostics,
+                **browser_diag,
+            )
         return jobs
 
     def scrape(self) -> list[dict]:

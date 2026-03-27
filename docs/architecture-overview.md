@@ -20,6 +20,19 @@ The scraper layer is organized around a synchronous `BaseScraper.run()` contract
 - `src/scrapers/linkedin_browser.py`: LinkedIn browser/session layer
 - `src/scrapers/linkedin_parser.py`: LinkedIn parsing helpers
 
+## Diagnostics Model
+
+`ScrapeReport` now carries a `diagnostics` object in addition to counts and error lists.
+
+- CLI runtime adds `elapsed_seconds`
+- LinkedIn emits structured browser/session diagnostics such as `session_status`, `last_stage`, `last_url`, `challenge_marker`, and per-query summaries
+- Metrics consumers should prefer `diagnostics` over log scraping when determining scraper health
+
+Operational guidance lives in:
+
+- [block-a-operations.md](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/docs/runbooks/block-a-operations.md)
+- [block-a-checklist.md](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/docs/runbooks/block-a-checklist.md)
+
 ## Compatibility Notes
 
 - `data/scrape_metrics.json` remains the Phase 1 metrics artifact.

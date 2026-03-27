@@ -143,6 +143,9 @@ def test_orchestrator_maps_session_and_captcha_to_scraper_errors(mock_db_cls, mo
         assert report.targets_failed == 0
         assert report.severity == "error"
         assert report.errors == ["captcha detected"]
+        assert report.diagnostics["session_status"] == "challenge"
+        assert report.diagnostics["last_stage"] == "validate_session"
+        assert report.diagnostics["queries"] == []
     finally:
         config_path.unlink(missing_ok=True)
 
@@ -210,5 +213,74 @@ def test_orchestrator_uses_all_active_profiles_when_profile_not_specified(mock_d
 
         assert jobs == []
         assert browser.enter.await_count == 1
+    finally:
+        config_path.unlink(missing_ok=True)
+
+
+@patch("src.scrapers.base.load_blacklists", return_value={"company": [], "title": []})
+@patch("src.scrapers.base.JobDatabase")
+def test_orchestrator_emits_structured_linkedin_diagnostics(mock_db_cls, mock_bl):
+    linkedin = load_linkedin_module()
+    config_path = write_search_profiles(Path(__file__).resolve().parent)
+    try:
+        mock_db_cls.return_value = MagicMock(find_existing_job_ids=MagicMock(return_value=set()))
+
+        browser = FakeLinkedInBrowser(
+            search_results_by_query={
+                '"Data Engineer"': [
+                    {
+                        "title": "Data Engineer",
+                        "company": "Acme",
+                        "location": "Amsterdam",
+                        "url": "https://www.linkedin.com/jobs/view/123",
+                    }
+                ],
+                '"MLOps Engineer"': [],
+            },
+            description_payloads_by_url={
+                "https://www.linkedin.com/jobs/view/123": {
+                    "detail_text": "Build ML systems at scale.",
+                }
+            },
+        )
+        browser.diagnostics = {
+            "session_status": "ok",
+            "last_stage": "detail_fetch",
+            "last_url": "https://www.linkedin.com/jobs/view/123",
+            "challenge_marker": "",
+            "cards_found": 1,
+            "detail_fetch_failures": 0,
+        }
+
+        scraper = linkedin.LinkedInScraper(profile="data_engineering", browser=browser, config_path=config_path)
+        report = scraper.run(dry_run=True)
+
+        assert report.diagnostics["session_status"] == "ok"
+        assert report.diagnostics["profile_scope"] == ["data_engineering"]
+        assert report.diagnostics["query_count"] == 2
+        assert report.diagnostics["query_successes"] == 2
+        assert report.diagnostics["query_failures"] == 0
+        assert report.diagnostics["queries"] == [
+            {
+                "profile": "data_engineering",
+                "query": '"Data Engineer"',
+                "status": "ok",
+                "cards_found": 1,
+                "jobs_enriched": 1,
+                "last_stage": "detail_fetch",
+                "last_url": "https://www.linkedin.com/jobs/view/123",
+                "error": "",
+            },
+            {
+                "profile": "data_engineering",
+                "query": '"MLOps Engineer"',
+                "status": "ok",
+                "cards_found": 0,
+                "jobs_enriched": 0,
+                "last_stage": "detail_fetch",
+                "last_url": "https://www.linkedin.com/jobs/view/123",
+                "error": "",
+            },
+        ]
     finally:
         config_path.unlink(missing_ok=True)
