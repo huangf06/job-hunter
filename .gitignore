@@ -1,5 +1,5 @@
 # Secrets
-# .env
+.env
 config/linkedin_cookies.json
 # config/credentials.json
 # config/private/
