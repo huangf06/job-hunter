@@ -35,9 +35,27 @@ Operational guidance lives in:
 - `docs/runbooks/block-a-operations.md`
 - `docs/runbooks/block-a-checklist.md`
 
+## Block B Hard Filter
+
+Block B applies binary pass/reject rules to scraped jobs. Pure CPU, zero AI cost.
+
+```bash
+python scripts/job_pipeline.py --filter
+python scripts/job_pipeline.py --process   # runs import + filter
+```
+
+- `src/hard_filter.py`: `HardFilter` class with `apply(job) -> FilterResult`
+- `config/base/filters.yaml`: 9 hard reject rules (Dutch language, wrong role, wrong tech stack, etc.)
+- Company/title blacklists loaded from `config/search_profiles.yaml`
+
+Rule Score (the old keyword-based scoring step) has been deleted. With flat AI subscription (Claude Code Max), the "save tokens" gate is unnecessary. Jobs that pass Hard Filter go directly to AI analysis (Block C).
+
+Archived: `config/archive/scoring.yaml.archived`
+
 ## Compatibility Notes
 
 - `data/scrape_metrics.json` remains the Phase 1 metrics artifact.
 - Top-level `new_jobs` is preserved for notifications and workflow compatibility.
 - Job dedup continues to use `JobDatabase.generate_job_id()` on normalized URLs.
-- Downstream hard filter, AI analysis, and notification flow are being rebuilt block-by-block (see pipeline block architecture doc).
+- `ai_scores` table preserved for historical queries but no longer receives new data.
+- Downstream AI analysis, rendering, and notification flow are being rebuilt block-by-block (see pipeline block architecture doc).
