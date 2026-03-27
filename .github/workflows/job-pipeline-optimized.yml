@@ -114,16 +114,16 @@ jobs:
       # ==========================================
 
       # ==========================================
-      # Step 2: 规则评分 (快速本地处理)
+      # Step 2: 导入 + 硬规则筛选
       # ==========================================
-      - name: Rule-based scoring
-        id: score
+      - name: Import and hard filter
+        id: filter
         run: |
-          echo "=== Running rule-based scoring ==="
+          echo "=== Running import + hard filter ==="
           python scripts/job_pipeline.py --process
 
       # ==========================================
-      # Step 3: AI 分析 (只处理高分新职位)
+      # Step 3: AI 分析 (筛选通过的职位)
       # ==========================================
       # ==========================================
       # Step 4: 通知
@@ -153,7 +153,7 @@ jobs:
           # Collect failed steps
           FAILED_STEPS=""
           [ "${{ steps.scrape.outcome }}" == "failure" ] && FAILED_STEPS="scrape"
-          [ "${{ steps.score.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }score"
+          [ "${{ steps.filter.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }filter"
           # TEMP DISABLED: restore after pipeline fix
           # [ "${{ steps.ai.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-analyze"
           if [ -n "$FAILED_STEPS" ]; then

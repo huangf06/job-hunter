@@ -17,7 +17,7 @@
 │ Greenhouse │     │ 二元 pass/  │     │ + CL spec         │     │ Jinja2 +   │     │ Apply      │     │ Discord    │
 │ (IamExpat) │     │ reject     │     │ 一次 AI 调用完成   │     │ Playwright │     │ Finalize   │     │            │
 └────────────┘     └────────────┘     └──────────────────┘     └────────────┘     └────────────┘     └────────────┘
-     ✅ 完成            待重建              待重建                  待重建              待重建            待重建
+     ✅ 完成           ✅ 完成              待重建                  待重建              待重建            待重建
 ```
 
 **设计前提**:
@@ -466,7 +466,7 @@ steps:
 | 顺序 | Block | 复杂度 | 依赖 | 说明 |
 |------|-------|--------|------|------|
 | ✅ | A (Scrape) | 高 | 无 | 已完成 |
-| 1 | B (Hard Filter) | 低 | A | 逻辑简单，主要是从 job_pipeline.py 中提取 + 删除 Rule Score |
+| ✅ | B (Hard Filter) | 低 | A | 已完成：提取 src/hard_filter.py，删除 Rule Score，归档 scoring.yaml |
 | 2 | C (AI Evaluate) | 高 | B | 核心改造：合并评分+简历+CL 为一次调用，接入 Claude Code CLI |
 | 3 | D (Render) | 中 | C | 更新 HTML 模板，CL 渲染逻辑调整 |
 | 4 | E (Deliver) | 中 | D | Prepare/Finalize 流程基本保留，状态跟踪增强 |
