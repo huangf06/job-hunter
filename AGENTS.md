@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Job Hunter is an automated job hunting pipeline designed for a data/ML engineer job search. The system scrapes job listings from multiple platforms (LinkedIn, Greenhouse, Lever, IamExpat), applies hard filters and rule-based scoring, uses AI (Claude Opus) to analyze high-quality matches, generates tailored resumes and cover letters, and tracks applications through the entire lifecycle.
+Job Hunter is an automated job hunting pipeline designed for a data/ML engineer job search. The system scrapes job listings from LinkedIn, Greenhouse, and IamExpat through a unified Block A scraper CLI, applies hard filters and rule-based scoring, uses AI (Claude Opus) to analyze high-quality matches, generates tailored resumes and cover letters, and tracks applications through the entire lifecycle.
 
 ### Pipeline Flow
 
@@ -21,7 +21,7 @@ Job Hunter is an automated job hunting pipeline designed for a data/ML engineer 
 |----------|------------|
 | Language | Python 3.11 |
 | Database | SQLite (local) + Turso (cloud sync via embedded replica) |
-| Web Scraping | Playwright (LinkedIn, IamExpat), REST APIs (Greenhouse, Lever) |
+| Web Scraping | Playwright (LinkedIn, IamExpat), REST APIs (Greenhouse) |
 | AI/LLM | Anthropic Claude Opus (via codesome.cn proxy), Kimi k2.5 |
 | Templating | Jinja2 |
 | PDF Generation | Playwright (HTML → PDF) |
@@ -35,12 +35,11 @@ Job Hunter is an automated job hunting pipeline designed for a data/ML engineer 
 job-hunter/
 ├── scripts/                    # CLI entry points
 │   ├── job_pipeline.py             # Main pipeline (unified CLI)
-│   ├── linkedin_scraper_v6.py      # LinkedIn scraper with CDP support
-│   ├── multi_scraper.py            # Multi-platform orchestration
+│   ├── scrape.py                   # Unified scraper CLI entry point
 │   ├── job_parser.py               # JD parser utilities
 │   ├── google_auth.py              # Google OAuth setup
 │   ├── notify.py                   # Telegram notifications
-│   └── scraper_incremental*.py     # Incremental scraper variants
+│   └── job_daemon.py               # Priority-based scrape scheduler
 │
 ├── src/                        # Reusable Python modules
 │   ├── ai_analyzer.py              # AI analysis and resume tailoring
@@ -57,7 +56,9 @@ job-hunter/
 │   └── scrapers/                   # Platform-specific scrapers
 │       ├── base.py                 # BaseScraper abstract class
 │       ├── greenhouse.py           # Greenhouse ATS API
-│       ├── lever.py                # Lever ATS API
+│       ├── linkedin.py             # LinkedIn orchestration
+│       ├── linkedin_browser.py     # LinkedIn browser/session layer
+│       ├── linkedin_parser.py      # LinkedIn parsing helpers
 │       └── iamexpat.py             # IamExpat Jobs scraper
 │
 ├── config/                     # Configuration files
@@ -118,22 +119,20 @@ copy .env.example .env
 ### Daily Workflow Commands
 
 ```bash
-# 1. Scrape LinkedIn jobs
-python scripts/linkedin_scraper_v6.py --profile ml_data --save-to-db --cdp
+# 1. Unified scraping
+python scripts/scrape.py --all --save-to-db
+python scripts/scrape.py --all --profile data_engineering --save-to-db
 
-# 2. Multi-platform scraping (Greenhouse + Lever + IamExpat)
-python scripts/multi_scraper.py --all
-
-# 3. Process pipeline (import → filter → score)
+# 2. Process pipeline (import → filter → score)
 python scripts/job_pipeline.py --process
 
-# 4. AI analyze high-scoring jobs
+# 3. AI analyze high-scoring jobs
 python scripts/job_pipeline.py --ai-analyze --limit 10
 
-# 5. Prepare application materials (resume + CL + checklist server)
+# 4. Prepare application materials (resume + CL + checklist server)
 python scripts/job_pipeline.py --prepare
 
-# 6. After applying, finalize and archive
+# 5. After applying, finalize and archive
 python scripts/job_pipeline.py --finalize
 ```
 
@@ -264,7 +263,7 @@ The database uses SQLite locally with optional Turso cloud synchronization.
 ## Testing Strategy
 
 - **Unit tests**: Located in `tests/` directory, uses pytest
-- **Scraper tests**: Mock-based tests for Greenhouse, Lever, IamExpat scrapers
+- **Scraper tests**: Mock-based tests for LinkedIn, Greenhouse, and IamExpat scrapers
 - **Integration**: CI/CD pipeline tests the full workflow end-to-end
 - **Manual testing**: Local checklist server for application workflow validation
 
@@ -272,7 +271,7 @@ The database uses SQLite locally with optional Turso cloud synchronization.
 
 GitHub Actions workflow (`.github/workflows/job-pipeline-optimized.yml`):
 - **Schedule**: 3x daily weekdays (08:23, 12:23, 16:23 CET), 1x on weekends
-- **Steps**: Scrape → Multi-platform scrape → Rule scoring → AI analysis → Notify
+- **Steps**: Unified scrape → Rule scoring → AI analysis → Notify
 - **Caching**: Playwright browsers, Turso embedded replica
 - **Secrets**: Turso credentials, Anthropic API key, LinkedIn cookies, Telegram tokens
 

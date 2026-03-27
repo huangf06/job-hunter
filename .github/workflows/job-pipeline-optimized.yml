@@ -15,22 +15,21 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: 'Search profile (ml_data / backend_data / quant / all)'
+        description: 'Search profile (active profiles only, or all)'
         required: false
         default: 'all'
         type: choice
         options:
           - all
-          - ml_data
-          - backend_data
+          - data_engineering
+          - ml_engineering
+          - backend_engineering
+          - data_science
           - quant
+          - ml_research
+          - backend_ai_data
       skip_scrape:
         description: 'Skip scraping (use existing data)'
-        required: false
-        default: false
-        type: boolean
-      force_refresh:
-        description: 'Force refresh (ignore cache, re-scrape all)'
         required: false
         default: false
         type: boolean
@@ -44,10 +43,7 @@ env:
   PYTHONUNBUFFERED: '1'
   TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
   TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-  TURSO_SYNC_MODE: 'startup_only'
-  # TEMP DISABLED: restore after pipeline fix
-  # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-  # ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+  # DB_TRANSPORT: http (auto-detected from TURSO_DATABASE_URL)
 jobs:
   pipeline:
     runs-on: ubuntu-latest
@@ -67,16 +63,6 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ hashFiles('requirements.txt') }}
 
-      - name: Cache embedded replica DB
-        uses: actions/cache@v4
-        with:
-          path: |
-            data/jobs.db
-            data/jobs.db-*
-          key: turso-replica-v3-${{ github.run_id }}
-          restore-keys: |
-            turso-replica-v3-
-
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
@@ -92,34 +78,18 @@ jobs:
       # ==========================================
       # Step 1: 爬取 (增量更新)
       # ==========================================
-      - name: Scrape LinkedIn
+      - name: Scrape jobs
         id: scrape
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
-        continue-on-error: true
         run: |
           PROFILE="${{ github.event.inputs.profile || 'all' }}"
-          FORCE_FLAG=""
-          if [ "${{ github.event.inputs.force_refresh }}" == "true" ]; then
-            FORCE_FLAG="--force-refresh"
-            echo "🔄 Force refresh mode enabled"
-          fi
-
-          echo "=== Starting incremental scrape: $PROFILE ==="
+          echo "=== Starting unified scrape (LinkedIn + Greenhouse): $PROFILE ==="
           START_TIME=$(date +%s)
 
           if [ "$PROFILE" = "all" ]; then
-            python scripts/linkedin_scraper_v6.py \
-              --headless \
-              --save-to-db \
-              --no-json \
-              $FORCE_FLAG
+            python scripts/scrape.py --all --save-to-db
           else
-            python scripts/linkedin_scraper_v6.py \
-              --profile "$PROFILE" \
-              --headless \
-              --save-to-db \
-              --no-json \
-              $FORCE_FLAG
+            python scripts/scrape.py --all --profile "$PROFILE" --save-to-db
           fi
 
           END_TIME=$(date +%s)
@@ -142,12 +112,6 @@ jobs:
       # ==========================================
       # Step 1b: 多平台爬取 (ATS API + IamExpat)
       # ==========================================
-      - name: Scrape other platforms
-        id: multi_scrape
-        continue-on-error: true
-        run: |
-          echo "=== Scraping Greenhouse + Lever + IamExpat ==="
-          python scripts/multi_scraper.py --all
 
       # ==========================================
       # Step 2: 规则评分 (快速本地处理)
@@ -190,7 +154,6 @@ jobs:
           FAILED_STEPS=""
           [ "${{ steps.scrape.outcome }}" == "failure" ] && FAILED_STEPS="scrape"
           [ "${{ steps.score.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }score"
-          [ "${{ steps.multi_scrape.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }multi-scrape"
           # TEMP DISABLED: restore after pipeline fix
           # [ "${{ steps.ai.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-analyze"
           if [ -n "$FAILED_STEPS" ]; then

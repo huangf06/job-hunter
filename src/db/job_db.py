@@ -130,19 +130,110 @@ class CoverLetter:
     tokens_used: int = 0
 
 
-class _DictRow(dict):
-    """Row that supports both dict-style (row['col']) and index-style (row[0]) access.
+class TursoHTTPClient:
+    """Turso HTTP API v2 client using httpx.
 
-    libsql cursors return raw tuples instead of sqlite3.Row objects.
-    This wrapper restores dict-style access for backward compatibility.
-
-    NOTE: __iter__ yields VALUES (matching sqlite3.Row), not keys.
-    Use row.keys() for column names. dict(row) is safe (uses mapping copy).
+    Replaces libsql embedded replica with a simple HTTP transport.
+    Uses the Turso pipeline endpoint: POST {url}/v3/pipeline
     """
 
-    def __init__(self, columns, values):
-        super().__init__(zip(columns, values))
-        self._values = values
+    def __init__(self, db_url: str, auth_token: str):
+        import httpx
+        # Convert libsql:// to https://
+        self._base_url = db_url.replace('libsql://', 'https://')
+        self._headers = {
+            'Authorization': f'Bearer {auth_token}',
+            'Content-Type': 'application/json',
+        }
+        self._client = httpx.Client(timeout=30.0)
+
+    def execute(self, sql: str, params: tuple = ()) -> list:
+        """Execute a single SQL statement, return list of dicts."""
+        results = self.execute_batch([(sql, params)])
+        return results[0] if results else []
+
+    def execute_batch(self, statements: list) -> list:
+        """Execute multiple statements in one HTTP call.
+
+        Args:
+            statements: list of (sql, params) tuples
+
+        Returns:
+            list of list-of-dicts, one per statement
+        """
+        requests = []
+        for sql, params in statements:
+            args = self._convert_params(params)
+            stmt = {'sql': sql}
+            if args:
+                stmt['args'] = args
+            requests.append({'type': 'execute', 'stmt': stmt})
+        requests.append({'type': 'close'})
+
+        url = f'{self._base_url}/v3/pipeline'
+        resp = self._client.post(url, json={'requests': requests}, headers=self._headers)
+        resp.raise_for_status()
+        data = resp.json()
+
+        results = []
+        for item in data.get('results', []):
+            if item.get('type') == 'ok':
+                response = item.get('response', {})
+                result = response.get('result', {})
+                cols = [c['name'] for c in result.get('cols', [])]
+                rows = []
+                for row in result.get('rows', []):
+                    values = [self._extract_value(cell) for cell in row]
+                    rows.append(dict(zip(cols, values)))
+                results.append(rows)
+            elif item.get('type') == 'error':
+                error = item.get('error', {})
+                raise RuntimeError(f"Turso HTTP error: {error.get('message', 'unknown')}")
+        return results
+
+    @staticmethod
+    def _convert_params(params):
+        """Convert Python params to Turso HTTP API format."""
+        if not params:
+            return []
+        args = []
+        for p in params:
+            if p is None:
+                args.append({'type': 'null', 'value': None})
+            elif isinstance(p, int):
+                args.append({'type': 'integer', 'value': str(p)})
+            elif isinstance(p, float):
+                args.append({'type': 'float', 'value': p})
+            elif isinstance(p, bytes):
+                import base64
+                args.append({'type': 'blob', 'base64': base64.b64encode(p).decode()})
+            else:
+                args.append({'type': 'text', 'value': str(p)})
+        return args
+
+    @staticmethod
+    def _extract_value(cell):
+        """Extract Python value from Turso HTTP API cell."""
+        if cell is None or cell.get('type') == 'null':
+            return None
+        val = cell.get('value')
+        cell_type = cell.get('type', '')
+        if cell_type == 'integer':
+            return int(val)
+        if cell_type == 'float':
+            return float(val)
+        return val
+
+    def close(self):
+        self._client.close()
+
+
+class _DualAccessRow(dict):
+    """Row that supports both dict-style (row['col']) and index-style (row[0]) access."""
+
+    def __init__(self, d: dict):
+        super().__init__(d)
+        self._values = list(d.values())
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -152,59 +243,59 @@ class _DictRow(dict):
     def __iter__(self):
         return iter(self._values)
 
-    def __len__(self):
-        return len(self._values)
+    def keys(self):
+        return super().keys()
 
 
-class _DictCursor:
-    """Wraps a libsql cursor to return _DictRow objects."""
+class _TursoCursor:
+    """Minimal cursor adapter for TursoHTTPClient results."""
 
-    def __init__(self, cursor):
-        self._cursor = cursor
-
-    def __getattr__(self, name):
-        return getattr(self._cursor, name)
-
-    def _wrap_row(self, row):
-        if row is None or self._cursor.description is None:
-            return row
-        cols = [d[0] for d in self._cursor.description]
-        return _DictRow(cols, row)
+    def __init__(self, rows: list):
+        self._rows = [_DualAccessRow(r) if isinstance(r, dict) else r for r in rows]
+        self._iter = iter(self._rows)
+        # Mimic sqlite3.Cursor.description for code that checks it
+        if rows and isinstance(rows[0], dict):
+            self.description = [(k,) for k in rows[0].keys()]
+        else:
+            self.description = None
 
     def fetchone(self):
-        return self._wrap_row(self._cursor.fetchone())
+        try:
+            return next(self._iter)
+        except StopIteration:
+            return None
 
     def fetchall(self):
-        if self._cursor.description is None:
-            return self._cursor.fetchall()
-        cols = [d[0] for d in self._cursor.description]
-        return [_DictRow(cols, row) for row in self._cursor.fetchall()]
+        return self._rows
 
     def __iter__(self):
-        while True:
-            row = self.fetchone()
-            if row is None:
-                break
-            yield row
+        return iter(self._rows)
 
 
-class _DictConnection:
-    """Wraps a libsql connection so execute() returns _DictCursor."""
+class _TursoConnAdapter:
+    """Makes TursoHTTPClient quack like a sqlite3 connection.
 
-    def __init__(self, conn):
-        self._conn = conn
+    Each execute() call is a separate HTTP request (auto-commit).
+    commit() and rollback() are no-ops.
+    """
 
-    def __getattr__(self, name):
-        return getattr(self._conn, name)
+    def __init__(self, client: TursoHTTPClient):
+        self._client = client
 
-    def execute(self, sql, params=()):
-        return _DictCursor(self._conn.execute(sql, params))
+    def execute(self, sql: str, params=()):
+        rows = self._client.execute(sql, tuple(params) if params else ())
+        return _TursoCursor(rows)
 
     def executemany(self, sql, params_seq):
-        return _DictCursor(self._conn.executemany(sql, params_seq))
+        for params in params_seq:
+            self._client.execute(sql, tuple(params))
+        return _TursoCursor([])
 
-    def executescript(self, sql):
-        return _DictCursor(self._conn.executescript(sql))
+    def commit(self):
+        pass  # auto-commit per statement
+
+    def rollback(self):
+        pass  # HTTP is stateless, no rollback
 
 
 class JobDatabase:
@@ -435,87 +526,32 @@ class JobDatabase:
     """
 
     def __init__(self, db_path: Path = None):
-        """初始化数据库"""
-        # NO_TURSO=1 forces local SQLite (bypasses libsql memory issues on Windows)
-        if os.getenv("NO_TURSO"):
-            self._turso_url = None
-            self._turso_token = None
-        else:
-            self._turso_url = os.getenv("TURSO_DATABASE_URL")
-            self._turso_token = os.getenv("TURSO_AUTH_TOKEN")
+        """初始化数据库
+
+        Transport selection:
+        - DB_TRANSPORT=http or TURSO_DATABASE_URL set: Turso HTTP API
+        - DB_TRANSPORT=sqlite or no Turso env vars: local SQLite
+        """
         self.db_path = db_path or DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Sync mode: controls how aggressively we sync with Turso.
-        #   "full"         — sync before reads + after writes (default, safest)
-        #   "startup_only" — sync once at init, skip per-call pre-read syncs,
-        #                     still push after writes (ideal for CI: same runner,
-        #                     no external writers between steps)
-        #   "off"          — no syncs at all (pure local SQLite)
-        self._sync_mode = os.getenv("TURSO_SYNC_MODE", "full").lower()
-        if self._sync_mode == "off":
-            self._turso_url = None
-            self._turso_token = None
+        transport = os.getenv("DB_TRANSPORT", "").lower()
+        turso_url = os.getenv("TURSO_DATABASE_URL")
+        turso_token = os.getenv("TURSO_AUTH_TOKEN")
 
-        # Persistent libsql connection for Turso embedded replica
-        # NOTE: libsql embedded replicas have a known stack overflow bug on
-        # Windows (https://github.com/tursodatabase/libsql/issues/2074).
-        # If this crashes, unset TURSO_DATABASE_URL to fall back to local SQLite.
-        self._libsql_raw = None
-        self._in_transaction = False
-        self._batch_active = False
-        self._sync_disabled = False  # Set True after persistent WalConflict
-        if self._turso_url:
-            if not self._turso_token:
+        # Determine transport: Turso HTTP or local SQLite
+        self._turso_http = None
+        if transport == "sqlite" or os.getenv("NO_TURSO"):
+            pass  # force local SQLite
+        elif transport == "http" or turso_url:
+            if not turso_token:
                 raise ValueError(
                     "TURSO_DATABASE_URL is set but TURSO_AUTH_TOKEN is missing. "
                     "Set the token or unset the URL to use local SQLite."
                 )
-            import libsql
-            import time as _time
-            # Retry connect+sync to handle transient Turso network errors
-            max_retries = 3
-            for attempt in range(1, max_retries + 1):
-                try:
-                    self._libsql_raw = libsql.connect(
-                        str(self.db_path),
-                        sync_url=self._turso_url,
-                        auth_token=self._turso_token,
-                    )
-                    self._libsql_raw.sync()
-                    break
-                except Exception as e:
-                    self._libsql_raw = None
-                    err_msg = str(e)
-                    # Stale local replica: db file exists without metadata.
-                    # Delete the db file so libsql can recreate from Turso.
-                    if "metadata file does not" in err_msg and self.db_path.exists():
-                        logger.warning(
-                            "Stale replica detected (attempt %d/%d) — deleting %s to re-sync from Turso",
-                            attempt, max_retries, self.db_path,
-                        )
-                        self.db_path.unlink(missing_ok=True)
-                    if attempt < max_retries:
-                        wait = attempt * 2
-                        logger.warning(
-                            "Turso connect/sync attempt %d/%d failed: %s — retrying in %ds",
-                            attempt, max_retries, e, wait,
-                        )
-                        _time.sleep(wait)
-                    else:
-                        logger.error(
-                            "Turso connect/sync failed after %d attempts: %s",
-                            max_retries, e,
-                        )
-            if self._libsql_raw is None:
-                raise RuntimeError(
-                    f"Failed to connect to Turso after {max_retries} attempts. "
-                    "Check TURSO_DATABASE_URL/TURSO_AUTH_TOKEN and network connectivity."
-                )
-            # Set PRAGMAs once for the persistent connection
-            self._libsql_raw.execute("PRAGMA journal_mode=WAL")
-            self._libsql_raw.execute("PRAGMA busy_timeout=5000")
-            self._libsql_raw.execute("PRAGMA foreign_keys=ON")
+            self._turso_http = TursoHTTPClient(turso_url, turso_token)
+            logger.info("Using Turso HTTP transport: %s", turso_url)
+
         self._init_db()
 
     def _init_db(self):
@@ -585,144 +621,16 @@ class JobDatabase:
         if 'submit_dir' not in existing:
             conn.execute("ALTER TABLE resumes ADD COLUMN submit_dir TEXT")
 
-    def _try_sync(self, context: str = "sync") -> None:
-        """Attempt Turso sync, disabling further syncs on persistent WalConflict.
-
-        On the first WalConflict, attempts to delete the local DB files and
-        reconnect fresh from Turso.  If recovery fails (or we're mid-transaction
-        and can't safely reset), disables sync for the rest of the session.
-        Local data is still committed and usable.
-        """
-        if self._sync_disabled or self._libsql_raw is None:
-            return
-        try:
-            self._libsql_raw.sync()
-        except BaseException as e:
-            err_msg = str(e)
-            if "WalConflict" not in err_msg:
-                # Non-WalConflict error — log and move on (original behavior)
-                logger.warning("Turso %s failed: %s", context, e)
-                return
-            # WalConflict — disable sync immediately to stop the spam
-            self._sync_disabled = True
-            # Only attempt destructive reset if we're NOT in a transaction
-            # (post-commit sync means data was just written to the local DB;
-            # deleting it would lose that data).
-            if self._in_transaction:
-                logger.warning(
-                    "Turso %s hit WalConflict mid-transaction — "
-                    "sync disabled for this session (local data preserved)",
-                    context,
-                )
-                return
-            logger.warning(
-                "Turso %s hit WalConflict — "
-                "attempting replica reset from Turso remote",
-                context,
-            )
-            # Try to rebuild local replica from remote
-            try:
-                import libsql
-                self._libsql_raw = None
-                # Delete all local DB files (db + WAL + metadata)
-                for suffix in ("", "-wal", "-shm", "-info",
-                               "-client_wal_index",
-                               "-client_wal_index-shm",
-                               "-client_wal_index-wal"):
-                    p = self.db_path.parent / (self.db_path.name + suffix)
-                    if p.exists():
-                        p.unlink()
-                        logger.info("Deleted %s for replica reset", p.name)
-                self._libsql_raw = libsql.connect(
-                    str(self.db_path),
-                    sync_url=self._turso_url,
-                    auth_token=self._turso_token,
-                )
-                self._libsql_raw.sync()
-                self._libsql_raw.execute("PRAGMA journal_mode=WAL")
-                self._libsql_raw.execute("PRAGMA busy_timeout=5000")
-                self._libsql_raw.execute("PRAGMA foreign_keys=ON")
-                self._sync_disabled = False  # recovery succeeded
-                logger.info(
-                    "Turso replica reset successful — sync re-enabled"
-                )
-            except Exception as reset_err:
-                logger.warning(
-                    "Turso replica reset failed (%s) — "
-                    "sync disabled for this session, using local data",
-                    reset_err,
-                )
-
     @contextmanager
     def _get_conn(self, *, sync_before=True):
-        """获取数据库连接 (Turso embedded replica or local SQLite)
+        """获取数据库连接 (Turso HTTP or local SQLite)
 
-        Args:
-            sync_before: Pull from remote before reading. Set False for
-                         write-only operations to skip the network round-trip.
-                         In "startup_only" sync mode, pre-read syncs are always
-                         skipped (data was synced once at init).
+        For Turso HTTP: wraps a _TursoConnAdapter that translates
+        execute()/commit() to HTTP calls.
+        For local SQLite: standard sqlite3 connection.
         """
-        use_libsql = self._libsql_raw is not None
-
-        if use_libsql:
-            # Re-entrancy: if already inside a _get_conn block on the shared
-            # connection, just yield the wrapper — the outer block owns the
-            # transaction lifecycle (commit / rollback / sync).
-            if self._in_transaction:
-                yield _DictConnection(self._libsql_raw)
-                return
-            # In "startup_only" mode, skip all pre-read syncs — data was pulled
-            # once at __init__ and no external writer exists within the same run.
-            should_pre_sync = (sync_before
-                               and not self._batch_active
-                               and self._sync_mode == "full")
-            if should_pre_sync:
-                self._try_sync("pre-read sync")
-            # Re-check: _try_sync may have reset self._libsql_raw on
-            # WalConflict recovery failure.
-            if self._libsql_raw is None:
-                use_libsql = False
-            if use_libsql:
-                # Health check: verify libsql can actually read data.
-                # On Windows, libsql embedded replicas have a known bug where the
-                # connection appears valid but data reads fail with
-                # "file is not a database".  Detect this early and fall back to
-                # plain sqlite3 for the rest of the session.
-                try:
-                    self._libsql_raw.execute(
-                        "SELECT 1 FROM sqlite_master LIMIT 1"
-                    ).fetchone()
-                except (ValueError, Exception) as e:
-                    if "file is not a database" in str(e):
-                        logger.warning(
-                            "libsql connection unusable (%s), "
-                            "falling back to local SQLite for this session", e)
-                        self._libsql_raw = None
-                        use_libsql = False
-                    else:
-                        raise
-
-        if use_libsql:
-            self._in_transaction = True
-            conn = _DictConnection(self._libsql_raw)
-            try:
-                yield conn
-                conn.commit()
-                # Sync after commit — skip if inside batch_mode() or
-                # startup_only mode (defers all syncs to final_sync()).
-                if not self._batch_active and self._sync_mode == "full":
-                    self._try_sync("post-commit sync")
-            except BaseException as e:
-                try:
-                    conn.rollback()
-                except Exception as rollback_err:
-                    # Turso stream may already be dead (502 → 404 stream not found)
-                    # Log but don't mask the original error
-                    logger.warning("Rollback failed (connection may be dead): %s", rollback_err)
-                raise e
-            finally:
-                self._in_transaction = False
+        if self._turso_http:
+            yield _TursoConnAdapter(self._turso_http)
         else:
             conn = sqlite3.connect(str(self.db_path))
             conn.row_factory = sqlite3.Row
@@ -743,38 +651,17 @@ class JobDatabase:
 
     @contextmanager
     def batch_mode(self):
-        """Suppress per-write Turso syncs; single sync on exit.
-
-        Use this to wrap loops that do many DB writes (e.g. filter/score)
-        to avoid ~200-300ms network round-trip per write.
-
-        In "startup_only" mode, the batch-exit sync is also skipped —
-        all data is pushed once via final_sync() at end of pipeline.
-        """
-        self._batch_active = True
-        try:
-            yield
-        finally:
-            self._batch_active = False
-            if self._libsql_raw and self._sync_mode == "full":
-                self._try_sync("batch sync")
+        """Context manager for batch operations. No-op with HTTP transport."""
+        yield
 
     def final_sync(self):
-        """Push all local changes to Turso remote.
-
-        Call once at the very end of a pipeline run.  In "startup_only" mode
-        this is the ONLY push sync that happens (all per-write and per-batch
-        syncs are deferred).  In "full" mode this is a no-op safety net
-        (data was already synced incrementally).
-        """
-        if not self._libsql_raw:
-            return
-        self._try_sync("final sync")
-        if not self._sync_disabled:
-            logger.info("Turso final sync complete")
+        """No-op — HTTP transport is always live."""
+        pass
 
     def execute(self, sql: str, params: tuple = ()) -> list:
         """执行 SQL 并返回结果行（用于 ad-hoc 查询和数据修改）"""
+        if self._turso_http:
+            return self._turso_http.execute(sql, params)
         with self._get_conn() as conn:
             cur = conn.execute(sql, params)
             if cur.description:
@@ -798,6 +685,25 @@ class JobDatabase:
         with self._get_conn() as conn:
             cursor = conn.execute("SELECT 1 FROM jobs WHERE id = ?", (job_id,))
             return cursor.fetchone() is not None
+
+    def find_existing_job_ids(self, urls: List[str]) -> set[str]:
+        """Batch-check which scraped URLs already exist in jobs."""
+        job_ids = [self.generate_job_id(url) for url in urls if url]
+        if not job_ids:
+            return set()
+
+        existing_ids: set[str] = set()
+        chunk_size = 900
+        with self._get_conn() as conn:
+            for i in range(0, len(job_ids), chunk_size):
+                chunk = job_ids[i:i + chunk_size]
+                placeholders = ",".join(["?"] * len(chunk))
+                cursor = conn.execute(
+                    f"SELECT id FROM jobs WHERE id IN ({placeholders})",
+                    chunk,
+                )
+                existing_ids.update(row[0] for row in cursor.fetchall())
+        return existing_ids
 
     def filter_urls_needing_jd(self, urls: List[str]) -> List[str]:
         """批量过滤，返回需要抓取JD的URL列表

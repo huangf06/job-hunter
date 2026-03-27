@@ -32,8 +32,6 @@ def load_config():
 
 async def scrape_and_process(profile_name: str, headless: bool = True):
     """Scrape a single profile and process new jobs through pipeline."""
-    from scripts.scraper_incremental import IncrementalScraper
-
     timestamp = datetime.now().strftime('%H:%M:%S')
     print(f"\n{'='*60}")
     print(f"[{timestamp}] Scraping: {profile_name}")
@@ -46,12 +44,19 @@ async def scrape_and_process(profile_name: str, headless: bool = True):
         return
 
     try:
-        async with IncrementalScraper(
-            headless=headless, max_pages_per_profile=4
-        ) as scraper:
-            stats = await scraper.run(profile=profile_name)
+        cmd = [sys.executable, str(PROJECT_ROOT / "scripts" / "scrape.py"), "--all", "--profile", profile_name, "--save-to-db"]
+        if not headless:
+            print("  [WARN] --no-headless is not supported by scripts/scrape.py; continuing with scraper defaults")
+        proc = await asyncio.create_subprocess_exec(*cmd)
+        exit_code = await proc.wait()
+        if exit_code != 0:
+            raise RuntimeError(f"Unified scrape failed with exit code {exit_code}")
 
-        new_count = stats.get('new_jobs', 0)
+        metrics_path = PROJECT_ROOT / "data" / "scrape_metrics.json"
+        new_count = 0
+        if metrics_path.exists():
+            import json
+            new_count = json.loads(metrics_path.read_text(encoding="utf-8")).get("new_jobs", 0)
         if new_count > 0:
             print(f"\n[Pipeline] Processing {new_count} new jobs...")
             from scripts.job_pipeline import JobPipeline

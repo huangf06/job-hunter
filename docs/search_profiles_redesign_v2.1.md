@@ -100,7 +100,7 @@ cp config/search_profiles.yaml.backup-YYYYMMDD-HHMMSS config/search_profiles.yam
 
 1. **本地测试单个 profile**：
    ```bash
-   python scripts/linkedin_scraper_v6.py --profile data_engineering --headless --save-to-db
+   python scripts/scrape.py --platform linkedin --profile data_engineering --dry-run
    ```
 
 2. **CI 测试（手动触发）**：

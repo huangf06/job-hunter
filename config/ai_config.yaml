@@ -12,10 +12,17 @@
 # See .env.example for required variables.
 # =============================================================================
 
-# Active model for job analysis (switch between "opus" and "kimi")
-active_model: "opus"
+# Active model for job analysis (switch between "opus", "kimi", "claude_code")
+active_model: "claude_code"
 
 models:
+  # Claude Code CLI (local use — no API key needed, uses Claude Code's auth)
+  claude_code:
+    provider: "claude_code"
+    model: "default"  # uses whatever model Claude Code is configured with
+    max_tokens: 8192
+    temperature: 0.3
+
   # Claude Opus via codesome.cn proxy (Account 1)
   opus:
     provider: "anthropic"
@@ -115,10 +122,10 @@ resume:
   pdf:
     format: "A4"
     margin:
-      top: "0.55in"
-      right: "0.55in"
-      bottom: "0.55in"
-      left: "0.55in"
+      top: "42pt"
+      right: "42pt"
+      bottom: "36pt"
+      left: "42pt"
     print_background: true
 
   # Career gap explanation (rendered below experience section)

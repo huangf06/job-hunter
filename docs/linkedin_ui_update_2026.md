@@ -93,7 +93,7 @@ defaults:
   max_jobs: 999
 ```
 
-### 2. `scripts/linkedin_scraper_v6.py`
+### 2. `scripts/scrape.py` + `src/scrapers/linkedin*.py`
 ```python
 params = {
     "keywords": keywords,
@@ -136,7 +136,7 @@ if "workplace_type" in defaults:
 
 1. **本地测试**：
    ```bash
-   python scripts/linkedin_scraper_v6.py --profile data_engineering --headless --save-to-db
+   python scripts/scrape.py --platform linkedin --profile data_engineering --dry-run
    ```
    检查生成的 URL 是否包含 `f_JT=F` 且不包含 `f_WT`
 

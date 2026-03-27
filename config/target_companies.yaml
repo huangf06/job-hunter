@@ -1,16 +1,15 @@
 # Target companies for direct ATS scraping
-# ats: greenhouse | lever
+# ats: greenhouse
 # board_token: company identifier in ATS URL
 # location_filter: optional, case-insensitive substring match on job location
 #
 # To find board tokens:
 #   Greenhouse: https://boards-api.greenhouse.io/v1/boards/{token}/jobs
-#   Lever: https://api.lever.co/v0/postings/{token}?mode=json&limit=1
 #
-# NOTE: Booking.com uses iCIMS (not Greenhouse/Lever) — needs custom scraper
+# NOTE: Booking.com uses iCIMS (not Greenhouse) — needs custom scraper
 # NOTE: Miro uses Greenhouse internally but doesn't expose public Board API
 # NOTE: Optiver/Backbase have valid GH boards but post jobs infrequently (0 at time of check)
-# NOTE: Uber, Nike, Snowflake, Confluent, HashiCorp, Notion — not on public GH/Lever API
+# NOTE: Uber, Nike, Snowflake, Confluent, HashiCorp, Notion — not on public Greenhouse API
 
 companies:
   # === Greenhouse — NL-headquartered / strong NL presence ===
@@ -124,9 +123,3 @@ companies:
     ats: greenhouse
     board_token: dbtlabsinc
     location_filter: "Netherlands"
-
-  # === Lever ===
-  - name: Spotify
-    ats: lever
-    board_token: spotify
-    location_filter: "Amsterdam"
