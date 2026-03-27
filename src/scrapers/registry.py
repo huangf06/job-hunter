@@ -21,6 +21,8 @@ def resolve_platform_names(name: str) -> list[str]:
 
 
 def get_scraper_class(name: str):
+    if name in ALIASES:
+        raise ValueError(f"Alias '{name}' does not map to a single scraper class")
     platform_name = resolve_platform_names(name)[0]
     module_path, class_name = SCRAPERS[platform_name].split(":")
     module = importlib.import_module(module_path)

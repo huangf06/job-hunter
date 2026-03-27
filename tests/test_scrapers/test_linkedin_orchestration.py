@@ -54,6 +54,7 @@ class FakeLinkedInBrowser:
         self.search_results_by_query = search_results_by_query or {}
         self.description_payloads_by_url = description_payloads_by_url or {}
         self.failures_by_query = failures_by_query or {}
+        self.diagnostics = {}
         self.enter = AsyncMock()
         self.exit = AsyncMock(return_value=False)
 

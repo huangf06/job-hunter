@@ -36,15 +36,15 @@ python scripts/scrape.py --platform iamexpat --dry-run
 - `iamexpat` is frozen out of the daily critical path
 - `iamexpat` still exists for manual or low-frequency backfill
 
-The source of truth for this behavior is [registry.py](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/src/scrapers/registry.py).
+The source of truth for this behavior is `src/scrapers/registry.py`.
 
 ## Key Artifacts
 
-- Metrics: [data/scrape_metrics.json](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/data/scrape_metrics.json)
-- CLI: [scrape.py](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/scripts/scrape.py)
-- Shared report contract: [base.py](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/src/scrapers/base.py)
-- LinkedIn browser/session diagnostics: [linkedin_browser.py](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/src/scrapers/linkedin_browser.py)
-- LinkedIn orchestration diagnostics: [linkedin.py](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/src/scrapers/linkedin.py)
+- Metrics: `data/scrape_metrics.json`
+- CLI: `scripts/scrape.py`
+- Shared report contract: `src/scrapers/base.py`
+- LinkedIn browser/session diagnostics: `src/scrapers/linkedin_browser.py`
+- LinkedIn orchestration diagnostics: `src/scrapers/linkedin.py`
 
 ## How To Read `scrape_metrics.json`
 
@@ -130,7 +130,7 @@ Example already seen in production:
 
 Remediation:
 
-- update or remove the company in [target_companies.yaml](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/config/target_companies.yaml)
+- update or remove the company in `config/target_companies.yaml`
 
 ## IamExpat Policy
 
@@ -144,7 +144,7 @@ Reason:
 
 Manual workflow:
 
-- [iamexpat-backfill.yml](C:/Users/huang/github/job-hunter/.worktrees/block-a-rebuild/.github/workflows/iamexpat-backfill.yml)
+- `.github/workflows/iamexpat-backfill.yml`
 
 ## Recommended Triage Order
 
