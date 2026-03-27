@@ -5,9 +5,8 @@ Job Pipeline - 完整的职位处理流程
 功能：
 1. 从 inbox 导入新职位到数据库
 2. 硬规则筛选
-3. AI 评分
-4. 生成定制简历
-5. 申请状态跟踪
+3. AI 分析 + 生成定制简历
+4. 申请状态跟踪
 
 Usage:
     # 完整处理流程
@@ -57,13 +56,13 @@ for d in [DATA_DIR, LEADS_DIR, INBOX_DIR, OUTPUT_DIR]:
 
 # 尝试导入数据库模块
 try:
-    from src.db.job_db import JobDatabase, FilterResult, ScoreResult, Resume
+    from src.db.job_db import JobDatabase, FilterResult, Resume
     DB_AVAILABLE = True
 except ImportError:
     DB_AVAILABLE = False
     print("[Warning] 数据库模块不可用，使用 JSON 追踪器")
 
-from src.hard_filter import HardFilter, keyword_boundary_pattern
+from src.hard_filter import HardFilter
 
 
 # =============================================================================
@@ -79,7 +78,6 @@ class JobPipeline:
             raise RuntimeError("Database module not available")
 
         self.db = JobDatabase()
-        self.score_config = self._load_config("base/scoring.yaml")
         self.ai_config = self._load_config("ai_config.yaml")
         self.hard_filter = HardFilter()
 
@@ -154,214 +152,12 @@ class JobPipeline:
         print(f"[Filter] Done: {passed_count} passed, {rejected_count} rejected")
         return passed_count, rejected_count
 
-    def score_jobs(self, limit: int = 500) -> int:
-        """Score all unscored jobs"""
-        unscored = self.db.get_unscored_jobs(limit=limit)
-        if not unscored:
-            print("[Score] No jobs to score")
-            return 0
-
-        print(f"\n[Score] Scoring {len(unscored)} jobs...")
-        scored = 0
-        with self.db.batch_mode():
-            for job in unscored:
-                try:
-                    result = self._calculate_score(job)
-                    self.db.save_score(result)
-                    scored += 1
-                    apply_now_threshold = self.score_config.get('thresholds', {}).get('apply_now', 7.0)
-                    if result.score >= apply_now_threshold:
-                        print(f"  * [{result.score:.1f}] {job['title'][:40]} @ {job['company'][:20]}")
-                except Exception as e:
-                    print(f"  x Score error for {job.get('id', '?')}: {e}")
-                    continue
-
-        print(f"[Score] Done: {scored}/{len(unscored)} jobs scored")
-        return scored
-
-    def _calculate_score(self, job: Dict) -> ScoreResult:
-        """计算职位评分 v2.0
-
-        算法:
-        1. 基础分 3.0
-        2. 标题关键词匹配 (高权重，按类别只取一次)
-        3. 正文关键词匹配 (按类别，有上限)
-        4. 目标公司加分 (分层)
-        5. 非核心技术惩罚
-        6. 限制到 0-10 范围
-        """
-        job_id = job['id']
-        title = (job.get('title') or '').lower()
-        description = (job.get('description') or '').lower()
-        company = (job.get('company') or '').lower()
-        location = (job.get('location') or '').lower()
-        full_text = f"{title} {company} {description} {location}"
-
-        base_score = self.score_config.get('base_score', {}).get('starting_score', 3.0)
-        score = base_score
-        score_breakdown = {}
-        matched_keywords = []
-
-        # Penalize very short descriptions (keeps empty-JD jobs below AI threshold)
-        short_jd = self.score_config.get('body_scoring', {}).get('short_jd', {})
-        short_jd_threshold = short_jd.get('threshold', 100)
-        short_jd_penalty = short_jd.get('penalty', -2.0)
-        if len(description) < short_jd_threshold:
-            score += short_jd_penalty
-            score_breakdown["short_jd_penalty"] = short_jd_penalty
-
-        # === Title scoring ===
-        title_config = self.score_config.get('title_scoring', {})
-
-        # Positive title categories (only match once per category)
-        for category, cat_config in title_config.items():
-            if category == 'negative_title':
-                continue
-            if not isinstance(cat_config, dict) or 'keywords' not in cat_config:
-                continue
-            keywords = cat_config.get('keywords', [])
-            weight = cat_config.get('weight', 0)
-            for kw in keywords:
-                if re.search(keyword_boundary_pattern(kw.lower()), title):
-                    score += weight
-                    score_breakdown[f"title_{category}"] = weight
-                    matched_keywords.append(f"title:{kw}")
-                    break  # Only count once per category
-
-        # Negative title keywords
-        negative_title = title_config.get('negative_title', {})
-        for neg_name, neg_config in negative_title.items():
-            if not isinstance(neg_config, dict):
-                continue
-            keywords = neg_config.get('keywords', [])
-            weight = neg_config.get('weight', 0)
-            for kw in keywords:
-                if re.search(keyword_boundary_pattern(kw.lower()), title):
-                    score += weight
-                    score_breakdown[f"title_neg_{neg_name}"] = weight
-                    matched_keywords.append(f"title_neg:{kw}")
-                    break  # Only count once per sub-category
-
-        # === Body scoring (capped per category) ===
-        body_config = self.score_config.get('body_scoring', {})
-        for category, cat_config in body_config.items():
-            if not isinstance(cat_config, dict):
-                continue
-
-            # Handle simple keyword list categories (python, ml_frameworks, etc.)
-            keywords = cat_config.get('keywords', [])
-            weight = cat_config.get('weight', 0)
-            max_total = cat_config.get('max_total', None)
-
-            if keywords:
-                cat_score = 0
-                for kw in keywords:
-                    if re.search(keyword_boundary_pattern(kw.lower()), description):
-                        cat_score += weight
-                        matched_keywords.append(kw)
-
-                # Apply cap
-                if max_total is not None:
-                    if max_total >= 0:
-                        cat_score = min(cat_score, max_total)
-                    else:
-                        cat_score = max(cat_score, max_total)
-
-                if cat_score != 0:
-                    score += cat_score
-                    score_breakdown[f"body_{category}"] = cat_score
-            else:
-                # Handle inline key-value categories (high_experience)
-                cat_score = 0
-                _SKIP_KEYS = {'max_total', 'keywords', 'weight', 'description'}
-                for kw, kw_config in cat_config.items():
-                    if kw in _SKIP_KEYS:
-                        continue
-                    if isinstance(kw_config, dict) and 'weight' in kw_config:
-                        if re.search(keyword_boundary_pattern(kw.lower()), description):
-                            cat_score += kw_config['weight']
-                            matched_keywords.append(kw)
-
-                # Apply cap for inline categories too
-                inline_max = cat_config.get('max_total', None)
-                if inline_max is not None:
-                    if inline_max >= 0:
-                        cat_score = min(cat_score, inline_max)
-                    else:
-                        cat_score = max(cat_score, inline_max)
-
-                if cat_score != 0:
-                    score += cat_score
-                    score_breakdown[f"body_{category}"] = cat_score
-
-        # === Non-core tech penalty ===
-        penalty_config = self.score_config.get('non_core_tech_penalty', {})
-        if penalty_config:
-            non_core_kws = penalty_config.get('non_core_keywords', [])
-            core_kws = penalty_config.get('core_keywords', [])
-            threshold = penalty_config.get('threshold', 3)
-            min_core = penalty_config.get('min_core_keywords', 2)
-            penalty = penalty_config.get('penalty', -2.0)
-
-            non_core_count = sum(1 for kw in non_core_kws if re.search(keyword_boundary_pattern(kw.lower()), full_text))
-            core_count = sum(1 for kw in core_kws if re.search(keyword_boundary_pattern(kw.lower()), full_text))
-
-            if non_core_count >= threshold and core_count < min_core:
-                score += penalty
-                score_breakdown["non_core_penalty"] = penalty
-                matched_keywords.append(f"non_core_dominance({non_core_count}nc/{core_count}c)")
-
-        # === Target company bonus ===
-        target_companies = self.score_config.get('target_companies', {})
-        for tier, companies in [('tier_1', target_companies.get('tier_1', [])),
-                                 ('tier_2', target_companies.get('tier_2', [])),
-                                 ('tier_3', target_companies.get('tier_3', []))]:
-            for target in companies:
-                if re.search(keyword_boundary_pattern(target.lower()), company):
-                    bonus = target_companies.get('bonus_scores', {}).get(tier, 0)
-                    score += bonus
-                    score_breakdown[f"company_{tier}"] = bonus
-                    matched_keywords.append(f"company:{target}")
-                    break
-            else:
-                continue
-            break  # Only match one tier
-
-        # === Clamp score ===
-        score = max(0.0, min(10.0, score))
-
-        # === Determine recommendation ===
-        thresholds = self.score_config.get('thresholds', {})
-        apply_now_th = thresholds.get('apply_now', 7.0)
-        apply_th = thresholds.get('apply', 5.5)
-        maybe_th = thresholds.get('maybe', 4.0)
-
-        if not (maybe_th <= apply_th <= apply_now_th):
-            raise ValueError(f"Invalid threshold order in scoring.yaml: maybe={maybe_th}, apply={apply_th}, apply_now={apply_now_th}")
-
-        if score >= apply_now_th:
-            recommendation = "APPLY_NOW"
-        elif score >= apply_th:
-            recommendation = "APPLY"
-        elif score >= maybe_th:
-            recommendation = "MAYBE"
-        else:
-            recommendation = "SKIP"
-
-        return ScoreResult(
-            job_id=job_id, score=round(score, 1), model="rule_based_v2",
-            score_breakdown=json.dumps(score_breakdown),
-            matched_keywords=json.dumps(matched_keywords),
-            recommendation=recommendation
-        )
-
     def show_stats(self):
         """Show statistics"""
         stats = self.db.get_funnel_stats()
         print("\n=== Funnel Stats ===")
         print(f"Total scraped:    {stats.get('total_scraped', 0)}")
         print(f"Passed filter:    {stats.get('passed_filter', 0)}")
-        print(f"High score (>=5.5): {stats.get('scored_high', 0)}")
         print(f"AI analyzed:      {stats.get('ai_analyzed', 0)}")
         print(f"AI high (>=5):    {stats.get('ai_scored_high', 0)}")
         print(f"Resume generated: {stats.get('resume_generated', 0)}")
@@ -447,12 +243,11 @@ class JobPipeline:
 
     # ==================== AI Analysis & Resume Generation ====================
 
-    def ai_analyze_jobs(self, min_rule_score: float = None, limit: int = None,
-                        model: str = None) -> int:
+    def ai_analyze_jobs(self, limit: int = None, model: str = None) -> int:
         """AI 分析通过预筛选的职位"""
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer(model_override=model)
-        return analyzer.analyze_batch(min_rule_score=min_rule_score, limit=limit)
+        return analyzer.analyze_batch(limit=limit)
 
     def generate_resumes(self, min_ai_score: float = None, limit: int = None) -> int:
         """为高分职位生成简历"""
@@ -811,19 +606,17 @@ class JobPipeline:
 
         imported = self.import_inbox()
         passed, rejected = self.filter_jobs(limit=limit)
-        scored = self.score_jobs(limit=limit)
 
         print("\n" + "-" * 70)
-        print("Stage 1 Complete: imported {}, filtered {}/{}, scored {}".format(
-            imported, passed, passed+rejected, scored))
+        print("Stage 1 Complete: imported {}, filtered {}/{}".format(
+            imported, passed, passed+rejected))
         print("-" * 70)
 
-        # AI Analysis (optional - only if high-score jobs exist)
+        # AI Analysis (optional - only if filtered jobs exist without analysis)
         ai_thresholds = self.ai_config.get('thresholds', {})
-        rule_score_threshold = ai_thresholds.get('rule_score_for_ai', 3.0)
         ai_score_threshold = ai_thresholds.get('ai_score_generate_resume', 5.0)
 
-        jobs_for_ai = self.db.get_jobs_needing_analysis(min_rule_score=rule_score_threshold, limit=limit)
+        jobs_for_ai = self.db.get_jobs_needing_analysis(limit=limit)
         if jobs_for_ai:
             print(f"\nFound {len(jobs_for_ai)} jobs ready for AI analysis")
             try:
@@ -831,7 +624,7 @@ class JobPipeline:
             except EOFError:
                 user_input = 'n'
             if user_input == 'y':
-                analyzed = self.ai_analyze_jobs(min_rule_score=rule_score_threshold, limit=limit)
+                analyzed = self.ai_analyze_jobs(limit=limit)
                 print(f"AI analyzed: {analyzed} jobs")
 
                 # Resume generation
@@ -950,7 +743,6 @@ def main():
     parser.add_argument('--process', action='store_true', help='Run full pipeline (DB)')
     parser.add_argument('--import-only', action='store_true', help='Only import inbox')
     parser.add_argument('--filter', action='store_true', help='Only run filter')
-    parser.add_argument('--score', action='store_true', help='Only run scoring')
     parser.add_argument('--ready', action='store_true', help='Show ready to apply')
     parser.add_argument('--stats', action='store_true', help='Show stats')
     parser.add_argument('--mark-applied', type=str, help='Mark job as applied')
@@ -1031,15 +823,13 @@ def main():
             sys.exit(1)
 
         pipeline = JobPipeline()
-        print("[Reprocess] Clearing old filter, score, and analysis results...")
+        print("[Reprocess] Clearing old filter and analysis results...")
         filter_count = pipeline.db.clear_filter_results()
-        score_count = pipeline.db.clear_scores()
         analysis_count = pipeline.db.clear_rejected_analyses()
-        print(f"  Cleared {filter_count} filter results, {score_count} score results, {analysis_count} rejected analyses")
+        print(f"  Cleared {filter_count} filter results, {analysis_count} rejected analyses")
 
         # Reprocess all jobs (ignore --limit to avoid data loss from partial reprocessing)
         pipeline.filter_jobs()
-        pipeline.score_jobs()
         pipeline.show_stats()
         pipeline.db.final_sync()
         return
@@ -1056,7 +846,7 @@ def main():
             print("[Retry] No transient failures found.")
             return
         print(f"[Retry] Cleared {cleared} transient failure(s), re-analyzing...")
-        pipeline.ai_analyze_jobs(limit=cleared + 10, model=args.model if hasattr(args, 'model') else None)
+        pipeline.ai_analyze_jobs(limit=cleared + 10, model=args.model)
         pipeline.db.final_sync()
         return
 
@@ -1072,7 +862,7 @@ def main():
         return
 
     # 新版数据库流水线
-    if args.process or args.import_only or args.filter or args.score or args.ready \
+    if args.process or args.import_only or args.filter or args.ready \
        or args.ai_analyze or args.generate or args.analyze_job \
        or args.stats or args.mark_applied or args.mark_all_applied \
        or args.update_status or args.tracker \
@@ -1114,13 +904,10 @@ def main():
             pipeline.import_inbox()
         elif args.filter:
             pipeline.filter_jobs(limit=args.limit)
-        elif args.score:
-            pipeline.score_jobs(limit=args.limit)
         elif args.ready:
             pipeline.show_ready()
         elif args.ai_analyze:
-            pipeline.ai_analyze_jobs(min_rule_score=args.min_score, limit=args.limit,
-                                     model=args.model)
+            pipeline.ai_analyze_jobs(limit=args.limit, model=args.model)
         elif args.generate:
             pipeline.generate_resumes(min_ai_score=args.min_score, limit=args.limit)
         elif args.cover_letter:
@@ -1237,10 +1024,9 @@ def main():
     print("Job Pipeline v2.0 - Commands:")
     print()
     print("  Basic:")
-    print("  --process          Run full pipeline (import/filter/score)")
+    print("  --process          Run full pipeline (import/filter)")
     print("  --import-only      Only import from inbox")
     print("  --filter           Only run hard filter")
-    print("  --score            Only run rule-based scoring")
     print("  --ready            Show ready-to-apply jobs")
     print("  --stats            Show funnel stats")
     print("  --reprocess        Clear and reprocess all jobs")

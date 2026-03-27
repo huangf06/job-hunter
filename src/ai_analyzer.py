@@ -991,13 +991,9 @@ class AIAnalyzer:
 
         return None
 
-    def analyze_batch(self, min_rule_score: float = None, limit: int = None) -> int:
+    def analyze_batch(self, limit: int = None) -> int:
         """批量分析职位"""
-        threshold = min_rule_score
-        if threshold is None:
-            threshold = self.config.get('thresholds', {}).get('rule_score_for_ai', 3.0)
-
-        jobs = self.db.get_jobs_needing_analysis(min_rule_score=threshold, limit=limit)
+        jobs = self.db.get_jobs_needing_analysis(limit=limit)
         if not jobs:
             print("[AI Analyzer] No jobs to analyze")
             return 0
@@ -1020,8 +1016,7 @@ class AIAnalyzer:
             for i, job in enumerate(jobs):
                 title = job.get('title', '')[:45]
                 company = job.get('company', '')[:20]
-                rule_score = job.get('rule_score', 0)
-                print(f"  [{i+1}/{len(jobs)}] [{rule_score:.1f}] {title} @ {company}...", end=' ')
+                print(f"  [{i+1}/{len(jobs)}] {title} @ {company}...", end=' ')
 
                 try:
                     result = self.analyze_job(job)
@@ -1084,8 +1079,6 @@ def main():
     parser = argparse.ArgumentParser(description="AI Job Analyzer")
     parser.add_argument('--batch', action='store_true', help='Analyze all pending jobs')
     parser.add_argument('--job', type=str, help='Analyze a single job by ID')
-    parser.add_argument('--min-score', type=float, default=None,
-                        help='Minimum rule score threshold')
     parser.add_argument('--limit', type=int, default=50,
                         help='Max jobs to analyze in batch')
     parser.add_argument('--model', type=str, default=None,
@@ -1099,7 +1092,7 @@ def main():
     if args.job:
         analyzer.analyze_single(args.job)
     elif args.batch:
-        analyzer.analyze_batch(min_rule_score=args.min_score, limit=args.limit)
+        analyzer.analyze_batch(limit=args.limit)
     else:
         parser.print_help()
         print("\nExamples:")

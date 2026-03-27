@@ -463,15 +463,12 @@ class JobDatabase:
         j.*,
         f.passed as filter_passed,
         f.reject_reason,
-        s.score as rule_score,
-        s.recommendation as rule_recommendation,
         an.ai_score,
         an.recommendation as ai_recommendation,
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
     LEFT JOIN filter_results f ON j.id = f.job_id
-    LEFT JOIN ai_scores s ON j.id = s.job_id
     LEFT JOIN job_analysis an ON j.id = an.job_id
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
@@ -509,7 +506,6 @@ class JobDatabase:
     SELECT
         COUNT(DISTINCT j.id) as total_scraped,
         COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
-        COUNT(DISTINCT CASE WHEN s.score >= {rule_score_apply} THEN j.id END) as scored_high,
         COUNT(DISTINCT CASE WHEN an.id IS NOT NULL THEN j.id END) as ai_analyzed,
         COUNT(DISTINCT CASE WHEN an.ai_score >= {ai_score_generate_resume} AND an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}' THEN j.id END) as ai_scored_high,
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
@@ -519,7 +515,6 @@ class JobDatabase:
         COUNT(DISTINCT CASE WHEN a.status = 'offer' THEN j.id END) as offer
     FROM jobs j
     LEFT JOIN filter_results f ON j.id = f.job_id
-    LEFT JOIN ai_scores s ON j.id = s.job_id
     LEFT JOIN job_analysis an ON j.id = an.job_id
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id;
@@ -583,13 +578,12 @@ class JobDatabase:
     def _load_view_thresholds() -> Dict[str, float]:
         """Load thresholds from config files for DB views.
 
-        Returns dict with keys: ai_score_apply_now, ai_score_generate_resume,
-        rule_score_apply. Falls back to hardcoded defaults if config unavailable.
+        Returns dict with keys: ai_score_apply_now, ai_score_generate_resume.
+        Falls back to hardcoded defaults if config unavailable.
         """
         defaults = {
             'ai_score_apply_now': 7.0,
             'ai_score_generate_resume': 5.0,
-            'rule_score_apply': 5.5,
         }
         try:
             ai_config_path = CONFIG_DIR / "ai_config.yaml"
@@ -599,13 +593,6 @@ class JobDatabase:
                 thresholds = ai_cfg.get('thresholds', {})
                 defaults['ai_score_apply_now'] = float(thresholds.get('ai_score_apply_now', defaults['ai_score_apply_now']))
                 defaults['ai_score_generate_resume'] = float(thresholds.get('ai_score_generate_resume', defaults['ai_score_generate_resume']))
-
-            scoring_path = CONFIG_DIR / "base" / "scoring.yaml"
-            if scoring_path.exists():
-                with open(scoring_path, 'r', encoding='utf-8') as f:
-                    scoring_cfg = yaml.safe_load(f) or {}
-                score_thresholds = scoring_cfg.get('thresholds', {})
-                defaults['rule_score_apply'] = float(score_thresholds.get('apply', defaults['rule_score_apply']))
         except Exception:
             pass  # Use defaults on any config error
         return defaults
@@ -845,17 +832,6 @@ class JobDatabase:
 
     # ==================== Score 操作 ====================
 
-    def save_score(self, result: ScoreResult):
-        """保存评分结果"""
-        with self._get_conn(sync_before=False) as conn:
-            conn.execute("""
-                INSERT OR REPLACE INTO ai_scores
-                (job_id, score, model, score_breakdown, matched_keywords, analysis, recommendation, scored_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (result.job_id, result.score, result.model, result.score_breakdown,
-                  result.matched_keywords, result.analysis, result.recommendation,
-                  datetime.now(timezone.utc).isoformat()))
-
     def get_score(self, job_id: str) -> Optional[Dict]:
         """获取评分结果"""
         with self._get_conn() as conn:
@@ -865,23 +841,6 @@ class JobDatabase:
             )
             row = cursor.fetchone()
             return dict(row) if row else None
-
-    def get_unscored_jobs(self, limit: int = None) -> List[Dict]:
-        """获取已通过筛选但未评分的职位"""
-        with self._get_conn() as conn:
-            query = """
-                SELECT j.* FROM jobs j
-                JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
-                LEFT JOIN ai_scores s ON j.id = s.job_id
-                WHERE s.id IS NULL
-                ORDER BY j.scraped_at DESC
-            """
-            params = []
-            if limit is not None:
-                query += " LIMIT ?"
-                params.append(limit)
-            cursor = conn.execute(query, params)
-            return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Resume 操作 ====================
 
@@ -934,21 +893,20 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_jobs_needing_analysis(self, min_rule_score: float = 3.0, limit: int = None) -> List[Dict]:
-        """获取通过筛选、达到规则评分阈值、但未经 AI 分析的职位 (排除已投递)"""
+    def get_jobs_needing_analysis(self, limit: int = None) -> List[Dict]:
+        """Get jobs that passed filter but have no AI analysis yet (excludes applied)."""
         with self._get_conn() as conn:
             query = """
-                SELECT j.*, s.score as rule_score, s.recommendation as rule_recommendation
+                SELECT j.*
                 FROM jobs j
                 JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
-                JOIN ai_scores s ON j.id = s.job_id AND s.score >= ?
                 LEFT JOIN job_analysis a ON j.id = a.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE a.id IS NULL
                   AND app.job_id IS NULL
-                ORDER BY s.score DESC
+                ORDER BY j.created_at DESC
             """
-            params = [min_rule_score]
+            params = []
             if limit is not None:
                 query += " LIMIT ?"
                 params.append(limit)
@@ -1453,23 +1411,20 @@ class JobDatabase:
 
     def get_daily_stats(self, days: int = 7) -> List[Dict]:
         """获取每日统计"""
-        thresholds = self._load_view_thresholds()
         with self._get_conn() as conn:
             cursor = conn.execute("""
                 SELECT
                     DATE(j.scraped_at) as date,
                     COUNT(DISTINCT j.id) as scraped,
                     COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed,
-                    COUNT(DISTINCT CASE WHEN s.score >= ? THEN j.id END) as high_score,
                     COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated
                 FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
-                LEFT JOIN ai_scores s ON j.id = s.job_id
                 LEFT JOIN resumes r ON j.id = r.job_id
                 WHERE j.scraped_at >= DATE('now', ?)
                 GROUP BY DATE(j.scraped_at)
                 ORDER BY date DESC
-            """, (thresholds['rule_score_apply'], f'-{days} days'))
+            """, (f'-{days} days',))
             return [dict(row) for row in cursor.fetchall()]
 
     def get_daily_token_usage(self) -> int:
@@ -1503,25 +1458,6 @@ class JobDatabase:
                 )
             else:
                 cursor = conn.execute("DELETE FROM filter_results")
-            return cursor.rowcount
-
-    def clear_scores(self, model: str = None) -> int:
-        """清除评分结果，以便重新处理
-
-        Args:
-            model: 如果指定，只清除该模型的结果；否则清除全部
-
-        Returns:
-            删除的记录数
-        """
-        with self._get_conn(sync_before=False) as conn:
-            if model:
-                cursor = conn.execute(
-                    "DELETE FROM ai_scores WHERE model = ?",
-                    (model,)
-                )
-            else:
-                cursor = conn.execute("DELETE FROM ai_scores")
             return cursor.rowcount
 
     # ==================== 批量操作 ====================
@@ -1654,11 +1590,10 @@ def main():
 
     elif args.command == "stats":
         stats = db.get_funnel_stats()
-        view_thresholds = JobDatabase._load_view_thresholds()
         print("\n=== 漏斗统计 ===")
-        print(f"总抓取: {stats.get('total_scraped', 0)}")
-        print(f"通过筛选: {stats.get('passed_filter', 0)}")
-        print(f"高分 (>={view_thresholds['rule_score_apply']}): {stats.get('scored_high', 0)}")
+        print(f"\u603b\u6293\u53d6: {stats.get('total_scraped', 0)}")
+        print(f"\u901a\u8fc7\u7b5b\u9009: {stats.get('passed_filter', 0)}")
+        print(f"AI 分析: {stats.get('ai_analyzed', 0)}")
         print(f"已生成简历: {stats.get('resume_generated', 0)}")
         print(f"已申请: {stats.get('applied', 0)}")
         print(f"面试: {stats.get('interview', 0)}")
