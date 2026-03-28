@@ -69,7 +69,7 @@ hard_reject_rules:
       - "genai"
       - "artificial intelligence"
       - "computer vision"
-      - "vision"
+      - "machine vision"
       - "python"
       - "quant"
       - "quantitative"
@@ -89,29 +89,28 @@ hard_reject_rules:
       - "platform"
       - "pipeline"
       - "applied scientist"
-    # 标题包含以下任一关键词直接拒绝 (优先于上面的白名单)
-    # 但如果标题同时含 reject_exceptions 中的词，则不硬拒 (交给 AI 判断)
-    title_reject_patterns:
+    # === 硬拒绝 (无例外，命中即拒) ===
+    title_hard_reject_patterns:
       - "\\bpolicy\\b"
-      - "\\bmarketing\\b"
-      - "\\bproduct\\s*manager\\b"
-      - "\\bsales\\b"
       - "\\brecruiter\\b"
       - "(?<![/\\d])\\bhr\\b"
-      - "\\blegal\\b"
       - "\\bfinance\\s*manager\\b"
       - "\\baccountant\\b"
       - "\\bcontrol\\s*software\\b"
       - "\\bkernel\\b"
-      - "\\bembedded\\b"
       - "\\bplc\\b"
       - "\\bsystems?\\s*engineer\\b(?!.*(?:data|ml|machine\\s*learning|ai|platform))"
       - "\\bsiem\\b"
       - "\\bsecurity\\s*engineer\\b"
       - "\\brelease\\s*engineer\\b"
       - "\\bnetwork\\s*engineer\\b"
-    # 如果标题同时含以下任一词，reject_pattern 不生效 (交给 AI)
-    # 注意: 不包含 "engineer" — 否则会豁免所有 embedded/PLC/control software engineer
+    # === 软拒绝 (如果标题同时含 reject_exceptions 词则交给 AI) ===
+    title_reject_patterns:
+      - "\\bmarketing\\b"
+      - "\\bproduct\\s*manager\\b"
+      - "\\bsales\\b"
+      - "\\blegal\\b"
+      - "\\bembedded\\b"
     reject_exceptions:
       - "data"
       - "analyst"
@@ -119,7 +118,6 @@ hard_reject_rules:
       - "ml"
       - "ai"
       - "machine learning"
-      - "vision"
 
   # 规则4: 非目标技术栈 (分标题和正文检查)
   wrong_tech_stack:
@@ -133,7 +131,7 @@ hard_reject_rules:
       - "\\b(android|ios|mobile)\\s*(developer|engineer)\\b"
       - "\\b(frontend|front-end|front end|ui/ux)\\s*(developer|engineer)\\b"
       - "\\b(devops|sre|site reliability)\\s*(engineer)\\b"
-      - "\\bdotnet\\b|\\.net\\b|\\bc#(?=\\s|$)"
+      - "\\bdotnet\\b|\\.net(?!\\w)|\\bc#(?!\\w)"
       - "\\bjava\\b(?!.*(?:script|data|ml|machine learning|ai))"
       - "\\bruby\\b"
       - "\\breact\\b.*\\b(developer|engineer)\\b"

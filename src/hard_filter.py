@@ -120,18 +120,11 @@ class HardFilter:
                 ):
                     continue
 
-                # Check reject patterns (blacklist has priority)
-                reject_patterns = rule_config.get('title_reject_patterns', [])
-                reject_exceptions = [e.lower().strip() for e in rule_config.get('reject_exceptions', [])]
-                for pattern in reject_patterns:
+                # Hard reject patterns — always reject, no exceptions
+                hard_reject_patterns = rule_config.get('title_hard_reject_patterns', [])
+                for pattern in hard_reject_patterns:
                     try:
                         if re.search(pattern, title, re.IGNORECASE):
-                            # If title also contains a reject_exception keyword, skip (let AI decide)
-                            if reject_exceptions and any(
-                                re.search(keyword_boundary_pattern(exc), title)
-                                for exc in reject_exceptions if exc
-                            ):
-                                continue
                             return FilterResult(
                                 job_id=job_id, passed=False,
                                 reject_reason=rule_name,
@@ -140,6 +133,26 @@ class HardFilter:
                             )
                     except re.error:
                         continue
+
+                # Soft reject patterns — bypassed if title also contains a reject_exception keyword
+                reject_patterns = rule_config.get('title_reject_patterns', [])
+                reject_exceptions = [e.lower().strip() for e in rule_config.get('reject_exceptions', [])]
+                has_exception = reject_exceptions and any(
+                    re.search(keyword_boundary_pattern(exc), title)
+                    for exc in reject_exceptions if exc
+                )
+                if not has_exception:
+                    for pattern in reject_patterns:
+                        try:
+                            if re.search(pattern, title, re.IGNORECASE):
+                                return FilterResult(
+                                    job_id=job_id, passed=False,
+                                    reject_reason=rule_name,
+                                    filter_version="2.0",
+                                    matched_rules=json.dumps({"rejected_pattern": pattern})
+                                )
+                        except re.error:
+                            continue
 
                 # Then check whitelist - title must contain at least one target keyword
                 must_contain = rule_config.get('title_must_contain_one_of', [])

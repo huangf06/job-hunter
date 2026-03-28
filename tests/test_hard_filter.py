@@ -137,9 +137,35 @@ class TestWrongRole:
         result = hf.apply(job)
         assert result.passed is False
 
+    # --- Hard reject patterns: always reject even with data/ai in title ---
+
+    def test_security_engineer_with_data_still_rejected(self, hf):
+        """security_engineer is a hard reject — 'data' in title doesn't save it."""
+        result = hf.apply(_make_job(title="Data Security Engineer"))
+        assert result.passed is False
+        assert result.reject_reason == "non_target_role"
+
+    def test_network_engineer_with_ai_still_rejected(self, hf):
+        """network_engineer is a hard reject — 'AI' doesn't save it."""
+        result = hf.apply(_make_job(title="AI Network Engineer"))
+        assert result.passed is False
+        assert result.reject_reason == "non_target_role"
+
+    def test_policy_data_analyst_still_rejected(self, hf):
+        """policy is a hard reject — 'data analyst' doesn't save it."""
+        result = hf.apply(_make_job(title="Policy Data Analyst"))
+        assert result.passed is False
+        assert result.reject_reason == "non_target_role"
+
+    def test_plc_software_engineer_still_rejected(self, hf):
+        """PLC is a hard reject."""
+        result = hf.apply(_make_job(title="PLC Software Engineer"))
+        assert result.passed is False
+
+    # --- Soft reject patterns: bypassed when title also has data/ml/ai/etc ---
+
     def test_marketing_data_analyst_passes(self, hf):
-        """'Marketing Data Analyst' has reject word 'marketing' but also 'data' + 'analyst'
-        in reject_exceptions — should NOT be hard-rejected, let AI decide."""
+        """'marketing' is soft reject, 'data' + 'analyst' in reject_exceptions → let AI decide."""
         result = hf.apply(_make_job(title="Marketing Data Analyst"))
         assert result.passed is True
 
@@ -152,12 +178,12 @@ class TestWrongRole:
         assert result.passed is True
 
     def test_embedded_ml_engineer_passes(self, hf):
-        """'Embedded ML Engineer' has 'embedded' reject but 'ml' + 'engineer' exceptions."""
+        """'embedded' is soft reject, 'ml' in reject_exceptions → let AI decide."""
         result = hf.apply(_make_job(title="Embedded ML Engineer"))
         assert result.passed is True
 
     def test_legal_ai_engineer_passes(self, hf):
-        """'AI Engineer (Libra - Legal AI Assistant)' has 'legal' reject but 'ai' + 'engineer' exceptions."""
+        """'legal' is soft reject, 'ai' in reject_exceptions → let AI decide."""
         result = hf.apply(_make_job(title="AI Engineer (Libra - Legal AI Assistant)"))
         assert result.passed is True
 
@@ -300,8 +326,22 @@ class TestWrongTechStack:
         assert result.reject_reason == "wrong_tech_stack"
 
     def test_csharp_platform_engineer_rejected(self, hf):
-        """C# in title triggers tech_stack; 'platform' passes non_target_role."""
+        """C# followed by space in title triggers tech_stack."""
         job = _make_job(title="C# Platform Engineer")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
+
+    def test_csharp_slash_dotnet_rejected(self, hf):
+        """C#/.NET Engineer — C# followed by slash (non-word char) should match via (?!\\w)."""
+        job = _make_job(title="C#/.NET Software Engineer")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
+
+    def test_csharp_comma_rejected(self, hf):
+        """C#, WPF Developer — C# followed by comma should match."""
+        job = _make_job(title="C#, WPF Software Developer")
         result = hf.apply(job)
         assert result.passed is False
         assert result.reject_reason == "wrong_tech_stack"
