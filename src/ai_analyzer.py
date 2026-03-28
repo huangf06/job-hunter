@@ -584,6 +584,290 @@ class AIAnalyzer:
         )
         return f"{language_guidance}\n\n{prompt_body}"
 
+    def _build_scoring_guidelines(self) -> str:
+        """Build scoring guidelines text for C1 evaluator prompt."""
+        return """Most jobs should score 4-6, NOT 7-9. High scores are rare.
+
+**Score Distribution Target:**
+- 9-10: Perfect match (RARE, <5% of jobs) — ALL required skills, exact experience level
+- 7-8: Excellent match (10-15%) — MOST required skills, experience ±1 year
+- 5-6: Good match (30-40%) — Core skills present, some secondary gaps
+- 3-4: Moderate match (30-40%) — Significant skill gaps or experience mismatch
+- 1-2: Poor match (10-20%) — Major skill gaps, wrong domain
+
+**Common Mistakes:**
+- JD requires "5+ years Java" but candidate has 0 → score 3-4 MAX
+- JD requires "PhD in CS" but candidate has M.Sc. → score 4-5 MAX
+- JD is 80% frontend but candidate is backend → score 2-3 MAX
+- JD requires "10+ years" but candidate has 6 → score 3-4 MAX"""
+
+    def _build_evaluate_prompt(self, job: Dict) -> str:
+        """Build C1 evaluation prompt (scoring + application brief). No bullet library."""
+        prompt_template = self.config.get('prompts', {}).get('evaluator', '')
+        if not prompt_template:
+            raise ValueError("No evaluator prompt template found in config")
+
+        ai_thresholds = self.config.get('ai_recommendation_thresholds', {})
+        prompt_settings = self.config.get('prompt_settings', {})
+        jd_max = prompt_settings.get('job_description_max_chars', 10000)
+        jd_text = (job.get('description') or '')[:jd_max]
+
+        scoring_guidelines = self._build_scoring_guidelines()
+
+        # Escape braces
+        jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
+        job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
+        job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
+        scoring_safe = scoring_guidelines.replace('{', '{{').replace('}', '}}')
+
+        return prompt_template.format(
+            scoring_guidelines=scoring_safe,
+            job_title=job_title,
+            job_company=job_company,
+            job_description=jd_safe,
+            apply_now_threshold=ai_thresholds.get('apply_now', 7),
+            apply_threshold=ai_thresholds.get('apply', 5),
+            maybe_threshold=ai_thresholds.get('maybe', 3),
+        )
+
+    def _build_tailor_prompt(self, job: Dict, analysis: Dict) -> str:
+        """Build C2 tailor prompt (resume tailoring). Includes bullet library + C1 context."""
+        prompt_template = self.config.get('prompts', {}).get('tailor', '')
+        if not prompt_template:
+            raise ValueError("No tailor prompt template found in config")
+        language_guidance = format_language_guidance_for_prompt("experience_bullet")
+
+        prompt_settings = self.config.get('prompt_settings', {})
+        jd_max = prompt_settings.get('job_description_max_chars', 10000)
+        jd_text = (job.get('description') or '')[:jd_max]
+
+        # Build dynamic context
+        skill_context = self._build_skill_context(jd_text)
+        title_context = self._build_title_context()
+        bio_constraints = self._build_bio_constraints()
+
+        bio_titles = self._bio_builder.get('allowed_titles', [])
+        bio_titles_str = ', '.join(f'"{t}"' for t in bio_titles) if bio_titles else '"Data Engineer"'
+
+        domain_claims = self._bio_builder.get('domain_claims', {})
+        if isinstance(domain_claims, dict):
+            dc_lines = []
+            for dc_id, dc_data in domain_claims.items():
+                if isinstance(dc_data, dict):
+                    dc_lines.append(f'      "{dc_id}" = {dc_data.get("text", dc_id)}')
+                else:
+                    dc_lines.append(f'      "{dc_id}" = {dc_data}')
+            domain_claims_str = '\n'.join(dc_lines) if dc_lines else '      (none configured)'
+        else:
+            domain_claims_str = '      (none configured)'
+
+        cat_list = self._allowed_categories if self._allowed_categories else []
+        cat_str = ', '.join(f'"{c}"' for c in cat_list) if cat_list else '"Languages & Core"'
+
+        # Extract C1 context
+        c1_score = analysis.get('ai_score', 0)
+        c1_recommendation = analysis.get('recommendation', 'UNKNOWN')
+        c1_reasoning_raw = analysis.get('reasoning', '')
+        # Parse reasoning JSON if it contains application_brief
+        try:
+            reasoning_data = json.loads(c1_reasoning_raw)
+            c1_reasoning = reasoning_data.get('reasoning', c1_reasoning_raw)
+            c1_brief = json.dumps(reasoning_data.get('application_brief', {}), ensure_ascii=False)
+        except (json.JSONDecodeError, TypeError):
+            c1_reasoning = c1_reasoning_raw
+            c1_brief = '{}'
+
+        # Escape braces
+        jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
+        job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
+        job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
+        bullet_lib_safe = self.bullet_library.replace('{', '{{').replace('}', '}}')
+        skill_ctx_safe = skill_context.replace('{', '{{').replace('}', '}}')
+        title_ctx_safe = title_context.replace('{', '{{').replace('}', '}}')
+        bio_cstr_safe = bio_constraints.replace('{', '{{').replace('}', '}}')
+        c1_reasoning_safe = c1_reasoning.replace('{', '{{').replace('}', '}}')
+        c1_brief_safe = c1_brief.replace('{', '{{').replace('}', '}}')
+
+        prompt_body = prompt_template.format(
+            bullet_library=bullet_lib_safe,
+            job_title=job_title,
+            job_company=job_company,
+            job_description=jd_safe,
+            c1_score=c1_score,
+            c1_recommendation=c1_recommendation,
+            c1_reasoning=c1_reasoning_safe,
+            c1_brief=c1_brief_safe,
+            skill_context=skill_ctx_safe,
+            title_context=title_ctx_safe,
+            bio_constraints=bio_cstr_safe,
+            bio_allowed_titles_list=bio_titles_str,
+            bio_domain_claims_list=domain_claims_str,
+            allowed_skill_categories_list=cat_str,
+        )
+        return f"{language_guidance}\n\n{prompt_body}"
+
+    def evaluate_job(self, job: Dict) -> Optional[AnalysisResult]:
+        """C1: Score + application brief. Short prompt, fast."""
+        job_id = job['id']
+        prompt = self._build_evaluate_prompt(job)
+
+        text = self._call_claude(prompt)
+        if not text:
+            return AnalysisResult(
+                job_id=job_id, ai_score=0.0,
+                recommendation='REJECTED',
+                reasoning='Claude Code CLI returned empty response',
+                tailored_resume='{}',
+                model='claude_code', tokens_used=0,
+            )
+
+        parsed = self._parse_response(text)
+        if not parsed:
+            preview = text[:300].replace('\n', ' ')
+            print(f"  [WARN] Failed to parse C1 response for {job_id}")
+            return AnalysisResult(
+                job_id=job_id, ai_score=0.0,
+                recommendation='REJECTED',
+                reasoning=f'[PARSE_FAIL] {preview[:200]}',
+                tailored_resume='{}',
+                model='claude_code', tokens_used=0,
+            )
+
+        scoring = parsed.get('scoring', {})
+        brief = parsed.get('application_brief', {})
+
+        def _safe_float(val, default=0.0):
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                return default
+
+        return AnalysisResult(
+            job_id=job_id,
+            ai_score=_safe_float(scoring.get('overall_score', 0)),
+            skill_match=_safe_float(scoring.get('skill_match', 0)),
+            experience_fit=_safe_float(scoring.get('experience_fit', 0)),
+            growth_potential=_safe_float(scoring.get('growth_potential', 0)),
+            recommendation=scoring.get('recommendation', 'SKIP'),
+            reasoning=json.dumps({"reasoning": scoring.get('reasoning', ''),
+                                   "application_brief": brief}, ensure_ascii=False),
+            tailored_resume='{}',
+            model='claude_code', tokens_used=0,
+        )
+
+    def tailor_resume(self, job: Dict, analysis: Dict) -> Optional[str]:
+        """C2: Resume tailoring. Long prompt, only for high-scoring jobs.
+        Returns tailored_resume JSON string, or None on failure."""
+        job_id = job['id']
+        prompt = self._build_tailor_prompt(job, analysis)
+
+        text = self._call_claude(prompt)
+        if not text:
+            print(f"  [WARN] C2 empty response for {job_id}")
+            return None
+
+        parsed = self._parse_response(text)
+        if not parsed:
+            print(f"  [WARN] C2 parse failed for {job_id}")
+            return None
+
+        tailored = parsed.get('tailored_resume', {})
+        if not tailored:
+            print(f"  [WARN] C2 no tailored_resume in response for {job_id}")
+            return None
+
+        tailored, bullet_errors = self._resolve_bullet_ids(tailored)
+        self._inject_technical_skills(tailored)
+        if bullet_errors:
+            for err in bullet_errors:
+                print(f"    [BULLET WARN] {err}")
+
+        # Bio assembly
+        bio_spec = tailored.get('bio')
+        assembled_bio, bio_errors = self._assemble_bio(bio_spec, job)
+        if bio_errors:
+            for err in bio_errors:
+                print(f"    [BIO ERROR] {err}")
+            return None
+        tailored['bio'] = assembled_bio
+
+        # Validation
+        validation = self.validator.validate(tailored, job)
+        if not validation.passed:
+            for err in validation.errors:
+                print(f"    [VALIDATION] {err}")
+            return None
+        if validation.warnings:
+            for warn in validation.warnings:
+                print(f"    [VALID WARN] {warn}")
+
+        return json.dumps(tailored, ensure_ascii=False)
+
+    def evaluate_batch(self, limit: int = None) -> int:
+        """C1: Evaluate all jobs needing analysis."""
+        jobs = self.db.get_jobs_needing_analysis(limit=limit)
+        if not jobs:
+            print("[AI C1] No jobs to evaluate")
+            return 0
+
+        print(f"\n[AI C1] Evaluating {len(jobs)} jobs...")
+        count = 0
+        with self.db.batch_mode():
+            for i, job in enumerate(jobs):
+                title = job.get('title', '')[:45]
+                company = job.get('company', '')[:20]
+                print(f"  [{i+1}/{len(jobs)}] {title} @ {company}...", end=' ')
+                try:
+                    result = self.evaluate_job(job)
+                    if result:
+                        self.db.save_analysis(result)
+                        count += 1
+                        print(f"-> {result.recommendation} ({result.ai_score:.1f})")
+                    else:
+                        print("-> SKIPPED")
+                except Exception as e:
+                    print(f"-> ERROR: {e}")
+                if i < len(jobs) - 1:
+                    time.sleep(1)
+
+        print(f"\n[AI C1] Done: {count}/{len(jobs)} evaluated")
+        return count
+
+    def tailor_batch(self, min_score: float = 4.0, limit: int = None) -> int:
+        """C2: Tailor resumes for evaluated jobs above threshold."""
+        jobs = self.db.get_jobs_needing_tailor(min_score=min_score, limit=limit)
+        if not jobs:
+            print(f"[AI C2] No jobs needing tailoring (min_score={min_score})")
+            return 0
+
+        print(f"\n[AI C2] Tailoring {len(jobs)} jobs (score >= {min_score})...")
+        count = 0
+        with self.db.batch_mode():
+            for i, job in enumerate(jobs):
+                title = job.get('title', '')[:45]
+                company = job.get('company', '')[:20]
+                score = job.get('ai_score', 0)
+                print(f"  [{i+1}/{len(jobs)}] {title} @ {company} ({score:.1f})...", end=' ')
+                try:
+                    analysis = self.db.get_analysis(job['id'])
+                    if not analysis:
+                        print("-> NO ANALYSIS")
+                        continue
+                    resume_json = self.tailor_resume(job, analysis)
+                    if resume_json:
+                        self.db.update_analysis_resume(job['id'], resume_json)
+                        count += 1
+                        print("-> TAILORED")
+                    else:
+                        print("-> FAILED")
+                except Exception as e:
+                    print(f"-> ERROR: {e}")
+                if i < len(jobs) - 1:
+                    time.sleep(1)
+
+        print(f"\n[AI C2] Done: {count}/{len(jobs)} tailored")
+        return count
+
     def _post_parse_analysis(self, job_id: str, job: Dict, parsed: Dict,
                               tokens_used: int, prompt: str = '') -> AnalysisResult:
         """Shared post-parse processing for both API and Claude Code paths."""
