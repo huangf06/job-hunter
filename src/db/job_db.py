@@ -893,6 +893,35 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
+    def update_analysis_resume(self, job_id: str, tailored_resume: str):
+        """Update tailored_resume for an existing analysis (C2 writes to C1's row)."""
+        with self._get_conn(sync_before=False) as conn:
+            conn.execute("""
+                UPDATE job_analysis
+                SET tailored_resume = ?
+                WHERE job_id = ?
+            """, (tailored_resume, job_id))
+
+    def get_jobs_needing_tailor(self, min_score: float = 4.0, limit: int = None) -> List[Dict]:
+        """Get jobs with C1 evaluation but no C2 tailored resume yet."""
+        with self._get_conn() as conn:
+            query = """
+                SELECT j.*, a.ai_score, a.recommendation, a.reasoning
+                FROM jobs j
+                JOIN job_analysis a ON j.id = a.job_id
+                LEFT JOIN applications app ON j.id = app.job_id
+                WHERE a.ai_score >= ?
+                  AND (a.tailored_resume IS NULL OR a.tailored_resume = '{}')
+                  AND app.job_id IS NULL
+                ORDER BY a.ai_score DESC
+            """
+            params = [min_score]
+            if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+            cursor = conn.execute(query, params)
+            return [dict(row) for row in cursor.fetchall()]
+
     def get_jobs_needing_analysis(self, limit: int = None) -> List[Dict]:
         """Get jobs that passed filter but have no AI analysis yet (excludes applied)."""
         with self._get_conn() as conn:
