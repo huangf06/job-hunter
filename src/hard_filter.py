@@ -122,10 +122,16 @@ class HardFilter:
 
                 # Check reject patterns (blacklist has priority)
                 reject_patterns = rule_config.get('title_reject_patterns', [])
-                rejected = False
+                reject_exceptions = [e.lower().strip() for e in rule_config.get('reject_exceptions', [])]
                 for pattern in reject_patterns:
                     try:
                         if re.search(pattern, title, re.IGNORECASE):
+                            # If title also contains a reject_exception keyword, skip (let AI decide)
+                            if reject_exceptions and any(
+                                re.search(keyword_boundary_pattern(exc), title)
+                                for exc in reject_exceptions if exc
+                            ):
+                                continue
                             return FilterResult(
                                 job_id=job_id, passed=False,
                                 reject_reason=rule_name,

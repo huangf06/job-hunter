@@ -62,14 +62,19 @@ hard_reject_rules:
     # 标题必须包含至少一个目标关键词 (否则被拒)
     title_must_contain_one_of:
       - "data"
+      - "dataflow"
       - "machine learning"
       - "ml"
       - "ai"
+      - "genai"
       - "artificial intelligence"
+      - "computer vision"
+      - "vision"
       - "python"
       - "quant"
       - "quantitative"
       - "analytics"
+      - "bi"
       - "scientist"
       - "research"
       - "researcher"
@@ -85,6 +90,7 @@ hard_reject_rules:
       - "pipeline"
       - "applied scientist"
     # 标题包含以下任一关键词直接拒绝 (优先于上面的白名单)
+    # 但如果标题同时含 reject_exceptions 中的词，则不硬拒 (交给 AI 判断)
     title_reject_patterns:
       - "\\bpolicy\\b"
       - "\\bmarketing\\b"
@@ -104,6 +110,16 @@ hard_reject_rules:
       - "\\bsecurity\\s*engineer\\b"
       - "\\brelease\\s*engineer\\b"
       - "\\bnetwork\\s*engineer\\b"
+    # 如果标题同时含以下任一词，reject_pattern 不生效 (交给 AI)
+    # 注意: 不包含 "engineer" — 否则会豁免所有 embedded/PLC/control software engineer
+    reject_exceptions:
+      - "data"
+      - "analyst"
+      - "scientist"
+      - "ml"
+      - "ai"
+      - "machine learning"
+      - "vision"
 
   # 规则4: 非目标技术栈 (分标题和正文检查)
   wrong_tech_stack:
