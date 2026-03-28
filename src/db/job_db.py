@@ -993,6 +993,7 @@ class JobDatabase:
                        OR reasoning LIKE 'Failed to parse AI response:%'
                        OR reasoning LIKE 'Response truncated%'
                        OR reasoning LIKE 'Empty API response%'
+                       OR reasoning LIKE 'Claude Code CLI returned empty response%'
                        OR reasoning LIKE 'Analysis error:%')
             """)
             return cursor.rowcount

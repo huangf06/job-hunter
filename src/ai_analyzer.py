@@ -518,71 +518,7 @@ class AIAnalyzer:
 
         return ' '.join(parts), []
 
-    def _build_prompt(self, job: Dict) -> str:
-        """构建分析 prompt"""
-        prompt_template = self.config.get('prompts', {}).get('analyzer', '')
-        if not prompt_template:
-            raise ValueError("No analyzer prompt template found in config")
-        language_guidance = format_language_guidance_for_prompt("experience_bullet")
-
-        prompt_settings = self.config.get('prompt_settings', {})
-        ai_thresholds = self.config.get('ai_recommendation_thresholds', {})
-
-        jd_max = prompt_settings.get('job_description_max_chars', 10000)
-
-        jd_text = (job.get('description') or '')[:jd_max]
-
-        # Build dynamic context blocks (v3.0) — use original JD for keyword matching
-        skill_context = self._build_skill_context(jd_text)
-        title_context = self._build_title_context()
-        bio_constraints = self._build_bio_constraints()
-
-        # Build dynamic lists from bullet_library.yaml (replaces hardcoded lists in prompt)
-        bio_titles = self._bio_builder.get('allowed_titles', [])
-        bio_titles_str = ', '.join(f'"{t}"' for t in bio_titles) if bio_titles else '"Data Engineer"'
-
-        domain_claims = self._bio_builder.get('domain_claims', {})
-        if isinstance(domain_claims, dict):
-            dc_lines = []
-            for dc_id, dc_data in domain_claims.items():
-                if isinstance(dc_data, dict):
-                    dc_lines.append(f'      "{dc_id}" = {dc_data.get("text", dc_id)}')
-                else:
-                    dc_lines.append(f'      "{dc_id}" = {dc_data}')
-            domain_claims_str = '\n'.join(dc_lines) if dc_lines else '      (none configured)'
-        else:
-            domain_claims_str = '      (none configured)'
-
-        cat_list = self._allowed_categories if self._allowed_categories else []
-        cat_str = ', '.join(f'"{c}"' for c in cat_list) if cat_list else '"Languages & Core"'
-
-        # Escape braces in user-supplied text to prevent str.format() crashes
-        jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
-        job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
-        job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
-
-        # Escape braces in dynamic content blocks to prevent str.format() crashes
-        bullet_lib_safe = self.bullet_library.replace('{', '{{').replace('}', '}}')
-        skill_ctx_safe = skill_context.replace('{', '{{').replace('}', '}}')
-        title_ctx_safe = title_context.replace('{', '{{').replace('}', '}}')
-        bio_cstr_safe = bio_constraints.replace('{', '{{').replace('}', '}}')
-
-        prompt_body = prompt_template.format(
-            bullet_library=bullet_lib_safe,
-            job_title=job_title,
-            job_company=job_company,
-            job_description=jd_safe,
-            apply_now_threshold=ai_thresholds.get('apply_now', 7),
-            apply_threshold=ai_thresholds.get('apply', 5),
-            maybe_threshold=ai_thresholds.get('maybe', 3),
-            skill_context=skill_ctx_safe,
-            title_context=title_ctx_safe,
-            bio_constraints=bio_cstr_safe,
-            bio_allowed_titles_list=bio_titles_str,
-            bio_domain_claims_list=domain_claims_str,
-            allowed_skill_categories_list=cat_str,
-        )
-        return f"{language_guidance}\n\n{prompt_body}"
+    # NOTE: legacy _build_prompt() removed — C1/C2 now use _build_evaluate_prompt / _build_tailor_prompt
 
     def _build_scoring_guidelines(self) -> str:
         """Build scoring guidelines text for C1 evaluator prompt."""
@@ -833,8 +769,10 @@ class AIAnalyzer:
         print(f"\n[AI C1] Done: {count}/{len(jobs)} evaluated")
         return count
 
-    def tailor_batch(self, min_score: float = 4.0, limit: int = None) -> int:
+    def tailor_batch(self, min_score: float = None, limit: int = None) -> int:
         """C2: Tailor resumes for evaluated jobs above threshold."""
+        if min_score is None:
+            min_score = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
         jobs = self.db.get_jobs_needing_tailor(min_score=min_score, limit=limit)
         if not jobs:
             print(f"[AI C2] No jobs needing tailoring (min_score={min_score})")
@@ -983,33 +921,39 @@ class AIAnalyzer:
             return None
 
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
-        """分析单个职位: 评分 + 简历定制 (Claude Code CLI)"""
+        """分析单个职位: C1 evaluate + C2 tailor (combined flow)."""
         job_id = job['id']
-        prompt = self._build_prompt(job)
 
-        text = self._call_claude(prompt)
-        if not text:
-            return AnalysisResult(
-                job_id=job_id, ai_score=0.0,
-                recommendation='REJECTED',
-                reasoning='Claude Code CLI returned empty response',
-                tailored_resume='{}',
-                model='claude_code', tokens_used=0,
-            )
+        # C1: Evaluate
+        c1_result = self.evaluate_job(job)
+        if not c1_result:
+            return None
 
-        parsed = self._parse_response(text)
-        if not parsed:
-            preview = text[:300].replace('\n', ' ')
-            print(f"  [WARN] Failed to parse response for {job_id}")
-            return AnalysisResult(
-                job_id=job_id, ai_score=0.0,
-                recommendation='REJECTED',
-                reasoning=f'[PARSE_FAIL] {preview[:200]}',
-                tailored_resume='{}',
-                model='claude_code', tokens_used=0,
-            )
+        # C2: Tailor (only if score meets threshold)
+        c2_threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
+        if c1_result.ai_score >= c2_threshold:
+            analysis = {
+                'ai_score': c1_result.ai_score,
+                'recommendation': c1_result.recommendation,
+                'reasoning': c1_result.reasoning,
+                'tailored_resume': c1_result.tailored_resume,
+            }
+            resume_json = self.tailor_resume(job, analysis)
+            if resume_json:
+                c1_result = AnalysisResult(
+                    job_id=c1_result.job_id,
+                    ai_score=c1_result.ai_score,
+                    skill_match=c1_result.skill_match,
+                    experience_fit=c1_result.experience_fit,
+                    growth_potential=c1_result.growth_potential,
+                    recommendation=c1_result.recommendation,
+                    reasoning=c1_result.reasoning,
+                    tailored_resume=resume_json,
+                    model=c1_result.model,
+                    tokens_used=c1_result.tokens_used,
+                )
 
-        return self._post_parse_analysis(job_id, job, parsed, tokens_used=0, prompt=prompt)
+        return c1_result
 
     def _parse_response(self, text: str) -> Optional[Dict]:
         """解析 AI 的 JSON 响应"""
@@ -1064,13 +1008,13 @@ class AIAnalyzer:
         return None
 
     def analyze_batch(self, limit: int = None) -> int:
-        """批量分析职位 (Claude Code CLI)"""
+        """批量分析职位: C1 evaluate + C2 tailor combined."""
         jobs = self.db.get_jobs_needing_analysis(limit=limit)
         if not jobs:
             print("[AI Analyzer] No jobs to analyze")
             return 0
 
-        print(f"\n[AI Analyzer] Analyzing {len(jobs)} jobs...")
+        print(f"\n[AI Analyzer] Analyzing {len(jobs)} jobs (C1+C2)...")
         analyzed = 0
 
         with self.db.batch_mode():
@@ -1090,7 +1034,6 @@ class AIAnalyzer:
                 except Exception as e:
                     print(f"-> ERROR: {e}")
 
-                # Rate limiting between CLI calls
                 if i < len(jobs) - 1:
                     time.sleep(1)
 
@@ -1098,19 +1041,22 @@ class AIAnalyzer:
         return analyzed
 
     def analyze_single(self, job_id: str) -> Optional[AnalysisResult]:
-        """分析单个职位 (by ID)"""
+        """分析单个职位 (by ID): C1 evaluate + C2 tailor."""
         job = self.db.get_job(job_id)
         if not job:
             print(f"[AI Analyzer] Job not found: {job_id}")
             return None
 
-        print(f"[AI Analyzer] Analyzing: {job['title']} @ {job['company']}")
+        print(f"[AI Analyzer] Analyzing (C1+C2): {job['title']} @ {job['company']}")
         result = self.analyze_job(job)
         if result:
             self.db.save_analysis(result)
             print(f"  Score: {result.ai_score:.1f} | {result.recommendation}")
-            print(f"  Reasoning: {result.reasoning}")
-            print(f"  Tokens: {result.tokens_used}")
+            tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
+            if tailored and tailored != {}:
+                print(f"  Resume: tailored ({len(tailored.get('experiences', []))} experiences)")
+            else:
+                print(f"  Resume: not tailored (score below threshold or C2 failed)")
         return result
 
 
@@ -1118,17 +1064,23 @@ def main():
     """CLI 入口"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="AI Job Analyzer")
-    parser.add_argument('--batch', action='store_true', help='Analyze all pending jobs')
-    parser.add_argument('--job', type=str, help='Analyze a single job by ID')
+    parser = argparse.ArgumentParser(description="AI Job Analyzer (C1/C2)")
+    parser.add_argument('--batch', action='store_true', help='C1+C2 for all pending jobs')
+    parser.add_argument('--evaluate', action='store_true', help='C1 only: evaluate pending jobs')
+    parser.add_argument('--tailor', action='store_true', help='C2 only: tailor evaluated jobs')
+    parser.add_argument('--job', type=str, help='C1+C2 for a single job by ID')
     parser.add_argument('--limit', type=int, default=50,
-                        help='Max jobs to analyze in batch')
+                        help='Max jobs to process in batch')
     args = parser.parse_args()
 
     analyzer = AIAnalyzer()
 
     if args.job:
         analyzer.analyze_single(args.job)
+    elif args.evaluate:
+        analyzer.evaluate_batch(limit=args.limit)
+    elif args.tailor:
+        analyzer.tailor_batch(limit=args.limit)
     elif args.batch:
         analyzer.analyze_batch(limit=args.limit)
     else:
