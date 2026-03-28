@@ -1395,11 +1395,9 @@ class JobDatabase:
                     COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
                     COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
                     COUNT(DISTINCT CASE WHEN a.status IN ('interview', 'offer') THEN j.id END) as positive_response,
-                    AVG(s.score) as avg_rule_score,
                     AVG(an.ai_score) as avg_ai_score
                 FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
-                LEFT JOIN ai_scores s ON j.id = s.job_id
                 LEFT JOIN job_analysis an ON j.id = an.job_id
                 LEFT JOIN applications a ON j.id = a.job_id
                 GROUP BY j.company
@@ -1542,7 +1540,7 @@ class JobDatabase:
                 params.append(filters["profile"])
 
             if filters.get("min_score"):
-                query += " AND id IN (SELECT job_id FROM ai_scores WHERE score >= ?)"
+                query += " AND id IN (SELECT job_id FROM job_analysis WHERE ai_score >= ?)"
                 params.append(filters["min_score"])
 
             cursor = conn.execute(query, params)

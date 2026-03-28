@@ -753,13 +753,13 @@ def main():
     parser.add_argument('--tracker', action='store_true',
                         help='Show application tracker (status breakdown)')
     parser.add_argument('--reprocess', action='store_true',
-                        help='Clear old filter/score results and reprocess all jobs with new rules')
+                        help='Clear old filter results and reprocess all jobs with new rules')
     parser.add_argument('--retry-failures', action='store_true',
                         help='Clear transient AI failures (parse/truncation/empty) and re-analyze')
 
     # New AI-powered commands
     parser.add_argument('--ai-analyze', action='store_true',
-                        help='Run AI analysis on scored jobs')
+                        help='Run AI analysis on filtered jobs')
     parser.add_argument('--generate', action='store_true',
                         help='Generate resumes for AI-analyzed jobs')
     parser.add_argument('--analyze-job', type=str,
@@ -1039,7 +1039,7 @@ def main():
     print("  --retention-days N Days to keep in live DB (default: 7, use with --archive)")
     print()
     print("  AI-powered:")
-    print("  --ai-analyze       AI analysis on scored jobs")
+    print("  --ai-analyze       AI analysis on filtered jobs")
     print("  --generate         Generate resumes for AI high-score jobs")
     print("  --analyze-job ID   Analyze a single job")
     print()
