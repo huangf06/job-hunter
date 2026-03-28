@@ -120,9 +120,9 @@ class HardFilter:
                 ):
                     continue
 
-                # Hard reject patterns — always reject, no exceptions
-                hard_reject_patterns = rule_config.get('title_hard_reject_patterns', [])
-                for pattern in hard_reject_patterns:
+                # Title reject patterns (simple list, no soft/hard distinction)
+                reject_patterns = rule_config.get('title_reject_patterns', [])
+                for pattern in reject_patterns:
                     try:
                         if re.search(pattern, title, re.IGNORECASE):
                             return FilterResult(
@@ -134,27 +134,7 @@ class HardFilter:
                     except re.error:
                         continue
 
-                # Soft reject patterns — bypassed if title also contains a reject_exception keyword
-                reject_patterns = rule_config.get('title_reject_patterns', [])
-                reject_exceptions = [e.lower().strip() for e in rule_config.get('reject_exceptions', [])]
-                has_exception = reject_exceptions and any(
-                    re.search(keyword_boundary_pattern(exc), title)
-                    for exc in reject_exceptions if exc
-                )
-                if not has_exception:
-                    for pattern in reject_patterns:
-                        try:
-                            if re.search(pattern, title, re.IGNORECASE):
-                                return FilterResult(
-                                    job_id=job_id, passed=False,
-                                    reject_reason=rule_name,
-                                    filter_version="2.0",
-                                    matched_rules=json.dumps({"rejected_pattern": pattern})
-                                )
-                        except re.error:
-                            continue
-
-                # Then check whitelist - title must contain at least one target keyword
+                # Whitelist - title must contain at least one target keyword
                 must_contain = rule_config.get('title_must_contain_one_of', [])
                 if must_contain:
                     found = any(
@@ -169,7 +149,7 @@ class HardFilter:
                             matched_rules=json.dumps({"no_target_keyword_in_title": title})
                         )
 
-            # --- Tech stack check (title + body) ---
+            # --- Tech stack check (title only) ---
             elif rule_type == 'tech_stack':
                 exceptions = [e.lower().strip() for e in rule_config.get('exceptions', [])]
 
@@ -192,18 +172,6 @@ class HardFilter:
                                 )
                         except re.error:
                             continue
-
-                    # Check body irrelevant keyword count
-                    body_keywords = rule_config.get('body_irrelevant_keywords', [])
-                    body_threshold = rule_config.get('body_irrelevant_threshold', 5)
-                    body_count = sum(1 for kw in body_keywords if re.search(keyword_boundary_pattern(kw.lower()), description))
-                    if body_count >= body_threshold:
-                        return FilterResult(
-                            job_id=job_id, passed=False,
-                            reject_reason=rule_name,
-                            filter_version="2.0",
-                            matched_rules=json.dumps({"body_irrelevant_count": body_count})
-                        )
 
             # --- Standard regex check ---
             elif rule_type == 'regex':
