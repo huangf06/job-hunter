@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 """
-AI Job Analyzer - 统一评分与简历定制
-=====================================
+AI Job Analyzer — Claude Code CLI
+==================================
 
-一次 AI 调用同时完成:
-1. 职位匹配评分 (skill_match, experience_fit, growth_potential)
-2. 简历内容定制 (bio, experiences, projects, skills)
-
-使用 Claude Opus (via proxy) 进行分析，结果保存到 job_analysis 表。
-
-API keys 从 .env 文件加载。
+Evaluates jobs and tailors resumes via Claude Code CLI (`claude -p`).
+No Anthropic SDK dependency — flat subscription model.
 """
 
 import json
@@ -25,14 +20,6 @@ import yaml
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Load .env file
-try:
-    from dotenv import load_dotenv
-    load_dotenv(PROJECT_ROOT / ".env", override=True)
-except ImportError:
-    pass  # dotenv not installed, rely on env vars directly
-
-from anthropic import Anthropic, RateLimitError, APITimeoutError, AuthenticationError, APIConnectionError, InternalServerError
 from src import TRANSFERABLE_SKIP_WORDS
 from src.db.job_db import JobDatabase, AnalysisResult
 from src.language_guidance import format_language_guidance_for_prompt
@@ -49,55 +36,15 @@ class AIAnalyzer:
         'graphsage_gnn', 'obama_tts', 'lifeos', 'job_hunter_automation',
     ]
 
-    def __init__(self, config_path: Path = None, model_override: str = None):
+    def __init__(self, config_path: Path = None):
         self.config = self._load_config(config_path)
         self.db = JobDatabase()
-
-        # Determine which model to use
-        active = model_override or self.config.get('active_model', 'opus')
-        model_config = self.config.get('models', {}).get(active, {})
-
-        if not model_config:
-            raise ValueError(f"Model config not found: {active}")
-
-        self.provider = model_config.get('provider', 'anthropic')
-        self.model = model_config.get('model', 'claude-opus-4-6')
-        self.max_tokens = model_config.get('max_tokens', 8192)
-        self.temperature = model_config.get('temperature', 0.3)
-
-        # Load API credentials from env (not needed for claude_code provider)
-        if self.provider != 'claude_code':
-            env_key = model_config.get('env_key', 'ANTHROPIC_API_KEY')
-            env_url = model_config.get('env_url', 'ANTHROPIC_BASE_URL')
-            self.api_key = os.environ.get(env_key)
-            self.base_url = os.environ.get(env_url)
-            self.auth_type = model_config.get('auth_type', 'api_key')
-            self.client = self._init_client()
-        else:
-            self.api_key = None
-            self.base_url = None
-            self.auth_type = None
-            self.client = None
         self.bullet_library = self._load_bullet_library()
-        self.valid_bullets = self._extract_valid_bullets()  # Set of all valid bullet texts
-        self.bullet_id_lookup = self._build_bullet_id_lookup()  # ID -> text
-        self.validator = ResumeValidator()  # Early validation to catch issues before saving
-
-        print(f"[AI Analyzer] Using: {active} ({self.model})")
-        print(f"[AI Analyzer] Loaded {len(self.bullet_id_lookup)} bullet IDs for resolution")
-
-    def _init_client(self):
-        """初始化 API client (统一使用 Anthropic SDK)"""
-        kwargs = {}
-        if self.api_key:
-            kwargs['api_key'] = self.api_key
-        if self.base_url:
-            kwargs['base_url'] = self.base_url
-        # For proxies that require Bearer auth (e.g. codesome.cn)
-        if self.auth_type == 'bearer' and self.api_key:
-            kwargs['api_key'] = 'bearer-auth-placeholder'  # SDK requires non-empty api_key
-            kwargs['default_headers'] = {"Authorization": f"Bearer {self.api_key}"}
-        return Anthropic(**kwargs)
+        self.valid_bullets = self._extract_valid_bullets()
+        self.bullet_id_lookup = self._build_bullet_id_lookup()
+        self.validator = ResumeValidator()
+        print(f"[AI Analyzer] Claude Code CLI mode")
+        print(f"[AI Analyzer] Loaded {len(self.bullet_id_lookup)} bullet IDs")
 
     def _load_config(self, config_path: Path = None) -> dict:
         """加载 AI 配置"""
@@ -703,11 +650,11 @@ class AIAnalyzer:
             recommendation=recommendation,
             reasoning=reasoning,
             tailored_resume=json.dumps(tailored, ensure_ascii=False),
-            model=self.model,
+            model='claude_code',
             tokens_used=tokens_used
         )
 
-    def _analyze_via_claude_code(self, prompt: str) -> Optional[str]:
+    def _call_claude(self, prompt: str) -> Optional[str]:
         """Call Claude Code CLI to analyze a job.
 
         Pipes the prompt via stdin to `claude -p` and returns the raw text
@@ -724,9 +671,6 @@ class AIAnalyzer:
 
         try:
             cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '1']
-            # Only pass --model if explicitly configured (skip to use Claude Code's default)
-            if self.model and self.model != 'default':
-                cmd.extend(['--model', self.model])
             # Strip ANTHROPIC_BASE_URL/API_KEY from env — they may point to an
             # expired proxy and would override Claude Code's native auth.
             clean_env = os.environ.copy()
@@ -755,189 +699,33 @@ class AIAnalyzer:
             return None
 
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
-        """分析单个职位: 评分 + 简历定制"""
+        """分析单个职位: 评分 + 简历定制 (Claude Code CLI)"""
         job_id = job['id']
         prompt = self._build_prompt(job)
 
-        try:
-            # ── Claude Code CLI provider ──
-            if self.provider == 'claude_code':
-                text = self._analyze_via_claude_code(prompt)
-                if not text:
-                    return AnalysisResult(
-                        job_id=job_id, ai_score=0.0,
-                        recommendation='REJECTED',
-                        reasoning='Claude Code CLI returned empty response',
-                        tailored_resume='{}',
-                        model=self.model, tokens_used=0,
-                    )
-                tokens_used = 0  # CLI doesn't report token usage
-                # Fall through to JSON parsing below
-                parsed = self._parse_response(text)
-                if not parsed:
-                    preview = text[:300].replace('\n', ' ')
-                    print(f"  [WARN] Failed to parse Claude Code response for {job_id}")
-                    print(f"    Raw response preview: {preview}")
-                    return AnalysisResult(
-                        job_id=job_id, ai_score=0.0,
-                        recommendation='REJECTED',
-                        reasoning=f'[PARSE_FAIL] {preview[:200]}',
-                        tailored_resume='{}',
-                        model=self.model, tokens_used=0,
-                    )
-                # Jump to post-parse processing (shared with API path)
-                return self._post_parse_analysis(job_id, job, parsed, tokens_used, prompt)
-
-            # ── Anthropic SDK provider ──
-            response = None
-            for attempt in range(3):
-                try:
-                    response = self.client.messages.create(
-                        model=self.model,
-                        max_tokens=self.max_tokens,
-                        temperature=self.temperature,
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    if not response or not response.content:
-                        if attempt < 2:
-                            wait = 2 ** (attempt + 1)
-                            print(f"\n    [RETRY] Empty response, waiting {wait}s...", end=' ')
-                            time.sleep(wait)
-                            continue
-                        else:
-                            print(f"  [WARN] Empty response from API for {job_id} after 3 attempts")
-                            return AnalysisResult(
-                                job_id=job_id, ai_score=0.0,
-                                recommendation='REJECTED',
-                                reasoning='Empty API response after 3 attempts',
-                                tailored_resume='{}',
-                                model=self.model, tokens_used=0,
-                            )
-                    break
-                except (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError) as e:
-                    if attempt < 2:
-                        import random
-                        # Rate limits need longer backoff than timeouts/connection errors
-                        base = 30 * (attempt + 1) if isinstance(e, RateLimitError) else 2 ** (attempt + 1)
-                        wait = base + random.uniform(0, base * 0.5)
-                        print(f"\n    [RETRY] {e}, waiting {wait:.0f}s...", end=' ')
-                        time.sleep(wait)
-                    else:
-                        raise
-
-            if not response or not response.content:
-                print(f"  [WARN] Empty response from API for {job_id}")
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning='Empty API response',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=0,
-                )
-
-            if response.stop_reason == "max_tokens":
-                # Track tokens even for truncated responses (API still charges)
-                usage = response.usage
-                tokens_used = 0
-                if usage:
-                    tokens_used = getattr(usage, 'input_tokens', 0) + getattr(usage, 'output_tokens', 0)
-                print(f"\n    [WARN] Response truncated (max_tokens={self.max_tokens}) — saving sentinel")
-                # Save sentinel to prevent infinite retry on same job
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning='Response truncated (max_tokens) — JD too complex for token limit',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=tokens_used
-                )
-
-            text_blocks = [b for b in response.content if getattr(b, 'type', None) == 'text']
-            if not text_blocks:
-                print(f"  [WARN] No text content in response for {job_id}")
-                return None
-            # Concatenate ALL text blocks — thinking blocks may split text output
-            text = ''.join(b.text for b in text_blocks).strip()
-            usage = response.usage
-            tokens_used = 0
-            if usage:
-                tokens_used = getattr(usage, 'input_tokens', 0) + getattr(usage, 'output_tokens', 0)
-
-            # Parse JSON from response
-            parsed = self._parse_response(text)
-            if not parsed:
-                # Retry: re-call API once for parse failures (transient API issues)
-                print(f"\n    [RETRY] Parse failed, retrying API call...")
-                time.sleep(2)
-                try:
-                    retry_resp = self.client.messages.create(
-                        model=self.model,
-                        max_tokens=self.max_tokens,
-                        temperature=self.temperature,
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    if retry_resp and retry_resp.content and retry_resp.stop_reason != "max_tokens":
-                        retry_blocks = [b for b in retry_resp.content if getattr(b, 'type', None) == 'text']
-                        if retry_blocks:
-                            retry_text = ''.join(b.text for b in retry_blocks).strip()
-                            retry_usage = retry_resp.usage
-                            if retry_usage:
-                                tokens_used += getattr(retry_usage, 'input_tokens', 0) + getattr(retry_usage, 'output_tokens', 0)
-                            parsed = self._parse_response(retry_text)
-                            if parsed:
-                                text = retry_text
-                                print(f"    [RETRY] Parse succeeded on retry")
-                except Exception as retry_err:
-                    print(f"    [RETRY] Retry API call failed: {retry_err}")
-
-            if not parsed:
-                preview = text[:300].replace('\n', ' ')
-                print(f"  [WARN] Failed to parse AI response for {job_id}")
-                print(f"    Raw response preview: {preview}")
-                # Save sentinel — marked as parse failure for selective retry
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning=f'[PARSE_FAIL] {preview[:200]}',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=tokens_used
-                )
-
-            return self._post_parse_analysis(job_id, job, parsed, tokens_used, prompt)
-
-        except AuthenticationError as e:
-            print(f"  [FATAL] Authentication failed: {e}")
-            raise
-        except RateLimitError as e:
-            # Quota exhaustion — do NOT save sentinel, allow retry when quota resets
-            error_msg = str(e)
-            if 'DAILY_LIMIT_EXCEEDED' in error_msg or 'usage limit exceeded' in error_msg.lower():
-                print(f"  [QUOTA] Daily quota exhausted — skipping (will retry when quota resets)")
-                return None  # No sentinel, job remains unanalyzed
-            else:
-                # Other rate limits (per-minute, etc.) — save sentinel to avoid infinite retry
-                print(f"  [ERROR] Rate limit error: {error_msg[:200]}")
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning=f'Rate limit: {error_msg[:200]}',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=0
-                )
-        except Exception as e:
-            error_msg = str(e)
-            # Insufficient balance (403) — transient billing issue, do NOT save sentinel
-            if 'INSUFFICIENT_BALANCE' in error_msg or 'Insufficient account balance' in error_msg:
-                print(f"  [BALANCE] Insufficient balance — skipping (will retry after top-up)")
-                return None  # No sentinel, job remains unanalyzed
-            print(f"  [ERROR] AI analysis failed for {job_id}: {ascii(error_msg)}")
-            # Save sentinel to prevent infinite retry on deterministic errors
+        text = self._call_claude(prompt)
+        if not text:
             return AnalysisResult(
                 job_id=job_id, ai_score=0.0,
                 recommendation='REJECTED',
-                reasoning=f'Analysis error: {error_msg[:200]}',
+                reasoning='Claude Code CLI returned empty response',
                 tailored_resume='{}',
-                model=self.model, tokens_used=0
+                model='claude_code', tokens_used=0,
             )
+
+        parsed = self._parse_response(text)
+        if not parsed:
+            preview = text[:300].replace('\n', ' ')
+            print(f"  [WARN] Failed to parse response for {job_id}")
+            return AnalysisResult(
+                job_id=job_id, ai_score=0.0,
+                recommendation='REJECTED',
+                reasoning=f'[PARSE_FAIL] {preview[:200]}',
+                tailored_resume='{}',
+                model='claude_code', tokens_used=0,
+            )
+
+        return self._post_parse_analysis(job_id, job, parsed, tokens_used=0, prompt=prompt)
 
     def _parse_response(self, text: str) -> Optional[Dict]:
         """解析 AI 的 JSON 响应"""
@@ -992,26 +780,15 @@ class AIAnalyzer:
         return None
 
     def analyze_batch(self, limit: int = None) -> int:
-        """批量分析职位"""
+        """批量分析职位 (Claude Code CLI)"""
         jobs = self.db.get_jobs_needing_analysis(limit=limit)
         if not jobs:
             print("[AI Analyzer] No jobs to analyze")
             return 0
 
-        print(f"\n[AI Analyzer] Analyzing {len(jobs)} jobs (model: {self.model})...")
+        print(f"\n[AI Analyzer] Analyzing {len(jobs)} jobs...")
         analyzed = 0
 
-        # Query cumulative daily token usage for budget tracking
-        total_tokens = 0
-        try:
-            total_tokens = self.db.get_daily_token_usage()
-            if total_tokens > 0:
-                print(f"  Today's token usage so far: {total_tokens}")
-        except Exception as e:
-            print(f"  [WARN] Could not query daily token usage: {e} — starting from 0")
-            total_tokens = 0
-
-        consecutive_none = 0  # Track consecutive None returns (quota/balance issues)
         with self.db.batch_mode():
             for i, job in enumerate(jobs):
                 title = job.get('title', '')[:45]
@@ -1023,36 +800,17 @@ class AIAnalyzer:
                     if result:
                         self.db.save_analysis(result)
                         analyzed += 1
-                        total_tokens += result.tokens_used
-                        consecutive_none = 0
                         print(f"-> {result.recommendation} ({result.ai_score:.1f})")
                     else:
-                        consecutive_none += 1
-                        print("-> SKIPPED (transient)")
-                        if consecutive_none >= 3:
-                            print(f"\n[AI Analyzer] 3 consecutive failures (quota/balance) — stopping batch early.")
-                            break
-                except AuthenticationError:
-                    print(f"\n[AI Analyzer] Authentication failed — stopping batch. Check API key.")
-                    break
+                        print("-> SKIPPED")
                 except Exception as e:
                     print(f"-> ERROR: {e}")
 
-                # Rate limiting
+                # Rate limiting between CLI calls
                 if i < len(jobs) - 1:
                     time.sleep(1)
 
-                # Token budget warning + hard stop
-                budget_config = self.config.get('budget', {})
-                warn_limit = budget_config.get('warn_threshold', 80000)
-                budget_limit = budget_config.get('daily_limit', 100000)
-                if total_tokens >= warn_limit and total_tokens < budget_limit:
-                    print(f"\n  [WARN] Approaching token budget ({total_tokens}/{budget_limit} tokens)")
-                if total_tokens >= budget_limit:
-                    print(f"\n[AI Analyzer] Token budget reached ({total_tokens} tokens)")
-                    break
-
-        print(f"\n[AI Analyzer] Done: {analyzed}/{len(jobs)} analyzed, {total_tokens} tokens used")
+        print(f"\n[AI Analyzer] Done: {analyzed}/{len(jobs)} analyzed")
         return analyzed
 
     def analyze_single(self, job_id: str) -> Optional[AnalysisResult]:
@@ -1091,11 +849,6 @@ def main():
         analyzer.analyze_batch(limit=args.limit)
     else:
         parser.print_help()
-        print("\nExamples:")
-        print("  python ai_analyzer.py --batch                    # Use default model from config")
-        print("  python ai_analyzer.py --batch --model kimi       # Force Kimi")
-        print("  python ai_analyzer.py --batch --model opus       # Force Claude Opus")
-        print("  python ai_analyzer.py --job abc123 --model kimi")
 
 
 if __name__ == "__main__":
