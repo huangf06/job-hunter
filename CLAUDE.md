@@ -11,13 +11,13 @@
 ```
 ┌──────────┐    ┌──────────────┐    ┌──────────────────────────────┐
 │ Block A  │───▶│   Block B    │───▶│         Block C               │
-│  Scrape  │    │ Hard Filter  │    │  AI Evaluate (Claude)         │
-│  (jobs)  │    │  (pass/reject)│    │  - 评分 (skill_match, etc)   │
-└──────────┘    └──────────────┘    │  - 输出 tailored resume JSON  │
-                      │             │  - Cover Letter spec           │
+│  Scrape  │    │ Hard Filter  │    │  C1: Evaluate (评分+brief)    │
+│  (jobs)  │    │ (whitelist)  │    │  C2: Tailor (简历定制)        │
+└──────────┘    └──────────────┘    │  score >= 4.0 触发 C2         │
+                      │             │  Application Brief 替代 CL    │
                  rejected           └──────────────────────────────┘
                       ▼                          │
-                 ┌─────────┐                     ▼ ai_score >= 5.0
+                 ┌─────────┐                     ▼ ai_score >= 4.0
                  │  SKIP   │          ┌──────────────────────────────┐
                  └─────────┘          │       Block D                │
                                       │  Resume Renderer (Jinja2)    │
@@ -57,16 +57,22 @@ python scripts/job_pipeline.py --filter        # 只筛选
 
 ### 3. AI 分析与简历生成
 ```bash
-# AI 分析高分职位 (调用 Claude Opus)
+# C1 评分 + application brief (快速，无 bullet library)
+python scripts/job_pipeline.py --ai-evaluate
+
+# C2 简历定制 (仅 score >= 4.0 的职位)
+python scripts/job_pipeline.py --ai-tailor
+
+# C1 + C2 一起执行 (向后兼容)
 python scripts/job_pipeline.py --ai-analyze
 
-# 分析单个职位
+# 分析单个职位 (C1+C2)
 python scripts/job_pipeline.py --analyze-job JOB_ID
 ```
 
 可选参数:
 - `--min-score N`: 最低分数阈值
-- `--limit N`: 最大处理数量 (默认 50)
+- `--limit N`: 最大处理数量
 
 ### 4. 本地投递工作流 (推荐)
 ```bash
@@ -296,8 +302,8 @@ print(db.get_funnel_stats())
 - `budget.daily_limit`: 每日 token 预算
 
 ### 硬规则筛选 (`config/base/filters.yaml`)
-- 9 条硬拒绝规则 (荷兰语检测、非目标角色、错误技术栈等)
-- 通过 Hard Filter 的职位直接进入 AI 分析 (无中间评分步骤)
+- 6 条硬拒绝规则 (whitelist-only: 荷兰语检测、白名单角色、标题技术栈等)
+- 通过 Hard Filter 的职位进入 C1 评分，score >= 4.0 进入 C2 简历定制
 
 ## 注意事项
 
