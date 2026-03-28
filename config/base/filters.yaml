@@ -70,6 +70,7 @@ hard_reject_rules:
       - "artificial intelligence"
       - "computer vision"
       - "machine vision"
+      - "vision"
       - "python"
       - "quant"
       - "quantitative"
@@ -118,6 +119,7 @@ hard_reject_rules:
       - "ml"
       - "ai"
       - "machine learning"
+      - "vision"
 
   # 规则4: 非目标技术栈 (分标题和正文检查)
   wrong_tech_stack:
