@@ -244,10 +244,24 @@ class JobPipeline:
     # ==================== AI Analysis & Resume Generation ====================
 
     def ai_analyze_jobs(self, limit: int = None) -> int:
-        """AI 分析通过预筛选的职位"""
+        """AI 分析通过预筛选的职位 (C1 evaluate + C2 tailor)"""
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer()
-        return analyzer.analyze_batch(limit=limit)
+        evaluated = analyzer.evaluate_batch(limit=limit)
+        tailored = analyzer.tailor_batch(min_score=4.0, limit=limit)
+        return evaluated + tailored
+
+    def ai_evaluate_jobs(self, limit: int = None) -> int:
+        """C1: AI evaluation (scoring + application brief)"""
+        from src.ai_analyzer import AIAnalyzer
+        analyzer = AIAnalyzer()
+        return analyzer.evaluate_batch(limit=limit)
+
+    def ai_tailor_jobs(self, min_score: float = 4.0, limit: int = None) -> int:
+        """C2: AI resume tailoring for high-scoring jobs"""
+        from src.ai_analyzer import AIAnalyzer
+        analyzer = AIAnalyzer()
+        return analyzer.tailor_batch(min_score=min_score, limit=limit)
 
     def generate_resumes(self, min_ai_score: float = None, limit: int = None) -> int:
         """为高分职位生成简历"""
@@ -759,7 +773,11 @@ def main():
 
     # New AI-powered commands
     parser.add_argument('--ai-analyze', action='store_true',
-                        help='Run AI analysis on filtered jobs')
+                        help='Run AI analysis on filtered jobs (C1 evaluate + C2 tailor)')
+    parser.add_argument('--ai-evaluate', action='store_true',
+                        help='Run AI evaluation only (C1: scoring + application brief)')
+    parser.add_argument('--ai-tailor', action='store_true',
+                        help='Run AI resume tailoring only (C2: for jobs with score >= 4.0)')
     parser.add_argument('--generate', action='store_true',
                         help='Generate resumes for AI-analyzed jobs')
     parser.add_argument('--analyze-job', type=str,
@@ -860,7 +878,7 @@ def main():
 
     # 新版数据库流水线
     if args.process or args.import_only or args.filter or args.ready \
-       or args.ai_analyze or args.generate or args.analyze_job \
+       or args.ai_analyze or args.ai_evaluate or args.ai_tailor or args.generate or args.analyze_job \
        or args.stats or args.mark_applied or args.mark_all_applied \
        or args.update_status or args.tracker \
        or args.cover_letter or args.cover_letters \
@@ -903,6 +921,10 @@ def main():
             pipeline.filter_jobs(limit=args.limit)
         elif args.ready:
             pipeline.show_ready()
+        elif args.ai_evaluate:
+            pipeline.ai_evaluate_jobs(limit=args.limit)
+        elif args.ai_tailor:
+            pipeline.ai_tailor_jobs(min_score=args.min_score or 4.0, limit=args.limit)
         elif args.ai_analyze:
             pipeline.ai_analyze_jobs(limit=args.limit)
         elif args.generate:
