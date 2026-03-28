@@ -124,7 +124,9 @@ class TestValidJobPasses:
 
 
 class TestWrongRole:
-    """Marketing / non-target titles should be rejected."""
+    """Whitelist-only: title must contain at least one target keyword to pass."""
+
+    # --- Rejected: no whitelist keyword in title ---
 
     def test_marketing_manager_rejected(self, hf):
         job = _make_job(title="Marketing Manager")
@@ -132,40 +134,32 @@ class TestWrongRole:
         assert result.passed is False
         assert result.reject_reason == "non_target_role"
 
-    def test_sales_director_rejected(self, hf):
-        job = _make_job(title="Sales Director")
+    def test_account_manager_rejected(self, hf):
+        job = _make_job(title="Account Manager")
         result = hf.apply(job)
         assert result.passed is False
+        assert result.reject_reason == "non_target_role"
 
-    # --- Hard reject patterns: always reject even with data/ai in title ---
-
-    def test_security_engineer_with_data_still_rejected(self, hf):
-        """security_engineer is a hard reject — 'data' in title doesn't save it."""
-        result = hf.apply(_make_job(title="Data Security Engineer"))
+    def test_recruiter_rejected(self, hf):
+        job = _make_job(title="Technical Recruiter")
+        result = hf.apply(job)
         assert result.passed is False
         assert result.reject_reason == "non_target_role"
 
-    def test_network_engineer_with_ai_still_rejected(self, hf):
-        """network_engineer is a hard reject — 'AI' doesn't save it."""
-        result = hf.apply(_make_job(title="AI Network Engineer"))
+    def test_hr_manager_rejected(self, hf):
+        job = _make_job(title="HR Manager")
+        result = hf.apply(job)
         assert result.passed is False
         assert result.reject_reason == "non_target_role"
 
-    def test_policy_data_analyst_still_rejected(self, hf):
-        """policy is a hard reject — 'data analyst' doesn't save it."""
-        result = hf.apply(_make_job(title="Policy Data Analyst"))
-        assert result.passed is False
-        assert result.reject_reason == "non_target_role"
+    # --- Passed: title contains whitelist keyword ---
 
-    def test_plc_software_engineer_still_rejected(self, hf):
-        """PLC is a hard reject."""
-        result = hf.apply(_make_job(title="PLC Software Engineer"))
-        assert result.passed is False
-
-    # --- Soft reject patterns: bypassed when title also has data/ml/ai/etc ---
+    def test_data_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="Data Engineer"))
+        assert result.passed is True
 
     def test_marketing_data_analyst_passes(self, hf):
-        """'marketing' is soft reject, 'data' + 'analyst' in reject_exceptions → let AI decide."""
+        """Has 'data' in title → passes whitelist (AI decides on marketing fit)."""
         result = hf.apply(_make_job(title="Marketing Data Analyst"))
         assert result.passed is True
 
@@ -173,22 +167,36 @@ class TestWrongRole:
         result = hf.apply(_make_job(title="Marketing Data Engineer"))
         assert result.passed is True
 
-    def test_senior_data_scientist_marketing_passes(self, hf):
-        result = hf.apply(_make_job(title="Senior Data Scientist - Marketing"))
-        assert result.passed is True
-
     def test_embedded_ml_engineer_passes(self, hf):
-        """'embedded' is soft reject, 'ml' in reject_exceptions → let AI decide."""
+        """Has 'ml' in title → passes whitelist."""
         result = hf.apply(_make_job(title="Embedded ML Engineer"))
         assert result.passed is True
 
     def test_legal_ai_engineer_passes(self, hf):
-        """'legal' is soft reject, 'ai' in reject_exceptions → let AI decide."""
+        """Has 'ai' in title → passes whitelist."""
         result = hf.apply(_make_job(title="AI Engineer (Libra - Legal AI Assistant)"))
         assert result.passed is True
 
     def test_data_analyst_sales_passes(self, hf):
         result = hf.apply(_make_job(title="Data Analyst, Sales & Delivery"))
+        assert result.passed is True
+
+    def test_security_data_engineer_passes(self, hf):
+        """Has 'data' → passes whitelist (formerly hard-rejected by pattern)."""
+        result = hf.apply(_make_job(title="Data Security Engineer"))
+        assert result.passed is True
+
+    def test_policy_data_analyst_passes(self, hf):
+        """Has 'data' → passes whitelist (formerly hard-rejected by pattern)."""
+        result = hf.apply(_make_job(title="Policy Data Analyst"))
+        assert result.passed is True
+
+    def test_bi_analyst_passes(self, hf):
+        result = hf.apply(_make_job(title="BI Analyst"))
+        assert result.passed is True
+
+    def test_senior_data_scientist_marketing_passes(self, hf):
+        result = hf.apply(_make_job(title="Senior Data Scientist - Marketing"))
         assert result.passed is True
 
 
@@ -373,38 +381,14 @@ class TestWrongTechStack:
         assert result.passed is False
         assert result.reject_reason == "non_target_role"
 
-    def test_body_irrelevant_keywords_below_threshold_passes(self, hf):
-        """A few irrelevant body keywords under threshold should not reject."""
-        job = _make_job(description=(
-            "Data Engineer role. You will work with Python, SQL, Spark, and AWS. "
-            "Some exposure to react and angular is nice to have but not required. "
-            "Primary focus is building data pipelines and ETL processes."
-        ))
-        result = hf.apply(job)
-        assert result.passed is True
-
-    def test_body_irrelevant_keywords_above_threshold_rejected(self, hf):
-        """Many irrelevant body keywords over threshold (7) should reject.
-        Title 'Software Engineer' passes non_target_role but has no tech_stack exception."""
+    def test_software_engineer_with_frontend_body_passes(self, hf):
+        """Body keywords no longer checked — only title patterns matter."""
         job = _make_job(
             title="Software Engineer",
             description=(
                 "Full stack engineer needed. Tech stack: react, angular, vue, "
                 "typescript, node.js, spring boot, microservice architecture, "
                 ".net backend, graphql API layer. Some Python scripting."
-            ),
-        )
-        result = hf.apply(job)
-        assert result.passed is False
-        assert result.reject_reason == "wrong_tech_stack"
-
-    def test_data_title_exempts_body_keywords(self, hf):
-        """'Data Engineer' title triggers tech_stack exception — body keywords ignored."""
-        job = _make_job(
-            title="Data Engineer",
-            description=(
-                "Full stack role: react, angular, vue, typescript, node.js, "
-                "spring boot, microservice, .net, graphql, ruby on rails."
             ),
         )
         result = hf.apply(job)
@@ -468,97 +452,6 @@ class TestLowCompensation:
         job = _make_job(description=(
             "Data Engineer. Salary range: €55,000 - €75,000 per year. "
             "Python, SQL, Spark. Amsterdam office with hybrid work."
-        ))
-        result = hf.apply(job)
-        assert result.passed is True
-
-
-class TestSpecificTechExperience:
-    """Rule 6.5: Specific tech stack years too high for candidate."""
-
-    def test_java_7_years_rejected(self, hf):
-        """Title 'Software Engineer' has no exception keyword → specific_tech_experience fires."""
-        job = _make_job(
-            title="Software Engineer",
-            description=(
-                "Software Engineer needed. Requirements: 7+ years of Java experience. "
-                "Strong background in distributed systems."
-            ),
-        )
-        result = hf.apply(job)
-        assert result.passed is False
-        assert result.reject_reason == "specific_tech_experience"
-
-    def test_scala_5_years_rejected(self, hf):
-        """Title 'Backend Engineer' has no exception → specific_tech_experience fires for Scala."""
-        job = _make_job(
-            title="Backend Engineer",
-            description=(
-                "Looking for engineer with 5+ years scala experience. "
-                "Building distributed data solutions."
-            ),
-        )
-        result = hf.apply(job)
-        assert result.passed is False
-        assert result.reject_reason == "specific_tech_experience"
-
-    def test_python_7_years_passes(self, hf):
-        """'python' is in the exceptions list — title with 'python' bypasses the rule."""
-        job = _make_job(
-            title="Python Software Engineer",
-            description=(
-                "Software Engineer. 7+ years of Python experience required. "
-                "SQL, Spark, and cloud platforms."
-            ),
-        )
-        result = hf.apply(job)
-        assert result.passed is True
-
-    def test_data_title_exempts_tech_years(self, hf):
-        """'Data Engineer' title has 'data' in exceptions → rule skipped even with Java years."""
-        job = _make_job(description=(
-            "Data Engineer. 7+ years of Java experience. "
-            "Building data pipelines."
-        ))
-        result = hf.apply(job)
-        assert result.passed is True
-
-
-class TestLocationRestricted:
-    """Rule 9: Visa/residency restrictions (on-site NOT rejected — let AI decide)."""
-
-    def test_onsite_only_passes(self, hf):
-        """On-site requirement is not a hard reject — candidate is NL-based."""
-        job = _make_job(description=(
-            "Data Engineer. This is an onsite only position in Amsterdam. "
-            "You will work from our office. Python, SQL required."
-        ))
-        result = hf.apply(job)
-        assert result.passed is True
-
-    def test_no_visa_sponsorship_rejected(self, hf):
-        job = _make_job(description=(
-            "Data Engineer role. Unfortunately we cannot provide visa sponsorship "
-            "for this position. No sponsorship available. Python and SQL."
-        ))
-        result = hf.apply(job)
-        assert result.passed is False
-        assert result.reject_reason == "location_restricted"
-
-    def test_must_be_located_rejected(self, hf):
-        job = _make_job(description=(
-            "Data Engineer. Candidates must be located in Germany. "
-            "No relocation support. Python, SQL required."
-        ))
-        result = hf.apply(job)
-        assert result.passed is False
-        assert result.reject_reason == "location_restricted"
-
-    def test_hybrid_with_onsite_mention_passes(self, hf):
-        """Hybrid role mentioning office should pass."""
-        job = _make_job(description=(
-            "Data Engineer - hybrid position. On-site 2 days per week, flexible "
-            "remote the rest. Python, SQL, Spark. Amsterdam office."
         ))
         result = hf.apply(job)
         assert result.passed is True
