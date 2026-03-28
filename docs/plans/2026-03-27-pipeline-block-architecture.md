@@ -67,23 +67,66 @@
 
 **职责**: 对 Block A 产出的职位做二元 pass/reject 判定。纯规则，CPU-only，零成本。
 
-**设计原则**: Hard Filter 的 9 条规则是**精确的业务逻辑**（荷兰语检测、公司黑名单、头衔黑名单等），正则比 AI 更可靠、更快、更可控。这些规则不适合交给 AI 做判断。
+### 核心设计原则: Block B vs Block C 分工
+
+> **Block B 只拦"100% 确定不要的"，灰色地带一律放给 Block C (AI) 打分。**
+
+- Block B 是粗筛，**宁可放过，不可误杀**。一个 "Vision Systems Engineer" 漏进来没关系，AI 会给低分自然淘汰。
+- Block B 适合做的：语言检测、公司黑名单、头衔黑名单等**精确业务逻辑**，正则比 AI 更快、更可靠、更可控。
+- Block B 不该做的：判断 "Marketing Data Analyst 到底是 marketing 岗还是 data 岗" — 这是语义理解，交给 AI。
+- 收紧白名单 = 增加误杀风险，违反分工原则。宽松白名单 + AI 打分是正确的漏斗形态。
+
+### 规则集
 
 **入口**: `python scripts/job_pipeline.py --filter`
 
-### 规则集 (按优先级排序)
+#### 规则优先级表
 
 | # | 规则名 | 类型 | 逻辑 |
 |---|--------|------|------|
 | 0 | 荷兰语 JD 检测 | word_count | ≥8 个荷兰语指示词 → reject |
 | 1 | 荷兰语要求 | regex | "dutch required/mandatory/native" 等 → reject |
-| 2 | 非目标角色 | title_check | 白名单 (27 关键词) + 黑名单 (11 模式) |
+| 2 | 非目标角色 | title_check | 白名单 + 硬拒绝模式 + 软拒绝模式 (见下方) |
 | 3 | 错误技术栈 | tech_stack | 标题模式 + 正文关键词计数 (≥7 非相关技术 → reject) |
 | 4 | 仅自由职业 | regex | "zzp", "freelance only" 等 (有 "full-time" 例外) |
 | 5 | 极低薪酬 | regex | "$1000-1500/month" 等 |
-| 5.5 | 特定技术经验过高 | regex | "5+ years java" 等 (python/data/ml 例外) |
+| 5.5 | 特定技术经验过高 | regex | "5+ years java/scala/c++" 等 (python/data/ml 例外) |
+| 6 | 经验年限过高 | regex | **已禁用** (enabled: false) |
 | 7 | 高管角色 | title_check | "director/vp/head of/cto" 等 (senior data analyst 等例外) |
-| 8 | 地点限制 | regex | "onsite only", "no relocation/visa" 等 |
+| 8 | 地点限制 | regex | "no visa/sponsorship", "must be located in" (on-site **不拒**) |
+
+#### 非目标角色 (规则 2) — 三层设计
+
+这是最复杂的规则，分三层处理：
+
+1. **硬拒绝模式** (`title_hard_reject_patterns`): 命中即拒，无例外。
+   - policy, recruiter, hr, finance manager, accountant, control software, kernel, plc, siem, security engineer, release engineer, network engineer, systems engineer (无 data/ml 限定)
+   - 即使标题含 "data"/"ai" 也拒绝 (例: "Data Security Engineer" → 拒)
+
+2. **软拒绝模式** (`title_reject_patterns`): 命中时检查 `reject_exceptions`，有例外词则交给 AI。
+   - marketing, product manager, sales, legal, embedded
+   - 例: "Marketing Manager" → 拒 (无例外词)
+   - 例: "Marketing Data Analyst" → 放 (含 "data" + "analyst")
+   - 例: "Embedded ML Engineer" → 放 (含 "ml")
+
+3. **白名单** (`title_must_contain_one_of`): 标题必须含至少一个目标关键词，否则拒绝。
+   - 32 个关键词: data, dataflow, machine learning, ml, ai, genai, computer vision, machine vision, vision, python, quant, analytics, bi, scientist, research, algorithm, nlp, llm, mlops, software, backend, infrastructure, platform, pipeline, ...
+
+**`reject_exceptions` 词表**: data, analyst, scientist, ml, ai, machine learning, vision
+
+#### 地点限制 (规则 8) — 设计决策
+
+**只拦签证/居住地硬限制，不拦 on-site**。候选人在荷兰有合法居留，on-site 不是障碍。on-site 是否 toxic 是语义判断，交给 AI。
+
+保留的 patterns: `no visa/sponsorship`, `must be located in`, `local candidates only`
+移除的 pattern: `(onsite|on-site|office).{0,30}(only|mandatory|required)`
+
+#### C#/.NET 正则边界处理
+
+`filters.yaml` 中的 `title_patterns` 使用原始正则，需要特殊处理非 word 字符:
+- `.net`: 用 `\.net(?!\w)` — 前面不加 `\b` (因为 `.` 是 non-word char，`\b` 在 non-word→non-word 间不匹配)
+- `c#`: 用 `\bc#(?!\w)` — 后面用 `(?!\w)` 替代 `\b` (因为 `#` 是 non-word char)
+- 这与 `keyword_boundary_pattern()` helper 的逻辑一致
 
 **额外过滤**:
 - 公司黑名单 (从 `search_profiles.yaml` 加载)
@@ -94,6 +137,8 @@
 **输出**: `filter_results` 表 (job_id, passed, reject_reason, matched_rules)
 
 **配置**: `config/base/filters.yaml`
+**代码**: `src/hard_filter.py`
+**测试**: `tests/test_hard_filter.py` (69 tests)
 
 **性能**: <1 秒处理 500 个职位，纯 CPU
 
@@ -106,9 +151,10 @@
 4. 删除后不再需要维护 `scoring.yaml` 中 80+ 关键词的权重
 
 **删除的文件/配置**:
-- `config/base/scoring.yaml` — 整个文件可归档
+- `config/base/scoring.yaml` → `config/archive/scoring.yaml.archived`
 - `ai_scores` 表 — 不再写入新数据（保留旧数据做兼容）
-- `job_pipeline.py` 中的 `_calculate_score()` 方法
+- `job_pipeline.py` 中的 `_calculate_score()`, `score_jobs()` 方法
+- `job_db.py` 中的 `save_score()`, `get_unscored_jobs()`, `clear_scores()` 方法
 
 ---
 
