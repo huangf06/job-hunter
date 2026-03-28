@@ -123,26 +123,28 @@ jobs:
           python scripts/job_pipeline.py --process
 
       # ==========================================
-      # Step 3: AI 分析 (筛选通过的职位)
+      # Step 3: AI Evaluate (C1: scoring + brief)
       # ==========================================
+      - name: AI Evaluate (C1)
+        id: ai_evaluate
+        continue-on-error: true
+        run: |
+          echo "=== Running AI evaluation (C1) ==="
+          python scripts/job_pipeline.py --ai-evaluate --limit 30
+
       # ==========================================
-      # Step 4: 通知
+      # Step 4: AI Tailor (C2: resume generation)
       # ==========================================
-      # TEMP DISABLED: restore after pipeline fix
-      # - name: AI Analysis
-      #   id: ai
-      #   run: |
-      #     LIMIT="${{ github.event.inputs.ai_limit }}"
-      #
-      #     if [ -z "$LIMIT" ]; then
-      #       NEW_JOBS="${{ steps.scrape.outputs.new_jobs_count }}"
-      #       NEW_JOBS="${NEW_JOBS:-0}"
-      #       LIMIT=$((NEW_JOBS + 20))
-      #       echo "Auto-limit: $LIMIT (new: $NEW_JOBS + backlog: 20)"
-      #     fi
-      #
-      #     echo "=== Running AI analysis (limit: $LIMIT) ==="
-      #     python scripts/job_pipeline.py --ai-analyze --limit "$LIMIT"
+      - name: AI Tailor (C2)
+        id: ai_tailor
+        continue-on-error: true
+        run: |
+          echo "=== Running AI resume tailoring (C2) ==="
+          python scripts/job_pipeline.py --ai-tailor --limit 30
+
+      # ==========================================
+      # Step 5: 通知
+      # ==========================================
       - name: Send Telegram notification
         if: always()
         continue-on-error: true
@@ -154,8 +156,8 @@ jobs:
           FAILED_STEPS=""
           [ "${{ steps.scrape.outcome }}" == "failure" ] && FAILED_STEPS="scrape"
           [ "${{ steps.filter.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }filter"
-          # TEMP DISABLED: restore after pipeline fix
-          # [ "${{ steps.ai.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-analyze"
+          [ "${{ steps.ai_evaluate.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-evaluate"
+          [ "${{ steps.ai_tailor.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-tailor"
           if [ -n "$FAILED_STEPS" ]; then
             python scripts/notify.py --status failure --failed-step "$FAILED_STEPS"
           else
@@ -163,7 +165,7 @@ jobs:
           fi
 
       # ==========================================
-      # Step 5: 统计汇总
+      # Step 6: 统计汇总
       # ==========================================
       - name: Pipeline stats
         if: always()
