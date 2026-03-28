@@ -258,11 +258,10 @@ hard_reject_rules:
     priority: 8
     type: "regex"
     patterns:
-      - "(onsite|on-site|office).{0,30}(only|mandatory|required)"
       - "no\\s*(relocation|visa|sponsorship)"
       - "must\\s*be\\s*located\\s*in"
       - "local\\s*candidates\\s*only"
-    description: "地点限制过于严格"
+    description: "签证/居住地硬限制 (on-site 不拒，交给 AI)"
     exceptions:
       - "hybrid"
       - "flexible"

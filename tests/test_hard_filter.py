@@ -485,16 +485,16 @@ class TestSpecificTechExperience:
 
 
 class TestLocationRestricted:
-    """Rule 9: Strict location/visa restrictions."""
+    """Rule 9: Visa/residency restrictions (on-site NOT rejected — let AI decide)."""
 
-    def test_onsite_only_rejected(self, hf):
+    def test_onsite_only_passes(self, hf):
+        """On-site requirement is not a hard reject — candidate is NL-based."""
         job = _make_job(description=(
-            "Data Engineer. This is an onsite only position in Berlin. "
-            "Candidates must be located in Germany. Python, SQL required."
+            "Data Engineer. This is an onsite only position in Amsterdam. "
+            "You will work from our office. Python, SQL required."
         ))
         result = hf.apply(job)
-        assert result.passed is False
-        assert result.reject_reason == "location_restricted"
+        assert result.passed is True
 
     def test_no_visa_sponsorship_rejected(self, hf):
         job = _make_job(description=(
@@ -505,8 +505,17 @@ class TestLocationRestricted:
         assert result.passed is False
         assert result.reject_reason == "location_restricted"
 
+    def test_must_be_located_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer. Candidates must be located in Germany. "
+            "No relocation support. Python, SQL required."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "location_restricted"
+
     def test_hybrid_with_onsite_mention_passes(self, hf):
-        """Hybrid role mentioning office should pass via exception."""
+        """Hybrid role mentioning office should pass."""
         job = _make_job(description=(
             "Data Engineer - hybrid position. On-site 2 days per week, flexible "
             "remote the rest. Python, SQL, Spark. Amsterdam office."
