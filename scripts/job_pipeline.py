@@ -248,7 +248,7 @@ class JobPipeline:
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer()
         evaluated = analyzer.evaluate_batch(limit=limit)
-        tailored = analyzer.tailor_batch(min_score=4.0, limit=limit)
+        tailored = analyzer.tailor_batch(limit=limit)
         return evaluated + tailored
 
     def ai_evaluate_jobs(self, limit: int = None) -> int:
@@ -257,7 +257,7 @@ class JobPipeline:
         analyzer = AIAnalyzer()
         return analyzer.evaluate_batch(limit=limit)
 
-    def ai_tailor_jobs(self, min_score: float = 4.0, limit: int = None) -> int:
+    def ai_tailor_jobs(self, min_score: float = None, limit: int = None) -> int:
         """C2: AI resume tailoring for high-scoring jobs"""
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer()
@@ -924,7 +924,7 @@ def main():
         elif args.ai_evaluate:
             pipeline.ai_evaluate_jobs(limit=args.limit)
         elif args.ai_tailor:
-            pipeline.ai_tailor_jobs(min_score=args.min_score or 4.0, limit=args.limit)
+            pipeline.ai_tailor_jobs(min_score=args.min_score, limit=args.limit)
         elif args.ai_analyze:
             pipeline.ai_analyze_jobs(limit=args.limit)
         elif args.generate:
@@ -1058,9 +1058,11 @@ def main():
     print("  --retention-days N Days to keep in live DB (default: 7, use with --archive)")
     print()
     print("  AI-powered:")
-    print("  --ai-analyze       AI analysis on filtered jobs")
+    print("  --ai-evaluate      C1: AI scoring + application brief")
+    print("  --ai-tailor        C2: Resume tailoring (score >= threshold)")
+    print("  --ai-analyze       C1 + C2 combined (default)")
+    print("  --analyze-job ID   Analyze a single job (C1+C2)")
     print("  --generate         Generate resumes for AI high-score jobs")
-    print("  --analyze-job ID   Analyze a single job")
     print()
     print("  Cover Letters:")
     print("  --cover-letter ID  Generate cover letter for a job")
