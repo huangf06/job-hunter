@@ -1081,13 +1081,9 @@ def main():
     parser.add_argument('--job', type=str, help='Analyze a single job by ID')
     parser.add_argument('--limit', type=int, default=50,
                         help='Max jobs to analyze in batch')
-    parser.add_argument('--model', type=str, default=None,
-                        choices=['opus', 'kimi'],
-                        help='Model to use: opus (Claude) or kimi')
-
     args = parser.parse_args()
 
-    analyzer = AIAnalyzer(model_override=args.model)
+    analyzer = AIAnalyzer()
 
     if args.job:
         analyzer.analyze_single(args.job)
