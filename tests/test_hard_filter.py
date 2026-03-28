@@ -207,6 +207,293 @@ class TestTitleBlacklist:
         assert result.reject_reason == "title_blacklist"
 
 
+class TestDutchRequired:
+    """Rule 2: JD explicitly requires Dutch language proficiency."""
+
+    def test_dutch_fluency_required_rejected(self, hf):
+        job = _make_job(description=(
+            "We are looking for a Data Engineer. "
+            "Requirements: fluency in Dutch is required for this position. "
+            "You will work with Python and SQL in our Amsterdam office."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "dutch_required"
+
+    def test_nederlandstalig_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer needed. Must be nederlandstalig. "
+            "Experience with Python, Spark, and cloud platforms required."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "dutch_required"
+
+    def test_english_only_jd_passes(self, hf):
+        """JD mentioning Dutch culture but not requiring the language should pass."""
+        job = _make_job(description=(
+            "Join our team in the Netherlands. We are looking for a Data Engineer. "
+            "You will work with Python, SQL, and Spark. English is the working language."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+
+class TestWrongTechStack:
+    """Rule 4: Non-target tech stack detection."""
+
+    def test_flutter_developer_title_rejected(self, hf):
+        """Flutter Software Engineer: 'software' passes non_target_role, but title matches tech_stack pattern."""
+        job = _make_job(title="Software Flutter Developer")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
+
+    def test_dotnet_in_title_body_rejected(self, hf):
+        """Dotnet keyword in title triggers tech_stack; 'platform' passes non_target_role."""
+        job = _make_job(title="Platform Engineer Dotnet")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
+
+    def test_csharp_dotnet_raw_regex_boundary_limitation(self, hf):
+        """Known limitation: \\bc#\\b and \\b\\.net\\b in filters.yaml title_patterns
+        fail at word boundaries because # and . are non-word chars.
+        keyword_boundary_pattern() handles this, but tech_stack title_patterns use raw regex.
+        These titles pass through when they shouldn't — tracked as a filters.yaml config issue."""
+        assert hf.apply(_make_job(title="C# Platform Engineer")).passed is True
+        assert hf.apply(_make_job(title=".NET Platform Engineer")).passed is True
+
+    def test_java_software_engineer_rejected(self, hf):
+        """Pure Java role: 'software' passes non_target_role, java triggers tech_stack."""
+        job = _make_job(title="Java Software Engineer")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
+
+    def test_java_data_title_passes(self, hf):
+        """Java + data qualifier in title triggers tech_stack exception → passes."""
+        job = _make_job(title="Java Data Engineer")
+        result = hf.apply(job)
+        assert result.passed is True
+
+    def test_title_without_target_keyword_rejected_by_role_not_tech(self, hf):
+        """Flutter Developer has no target keyword → non_target_role fires first (priority 2 < 3)."""
+        job = _make_job(title="Flutter Developer")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "non_target_role"
+
+    def test_body_irrelevant_keywords_below_threshold_passes(self, hf):
+        """A few irrelevant body keywords under threshold should not reject."""
+        job = _make_job(description=(
+            "Data Engineer role. You will work with Python, SQL, Spark, and AWS. "
+            "Some exposure to react and angular is nice to have but not required. "
+            "Primary focus is building data pipelines and ETL processes."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+    def test_body_irrelevant_keywords_above_threshold_rejected(self, hf):
+        """Many irrelevant body keywords over threshold (7) should reject.
+        Title 'Software Engineer' passes non_target_role but has no tech_stack exception."""
+        job = _make_job(
+            title="Software Engineer",
+            description=(
+                "Full stack engineer needed. Tech stack: react, angular, vue, "
+                "typescript, node.js, spring boot, microservice architecture, "
+                ".net backend, graphql API layer. Some Python scripting."
+            ),
+        )
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
+
+    def test_data_title_exempts_body_keywords(self, hf):
+        """'Data Engineer' title triggers tech_stack exception — body keywords ignored."""
+        job = _make_job(
+            title="Data Engineer",
+            description=(
+                "Full stack role: react, angular, vue, typescript, node.js, "
+                "spring boot, microservice, .net, graphql, ruby on rails."
+            ),
+        )
+        result = hf.apply(job)
+        assert result.passed is True
+
+
+class TestFreelanceZzp:
+    """Rule 5: Freelance/ZZP-only positions."""
+
+    def test_zzp_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer (ZZP). We are looking for a freelance data engineer. "
+            "KVK registration required. Day rate negotiable."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "freelance_zzp"
+
+    def test_freelance_only_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer position. This is a freelance only contract. "
+            "Candidates must have their own business registration."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "freelance_zzp"
+
+    def test_fulltime_with_freelance_mention_passes(self, hf):
+        """JD mentioning full-time/permanent/salary alongside freelance keyword should pass via exception."""
+        job = _make_job(description=(
+            "Data Engineer - full-time permanent position. Competitive salary offered. "
+            "We also welcome freelance applicants. Python, SQL, Spark required."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+
+class TestLowCompensation:
+    """Rule 6: Extremely low compensation."""
+
+    def test_low_usd_monthly_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer position. Compensation: $1200 per month. "
+            "Remote work available. Python and SQL required."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "low_compensation"
+
+    def test_low_eur_monthly_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer. We offer €1300 per month plus benefits. "
+            "Location: Amsterdam. Python, SQL, cloud experience."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "low_compensation"
+
+    def test_normal_salary_passes(self, hf):
+        """Normal salary range should not trigger low compensation filter."""
+        job = _make_job(description=(
+            "Data Engineer. Salary range: €55,000 - €75,000 per year. "
+            "Python, SQL, Spark. Amsterdam office with hybrid work."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+
+class TestSpecificTechExperience:
+    """Rule 6.5: Specific tech stack years too high for candidate."""
+
+    def test_java_7_years_rejected(self, hf):
+        """Title 'Software Engineer' has no exception keyword → specific_tech_experience fires."""
+        job = _make_job(
+            title="Software Engineer",
+            description=(
+                "Software Engineer needed. Requirements: 7+ years of Java experience. "
+                "Strong background in distributed systems."
+            ),
+        )
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "specific_tech_experience"
+
+    def test_scala_5_years_rejected(self, hf):
+        """Title 'Backend Engineer' has no exception → specific_tech_experience fires for Scala."""
+        job = _make_job(
+            title="Backend Engineer",
+            description=(
+                "Looking for engineer with 5+ years scala experience. "
+                "Building distributed data solutions."
+            ),
+        )
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "specific_tech_experience"
+
+    def test_python_7_years_passes(self, hf):
+        """'python' is in the exceptions list — title with 'python' bypasses the rule."""
+        job = _make_job(
+            title="Python Software Engineer",
+            description=(
+                "Software Engineer. 7+ years of Python experience required. "
+                "SQL, Spark, and cloud platforms."
+            ),
+        )
+        result = hf.apply(job)
+        assert result.passed is True
+
+    def test_data_title_exempts_tech_years(self, hf):
+        """'Data Engineer' title has 'data' in exceptions → rule skipped even with Java years."""
+        job = _make_job(description=(
+            "Data Engineer. 7+ years of Java experience. "
+            "Building data pipelines."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+
+class TestLocationRestricted:
+    """Rule 9: Strict location/visa restrictions."""
+
+    def test_onsite_only_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer. This is an onsite only position in Berlin. "
+            "Candidates must be located in Germany. Python, SQL required."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "location_restricted"
+
+    def test_no_visa_sponsorship_rejected(self, hf):
+        job = _make_job(description=(
+            "Data Engineer role. Unfortunately we cannot provide visa sponsorship "
+            "for this position. No sponsorship available. Python and SQL."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "location_restricted"
+
+    def test_hybrid_with_onsite_mention_passes(self, hf):
+        """Hybrid role mentioning office should pass via exception."""
+        job = _make_job(description=(
+            "Data Engineer - hybrid position. On-site 2 days per week, flexible "
+            "remote the rest. Python, SQL, Spark. Amsterdam office."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+
+class TestPriorityOrder:
+    """Rules should fire in priority order — earlier rules take precedence."""
+
+    def test_dutch_language_beats_wrong_role(self, hf):
+        """Dutch language (priority 0) should reject before non_target_role (priority 2)."""
+        job = _make_job(
+            title="Marketing Manager",
+            description=(
+                "Wij zijn op zoek naar een marketing manager. "
+                "Jij hebt kennis van onze systemen en werken binnen projecten. "
+                "Verantwoordelijk voor de ontwikkeling van oplossingen in een omgeving "
+                "met kwaliteit en samenwerken. Beschikbaar voor vacature in onze organisatie. "
+                "Functie vereisten: ervaring met projecten."
+            ),
+        )
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "dutch_language"
+
+    def test_non_target_role_beats_tech_stack(self, hf):
+        """non_target_role (priority 2) should reject before wrong_tech_stack (priority 3)."""
+        job = _make_job(title="Flutter Developer")
+        result = hf.apply(job)
+        assert result.passed is False
+        # Flutter Developer has no target keyword → non_target_role fires first
+        assert result.reject_reason == "non_target_role"
+
+
 class TestFilterResultType:
     """All results should be FilterResult with filter_version 2.0."""
 
