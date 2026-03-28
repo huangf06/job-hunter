@@ -64,7 +64,7 @@ Standalone Hard Filter module extracted from `scripts/job_pipeline.py`.
 
 The `apply()` logic is a **direct copy** of the old `JobPipeline._apply_filter()` (verified line-by-line in code review). No behavioral changes.
 
-#### `tests/test_hard_filter.py` (222 lines, 24 tests)
+#### `tests/test_hard_filter.py` (500+ lines, 52 tests)
 
 | Test Class | Tests | What It Covers |
 |------------|-------|----------------|
@@ -76,9 +76,16 @@ The `apply()` logic is a **direct copy** of the old `JobPipeline._apply_filter()
 | `TestSeniorManagement` | 5 | VP/director rejected; senior DS/DE/MLE exceptions pass |
 | `TestCompanyBlacklist` | 3 | Hays/Randstad rejected, Booking.com passes |
 | `TestTitleBlacklist` | 2 | Intern, trainee rejected |
+| `TestDutchRequired` | 3 | Dutch fluency required, nederlandstalig, English-only passes |
+| `TestWrongTechStack` | 10 | Title patterns (Flutter/dotnet/C#/Java), body keywords, exceptions, priority |
+| `TestFreelanceZzp` | 3 | ZZP rejected, freelance-only rejected, full-time+freelance passes |
+| `TestLowCompensation` | 3 | Low USD/EUR monthly rejected, normal salary passes |
+| `TestSpecificTechExperience` | 4 | Java/Scala years rejected, Python/data title exceptions pass |
+| `TestLocationRestricted` | 3 | Onsite-only rejected, no visa rejected, hybrid passes |
+| `TestPriorityOrder` | 2 | Dutch beats wrong role, non_target_role beats tech_stack |
 | `TestFilterResultType` | 2 | Returns `FilterResult` with `filter_version="2.0"` |
 
-All 24 tests pass in 0.1s. Tests use real config files (integration-style).
+All 52 tests pass in ~0.2s. Tests use real config files (integration-style). Every enabled rule has at least one hit, one pass, and one exception/bypass test.
 
 ### Modified Files
 
@@ -189,12 +196,12 @@ The `ai_scores` table is bypassed. No writes, no reads in the main pipeline. His
 
 ```
 $ python -m pytest tests/ -v
-============================= 77 passed, 1 skipped in 14.57s ==============================
+============================ 105 passed, 1 skipped in 16.42s =============================
 ```
 
 | Test File | Tests | Status |
 |-----------|-------|--------|
-| `tests/test_hard_filter.py` | 24 | All pass |
+| `tests/test_hard_filter.py` | 52 | All pass |
 | `tests/test_scrapers/test_base.py` | 10 | All pass |
 | `tests/test_scrapers/test_greenhouse.py` | 3 | All pass |
 | `tests/test_scrapers/test_iamexpat.py` | 5 | All pass |
@@ -249,7 +256,7 @@ OK
 ## 8. Review Checklist for Codex
 
 1. **Logic preservation**: Is `HardFilter.apply()` in `src/hard_filter.py` behaviorally identical to the old `_apply_filter()` in `job_pipeline.py`?
-2. **Test coverage**: Do the 24 tests in `test_hard_filter.py` adequately cover the 9 filter rules, blacklists, and edge cases?
+2. **Test coverage**: Do the 52 tests in `test_hard_filter.py` adequately cover the 9 filter rules, blacklists, and edge cases?
 3. **Rule Score deletion safety**: Are there any remaining code paths that expect `ai_scores` data for new jobs (not historical)?
 4. **View correctness**: Do the updated `v_pending_jobs` and `v_funnel_stats` views still produce correct results without `ai_scores` join?
 5. **CI workflow**: Is the step ID rename from `score` to `filter` correctly propagated to the failure detection logic?

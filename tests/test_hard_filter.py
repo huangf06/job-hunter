@@ -256,13 +256,19 @@ class TestWrongTechStack:
         assert result.passed is False
         assert result.reject_reason == "wrong_tech_stack"
 
-    def test_csharp_dotnet_raw_regex_boundary_limitation(self, hf):
-        """Known limitation: \\bc#\\b and \\b\\.net\\b in filters.yaml title_patterns
-        fail at word boundaries because # and . are non-word chars.
-        keyword_boundary_pattern() handles this, but tech_stack title_patterns use raw regex.
-        These titles pass through when they shouldn't — tracked as a filters.yaml config issue."""
-        assert hf.apply(_make_job(title="C# Platform Engineer")).passed is True
-        assert hf.apply(_make_job(title=".NET Platform Engineer")).passed is True
+    def test_csharp_platform_engineer_rejected(self, hf):
+        """C# in title triggers tech_stack; 'platform' passes non_target_role."""
+        job = _make_job(title="C# Platform Engineer")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
+
+    def test_dotnet_platform_engineer_rejected(self, hf):
+        """.NET in title triggers tech_stack; 'platform' passes non_target_role."""
+        job = _make_job(title=".NET Platform Engineer")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "wrong_tech_stack"
 
     def test_java_software_engineer_rejected(self, hf):
         """Pure Java role: 'software' passes non_target_role, java triggers tech_stack."""

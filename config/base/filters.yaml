@@ -117,7 +117,7 @@ hard_reject_rules:
       - "\\b(android|ios|mobile)\\s*(developer|engineer)\\b"
       - "\\b(frontend|front-end|front end|ui/ux)\\s*(developer|engineer)\\b"
       - "\\b(devops|sre|site reliability)\\s*(engineer)\\b"
-      - "\\bdotnet\\b|\\b\\.net\\b|\\bc#\\b"
+      - "\\bdotnet\\b|\\.net\\b|\\bc#(?=\\s|$)"
       - "\\bjava\\b(?!.*(?:script|data|ml|machine learning|ai))"
       - "\\bruby\\b"
       - "\\breact\\b.*\\b(developer|engineer)\\b"
