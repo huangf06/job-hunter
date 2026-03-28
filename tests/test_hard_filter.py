@@ -106,6 +106,22 @@ class TestValidJobPasses:
         result = hf.apply(_make_job(title="Machine Learning Engineer"))
         assert result.passed is True
 
+    def test_genai_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="GenAI Engineer"))
+        assert result.passed is True
+
+    def test_computer_vision_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="Computer Vision Engineer"))
+        assert result.passed is True
+
+    def test_bi_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="Senior BI Engineer"))
+        assert result.passed is True
+
+    def test_dataflow_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="Dataflow Development Engineer"))
+        assert result.passed is True
+
 
 class TestWrongRole:
     """Marketing / non-target titles should be rejected."""
@@ -114,13 +130,40 @@ class TestWrongRole:
         job = _make_job(title="Marketing Manager")
         result = hf.apply(job)
         assert result.passed is False
-        # Could be rejected by title_reject_patterns or by title_must_contain_one_of
-        assert result.reject_reason in ("non_target_role",)
+        assert result.reject_reason == "non_target_role"
 
     def test_sales_director_rejected(self, hf):
         job = _make_job(title="Sales Director")
         result = hf.apply(job)
         assert result.passed is False
+
+    def test_marketing_data_analyst_passes(self, hf):
+        """'Marketing Data Analyst' has reject word 'marketing' but also 'data' + 'analyst'
+        in reject_exceptions — should NOT be hard-rejected, let AI decide."""
+        result = hf.apply(_make_job(title="Marketing Data Analyst"))
+        assert result.passed is True
+
+    def test_marketing_data_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="Marketing Data Engineer"))
+        assert result.passed is True
+
+    def test_senior_data_scientist_marketing_passes(self, hf):
+        result = hf.apply(_make_job(title="Senior Data Scientist - Marketing"))
+        assert result.passed is True
+
+    def test_embedded_ml_engineer_passes(self, hf):
+        """'Embedded ML Engineer' has 'embedded' reject but 'ml' + 'engineer' exceptions."""
+        result = hf.apply(_make_job(title="Embedded ML Engineer"))
+        assert result.passed is True
+
+    def test_legal_ai_engineer_passes(self, hf):
+        """'AI Engineer (Libra - Legal AI Assistant)' has 'legal' reject but 'ai' + 'engineer' exceptions."""
+        result = hf.apply(_make_job(title="AI Engineer (Libra - Legal AI Assistant)"))
+        assert result.passed is True
+
+    def test_data_analyst_sales_passes(self, hf):
+        result = hf.apply(_make_job(title="Data Analyst, Sales & Delivery"))
+        assert result.passed is True
 
 
 class TestInsufficientData:
