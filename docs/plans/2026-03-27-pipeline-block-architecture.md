@@ -2,7 +2,7 @@
 
 **Date**: 2026-03-27
 **Status**: Approved
-**Decision**: Scheme B — Hard Filter 独立, Rule Score 删除, AI 一步评分+定制
+**Decision**: Scheme B → v3.1 — Hard Filter whitelist-only, AI split C1 (evaluate) + C2 (tailor)
 
 ---
 
@@ -13,9 +13,9 @@
 │  Block A   │────▶│  Block B   │────▶│    Block C        │────▶│  Block D   │────▶│  Block E   │────▶│  Block F   │
 │  Scrape    │     │Hard Filter │     │  AI Evaluate      │     │  Render    │     │  Deliver   │     │  Notify    │
 │            │     │            │     │                    │     │            │     │            │     │            │
-│ LinkedIn   │     │ 9 条硬规则  │     │ 评分 + 简历定制    │     │ HTML→PDF   │     │ Prepare    │     │ Telegram   │
-│ Greenhouse │     │ 二元 pass/  │     │ + CL spec         │     │ Jinja2 +   │     │ Apply      │     │ Discord    │
-│ (IamExpat) │     │ reject     │     │ 一次 AI 调用完成   │     │ Playwright │     │ Finalize   │     │            │
+│ LinkedIn   │     │ 6 条硬规则  │     │ C1: 评分+brief    │     │ HTML→PDF   │     │ Prepare    │     │ Telegram   │
+│ Greenhouse │     │ whitelist  │     │ C2: 简历定制       │     │ Jinja2 +   │     │ Apply      │     │ Discord    │
+│ (IamExpat) │     │ only       │     │ 两步 AI 调用      │     │ Playwright │     │ Finalize   │     │            │
 └────────────┘     └────────────┘     └──────────────────┘     └────────────┘     └────────────┘     └────────────┘
      ✅ 完成           ✅ 完成              待重建                  待重建              待重建            待重建
 ```
@@ -80,46 +80,28 @@
 
 **入口**: `python scripts/job_pipeline.py --filter`
 
-#### 规则优先级表
+#### 规则优先级表 (v3.0 — whitelist-only)
 
 | # | 规则名 | 类型 | 逻辑 |
 |---|--------|------|------|
 | 0 | 荷兰语 JD 检测 | word_count | ≥8 个荷兰语指示词 → reject |
 | 1 | 荷兰语要求 | regex | "dutch required/mandatory/native" 等 → reject |
-| 2 | 非目标角色 | title_check | 白名单 + 硬拒绝模式 + 软拒绝模式 (见下方) |
-| 3 | 错误技术栈 | tech_stack | 标题模式 + 正文关键词计数 (≥7 非相关技术 → reject) |
+| 2 | 非目标角色 | title_check | 白名单 only: 标题必须含目标关键词 (见下方) |
+| 3 | 错误技术栈 | tech_stack | 标题模式 only (无正文关键词计数) |
 | 4 | 仅自由职业 | regex | "zzp", "freelance only" 等 (有 "full-time" 例外) |
 | 5 | 极低薪酬 | regex | "$1000-1500/month" 等 |
-| 5.5 | 特定技术经验过高 | regex | "5+ years java/scala/c++" 等 (python/data/ml 例外) |
-| 6 | 经验年限过高 | regex | **已禁用** (enabled: false) |
 | 7 | 高管角色 | title_check | "director/vp/head of/cto" 等 (senior data analyst 等例外) |
-| 8 | 地点限制 | regex | "no visa/sponsorship", "must be located in" (on-site **不拒**) |
 
-#### 非目标角色 (规则 2) — 三层设计
+**v3.0 删除的规则**: specific_tech_experience, experience_too_high, location_restricted — 这些语义判断移至 Block C (AI)。
 
-这是最复杂的规则，分三层处理：
+#### 非目标角色 (规则 2) — 白名单设计
 
-1. **硬拒绝模式** (`title_hard_reject_patterns`): 命中即拒，无例外。
-   - policy, recruiter, hr, finance manager, accountant, control software, kernel, plc, siem, security engineer, release engineer, network engineer, systems engineer (无 data/ml 限定)
-   - 即使标题含 "data"/"ai" 也拒绝 (例: "Data Security Engineer" → 拒)
+v3.0 简化: 只保留白名单，删除所有 reject patterns。
 
-2. **软拒绝模式** (`title_reject_patterns`): 命中时检查 `reject_exceptions`，有例外词则交给 AI。
-   - marketing, product manager, sales, legal, embedded
-   - 例: "Marketing Manager" → 拒 (无例外词)
-   - 例: "Marketing Data Analyst" → 放 (含 "data" + "analyst")
-   - 例: "Embedded ML Engineer" → 放 (含 "ml")
+**白名单** (`title_must_contain_one_of`): 标题必须含至少一个目标关键词，否则拒绝。
+- 27 个关键词: data, dataflow, machine learning, ml, ai, genai, artificial intelligence, computer vision, machine vision, vision, python, quant, quantitative, analytics, bi, scientist, research, researcher, algorithm, deep learning, nlp, llm, mlops, software, backend, infrastructure, platform, pipeline, applied scientist
 
-3. **白名单** (`title_must_contain_one_of`): 标题必须含至少一个目标关键词，否则拒绝。
-   - 32 个关键词: data, dataflow, machine learning, ml, ai, genai, computer vision, machine vision, vision, python, quant, analytics, bi, scientist, research, algorithm, nlp, llm, mlops, software, backend, infrastructure, platform, pipeline, ...
-
-**`reject_exceptions` 词表**: data, analyst, scientist, ml, ai, machine learning, vision
-
-#### 地点限制 (规则 8) — 设计决策
-
-**只拦签证/居住地硬限制，不拦 on-site**。候选人在荷兰有合法居留，on-site 不是障碍。on-site 是否 toxic 是语义判断，交给 AI。
-
-保留的 patterns: `no visa/sponsorship`, `must be located in`, `local candidates only`
-移除的 pattern: `(onsite|on-site|office).{0,30}(only|mandatory|required)`
+**设计理由**: 旧的三层设计 (硬拒绝/软拒绝/白名单) 在判断边界情况时过于复杂 (如 "Data Security Engineer" 是安全还是数据?)。whitelist-only 设计: 有目标关键词就放行，让 AI 判断具体匹配度。
 
 #### C#/.NET 正则边界处理
 
@@ -138,7 +120,7 @@
 
 **配置**: `config/base/filters.yaml`
 **代码**: `src/hard_filter.py`
-**测试**: `tests/test_hard_filter.py` (69 tests)
+**测试**: `tests/test_hard_filter.py` (61 tests)
 
 **性能**: <1 秒处理 500 个职位，纯 CPU
 
@@ -158,29 +140,28 @@
 
 ---
 
-## Block C: AI Evaluate
+## Block C: AI Evaluate + Tailor (v3.1 — two-step)
 
-**职责**: 对通过 Hard Filter 的职位做**一次 AI 调用**，完成三件事:
-1. **评分**: 多维度语义评估 (skill_match, experience_fit, growth_potential, overall_score)
-2. **简历定制**: 从 bullet_library 选择经历、项目、技能，生成 tailored_resume JSON
-3. **Cover Letter spec**: 生成 CL 结构 (paragraphs + evidence_ids)，或判断不需要 CL
+**职责**: 对通过 Hard Filter 的职位做**两步 AI 调用**:
+1. **C1 Evaluate**: 评分 + Application Brief (短 prompt, 无 bullet library)
+2. **C2 Tailor**: 简历定制 (长 prompt, 含 bullet library, 仅 score >= 4.0)
 
-**设计原则**: 这三项任务共享相同的上下文（JD + 候选人资料 + bullet library），合并为一次调用减少 API 往返和上下文重复。
+**设计原则**: 分步执行 — C1 快速筛选，C2 仅对值得投递的职位生成简历。Cover Letter 被 Application Brief (素材包) 取代，合并在 C1 输出中。
 
-**入口**: `python scripts/job_pipeline.py --ai-analyze`
+**入口**:
+- `python scripts/job_pipeline.py --ai-evaluate` — C1 only
+- `python scripts/job_pipeline.py --ai-tailor` — C2 only
+- `python scripts/job_pipeline.py --ai-analyze` — C1 + C2 sequentially
 
-### AI 调用设计
+### C1: Evaluate (评分 + Application Brief)
 
-**模型**: Claude (通过 Claude Code CLI 或 API，由运行环境决定)
-- CI: `anthropics/claude-code-action@v1` + Max plan
-- 本地: `claude -p` CLI 或 Anthropic SDK
+**模型**: Claude Code CLI (`claude -p`)
 
 **Prompt 输入**:
-- 候选人资料 (from `ai_config.yaml`)
-- Bullet Library 全文 (from `assets/bullet_library.yaml`)
+- 候选人资料摘要
+- Hard Reject Signals (让 AI 也拦截 Block B 漏过的语义问题)
+- 评分标准和校准指导
 - JD 全文 (截断到 10,000 字符)
-- 评分标准和校准指导 (分布目标: 9-10 rare <5%, 5-6 most common 30-40%)
-- Cover Letter 指导 (短格式 100-150 字, 可选)
 
 **Prompt 输出** (structured JSON):
 ```json
@@ -193,6 +174,27 @@
     "recommendation": "APPLY",
     "reasoning": "..."
   },
+  "application_brief": {
+    "hook": "strongest connection",
+    "key_angle": "main selling point",
+    "gap_mitigation": "biggest gap + mitigation",
+    "company_connection": "personal connection or null"
+  }
+}
+```
+
+### C2: Tailor Resume (简历定制)
+
+**仅对 C1 score >= 4.0 的职位运行。**
+
+**Prompt 输入**:
+- 候选人资料 + Bullet Library 全文
+- JD 全文
+- C1 分析结果 (score, reasoning, application_brief) 作为上下文
+
+**Prompt 输出** (structured JSON):
+```json
+{
   "tailored_resume": {
     "bio": { "role_title": "...", "years": 6, ... },
     "experiences": [ { "company": "...", "bullets": ["bullet_id_1", ...] }, ... ],
