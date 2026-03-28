@@ -243,10 +243,10 @@ class JobPipeline:
 
     # ==================== AI Analysis & Resume Generation ====================
 
-    def ai_analyze_jobs(self, limit: int = None, model: str = None) -> int:
+    def ai_analyze_jobs(self, limit: int = None) -> int:
         """AI 分析通过预筛选的职位"""
         from src.ai_analyzer import AIAnalyzer
-        analyzer = AIAnalyzer(model_override=model)
+        analyzer = AIAnalyzer()
         return analyzer.analyze_batch(limit=limit)
 
     def generate_resumes(self, min_ai_score: float = None, limit: int = None) -> int:
@@ -582,10 +582,10 @@ class JobPipeline:
         self.db.final_sync()
         print("Turso sync complete.")
 
-    def analyze_single_job(self, job_id: str, model: str = None):
+    def analyze_single_job(self, job_id: str):
         """分析单个职位"""
         from src.ai_analyzer import AIAnalyzer
-        analyzer = AIAnalyzer(model_override=model)
+        analyzer = AIAnalyzer()
         result = analyzer.analyze_single(job_id)
         if result:
             print(f"\nTailored Resume Preview:")
@@ -768,9 +768,6 @@ def main():
                         help='Minimum score threshold for AI commands')
     parser.add_argument('--limit', type=int, default=None,
                         help='Max jobs to process (default: no limit)')
-    parser.add_argument('--model', type=str, default=None,
-                        choices=['opus', 'kimi'],
-                        help='AI model: opus (Claude) or kimi')
 
     # Cover letter commands
     parser.add_argument('--cover-letter', type=str, metavar='JOB_ID',
@@ -846,7 +843,7 @@ def main():
             print("[Retry] No transient failures found.")
             return
         print(f"[Retry] Cleared {cleared} transient failure(s), re-analyzing...")
-        pipeline.ai_analyze_jobs(limit=cleared + 10, model=args.model)
+        pipeline.ai_analyze_jobs(limit=cleared + 10)
         pipeline.db.final_sync()
         return
 
@@ -907,7 +904,7 @@ def main():
         elif args.ready:
             pipeline.show_ready()
         elif args.ai_analyze:
-            pipeline.ai_analyze_jobs(limit=args.limit, model=args.model)
+            pipeline.ai_analyze_jobs(limit=args.limit)
         elif args.generate:
             pipeline.generate_resumes(min_ai_score=args.min_score, limit=args.limit)
         elif args.cover_letter:
@@ -918,7 +915,7 @@ def main():
             pipeline.generate_cover_letters_batch(min_ai_score=args.min_score,
                                                    limit=args.limit)
         elif args.analyze_job:
-            pipeline.analyze_single_job(args.analyze_job, model=args.model)
+            pipeline.analyze_single_job(args.analyze_job)
         elif args.stats:
             pipeline.show_stats()
         elif args.mark_applied:

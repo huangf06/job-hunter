@@ -12,62 +12,20 @@
 # See .env.example for required variables.
 # =============================================================================
 
-# Active model for job analysis (switch between "opus", "kimi", "claude_code")
-active_model: "claude_code"
-
+# Only Claude Code CLI path (flat subscription, no API key needed)
 models:
-  # Claude Code CLI (local use — no API key needed, uses Claude Code's auth)
   claude_code:
     provider: "claude_code"
     model: "default"  # uses whatever model Claude Code is configured with
     max_tokens: 8192
-    temperature: 0.3
-
-  # Claude Opus via codesome.cn proxy (Account 1)
-  opus:
-    provider: "anthropic"
-    model: "claude-opus-4-6"
-    max_tokens: 8192
-    temperature: 0.3
-    env_key: "ANTHROPIC_API_KEY"
-    env_url: "ANTHROPIC_BASE_URL"
-    auth_type: "bearer"  # codesome.cn proxy requires Bearer auth
-
-  # Kimi Coding - uses Anthropic SDK format (messages.create)
-  kimi:
-    provider: "anthropic"
-    model: "k2p5"
-    max_tokens: 8192
-    temperature: 0.3
-    env_key: "KIMI_API_KEY"
-    env_url: "KIMI_BASE_URL"
 
 # =============================================================================
 # Scoring Thresholds
 # =============================================================================
 
 thresholds:
-  # Minimum rule-based score to trigger AI analysis
-  # Lower threshold = more jobs analyzed = more tokens used
-  rule_score_for_ai: 3.0
-
-  # AI score thresholds for actions
-  ai_score_generate_resume: 4.0  # >= 4.0: generate tailored resume (lowered from 5.0 to include maybe zone)
+  ai_score_generate_resume: 4.0  # >= 4.0: trigger C2 resume tailoring
   ai_score_apply_now: 7.0        # >= 7.0: mark as priority
-
-# =============================================================================
-# Token Budget
-# =============================================================================
-
-budget:
-  # Daily token limit (approximate)
-  daily_limit: 10000000
-  warn_threshold: 8000000
-
-  # Cost tracking (matches configured models)
-  cost_per_1k_tokens:
-    claude_opus_input: 0.015
-    claude_opus_output: 0.075
 
 # =============================================================================
 # Prompt Construction Settings
@@ -477,8 +435,8 @@ interview_scheduler:
     late_afternoon: -0.5    # 15:30-17:00
 
 metadata:
-  version: "2.0.0"
+  version: "3.0.0"
   created: "2026-02-05"
-  updated: "2026-02-19"
+  updated: "2026-03-28"
   author: "Fei Huang"
-  description: "AI-powered job analysis and resume generation configuration (v2: bullet-by-ID)"
+  description: "AI-powered job analysis and resume generation configuration (v3: C1/C2 split, Claude Code CLI only)"
