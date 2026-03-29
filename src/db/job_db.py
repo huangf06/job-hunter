@@ -115,6 +115,16 @@ class AnalysisResult:
     tailored_resume: str = ""  # JSON
     model: str = ""
     tokens_used: int = 0
+    resume_tier: Optional[str] = None
+    template_id_initial: Optional[str] = None
+    template_id_final: Optional[str] = None
+    routing_confidence: Optional[float] = None
+    routing_override_reason: Optional[str] = None
+    escalation_reason: Optional[str] = None
+    routing_payload: Optional[str] = None
+    c3_decision: Optional[str] = None
+    c3_confidence: Optional[float] = None
+    c3_reason: Optional[str] = None
 
 
 @dataclass
@@ -411,6 +421,18 @@ class JobDatabase:
         -- 定制简历 (JSON)
         tailored_resume TEXT,
 
+        -- 三档简历路由状态
+        resume_tier TEXT,
+        template_id_initial TEXT,
+        template_id_final TEXT,
+        routing_confidence REAL,
+        routing_override_reason TEXT,
+        escalation_reason TEXT,
+        routing_payload TEXT,
+        c3_decision TEXT,
+        c3_confidence REAL,
+        c3_reason TEXT,
+
         -- 元数据
         model TEXT,
         tokens_used INTEGER,
@@ -605,9 +627,26 @@ class JobDatabase:
 
     def _migrate(self, conn):
         """Add columns introduced after initial schema."""
-        existing = {row[1] for row in conn.execute("PRAGMA table_info(resumes)").fetchall()}
-        if 'submit_dir' not in existing:
+        resume_columns = {row[1] for row in conn.execute("PRAGMA table_info(resumes)").fetchall()}
+        if 'submit_dir' not in resume_columns:
             conn.execute("ALTER TABLE resumes ADD COLUMN submit_dir TEXT")
+
+        analysis_columns = {row[1] for row in conn.execute("PRAGMA table_info(job_analysis)").fetchall()}
+        analysis_migrations = {
+            'resume_tier': "ALTER TABLE job_analysis ADD COLUMN resume_tier TEXT",
+            'template_id_initial': "ALTER TABLE job_analysis ADD COLUMN template_id_initial TEXT",
+            'template_id_final': "ALTER TABLE job_analysis ADD COLUMN template_id_final TEXT",
+            'routing_confidence': "ALTER TABLE job_analysis ADD COLUMN routing_confidence REAL",
+            'routing_override_reason': "ALTER TABLE job_analysis ADD COLUMN routing_override_reason TEXT",
+            'escalation_reason': "ALTER TABLE job_analysis ADD COLUMN escalation_reason TEXT",
+            'routing_payload': "ALTER TABLE job_analysis ADD COLUMN routing_payload TEXT",
+            'c3_decision': "ALTER TABLE job_analysis ADD COLUMN c3_decision TEXT",
+            'c3_confidence': "ALTER TABLE job_analysis ADD COLUMN c3_confidence REAL",
+            'c3_reason': "ALTER TABLE job_analysis ADD COLUMN c3_reason TEXT",
+        }
+        for column, sql in analysis_migrations.items():
+            if column not in analysis_columns:
+                conn.execute(sql)
 
     @contextmanager
     def _get_conn(self, *, sync_before=True):
@@ -876,12 +915,20 @@ class JobDatabase:
             conn.execute("""
                 INSERT OR REPLACE INTO job_analysis
                 (job_id, ai_score, skill_match, experience_fit, growth_potential,
-                 recommendation, reasoning, tailored_resume, model, tokens_used, analyzed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 recommendation, reasoning, tailored_resume,
+                 resume_tier, template_id_initial, template_id_final,
+                 routing_confidence, routing_override_reason, escalation_reason,
+                 routing_payload, c3_decision, c3_confidence, c3_reason,
+                 model, tokens_used, analyzed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (result.job_id, result.ai_score, result.skill_match,
                   result.experience_fit, result.growth_potential,
                   result.recommendation, result.reasoning,
-                  result.tailored_resume, result.model, result.tokens_used,
+                  result.tailored_resume,
+                  result.resume_tier, result.template_id_initial, result.template_id_final,
+                  result.routing_confidence, result.routing_override_reason, result.escalation_reason,
+                  result.routing_payload, result.c3_decision, result.c3_confidence, result.c3_reason,
+                  result.model, result.tokens_used,
                   datetime.now(timezone.utc).isoformat()))
 
     def get_analysis(self, job_id: str) -> Optional[Dict]:
