@@ -504,7 +504,12 @@ class JobDatabase:
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
-    JOIN job_analysis an ON j.id = an.job_id AND an.ai_score >= {ai_score_apply_now} AND an.tailored_resume != '{{}}'
+    JOIN job_analysis an ON j.id = an.job_id
+        AND an.ai_score >= {ai_score_apply_now}
+        AND (
+            an.resume_tier = 'USE_TEMPLATE'
+            OR (an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}')
+        )
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
     ORDER BY an.ai_score DESC;
@@ -529,8 +534,16 @@ class JobDatabase:
         COUNT(DISTINCT j.id) as total_scraped,
         COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
         COUNT(DISTINCT CASE WHEN an.id IS NOT NULL THEN j.id END) as ai_analyzed,
-        COUNT(DISTINCT CASE WHEN an.ai_score >= {ai_score_generate_resume} AND an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}' THEN j.id END) as ai_scored_high,
+        COUNT(DISTINCT CASE
+            WHEN an.ai_score >= {ai_score_generate_resume}
+             AND ((an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}')
+                  OR an.resume_tier = 'USE_TEMPLATE')
+            THEN j.id END) as ai_scored_high,
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'USE_TEMPLATE' THEN j.id END) as use_template_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'ADAPT_TEMPLATE' THEN j.id END) as adapt_template_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'FULL_CUSTOMIZE' THEN j.id END) as full_customize_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier IS NULL AND an.id IS NOT NULL THEN j.id END) as legacy_analysis_count,
         COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
         COUNT(DISTINCT CASE WHEN a.status = 'rejected' THEN j.id END) as rejected,
         COUNT(DISTINCT CASE WHEN a.status = 'interview' THEN j.id END) as interview,
@@ -941,14 +954,24 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def update_analysis_resume(self, job_id: str, tailored_resume: str):
+    def update_analysis_resume(
+        self,
+        job_id: str,
+        tailored_resume: str,
+        c3_decision: Optional[str] = None,
+        c3_confidence: Optional[float] = None,
+        c3_reason: Optional[str] = None,
+    ):
         """Update tailored_resume for an existing analysis (C2 writes to C1's row)."""
         with self._get_conn(sync_before=False) as conn:
             conn.execute("""
                 UPDATE job_analysis
-                SET tailored_resume = ?
+                SET tailored_resume = ?,
+                    c3_decision = ?,
+                    c3_confidence = ?,
+                    c3_reason = ?
                 WHERE job_id = ?
-            """, (tailored_resume, job_id))
+            """, (tailored_resume, c3_decision, c3_confidence, c3_reason, job_id))
 
     def get_jobs_needing_tailor(self, min_score: float = 4.0, limit: int = None) -> List[Dict]:
         """Get jobs with C1 evaluation but no C2 tailored resume yet."""
@@ -960,6 +983,7 @@ class JobDatabase:
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE a.ai_score >= ?
                   AND (a.tailored_resume IS NULL OR a.tailored_resume = '{}')
+                  AND (a.resume_tier IS NULL OR a.resume_tier IN ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'))
                   AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
@@ -1001,8 +1025,12 @@ class JobDatabase:
                 LEFT JOIN resumes r ON j.id = r.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE (r.id IS NULL OR (r.pdf_path IS NULL OR r.pdf_path = ''))
-                  AND a.tailored_resume IS NOT NULL
-                  AND a.tailored_resume != '{}'
+                  AND (
+                      a.resume_tier = 'USE_TEMPLATE'
+                      OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                  )
                   AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
@@ -1027,7 +1055,7 @@ class JobDatabase:
         """清除被拒绝的 AI 分析结果 (tailored_resume = '{}')，允许重新分析"""
         with self._get_conn(sync_before=False) as conn:
             cursor = conn.execute(
-                "DELETE FROM job_analysis WHERE tailored_resume = '{}' OR tailored_resume IS NULL"
+                "DELETE FROM job_analysis WHERE (tailored_resume = '{}' OR tailored_resume IS NULL) AND resume_tier IS NULL"
             )
             return cursor.rowcount
 
@@ -1037,6 +1065,7 @@ class JobDatabase:
             cursor = conn.execute("""
                 DELETE FROM job_analysis
                 WHERE tailored_resume = '{}'
+                  AND resume_tier IS NULL
                   AND (reasoning LIKE '[PARSE_FAIL]%'
                        OR reasoning LIKE 'Failed to parse AI response:%'
                        OR reasoning LIKE 'Response truncated%'
@@ -1082,8 +1111,11 @@ class JobDatabase:
                 JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
                 LEFT JOIN cover_letters cl ON j.id = cl.job_id
                 WHERE cl.id IS NULL
-                  AND a.tailored_resume IS NOT NULL
-                  AND a.tailored_resume != '{}'
+                  AND (
+                      a.resume_tier = 'USE_TEMPLATE'
+                      OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.c3_decision = 'FAIL')
+                      OR (a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                  )
                 ORDER BY a.ai_score DESC
             """
             params = [min_ai_score]

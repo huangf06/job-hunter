@@ -604,12 +604,21 @@ class JobPipeline:
         if result:
             print(f"\nTailored Resume Preview:")
             tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
-            if tailored.get('bio'):
-                print(f"  Bio: {tailored['bio'][:100]}...")
+            if result.resume_tier == "USE_TEMPLATE":
+                print(f"  Template: {result.template_id_final} (no adaptation)")
+            elif result.resume_tier == "ADAPT_TEMPLATE":
+                slot_count = len((tailored or {}).get("slot_overrides", {}))
+                print(f"  Template: {result.template_id_final}")
+                print(f"  Slots overridden: {slot_count}")
+                if result.c3_decision == "FAIL":
+                    print("  C3: FAIL, using template fallback")
             else:
-                print(f"  Bio: (omitted)")
-            if 'experiences' in tailored:
-                print(f"  Experiences: {len(tailored['experiences'])} selected")
+                if tailored.get('bio'):
+                    print(f"  Bio: {tailored['bio'][:100]}...")
+                else:
+                    print(f"  Bio: (omitted)")
+                if 'experiences' in tailored:
+                    print(f"  Experiences: {len(tailored['experiences'])} selected")
         return result
 
     def process_all(self, limit: int = 50):

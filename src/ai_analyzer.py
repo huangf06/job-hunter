@@ -1052,8 +1052,17 @@ class AIAnalyzer:
         if result:
             self.db.save_analysis(result)
             print(f"  Score: {result.ai_score:.1f} | {result.recommendation}")
+            tier = result.resume_tier or ""
             tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
-            if tailored and tailored != {}:
+            if tier == "USE_TEMPLATE":
+                print(f"  Resume: template {result.template_id_final} (no adaptation)")
+            elif tier == "ADAPT_TEMPLATE":
+                slot_count = len((tailored or {}).get("slot_overrides", {}))
+                if result.c3_decision == "FAIL":
+                    print(f"  Resume: adapted {result.template_id_final} rejected by C3, using template")
+                else:
+                    print(f"  Resume: adapted {result.template_id_final} ({slot_count} slots overridden)")
+            elif tailored and tailored != {}:
                 print(f"  Resume: tailored ({len(tailored.get('experiences', []))} experiences)")
             else:
                 print(f"  Resume: not tailored (score below threshold or C2 failed)")
