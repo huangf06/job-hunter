@@ -27,6 +27,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.db.job_db import JobDatabase, Resume
 from src.resume_validator import ResumeValidator
+from src.template_registry import load_registry, validate_tier2_output
 
 
 class ResumeRenderer:
@@ -40,6 +41,7 @@ class ResumeRenderer:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.ready_dir = PROJECT_ROOT / "ready_to_send"
         self.ready_dir.mkdir(parents=True, exist_ok=True)
+        self.registry = load_registry()
 
         # Load Jinja2 environment
         self.jinja_env = Environment(
@@ -122,6 +124,12 @@ class ResumeRenderer:
         if not analysis:
             print(f"[Renderer] No analysis found for job: {job_id}")
             return None
+
+        tier = analysis.get('resume_tier')
+        if tier == 'USE_TEMPLATE' or (tier == 'ADAPT_TEMPLATE' and analysis.get('c3_decision') == 'FAIL'):
+            return self._render_template_copy(job_id, analysis)
+        if tier == 'ADAPT_TEMPLATE':
+            return self._render_adapt_template(job_id, analysis)
 
         tailored_json = analysis.get('tailored_resume', '')
         if not tailored_json:
@@ -257,6 +265,99 @@ class ResumeRenderer:
             'html_path': str(html_path),
             'pdf_path': str(pdf_path) if pdf_success else None
         }
+
+    def _build_output_paths(self, job: Dict) -> Dict[str, Path]:
+        candidate_name = self._safe_filename(self.candidate.get('name', 'Resume'))
+        company_safe = self._safe_filename(job.get('company', 'unknown'))[:20].rstrip('_')
+        job_id_short = job.get('id', 'unknown')[:8]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        tracking_name = f"{candidate_name}_{company_safe}_{job_id_short}_{timestamp}"
+        submit_name = f"{candidate_name}_Resume"
+        date_prefix = datetime.now().strftime("%Y%m%d")
+        base_folder = f"{date_prefix}_{company_safe}"
+        submit_dir = self.ready_dir / base_folder
+        if (submit_dir / f"{submit_name}.pdf").exists():
+            for seq in range(2, 100):
+                submit_dir = self.ready_dir / f"{base_folder}_{seq:02d}"
+                if not (submit_dir / f"{submit_name}.pdf").exists():
+                    break
+        submit_dir.mkdir(parents=True, exist_ok=True)
+
+        return {
+            'tracking_name': tracking_name,
+            'html_path': self.output_dir / f"{tracking_name}.html",
+            'pdf_path': self.output_dir / f"{tracking_name}.pdf",
+            'submit_dir': submit_dir,
+            'submit_pdf_path': submit_dir / f"{submit_name}.pdf",
+        }
+
+    def _render_template_copy(self, job_id: str, analysis: Dict) -> Optional[Dict[str, str]]:
+        job = self.db.get_job(job_id)
+        template_id = analysis.get('template_id_final')
+        if not job or not template_id:
+            return None
+        source_pdf = PROJECT_ROOT / self.registry['templates'][template_id]['pdf']
+        if not source_pdf.exists():
+            print(f"[Renderer] Template PDF missing: {source_pdf}")
+            return None
+
+        paths = self._build_output_paths(job)
+        import shutil
+        shutil.copy2(source_pdf, paths['pdf_path'])
+        shutil.copy2(source_pdf, paths['submit_pdf_path'])
+
+        self.db.save_resume(Resume(
+            job_id=job_id,
+            role_type=template_id,
+            template_version="template_v1",
+            pdf_path=str(paths['pdf_path']),
+            submit_dir=str(paths['submit_dir']),
+        ))
+        return {'html_path': None, 'pdf_path': str(paths['pdf_path'])}
+
+    def _render_adapt_template(self, job_id: str, analysis: Dict) -> Optional[Dict[str, str]]:
+        job = self.db.get_job(job_id)
+        if not job:
+            return None
+        template_id = analysis.get('template_id_final')
+        template_meta = self.registry['templates'][template_id]
+        tailored = json.loads(analysis.get('tailored_resume') or '{}')
+        schema = template_meta['slot_schema']
+        errors = validate_tier2_output(tailored, schema)
+        if errors:
+            for error in errors:
+                print(f"[Renderer] Tier 2 validation error: {error}")
+            return None
+
+        template = self.jinja_env.get_template(Path(template_meta['adapt_html']).name)
+        html_content = template.render(
+            schema=schema,
+            slot_overrides=tailored.get('slot_overrides', {}),
+            skills_override=tailored.get('skills_override', {}),
+            entry_visibility=tailored.get('entry_visibility', {}),
+            candidate=self.base_context,
+        )
+
+        paths = self._build_output_paths(job)
+        with open(paths['html_path'], 'w', encoding='utf-8') as handle:
+            handle.write(html_content)
+
+        pdf_success = self._html_to_pdf(paths['html_path'], paths['pdf_path'])
+        if not pdf_success:
+            return None
+
+        import shutil
+        shutil.copy2(paths['pdf_path'], paths['submit_pdf_path'])
+        self.db.save_resume(Resume(
+            job_id=job_id,
+            role_type=template_id,
+            template_version="adapt_v1",
+            html_path=str(paths['html_path']),
+            pdf_path=str(paths['pdf_path']),
+            submit_dir=str(paths['submit_dir']),
+        ))
+        return {'html_path': str(paths['html_path']), 'pdf_path': str(paths['pdf_path'])}
 
     def _build_context(self, tailored: Dict, job: Dict) -> Dict:
         """构建完整的模板上下文"""

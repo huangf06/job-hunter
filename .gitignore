@@ -48,6 +48,10 @@ nul
 
 # Temp files
 _tmp_*
+_tmp_pytest/
+renderer_test_workspace_*/
+pytest-cache-files-*/
+tmp*/
 
 # SVG optimizer artifacts
 iterations/
