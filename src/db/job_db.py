@@ -561,6 +561,9 @@ class JobDatabase:
                 statement = statement.strip()
                 if statement:
                     conn.execute(statement)
+            # Migrations must run before recreating views because newer view
+            # definitions may reference columns added during migration.
+            self._migrate(conn)
             # Drop and recreate views to ensure they're up-to-date
             conn.execute("DROP VIEW IF EXISTS v_pending_jobs")
             conn.execute("DROP VIEW IF EXISTS v_high_score_jobs")
@@ -571,8 +574,6 @@ class JobDatabase:
                 statement = statement.strip()
                 if statement:
                     conn.execute(statement)
-            # Migrations: add columns that may not exist in older databases
-            self._migrate(conn)
 
     @staticmethod
     def _load_view_thresholds() -> Dict[str, float]:
