@@ -938,9 +938,9 @@ class JobDatabase:
                   result.experience_fit, result.growth_potential,
                   result.recommendation, result.reasoning,
                   result.tailored_resume,
-                  result.resume_tier, result.template_id_initial, result.template_id_final,
-                  result.routing_confidence, result.routing_override_reason, result.escalation_reason,
-                  result.routing_payload, result.c3_decision, result.c3_confidence, result.c3_reason,
+                  result.resume_tier or None, result.template_id_initial or None, result.template_id_final or None,
+                  result.routing_confidence, result.routing_override_reason or None, result.escalation_reason or None,
+                  result.routing_payload or None, result.c3_decision or None, result.c3_confidence, result.c3_reason or None,
                   result.model, result.tokens_used,
                   datetime.now(timezone.utc).isoformat()))
 
@@ -1114,7 +1114,8 @@ class JobDatabase:
                   AND (
                       a.resume_tier = 'USE_TEMPLATE'
                       OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.c3_decision = 'FAIL')
-                      OR (a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                   )
                 ORDER BY a.ai_score DESC
             """

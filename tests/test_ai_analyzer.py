@@ -332,6 +332,7 @@ class TestAnalyzeJobFlow:
                 "DE": {"pdf": "templates/pdf/Fei_Huang_DE.pdf"},
             }
         }
+        analyzer.config = {"thresholds": {"ai_score_generate_resume": 4.0}}
 
         saved_results = []
         saved_resumes = []
@@ -372,6 +373,7 @@ class TestAnalyzeJobFlow:
 
         analyzer = AIAnalyzer.__new__(AIAnalyzer)
         analyzer.registry = {"templates": {"ML": {"pdf": "templates/pdf/Fei_Huang_ML.pdf"}}}
+        analyzer.config = {"thresholds": {"ai_score_generate_resume": 4.0}}
 
         saved_results = []
 
@@ -425,6 +427,7 @@ class TestAnalyzeJobFlow:
 
         analyzer = AIAnalyzer.__new__(AIAnalyzer)
         analyzer.registry = {"templates": {}}
+        analyzer.config = {"thresholds": {"ai_score_generate_resume": 4.0}}
 
         saved_results = []
 
@@ -458,6 +461,71 @@ class TestAnalyzeJobFlow:
         assert json.loads(result.tailored_resume)["bio"] == "Full custom bio"
         assert result.c3_decision is None
         assert len(saved_results) == 1
+
+
+def test_build_tier2_prompt_preserves_template_schema_json():
+    from src.ai_analyzer import AIAnalyzer
+    from src.template_registry import load_registry
+
+    analyzer = AIAnalyzer.__new__(AIAnalyzer)
+    analyzer.config = {
+        "prompts": {
+            "tailor_adapt": "SCHEMA:\n{template_schema}\nGAPS:{routing_gaps}\nINST:{adapt_instructions}"
+        },
+        "prompt_settings": {"job_description_max_chars": 10000},
+    }
+    analyzer.registry = load_registry()
+
+    prompt = analyzer._build_tier2_prompt(
+        _make_job(title="Data Engineer"),
+        {"template_id_final": "DE"},
+        {"gaps": ["gap a"], "adapt_instructions": "Keep {named} slot stable"},
+    )
+
+    assert '"slot_id": "bio"' in prompt
+    assert '{{"slot_id"' not in prompt
+    assert 'Keep {{named}} slot stable' in prompt
+
+
+def test_analyze_job_below_threshold_skips_c2_for_non_template_tiers():
+    from src.ai_analyzer import AIAnalyzer
+
+    analyzer = AIAnalyzer.__new__(AIAnalyzer)
+    analyzer.registry = {"templates": {"ML": {"pdf": "templates/pdf/Fei_Huang_ML.pdf"}}}
+    analyzer.config = {"thresholds": {"ai_score_generate_resume": 4.0}}
+
+    saved_results = []
+
+    class DBStub:
+        def save_analysis(self, result):
+            saved_results.append(result)
+
+        def save_resume(self, resume):
+            pytest.fail("Low-score adapt path should not create resume record")
+
+    analyzer.db = DBStub()
+    analyzer.evaluate_job = lambda job: AnalysisResult(
+        job_id=job["id"],
+        ai_score=2.0,
+        recommendation="SKIP",
+        reasoning=json.dumps({"reasoning": "low fit", "application_brief": {}}),
+        tailored_resume="{}",
+        model="claude_code",
+        resume_tier="ADAPT_TEMPLATE",
+        template_id_initial="ML",
+        template_id_final="ML",
+        routing_confidence=0.5,
+        routing_payload=json.dumps({"tier": "ADAPT_TEMPLATE"}),
+    )
+    analyzer.tailor_resume = lambda *args, **kwargs: pytest.fail("Low-score single-job flow should skip C2")
+    analyzer.run_c3_gate = lambda *args, **kwargs: pytest.fail("Low-score single-job flow should skip C3")
+
+    result = analyzer.analyze_job(_make_job(title="ML Engineer"))
+
+    assert result.resume_tier == "ADAPT_TEMPLATE"
+    assert result.tailored_resume == "{}"
+    assert result.c3_decision is None
+    assert len(saved_results) == 1
 
 
 # =============================================================================

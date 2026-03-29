@@ -55,3 +55,33 @@ def test_run_c3_gate_parses_model_response():
     assert gate["decision"] == "PASS"
     assert gate["confidence"] == 0.82
     assert gate["reason"] == "Worth the adaptation"
+
+
+def test_run_c3_gate_prompt_preserves_structured_diff_braces():
+    analyzer = AIAnalyzer.__new__(AIAnalyzer)
+    analyzer.registry = load_registry()
+    analyzer.config = {"prompts": {"c3_gate": "DIFF:\n{structured_diff}"}}
+    captured = {}
+
+    def _fake_call(prompt):
+        captured["prompt"] = prompt
+        return json.dumps({"decision": "PASS", "confidence": 0.75, "reason": "ok"})
+
+    analyzer._call_claude = _fake_call
+
+    class Result:
+        template_id_final = "DE"
+        tailored_resume = json.dumps(
+            {
+                "slot_overrides": {"bio": "Processed {batch_size} records"},
+                "skills_override": {},
+                "entry_visibility": {},
+                "change_summary": "bio only",
+            }
+        )
+        reasoning = json.dumps({"application_brief": {"key_angle": "Data engineering fit"}})
+
+    analyzer.run_c3_gate(Result(), {"gaps": ["fit gap"]}, {"title": "Data Engineer"})
+
+    assert "Processed {batch_size} records" in captured["prompt"]
+    assert "Processed {{batch_size}} records" not in captured["prompt"]
