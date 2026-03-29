@@ -21,9 +21,16 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src import TRANSFERABLE_SKIP_WORDS
-from src.db.job_db import JobDatabase, AnalysisResult
+from src.db.job_db import JobDatabase, AnalysisResult, Resume
 from src.language_guidance import format_language_guidance_for_prompt
 from src.resume_validator import ResumeValidator
+from src.template_registry import (
+    apply_tier1_safeguard,
+    load_registry,
+    resolve_routing,
+    select_template,
+    validate_tier2_output,
+)
 
 
 class AIAnalyzer:
@@ -39,6 +46,7 @@ class AIAnalyzer:
     def __init__(self, config_path: Path = None):
         self.config = self._load_config(config_path)
         self.db = JobDatabase()
+        self.registry = load_registry()
         self.bullet_library = self._load_bullet_library()
         self.valid_bullets = self._extract_valid_bullets()
         self.bullet_id_lookup = self._build_bullet_id_lookup()
@@ -537,7 +545,7 @@ class AIAnalyzer:
 - JD is 80% frontend but candidate is backend → score 2-3 MAX
 - JD requires "10+ years" but candidate has 6 → score 3-4 MAX"""
 
-    def _build_evaluate_prompt(self, job: Dict) -> str:
+    def _build_evaluate_prompt(self, job: Dict, code_decision) -> str:
         """Build C1 evaluation prompt (scoring + application brief). No bullet library."""
         prompt_template = self.config.get('prompts', {}).get('evaluator', '')
         if not prompt_template:
@@ -555,12 +563,26 @@ class AIAnalyzer:
         job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
         job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
         scoring_safe = scoring_guidelines.replace('{', '{{').replace('}', '}}')
+        available_templates = []
+        for template_id, meta in self.registry.get('templates', {}).items():
+            if not meta.get('enabled', True):
+                continue
+            strengths = ', '.join(meta.get('key_strengths', []))
+            available_templates.append(
+                f"- {template_id}: {meta.get('bio_positioning', template_id)}. Strengths: {strengths}"
+            )
+        available_templates_safe = '\n'.join(available_templates).replace('{', '{{').replace('}', '}}')
+        ambiguous_warning = "⚠ AMBIGUOUS: title matched multiple templates" if code_decision.ambiguous else ""
 
         return prompt_template.format(
             scoring_guidelines=scoring_safe,
             job_title=job_title,
             job_company=job_company,
             job_description=jd_safe,
+            available_templates=available_templates_safe,
+            preselected_template_id=code_decision.template_id,
+            preselected_confidence=code_decision.confidence,
+            ambiguous_warning=ambiguous_warning,
             apply_now_threshold=ai_thresholds.get('apply_now', 7),
             apply_threshold=ai_thresholds.get('apply', 5),
             maybe_threshold=ai_thresholds.get('maybe', 3),
@@ -642,10 +664,31 @@ class AIAnalyzer:
         )
         return f"{language_guidance}\n\n{prompt_body}"
 
+    def _build_tier2_prompt(self, job: Dict, analysis: Dict, c1_routing: Dict) -> str:
+        prompt_template = self.config.get('prompts', {}).get('tailor_adapt', '')
+        if not prompt_template:
+            raise ValueError("No tailor_adapt prompt template found in config")
+
+        prompt_settings = self.config.get('prompt_settings', {})
+        jd_max = prompt_settings.get('job_description_max_chars', 10000)
+        jd_text = (job.get('description') or '')[:jd_max]
+        template_id = analysis.get('template_id_final')
+        schema = self.registry['templates'][template_id]['slot_schema']
+
+        return prompt_template.format(
+            job_title=(job.get('title') or '').replace('{', '{{').replace('}', '}}'),
+            job_company=(job.get('company') or '').replace('{', '{{').replace('}', '}}'),
+            job_description=jd_text.replace('{', '{{').replace('}', '}}'),
+            routing_gaps=json.dumps(c1_routing.get('gaps', []), ensure_ascii=False).replace('{', '{{').replace('}', '}}'),
+            adapt_instructions=(c1_routing.get('adapt_instructions') or '').replace('{', '{{').replace('}', '}}'),
+            template_schema=json.dumps(schema, ensure_ascii=False, indent=2).replace('{', '{{').replace('}', '}}'),
+        )
+
     def evaluate_job(self, job: Dict) -> Optional[AnalysisResult]:
         """C1: Score + application brief. Short prompt, fast."""
         job_id = job['id']
-        prompt = self._build_evaluate_prompt(job)
+        code_decision = select_template(job.get('title', ''), self.registry)
+        prompt = self._build_evaluate_prompt(job, code_decision)
 
         text = self._call_claude(prompt)
         if not text:
@@ -671,6 +714,16 @@ class AIAnalyzer:
 
         scoring = parsed.get('scoring', {})
         brief = parsed.get('application_brief', {})
+        c1_routing = parsed.get('resume_routing') or {
+            'tier': 'USE_TEMPLATE',
+            'template_id': code_decision.template_id,
+            'override': False,
+            'override_reason': None,
+            'gaps': [],
+            'adapt_instructions': None,
+        }
+        routing = resolve_routing(code_decision, c1_routing)
+        routing = apply_tier1_safeguard(routing, code_decision)
 
         def _safe_float(val, default=0.0):
             try:
@@ -688,14 +741,26 @@ class AIAnalyzer:
             reasoning=json.dumps({"reasoning": scoring.get('reasoning', ''),
                                    "application_brief": brief}, ensure_ascii=False),
             tailored_resume='{}',
-            model='claude_code', tokens_used=0,
+            model='claude_code',
+            tokens_used=0,
+            resume_tier=routing.get('resume_tier'),
+            template_id_initial=routing.get('template_id_initial'),
+            template_id_final=routing.get('template_id_final'),
+            routing_confidence=routing.get('routing_confidence'),
+            routing_override_reason=routing.get('routing_override_reason'),
+            escalation_reason=routing.get('escalation_reason'),
+            routing_payload=routing.get('routing_payload'),
         )
 
-    def tailor_resume(self, job: Dict, analysis: Dict) -> Optional[str]:
+    def tailor_resume(self, job: Dict, analysis: Dict, c1_routing: Dict = None) -> Optional[str]:
         """C2: Resume tailoring. Long prompt, only for high-scoring jobs.
         Returns tailored_resume JSON string, or None on failure."""
         job_id = job['id']
-        prompt = self._build_tailor_prompt(job, analysis)
+        tier = analysis.get('resume_tier') or analysis.get('resume_tier'.upper())
+        if tier == 'ADAPT_TEMPLATE':
+            prompt = self._build_tier2_prompt(job, analysis, c1_routing or {})
+        else:
+            prompt = self._build_tailor_prompt(job, analysis)
 
         text = self._call_claude(prompt)
         if not text:
@@ -706,6 +771,14 @@ class AIAnalyzer:
         if not parsed:
             print(f"  [WARN] C2 parse failed for {job_id}")
             return None
+
+        if tier == 'ADAPT_TEMPLATE':
+            errors = validate_tier2_output(parsed, self.registry['templates'][analysis['template_id_final']]['slot_schema'])
+            if errors:
+                for error in errors:
+                    print(f"    [TIER2 VALIDATION] {error}")
+                return None
+            return json.dumps(parsed, ensure_ascii=False)
 
         tailored = parsed.get('tailored_resume', {})
         if not tailored:
@@ -739,6 +812,78 @@ class AIAnalyzer:
 
         return json.dumps(tailored, ensure_ascii=False)
 
+    def build_c3_input(self, template_schema: Dict, c2_output: Dict, c1_routing: Dict, jd_summary: str) -> str:
+        lines = []
+        lines.append(f"## Job Summary\n{jd_summary}\n")
+        lines.append(f"## Identified Gaps\n{', '.join(c1_routing.get('gaps', []))}\n")
+        lines.append("## Changes Made (before -> after)\n")
+
+        change_count = 0
+        total_changeable = 1
+
+        if c2_output.get('slot_overrides', {}).get('bio'):
+            lines.append("**Bio:**")
+            lines.append(f"  BEFORE: {template_schema['bio']['default']}")
+            lines.append(f"  AFTER:  {c2_output['slot_overrides']['bio']}\n")
+            change_count += 1
+
+        for section in template_schema.get('sections', []):
+            for entry in section.get('entries', []):
+                for bullet in entry.get('bullets', []):
+                    total_changeable += 1
+                    override = c2_output.get('slot_overrides', {}).get(bullet['slot_id'])
+                    if override:
+                        lines.append(f"**{bullet['slot_id']}:**")
+                        lines.append(f"  BEFORE: {bullet['default']}")
+                        lines.append(f"  AFTER:  {override}\n")
+                        change_count += 1
+            for category in section.get('categories', []):
+                total_changeable += 1
+                override = c2_output.get('skills_override', {}).get(category['cat_id'])
+                if override:
+                    lines.append(f"**skills.{category['cat_id']}:**")
+                    lines.append(f"  BEFORE: {category['default']}")
+                    lines.append(f"  AFTER:  {override}\n")
+                    change_count += 1
+
+        all_entries = set()
+        for section in template_schema.get('sections', []):
+            for entry in section.get('entries', []):
+                all_entries.add(entry['entry_id'])
+        total_changeable += len(all_entries)
+
+        hidden = [entry_id for entry_id, visible in c2_output.get('entry_visibility', {}).items() if not visible]
+        if hidden:
+            lines.append(f"**Hidden entries:** {', '.join(hidden)}")
+            change_count += len(hidden)
+
+        density = change_count / max(total_changeable, 1) * 100
+        lines.append(
+            f"\n**Change density:** {change_count} of {total_changeable} changeable items modified ({density:.0f}%)"
+        )
+        return "\n".join(lines)
+
+    def run_c3_gate(self, analysis: AnalysisResult, c1_routing: Dict, job: Dict) -> Dict:
+        template_id = analysis.template_id_final
+        schema = self.registry['templates'][template_id]['slot_schema']
+        c2_output = json.loads(analysis.tailored_resume or '{}')
+        reasoning_data = json.loads(analysis.reasoning or '{}')
+        brief = reasoning_data.get('application_brief', {})
+        jd_summary = brief.get('key_angle') or brief.get('hook') or job.get('title', '')
+        structured_diff = self.build_c3_input(schema, c2_output, c1_routing, jd_summary)
+        prompt = self.config.get('prompts', {}).get('c3_gate', '').format(
+            structured_diff=structured_diff.replace('{', '{{').replace('}', '}}')
+        )
+        text = self._call_claude(prompt)
+        parsed = self._parse_response(text or '')
+        if not parsed:
+            return {'decision': 'FAIL', 'confidence': 0.0, 'reason': 'C3 parse failed'}
+        return {
+            'decision': parsed.get('decision', 'FAIL'),
+            'confidence': float(parsed.get('confidence', 0.0) or 0.0),
+            'reason': parsed.get('reason', ''),
+        }
+
     def evaluate_batch(self, limit: int = None) -> int:
         """C1: Evaluate all jobs needing analysis."""
         jobs = self.db.get_jobs_needing_analysis(limit=limit)
@@ -757,6 +902,14 @@ class AIAnalyzer:
                     result = self.evaluate_job(job)
                     if result:
                         self.db.save_analysis(result)
+                        if result.resume_tier == 'USE_TEMPLATE' and result.template_id_final:
+                            template_pdf = self.registry['templates'][result.template_id_final]['pdf']
+                            self.db.save_resume(Resume(
+                                job_id=job['id'],
+                                role_type=result.template_id_final,
+                                template_version="template_v1",
+                                pdf_path=template_pdf,
+                            ))
                         count += 1
                         print(f"-> {result.recommendation} ({result.ai_score:.1f})")
                     else:
@@ -791,9 +944,30 @@ class AIAnalyzer:
                     if not analysis:
                         print("-> NO ANALYSIS")
                         continue
-                    resume_json = self.tailor_resume(job, analysis)
+                    c1_routing = json.loads(analysis.get('routing_payload') or '{}')
+                    resume_json = self.tailor_resume(job, analysis, c1_routing=c1_routing)
                     if resume_json:
-                        self.db.update_analysis_resume(job['id'], resume_json)
+                        c3_decision = None
+                        c3_confidence = None
+                        c3_reason = None
+                        if analysis.get('resume_tier') == 'ADAPT_TEMPLATE':
+                            temp_result = AnalysisResult(
+                                job_id=job['id'],
+                                reasoning=analysis.get('reasoning', ''),
+                                tailored_resume=resume_json,
+                                template_id_final=analysis.get('template_id_final'),
+                            )
+                            c3 = self.run_c3_gate(temp_result, c1_routing, job)
+                            c3_decision = c3['decision']
+                            c3_confidence = c3['confidence']
+                            c3_reason = c3['reason']
+                        self.db.update_analysis_resume(
+                            job['id'],
+                            resume_json,
+                            c3_decision=c3_decision,
+                            c3_confidence=c3_confidence,
+                            c3_reason=c3_reason,
+                        )
                         count += 1
                         print("-> TAILORED")
                     else:
@@ -921,37 +1095,41 @@ class AIAnalyzer:
             return None
 
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
-        """分析单个职位: C1 evaluate + C2 tailor (combined flow)."""
-        job_id = job['id']
-
-        # C1: Evaluate
+        """分析单个职位: C1 evaluate + route + conditional C2/C3."""
         c1_result = self.evaluate_job(job)
         if not c1_result:
             return None
 
-        # C2: Tailor (only if score meets threshold)
-        c2_threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
-        if c1_result.ai_score >= c2_threshold:
+        c1_routing = json.loads(c1_result.routing_payload) if c1_result.routing_payload else {}
+        if c1_result.resume_tier == 'USE_TEMPLATE':
+            pass
+        elif c1_result.resume_tier in ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'):
             analysis = {
                 'ai_score': c1_result.ai_score,
                 'recommendation': c1_result.recommendation,
                 'reasoning': c1_result.reasoning,
                 'tailored_resume': c1_result.tailored_resume,
+                'resume_tier': c1_result.resume_tier,
+                'template_id_final': c1_result.template_id_final,
             }
-            resume_json = self.tailor_resume(job, analysis)
+            resume_json = self.tailor_resume(job, analysis, c1_routing=c1_routing)
             if resume_json:
-                c1_result = AnalysisResult(
-                    job_id=c1_result.job_id,
-                    ai_score=c1_result.ai_score,
-                    skill_match=c1_result.skill_match,
-                    experience_fit=c1_result.experience_fit,
-                    growth_potential=c1_result.growth_potential,
-                    recommendation=c1_result.recommendation,
-                    reasoning=c1_result.reasoning,
-                    tailored_resume=resume_json,
-                    model=c1_result.model,
-                    tokens_used=c1_result.tokens_used,
-                )
+                c1_result.tailored_resume = resume_json
+                if c1_result.resume_tier == 'ADAPT_TEMPLATE':
+                    c3 = self.run_c3_gate(c1_result, c1_routing, job)
+                    c1_result.c3_decision = c3['decision']
+                    c1_result.c3_confidence = c3['confidence']
+                    c1_result.c3_reason = c3['reason']
+
+        self.db.save_analysis(c1_result)
+        if c1_result.resume_tier == 'USE_TEMPLATE' and c1_result.template_id_final:
+            template_pdf = self.registry['templates'][c1_result.template_id_final]['pdf']
+            self.db.save_resume(Resume(
+                job_id=job['id'],
+                role_type=c1_result.template_id_final,
+                template_version="template_v1",
+                pdf_path=template_pdf,
+            ))
 
         return c1_result
 

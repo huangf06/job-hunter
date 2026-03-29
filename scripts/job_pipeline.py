@@ -167,6 +167,58 @@ class JobPipeline:
         for stat in self.db.get_filter_stats():
             print(f"  {stat['reject_reason']}: {stat['count']} ({stat['percentage']}%)")
 
+    def show_template_stats(self):
+        """Show three-tier template routing statistics."""
+        use_template = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'USE_TEMPLATE'"
+        )[0]["c"]
+        adapt_pass = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'ADAPT_TEMPLATE' AND c3_decision = 'PASS'"
+        )[0]["c"]
+        adapt_fail = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'ADAPT_TEMPLATE' AND c3_decision = 'FAIL'"
+        )[0]["c"]
+        full_customize = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'FULL_CUSTOMIZE'"
+        )[0]["c"]
+        legacy = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier IS NULL"
+        )[0]["c"]
+        agreement = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE template_id_initial = template_id_final"
+        )[0]["c"]
+        overrides = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE routing_override_reason IS NOT NULL"
+        )[0]["c"]
+        escalations = self.db.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE escalation_reason IS NOT NULL"
+        )[0]["c"]
+        template_usage = self.db.execute(
+            "SELECT template_id_final, COUNT(*) as c FROM job_analysis WHERE template_id_final IS NOT NULL GROUP BY template_id_final ORDER BY template_id_final"
+        )
+        pass_conf = self.db.execute(
+            "SELECT AVG(c3_confidence) as avg_conf FROM job_analysis WHERE c3_decision = 'PASS'"
+        )[0]["avg_conf"]
+        fail_conf = self.db.execute(
+            "SELECT AVG(c3_confidence) as avg_conf FROM job_analysis WHERE c3_decision = 'FAIL'"
+        )[0]["avg_conf"]
+
+        print("\nResume Tier Distribution (score >= 4.0):")
+        print(f"  USE_TEMPLATE:     {use_template}")
+        print(f"  ADAPT_TEMPLATE:   {adapt_pass + adapt_fail}")
+        print(f"  FULL_CUSTOMIZE:   {full_customize}")
+        print(f"  Legacy:           {legacy}")
+        print("\nRouting:")
+        print(f"  Code -> C1 agreement:  {agreement}")
+        print(f"  C1 overrides:          {overrides}")
+        print(f"  Safeguard escalations: {escalations}")
+        print("\nTemplate usage:")
+        for row in template_usage:
+            print(f"  {row['template_id_final']}:      {row['c']}")
+        print("\nC3 calibration:")
+        print(f"  Avg confidence (PASS): {0 if pass_conf is None else pass_conf:.2f}")
+        print(f"  Avg confidence (FAIL): {0 if fail_conf is None else fail_conf:.2f}")
+
     def show_ready(self):
         """Show jobs ready to apply and generate application checklist"""
         ready = self.db.get_ready_to_apply()
@@ -768,6 +820,7 @@ def main():
     parser.add_argument('--filter', action='store_true', help='Only run filter')
     parser.add_argument('--ready', action='store_true', help='Show ready to apply')
     parser.add_argument('--stats', action='store_true', help='Show stats')
+    parser.add_argument('--template-stats', action='store_true', help='Show three-tier routing stats')
     parser.add_argument('--mark-applied', type=str, help='Mark job as applied')
     parser.add_argument('--mark-all-applied', action='store_true',
                         help='Mark ALL ready-to-apply jobs as applied and archive ready_to_send/')
@@ -888,7 +941,7 @@ def main():
     # 新版数据库流水线
     if args.process or args.import_only or args.filter or args.ready \
        or args.ai_analyze or args.ai_evaluate or args.ai_tailor or args.generate or args.analyze_job \
-       or args.stats or args.mark_applied or args.mark_all_applied \
+       or args.stats or args.template_stats or args.mark_applied or args.mark_all_applied \
        or args.update_status or args.tracker \
        or args.cover_letter or args.cover_letters \
        or args.prepare or args.finalize or args.archive \
@@ -949,6 +1002,8 @@ def main():
             pipeline.analyze_single_job(args.analyze_job)
         elif args.stats:
             pipeline.show_stats()
+        elif args.template_stats:
+            pipeline.show_template_stats()
         elif args.mark_applied:
             job_id = args.mark_applied
             pipeline.db.update_application_status(job_id, "applied", applied_at=datetime.now(timezone.utc).isoformat())

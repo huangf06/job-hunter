@@ -169,6 +169,27 @@ prompts:
     Job Description:
     {job_description}
 
+    ## Resume Routing Decision
+    We have professionally designed template resumes, human-reviewed through multiple
+    iterations for narrative coherence, visual design, and cross-section resonance.
+    AI-generated alternatives cannot replicate these qualities.
+
+    Principle: when in doubt, use the template. Minor content gaps do not justify
+    replacing a polished template with an AI-generated alternative.
+
+    Available templates:
+    {available_templates}
+
+    Pre-selected template: {preselected_template_id} (confidence: {preselected_confidence})
+    {ambiguous_warning}
+
+    Routing rules:
+    - USE_TEMPLATE: Default. Choose unless hiring manager would question fit at first glance.
+      Acceptable gaps: missing a mentioned technology, different domain emphasis, slightly different experience years.
+    - ADAPT_TEMPLATE: Only when structural positioning mismatch exists: bio positioning is wrong,
+      or more than half the bullets are irrelevant, or skill ordering misrepresents fit.
+    - FULL_CUSTOMIZE: Only when no template is remotely close.
+
     ## Output (JSON only, no markdown)
     {{
       "scoring": {{
@@ -184,6 +205,14 @@ prompts:
         "key_angle": "One sentence: main selling point for this application",
         "gap_mitigation": "One sentence: biggest gap and how to address it, or null",
         "company_connection": "Personal connection to company mission, or null if none"
+      }},
+      "resume_routing": {{
+        "tier": "USE_TEMPLATE",
+        "template_id": "{preselected_template_id}",
+        "override": false,
+        "override_reason": null,
+        "gaps": ["specific gap 1"],
+        "adapt_instructions": null
       }}
     }}
 
@@ -409,6 +438,61 @@ prompts:
     2. MUST include 2-3 different work experiences from different companies
     3. Select bullets that best match the JD requirements AND form a coherent narrative per section
     4. Prefer narrative composition over exhaustive coverage — omit a relevant bullet if it breaks the narrative flow
+
+  tailor_adapt: |
+    # Template Adaptation
+
+    You are adapting a polished resume template for a specific job. Do not rewrite the full resume.
+
+    ## Target Job
+    Title: {job_title}
+    Company: {job_company}
+
+    Job Description:
+    {job_description}
+
+    ## Routing Context
+    Gaps: {routing_gaps}
+    Adapt instructions: {adapt_instructions}
+
+    ## Template Schema
+    {template_schema}
+
+    ## Output JSON
+    {{
+      "slot_overrides": {{
+        "bio": "Optional replacement bio"
+      }},
+      "skills_override": {{
+        "programming": "Optional replacement skill line"
+      }},
+      "entry_visibility": {{
+        "glp": true
+      }},
+      "change_summary": "One sentence summary of the changes"
+    }}
+
+  c3_gate: |
+    You are reviewing whether adapting a polished resume template improves job fit enough
+    to justify using the adapted version over the original.
+
+    The original template has been professionally designed through 9+ iterations for
+    narrative coherence, visual design, and cross-section resonance.
+
+    {structured_diff}
+
+    ## Decision criteria
+    - Does each change demonstrably improve fit for THIS specific job?
+    - Are the new bullet texts of comparable quality to the originals?
+    - Is the change density proportionate? (>60% modified = essentially a rewrite -> FAIL)
+    - Would a hiring manager notice the gaps if we used the unmodified template?
+
+    Output JSON:
+    {{
+      "decision": "PASS",
+      "confidence": 0.8,
+      "reason": "one sentence"
+    }}
 
 # =============================================================================
 # Metadata

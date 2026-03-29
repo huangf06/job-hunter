@@ -43,12 +43,86 @@ from src.db.job_db import JobDatabase, CoverLetter
 from src.language_guidance import format_language_guidance_for_prompt
 
 
+def _extract_application_brief_text(analysis: Dict) -> str:
+    reasoning = analysis.get("reasoning", "")
+    try:
+        reasoning_data = json.loads(reasoning)
+    except (json.JSONDecodeError, TypeError):
+        return ""
+    brief = reasoning_data.get("application_brief") or {}
+    return brief.get("key_angle") or brief.get("hook") or ""
+
+
+def _build_template_context(template_id: str, registry: Dict, brief_text: str) -> str:
+    template = registry["templates"][template_id]
+    strengths = ", ".join(template.get("key_strengths", []))
+    parts = [
+        f"Template Positioning: {template.get('bio_positioning', template_id)}",
+        f"Key Strengths: {strengths}",
+    ]
+    if brief_text:
+        parts.append(f"Application Brief: {brief_text}")
+    return "\n".join(parts)
+
+
+def _merge_slot_schema(template_id: str, registry: Dict, tailored_resume: str, brief_text: str) -> str:
+    template = registry["templates"][template_id]
+    schema = template["slot_schema"]
+    payload = json.loads(tailored_resume or "{}")
+    slot_overrides = payload.get("slot_overrides", {})
+    skills_override = payload.get("skills_override", {})
+    entry_visibility = payload.get("entry_visibility", {})
+
+    lines = [slot_overrides.get("bio") or schema["bio"]["default"]]
+
+    for section in schema.get("sections", []):
+        for entry in section.get("entries", []):
+            if entry_visibility.get(entry["entry_id"], True) is False:
+                continue
+            for bullet in entry.get("bullets", []):
+                lines.append(slot_overrides.get(bullet["slot_id"]) or bullet["default"])
+        for category in section.get("categories", []):
+            lines.append(skills_override.get(category["cat_id"]) or category["default"])
+
+    if brief_text:
+        lines.append(f"Application Brief: {brief_text}")
+    return "\n".join(lines)
+
+
+def get_resume_context_for_cl(job_analysis_row: Dict, registry: Dict) -> str:
+    tier = job_analysis_row.get("resume_tier")
+    brief_text = _extract_application_brief_text(job_analysis_row)
+
+    if tier == "USE_TEMPLATE":
+        return _build_template_context(job_analysis_row["template_id_final"], registry, brief_text)
+
+    if tier == "ADAPT_TEMPLATE":
+        if job_analysis_row.get("c3_decision") == "PASS":
+            return _merge_slot_schema(
+                job_analysis_row["template_id_final"],
+                registry,
+                job_analysis_row.get("tailored_resume", "{}"),
+                brief_text,
+            )
+        return _build_template_context(job_analysis_row["template_id_final"], registry, brief_text)
+
+    if tier == "FULL_CUSTOMIZE":
+        context = job_analysis_row.get("tailored_resume", "{}")
+        if brief_text:
+            context = f"{context}\nApplication Brief: {brief_text}"
+        return context
+
+    return job_analysis_row.get("tailored_resume", "{}")
+
+
 class CoverLetterGenerator:
     """AI 驱动的 cover letter 生成器"""
 
     def __init__(self, config_path: Path = None, model_override: str = None):
         self.config = self._load_config(config_path)
         self.db = JobDatabase()
+        from src.template_registry import load_registry
+        self.registry = load_registry()
 
         # Model setup (same pattern as AIAnalyzer)
         active = model_override or self.config.get('active_model', 'opus')
@@ -234,7 +308,7 @@ class CoverLetterGenerator:
 
         ai_score = analysis.get('ai_score', 0)
         reasoning = analysis.get('reasoning', '')
-        tailored_resume = analysis.get('tailored_resume', '{}')
+        tailored_resume = get_resume_context_for_cl(analysis, self.registry)
 
         # Load config sections
         tone = self.cl_config.get('tone_guidelines', [])

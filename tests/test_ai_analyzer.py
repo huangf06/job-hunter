@@ -48,6 +48,33 @@ def _valid_c1_response():
     })
 
 
+def _valid_c1_routing_response(*, tier="USE_TEMPLATE", template_id="DE", override=False, override_reason=None):
+    return json.dumps({
+        "scoring": {
+            "overall_score": 7.5,
+            "skill_match": 8.0,
+            "experience_fit": 7.0,
+            "growth_potential": 7.5,
+            "recommendation": "APPLY",
+            "reasoning": "Strong overall fit."
+        },
+        "application_brief": {
+            "hook": "Relevant track record",
+            "key_angle": "Best fit angle",
+            "gap_mitigation": None,
+            "company_connection": None
+        },
+        "resume_routing": {
+            "tier": tier,
+            "template_id": template_id,
+            "override": override,
+            "override_reason": override_reason,
+            "gaps": ["gap a"],
+            "adapt_instructions": "Adjust positioning" if tier == "ADAPT_TEMPLATE" else None
+        }
+    })
+
+
 def _valid_c2_response():
     """A well-formed C2 tailor response (just tailored_resume, no scoring)."""
     return json.dumps({
@@ -171,6 +198,103 @@ class TestEvaluateResponseParsing:
         assert brief["key_angle"] is not None
         assert brief["company_connection"] is None
 
+    def test_evaluate_job_resolves_routing_with_c1_override(self):
+        from src.ai_analyzer import AIAnalyzer
+
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer.config = {
+            "prompts": {
+                "evaluator": (
+                    "Title: {job_title}\nCompany: {job_company}\n"
+                    "Templates:\n{available_templates}\n"
+                    "Preselected: {preselected_template_id} {preselected_confidence} {ambiguous_warning}\n"
+                    "{job_description}"
+                )
+            },
+            "ai_recommendation_thresholds": {"apply_now": 7, "apply": 5, "maybe": 3},
+            "prompt_settings": {"job_description_max_chars": 10000},
+        }
+        from src.template_registry import load_registry
+        analyzer.registry = load_registry()
+        analyzer._call_claude = lambda prompt: _valid_c1_routing_response(
+            tier="ADAPT_TEMPLATE",
+            template_id="ML",
+            override=True,
+            override_reason="JD is ML-heavy",
+        )
+
+        result = analyzer.evaluate_job(_make_job(title="Data Engineer"))
+
+        assert result.resume_tier == "ADAPT_TEMPLATE"
+        assert result.template_id_initial == "DE"
+        assert result.template_id_final == "ML"
+        assert result.routing_confidence == 0.9
+        assert result.routing_override_reason == "JD is ML-heavy"
+        assert result.escalation_reason is None
+        assert json.loads(result.routing_payload)["template_id"] == "ML"
+
+    def test_evaluate_job_keeps_code_template_without_override(self):
+        from src.ai_analyzer import AIAnalyzer
+
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer.config = {
+            "prompts": {
+                "evaluator": (
+                    "Title: {job_title}\nCompany: {job_company}\n"
+                    "Templates:\n{available_templates}\n"
+                    "Preselected: {preselected_template_id} {preselected_confidence} {ambiguous_warning}\n"
+                    "{job_description}"
+                )
+            },
+            "ai_recommendation_thresholds": {"apply_now": 7, "apply": 5, "maybe": 3},
+            "prompt_settings": {"job_description_max_chars": 10000},
+        }
+        from src.template_registry import load_registry
+        analyzer.registry = load_registry()
+        analyzer._call_claude = lambda prompt: _valid_c1_routing_response(
+            tier="USE_TEMPLATE",
+            template_id="ML",
+            override=False,
+        )
+
+        result = analyzer.evaluate_job(_make_job(title="Data Engineer"))
+
+        assert result.resume_tier == "USE_TEMPLATE"
+        assert result.template_id_initial == "DE"
+        assert result.template_id_final == "DE"
+        assert result.routing_override_reason is None
+
+    def test_evaluate_job_applies_low_confidence_tier1_safeguard(self):
+        from src.ai_analyzer import AIAnalyzer
+
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer.config = {
+            "prompts": {
+                "evaluator": (
+                    "Title: {job_title}\nCompany: {job_company}\n"
+                    "Templates:\n{available_templates}\n"
+                    "Preselected: {preselected_template_id} {preselected_confidence} {ambiguous_warning}\n"
+                    "{job_description}"
+                )
+            },
+            "ai_recommendation_thresholds": {"apply_now": 7, "apply": 5, "maybe": 3},
+            "prompt_settings": {"job_description_max_chars": 10000},
+        }
+        from src.template_registry import load_registry
+        analyzer.registry = load_registry()
+        analyzer._call_claude = lambda prompt: _valid_c1_routing_response(
+            tier="USE_TEMPLATE",
+            template_id="ML",
+            override=False,
+        )
+
+        result = analyzer.evaluate_job(_make_job(title="ML Platform Engineer"))
+
+        assert result.template_id_initial == "ML"
+        assert result.routing_confidence == 0.5
+        assert result.resume_tier == "ADAPT_TEMPLATE"
+        assert "Auto-escalated" in result.escalation_reason
+
 
 # =============================================================================
 # C2 Tailor Response Parsing
@@ -196,6 +320,144 @@ class TestTailorResponseParsing:
         parsed = analyzer_cls._parse_response(response)
         assert parsed is not None
         assert parsed["tailored_resume"] == {}
+
+
+class TestAnalyzeJobFlow:
+    def test_analyze_job_use_template_skips_c2_and_creates_resume_record(self):
+        from src.ai_analyzer import AIAnalyzer
+
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer.registry = {
+            "templates": {
+                "DE": {"pdf": "templates/pdf/Fei_Huang_DE.pdf"},
+            }
+        }
+
+        saved_results = []
+        saved_resumes = []
+
+        class DBStub:
+            def save_analysis(self, result):
+                saved_results.append(result)
+
+            def save_resume(self, resume):
+                saved_resumes.append(resume)
+
+        analyzer.db = DBStub()
+        analyzer.evaluate_job = lambda job: AnalysisResult(
+            job_id=job["id"],
+            ai_score=7.0,
+            recommendation="APPLY",
+            reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
+            tailored_resume="{}",
+            model="claude_code",
+            resume_tier="USE_TEMPLATE",
+            template_id_initial="DE",
+            template_id_final="DE",
+            routing_confidence=0.9,
+            routing_payload=json.dumps({"tier": "USE_TEMPLATE"}),
+        )
+        analyzer.tailor_resume = lambda *args, **kwargs: pytest.fail("Tier 1 should not call C2")
+        analyzer.run_c3_gate = lambda *args, **kwargs: pytest.fail("Tier 1 should not call C3")
+
+        result = analyzer.analyze_job(_make_job())
+
+        assert result.resume_tier == "USE_TEMPLATE"
+        assert len(saved_results) == 1
+        assert len(saved_resumes) == 1
+        assert saved_resumes[0].pdf_path == "templates/pdf/Fei_Huang_DE.pdf"
+
+    def test_analyze_job_adapt_template_runs_c2_and_c3(self):
+        from src.ai_analyzer import AIAnalyzer
+
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer.registry = {"templates": {"ML": {"pdf": "templates/pdf/Fei_Huang_ML.pdf"}}}
+
+        saved_results = []
+
+        class DBStub:
+            def save_analysis(self, result):
+                saved_results.append(result)
+
+            def save_resume(self, resume):
+                pytest.fail("Tier 2 should not create template resume record here")
+
+        analyzer.db = DBStub()
+        analyzer.evaluate_job = lambda job: AnalysisResult(
+            job_id=job["id"],
+            ai_score=7.5,
+            recommendation="APPLY",
+            reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
+            tailored_resume="{}",
+            model="claude_code",
+            resume_tier="ADAPT_TEMPLATE",
+            template_id_initial="ML",
+            template_id_final="ML",
+            routing_confidence=0.5,
+            routing_payload=json.dumps(
+                {"tier": "ADAPT_TEMPLATE", "gaps": ["gap"], "adapt_instructions": "adapt"}
+            ),
+        )
+        analyzer.tailor_resume = lambda job, analysis, c1_routing=None: json.dumps(
+            {
+                "slot_overrides": {"bio": "Adapted bio"},
+                "skills_override": {},
+                "entry_visibility": {},
+                "change_summary": "Changed bio",
+            }
+        )
+        analyzer.run_c3_gate = lambda analysis, c1_routing, job: {
+            "decision": "PASS",
+            "confidence": 0.88,
+            "reason": "Worth adapting",
+        }
+
+        result = analyzer.analyze_job(_make_job(title="ML Engineer"))
+
+        assert result.resume_tier == "ADAPT_TEMPLATE"
+        assert result.c3_decision == "PASS"
+        assert result.c3_confidence == 0.88
+        assert json.loads(result.tailored_resume)["slot_overrides"]["bio"] == "Adapted bio"
+        assert len(saved_results) == 1
+
+    def test_analyze_job_full_customize_skips_c3(self):
+        from src.ai_analyzer import AIAnalyzer
+
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer.registry = {"templates": {}}
+
+        saved_results = []
+
+        class DBStub:
+            def save_analysis(self, result):
+                saved_results.append(result)
+
+            def save_resume(self, resume):
+                pytest.fail("Tier 3 should not create template resume record")
+
+        analyzer.db = DBStub()
+        analyzer.evaluate_job = lambda job: AnalysisResult(
+            job_id=job["id"],
+            ai_score=8.0,
+            recommendation="APPLY_NOW",
+            reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
+            tailored_resume="{}",
+            model="claude_code",
+            resume_tier="FULL_CUSTOMIZE",
+            template_id_initial="DE",
+            template_id_final="DE",
+            routing_confidence=0.3,
+            routing_payload=json.dumps({"tier": "FULL_CUSTOMIZE"}),
+        )
+        analyzer.tailor_resume = lambda job, analysis, c1_routing=None: json.dumps({"bio": "Full custom bio"})
+        analyzer.run_c3_gate = lambda *args, **kwargs: pytest.fail("Tier 3 should not call C3")
+
+        result = analyzer.analyze_job(_make_job(title="Research Engineer"))
+
+        assert result.resume_tier == "FULL_CUSTOMIZE"
+        assert json.loads(result.tailored_resume)["bio"] == "Full custom bio"
+        assert result.c3_decision is None
+        assert len(saved_results) == 1
 
 
 # =============================================================================
