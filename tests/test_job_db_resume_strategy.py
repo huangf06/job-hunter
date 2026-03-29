@@ -102,6 +102,19 @@ def _make_in_memory_db() -> JobDatabase:
             pdf_path TEXT,
             generated_at TEXT
         );
+
+        CREATE TABLE cover_letters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL UNIQUE,
+            spec_json TEXT,
+            custom_requirements TEXT,
+            standard_text TEXT,
+            short_text TEXT,
+            html_path TEXT,
+            pdf_path TEXT,
+            tokens_used INTEGER,
+            created_at TEXT
+        );
         """
     )
 
@@ -191,3 +204,115 @@ def test_save_analysis_legacy_result_stores_null_routing_fields():
     assert saved["c3_decision"] is None
     assert saved["c3_confidence"] is None
     assert saved["c3_reason"] is None
+
+
+def test_save_analysis_empty_string_routing_fields_store_as_null():
+    db = _make_in_memory_db()
+    db._migrate(db._conn)
+    _insert_job(db, "job-empty")
+
+    result = AnalysisResult(
+        job_id="job-empty",
+        ai_score=6.5,
+        recommendation="APPLY",
+        reasoning="empty string routing fields",
+        tailored_resume="{}",
+        model="claude_code",
+        resume_tier="",
+        template_id_initial="",
+        template_id_final="",
+        routing_override_reason="",
+        escalation_reason="",
+        routing_payload="",
+        c3_decision="",
+        c3_reason="",
+    )
+
+    db.save_analysis(result)
+    saved = db.get_analysis("job-empty")
+
+    assert saved["resume_tier"] is None
+    assert saved["template_id_initial"] is None
+    assert saved["template_id_final"] is None
+    assert saved["routing_override_reason"] is None
+    assert saved["escalation_reason"] is None
+    assert saved["routing_payload"] is None
+    assert saved["c3_decision"] is None
+    assert saved["c3_reason"] is None
+
+
+def test_clear_rejected_analyses_keeps_routed_rows():
+    db = _make_in_memory_db()
+    db._migrate(db._conn)
+    _insert_job(db, "job-routed")
+    _insert_job(db, "job-legacy-rejected")
+
+    db.execute(
+        "INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, resume_tier, model, tokens_used, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        ("job-routed", 7.0, "APPLY", "tier1", "{}", "USE_TEMPLATE", "claude_code", 0),
+    )
+    db.execute(
+        "INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, model, tokens_used, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        ("job-legacy-rejected", 0.0, "REJECTED", "legacy reject", "{}", "claude_code", 0),
+    )
+
+    deleted = db.clear_rejected_analyses()
+
+    assert deleted == 1
+    assert db.get_analysis("job-routed") is not None
+    assert db.get_analysis("job-legacy-rejected") is None
+
+
+def test_clear_transient_failures_keeps_routed_rows():
+    db = _make_in_memory_db()
+    db._migrate(db._conn)
+    _insert_job(db, "job-routed-fail")
+    _insert_job(db, "job-legacy-fail")
+
+    db.execute(
+        "INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, resume_tier, model, tokens_used, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        ("job-routed-fail", 7.0, "APPLY", "Claude Code CLI returned empty response", "{}", "USE_TEMPLATE", "claude_code", 0),
+    )
+    db.execute(
+        "INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, model, tokens_used, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        ("job-legacy-fail", 0.0, "REJECTED", "Claude Code CLI returned empty response", "{}", "claude_code", 0),
+    )
+
+    deleted = db.clear_transient_failures()
+
+    assert deleted == 1
+    assert db.get_analysis("job-routed-fail") is not None
+    assert db.get_analysis("job-legacy-fail") is None
+
+
+def test_get_jobs_needing_cover_letter_includes_tier_aware_cases():
+    db = _make_in_memory_db()
+    db._migrate(db._conn)
+    for job_id in ["job-use", "job-adapt-fail", "job-full", "job-legacy", "job-adapt-pass"]:
+        _insert_job(db, job_id)
+
+    analyses = [
+        ("job-use", 6.0, "USE_TEMPLATE", "{}", None),
+        ("job-adapt-fail", 6.0, "ADAPT_TEMPLATE", '{"slot_overrides":{"bio":"x"}}', "FAIL"),
+        ("job-full", 6.0, "FULL_CUSTOMIZE", '{"bio":"custom"}', None),
+        ("job-legacy", 6.0, None, '{"bio":"legacy"}', None),
+        ("job-adapt-pass", 6.0, "ADAPT_TEMPLATE", '{"slot_overrides":{"bio":"x"}}', "PASS"),
+    ]
+    for job_id, score, tier, tailored_resume, c3_decision in analyses:
+        db.execute(
+            "INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, resume_tier, c3_decision, model, tokens_used, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            (job_id, score, "APPLY", "reason", tailored_resume, tier, c3_decision, "claude_code", 0),
+        )
+        db.execute(
+            "INSERT INTO resumes (job_id, role_type, template_version, html_path, pdf_path, generated_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
+            (job_id, "DE", "v1", "", f"/tmp/{job_id}.pdf"),
+        )
+
+    jobs = db.get_jobs_needing_cover_letter(min_ai_score=5.0)
+    job_ids = {job["id"] for job in jobs}
+
+    assert "job-use" in job_ids
+    assert "job-adapt-fail" in job_ids
+    assert "job-full" in job_ids
+    assert "job-legacy" in job_ids
+    assert "job-adapt-pass" not in job_ids

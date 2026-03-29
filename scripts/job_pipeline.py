@@ -169,41 +169,53 @@ class JobPipeline:
 
     def show_template_stats(self):
         """Show three-tier template routing statistics."""
+        min_score = self.ai_config.get("thresholds", {}).get("ai_score_generate_resume", 4.0)
         use_template = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'USE_TEMPLATE'"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND resume_tier = 'USE_TEMPLATE'",
+            (min_score,),
         )[0]["c"]
         adapt_pass = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'ADAPT_TEMPLATE' AND c3_decision = 'PASS'"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND resume_tier = 'ADAPT_TEMPLATE' AND c3_decision = 'PASS'",
+            (min_score,),
         )[0]["c"]
         adapt_fail = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'ADAPT_TEMPLATE' AND c3_decision = 'FAIL'"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND resume_tier = 'ADAPT_TEMPLATE' AND c3_decision = 'FAIL'",
+            (min_score,),
         )[0]["c"]
         full_customize = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier = 'FULL_CUSTOMIZE'"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND resume_tier = 'FULL_CUSTOMIZE'",
+            (min_score,),
         )[0]["c"]
         legacy = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE resume_tier IS NULL"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND resume_tier IS NULL",
+            (min_score,),
         )[0]["c"]
         agreement = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE template_id_initial = template_id_final"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND template_id_initial = template_id_final",
+            (min_score,),
         )[0]["c"]
         overrides = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE routing_override_reason IS NOT NULL"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND routing_override_reason IS NOT NULL",
+            (min_score,),
         )[0]["c"]
         escalations = self.db.execute(
-            "SELECT COUNT(*) as c FROM job_analysis WHERE escalation_reason IS NOT NULL"
+            "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND escalation_reason IS NOT NULL",
+            (min_score,),
         )[0]["c"]
         template_usage = self.db.execute(
-            "SELECT template_id_final, COUNT(*) as c FROM job_analysis WHERE template_id_final IS NOT NULL GROUP BY template_id_final ORDER BY template_id_final"
+            "SELECT template_id_final, COUNT(*) as c FROM job_analysis WHERE ai_score >= ? AND template_id_final IS NOT NULL GROUP BY template_id_final ORDER BY template_id_final",
+            (min_score,),
         )
         pass_conf = self.db.execute(
-            "SELECT AVG(c3_confidence) as avg_conf FROM job_analysis WHERE c3_decision = 'PASS'"
+            "SELECT AVG(c3_confidence) as avg_conf FROM job_analysis WHERE ai_score >= ? AND c3_decision = 'PASS'",
+            (min_score,),
         )[0]["avg_conf"]
         fail_conf = self.db.execute(
-            "SELECT AVG(c3_confidence) as avg_conf FROM job_analysis WHERE c3_decision = 'FAIL'"
+            "SELECT AVG(c3_confidence) as avg_conf FROM job_analysis WHERE ai_score >= ? AND c3_decision = 'FAIL'",
+            (min_score,),
         )[0]["avg_conf"]
 
-        print("\nResume Tier Distribution (score >= 4.0):")
+        print(f"\nResume Tier Distribution (score >= {min_score:.1f}):")
         print(f"  USE_TEMPLATE:     {use_template}")
         print(f"  ADAPT_TEMPLATE:   {adapt_pass + adapt_fail}")
         print(f"  FULL_CUSTOMIZE:   {full_customize}")

@@ -681,7 +681,7 @@ class AIAnalyzer:
             job_description=jd_text.replace('{', '{{').replace('}', '}}'),
             routing_gaps=json.dumps(c1_routing.get('gaps', []), ensure_ascii=False).replace('{', '{{').replace('}', '}}'),
             adapt_instructions=(c1_routing.get('adapt_instructions') or '').replace('{', '{{').replace('}', '}}'),
-            template_schema=json.dumps(schema, ensure_ascii=False, indent=2).replace('{', '{{').replace('}', '}}'),
+            template_schema=json.dumps(schema, ensure_ascii=False, indent=2),
         )
 
     def evaluate_job(self, job: Dict) -> Optional[AnalysisResult]:
@@ -756,7 +756,7 @@ class AIAnalyzer:
         """C2: Resume tailoring. Long prompt, only for high-scoring jobs.
         Returns tailored_resume JSON string, or None on failure."""
         job_id = job['id']
-        tier = analysis.get('resume_tier') or analysis.get('resume_tier'.upper())
+        tier = analysis.get('resume_tier')
         if tier == 'ADAPT_TEMPLATE':
             prompt = self._build_tier2_prompt(job, analysis, c1_routing or {})
         else:
@@ -872,7 +872,7 @@ class AIAnalyzer:
         jd_summary = brief.get('key_angle') or brief.get('hook') or job.get('title', '')
         structured_diff = self.build_c3_input(schema, c2_output, c1_routing, jd_summary)
         prompt = self.config.get('prompts', {}).get('c3_gate', '').format(
-            structured_diff=structured_diff.replace('{', '{{').replace('}', '}}')
+            structured_diff=structured_diff
         )
         text = self._call_claude(prompt)
         parsed = self._parse_response(text or '')
@@ -1101,9 +1101,10 @@ class AIAnalyzer:
             return None
 
         c1_routing = json.loads(c1_result.routing_payload) if c1_result.routing_payload else {}
+        c2_threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
         if c1_result.resume_tier == 'USE_TEMPLATE':
             pass
-        elif c1_result.resume_tier in ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'):
+        elif c1_result.resume_tier in ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE') and c1_result.ai_score >= c2_threshold:
             analysis = {
                 'ai_score': c1_result.ai_score,
                 'recommendation': c1_result.recommendation,

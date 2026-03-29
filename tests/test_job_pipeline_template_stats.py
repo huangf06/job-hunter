@@ -7,6 +7,7 @@ from scripts.job_pipeline import JobPipeline
 class _DBStub:
     def execute(self, sql, params=()):
         normalized = " ".join(sql.split())
+        assert params == (4.0,)
         if "resume_tier = 'USE_TEMPLATE'" in normalized and "COUNT(*) as c" in normalized:
             return [{"c": 5}]
         if "resume_tier = 'ADAPT_TEMPLATE'" in normalized and "c3_decision = 'PASS'" in normalized:
@@ -35,6 +36,7 @@ class _DBStub:
 def test_show_template_stats_outputs_expected_sections():
     pipeline = JobPipeline.__new__(JobPipeline)
     pipeline.db = _DBStub()
+    pipeline.ai_config = {"thresholds": {"ai_score_generate_resume": 4.0}}
 
     stdout = StringIO()
     with redirect_stdout(stdout):
