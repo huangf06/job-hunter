@@ -143,6 +143,16 @@ jobs:
           python scripts/job_pipeline.py --ai-tailor --limit 30
 
       # ==========================================
+      # Step 4b: Generate resumes (Block D)
+      # ==========================================
+      - name: Generate resumes
+        id: generate
+        continue-on-error: true
+        run: |
+          echo "=== Generating resumes ==="
+          python scripts/job_pipeline.py --generate --limit 30
+
+      # ==========================================
       # Step 5: 通知
       # ==========================================
       - name: Send Telegram notification
@@ -158,6 +168,7 @@ jobs:
           [ "${{ steps.filter.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }filter"
           [ "${{ steps.ai_evaluate.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-evaluate"
           [ "${{ steps.ai_tailor.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }ai-tailor"
+          [ "${{ steps.generate.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }generate"
           if [ -n "$FAILED_STEPS" ]; then
             python scripts/notify.py --status failure --failed-step "$FAILED_STEPS"
           else
