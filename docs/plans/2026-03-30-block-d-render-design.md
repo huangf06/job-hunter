@@ -1,7 +1,7 @@
 # Block D: Resume Renderer — 审查+精简设计
 
 **Date**: 2026-03-30
-**Status**: v2 — Codex review findings addressed
+**Status**: Approved (Codex v2: "Approve with notes", note resolved)
 **Scope**: 审查+精简现有 `resume_renderer.py`，非完整重建
 **前置**: Block A (Scrape) ✅, Block B (Hard Filter) ✅, Block C (AI Evaluate+Tailor) ✅ 均已逐块完成
 
@@ -262,7 +262,7 @@ def _render_adapt_template(self, job_id, analysis):
 | `src/resume_validator.py` | 审查结论：干净、无死代码、3 处调用 |
 | `src/template_registry.py` | 审查结论：干净、14 个测试覆盖 |
 | `templates/base_template.html` | 审查结论：干净、325 行纯模板 |
-| `config/template_registry.yaml` | 仅删 `adapt_html` 字段，schema 不变 |
+| `config/template_registry.yaml` | 仅删 `adapt_html` 字段 (见改动 2)，slot_schema 不变 |
 
 ### 3.4 测试计划
 
