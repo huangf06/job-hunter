@@ -66,7 +66,6 @@ def _make_renderer(tmp_dir: Path, analysis: dict):
         "templates": {
             "DE": {
                 "pdf": str((tmp_dir / "source_de.pdf").resolve()),
-                "adapt_html": "templates/adapt_de.html",
                 "slot_schema": {
                     "bio": {"slot_id": "bio", "default": "Default bio"},
                     "sections": [
@@ -366,6 +365,35 @@ def test_render_full_customize_role_type_uses_template_id():
     result = renderer.render_resume("job-1")
     assert result is not None
     assert renderer.db.saved_resume.role_type == "ML"
+
+
+def test_render_full_customize_uses_build_output_paths():
+    """FULL_CUSTOMIZE path should use _build_output_paths(), producing ready_to_send output."""
+    tmp_dir = _local_tmp_dir("renderer_output_paths")
+    renderer = _make_renderer(
+        tmp_dir,
+        {
+            "resume_tier": "FULL_CUSTOMIZE",
+            "template_id_final": "DE",
+            "tailored_resume": json.dumps(
+                {
+                    "bio": "Bio",
+                    "experiences": [
+                        {"company": "C", "title": "T", "date": "D", "bullets": ["B"]}
+                    ],
+                    "projects": [],
+                    "skills": [{"category": "Cat", "skills_list": "Python"}],
+                }
+            ),
+        },
+    )
+    result = renderer.render_resume("job-1")
+    assert result is not None
+    assert Path(result["pdf_path"]).exists()
+    # _build_output_paths creates submit_dir under ready_dir; saved via DB stub
+    saved = renderer.db.saved_resume
+    assert saved is not None
+    assert str(renderer.ready_dir) in saved.submit_dir
 
 
 def test_adapt_template_html_renders_with_title_variable():
