@@ -623,7 +623,7 @@ class JobDatabase:
         """
         defaults = {
             'ai_score_apply_now': 7.0,
-            'ai_score_generate_resume': 5.0,
+            'ai_score_generate_resume': 4.0,
         }
         try:
             ai_config_path = CONFIG_DIR / "ai_config.yaml"

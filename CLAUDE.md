@@ -298,7 +298,7 @@ print(db.get_funnel_stats())
 
 ### AI 配置 (`config/ai_config.yaml`)
 - `models.analyzer`: Claude 用于智能分析
-- `thresholds.ai_score_generate_resume`: 生成简历的最低 AI 分 (默认 5.0)
+- `thresholds.ai_score_generate_resume`: 生成简历的最低 AI 分 (默认 4.0)
 - `budget.daily_limit`: 每日 token 预算
 
 ### 硬规则筛选 (`config/base/filters.yaml`)

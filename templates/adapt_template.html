@@ -23,28 +23,28 @@
   <p class="contact">{{ candidate.location }} | {{ candidate.phone }} | {{ candidate.email }}</p>
 
   <div class="section">BIO</div>
-  <div class="bio">{{ slot_overrides.get("bio") or schema.bio.default }}</div>
+  <div class="bio">{{ slot_overrides.get("bio") or schema['bio']['default'] }}</div>
 
-  {% for section in schema.sections %}
-    {% if section.section_id in ["experience", "projects"] %}
-      <div class="section">{{ section.section_id|upper }}</div>
-      {% for entry in section.entries %}
-        {% if entry_visibility.get(entry.entry_id, true) %}
+  {% for section in schema['sections'] %}
+    {% if section['section_id'] in ["experience", "projects"] %}
+      <div class="section">{{ section['section_id']|upper }}</div>
+      {% for entry in section['entries'] %}
+        {% if entry_visibility.get(entry['entry_id'], true) %}
           <div class="entry">
-            <h3>{{ entry.company }} - {{ entry.title }}</h3>
-            {% if entry.date %}<div class="date">{{ entry.date }}</div>{% endif %}
+            <h3>{{ entry['company'] }} - {{ entry['title'] }}</h3>
+            {% if entry['date'] %}<div class="date">{{ entry['date'] }}</div>{% endif %}
             <ul>
-              {% for bullet in entry.bullets %}
-                <li>{{ slot_overrides.get(bullet.slot_id) or bullet.default }}</li>
+              {% for bullet in entry['bullets'] %}
+                <li>{{ slot_overrides.get(bullet['slot_id']) or bullet['default'] }}</li>
               {% endfor %}
             </ul>
           </div>
         {% endif %}
       {% endfor %}
-    {% elif section.section_id == "skills" %}
+    {% elif section['section_id'] == "skills" %}
       <div class="section">TECHNICAL SKILLS</div>
-      {% for category in section.categories %}
-        <p class="skills-line"><strong>{{ category.cat_id.replace('_', ' ')|title }}:</strong> {{ skills_override.get(category.cat_id) or category.default }}</p>
+      {% for category in section['categories'] %}
+        <p class="skills-line"><strong>{{ category['cat_id'].replace('_', ' ')|title }}:</strong> {{ skills_override.get(category['cat_id']) or category['default'] }}</p>
       {% endfor %}
     {% endif %}
   {% endfor %}

@@ -162,8 +162,28 @@ def format_message(status: str, failed_step: str = "",
     interview = db.get("interview", 0)
     rejected = db.get("rejected", 0)
 
+    # Check scrape health — detect silent failures (e.g. LinkedIn cookie expiry)
+    scrape_severity = ""
+    if scrape:
+        total_info = scrape.get("total", {})
+        scrape_severity = total_info.get("severity", "info")
+        if scrape_severity in ("error", "warning"):
+            platforms = scrape.get("platforms", {})
+            error_details = []
+            for plat, info in platforms.items():
+                errs = info.get("errors", [])
+                if errs:
+                    error_details.append(f"{plat}: {errs[0]}")
+            scrape_warning = " | ".join(error_details) if error_details else "check logs"
+
     # No new jobs — short message
     if new_jobs == 0 and today_analyzed == 0:
+        if scrape_severity in ("error", "warning"):
+            lines = [f"Job Pipeline {time_str} — SCRAPE DEGRADED"]
+            lines.append(f"{scrape_warning}")
+            lines.append("")
+            lines.append(f"Ready: {total_ready} | Applied: {applied} | Interview: {interview}")
+            return "\n".join(lines)
         lines = [f"Job Pipeline {time_str} — No new jobs"]
         lines.append(f"Ready: {total_ready} | Applied: {applied} | Interview: {interview}")
         return "\n".join(lines)

@@ -159,7 +159,8 @@ class JobPipeline:
         print(f"Total scraped:    {stats.get('total_scraped', 0)}")
         print(f"Passed filter:    {stats.get('passed_filter', 0)}")
         print(f"AI analyzed:      {stats.get('ai_analyzed', 0)}")
-        print(f"AI high (>=5):    {stats.get('ai_scored_high', 0)}")
+        threshold = self.ai_config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
+        print(f"AI high (>={threshold}):  {stats.get('ai_scored_high', 0)}")
         print(f"Resume generated: {stats.get('resume_generated', 0)}")
         print(f"Applied:          {stats.get('applied', 0)}")
 
@@ -370,7 +371,7 @@ class JobPipeline:
         from src.resume_renderer import ResumeRenderer
 
         threshold = min_ai_score or self.ai_config.get('thresholds', {}).get(
-            'ai_score_generate_resume', 5.0)
+            'ai_score_generate_resume', 4.0)
         limit = limit or 50
 
         # Step 1: Sync from Turso
@@ -406,6 +407,9 @@ class JobPipeline:
                 results["success"].append(label)
         else:
             print("No new jobs need resume generation.")
+
+        # Step 2.5: Generate cover letters for jobs that have resumes but no CL
+        self.generate_cover_letters_batch(min_ai_score=threshold, limit=limit)
 
         # Step 3: Collect ALL ready-to-apply jobs (new + existing)
         all_ready = self.db.get_ready_to_apply()
@@ -720,7 +724,7 @@ class JobPipeline:
 
         # AI Analysis (optional - only if filtered jobs exist without analysis)
         ai_thresholds = self.ai_config.get('thresholds', {})
-        ai_score_threshold = ai_thresholds.get('ai_score_generate_resume', 5.0)
+        ai_score_threshold = ai_thresholds.get('ai_score_generate_resume', 4.0)
 
         jobs_for_ai = self.db.get_jobs_needing_analysis(limit=limit)
         if jobs_for_ai:
