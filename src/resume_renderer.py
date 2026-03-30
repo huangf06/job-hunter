@@ -209,30 +209,12 @@ class ResumeRenderer:
                     print(f"  [QA BLOCK] {issue}")
                 return None
 
-        # Generate output paths
-        candidate_name = self._safe_filename(self.candidate.get('name', 'Resume'))
-        company_safe = self._safe_filename(job.get('company', 'unknown'))[:20].rstrip('_')
-        job_id_short = job.get('id', 'unknown')[:8]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        # Internal tracking name (unique, keeps history)
-        tracking_name = f"{candidate_name}_{company_safe}_{job_id_short}_{timestamp}"
-        # Submission-ready: ready_to_send/<date_Company[_NN]>/Fei_Huang_Resume.pdf
-        submit_name = f"{candidate_name}_Resume"
-        date_prefix = datetime.now().strftime("%Y%m%d")
-        base_folder = f"{date_prefix}_{company_safe}"
-        submit_dir = self.ready_dir / base_folder
-        # If folder already has a PDF (different job, same company+date), use _02, _03, ...
-        if (submit_dir / f"{submit_name}.pdf").exists():
-            for seq in range(2, 100):
-                submit_dir = self.ready_dir / f"{base_folder}_{seq:02d}"
-                if not (submit_dir / f"{submit_name}.pdf").exists():
-                    break
-        submit_dir.mkdir(parents=True, exist_ok=True)
-
-        html_path = self.output_dir / f"{tracking_name}.html"
-        pdf_path = self.output_dir / f"{tracking_name}.pdf"
-        submit_pdf_path = submit_dir / f"{submit_name}.pdf"
+        paths = self._build_output_paths(job)
+        html_path = paths['html_path']
+        pdf_path = paths['pdf_path']
+        submit_pdf_path = paths['submit_pdf_path']
+        submit_dir = paths['submit_dir']
+        submit_name = submit_pdf_path.stem
 
         # Save HTML
         with open(html_path, 'w', encoding='utf-8') as f:
