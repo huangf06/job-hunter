@@ -1067,8 +1067,8 @@ class AIAnalyzer:
 
         try:
             cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '1']
-            # Strip ANTHROPIC_BASE_URL/API_KEY from env — they may point to an
-            # expired proxy and would override Claude Code's native auth.
+            # Strip ANTHROPIC_BASE_URL/API_KEY if present — they override
+            # Claude Code's native OAuth auth (CLAUDE_CODE_OAUTH_TOKEN).
             clean_env = os.environ.copy()
             clean_env.pop('ANTHROPIC_BASE_URL', None)
             clean_env.pop('ANTHROPIC_API_KEY', None)
