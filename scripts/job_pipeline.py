@@ -508,7 +508,26 @@ class JobPipeline:
             return
 
         state = json.loads(state_path.read_text(encoding="utf-8"))
-        jobs = state.get("jobs", {})
+
+        # Validate state.json schema before mutating DB or files.
+        if not isinstance(state, dict) or "jobs" not in state:
+            print("Error: state.json is malformed (missing 'jobs' key). Re-run --prepare to regenerate.")
+            sys.exit(1)
+
+        jobs = state["jobs"]
+        if not isinstance(jobs, dict):
+            print("Error: state.json 'jobs' is not a dict. Re-run --prepare to regenerate.")
+            sys.exit(1)
+
+        required_keys = {"applied", "submit_dir", "company", "title"}
+        for job_id, info in jobs.items():
+            if not isinstance(info, dict):
+                print(f"Error: state.json job '{job_id}' is not an object. Re-run --prepare to regenerate.")
+                sys.exit(1)
+            missing = required_keys - set(info.keys())
+            if missing:
+                print(f"Error: state.json job '{job_id}' missing keys: {sorted(missing)}. Re-run --prepare to regenerate.")
+                sys.exit(1)
 
         if not jobs:
             print("No jobs in state. Nothing to finalize.")
