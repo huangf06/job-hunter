@@ -271,7 +271,11 @@ class ResumeRenderer:
         template_id = analysis.get('template_id_final')
         if not job or not template_id:
             return None
-        source_pdf = PROJECT_ROOT / self.registry['templates'][template_id]['pdf']
+        template_meta = self.registry.get('templates', {}).get(template_id)
+        if not template_meta or 'pdf' not in template_meta:
+            print(f"[Renderer] Unknown template or missing PDF config: {template_id}")
+            return None
+        source_pdf = PROJECT_ROOT / template_meta['pdf']
         if not source_pdf.exists():
             print(f"[Renderer] Template PDF missing: {source_pdf}")
             return None
@@ -295,8 +299,18 @@ class ResumeRenderer:
         if not job:
             return None
         template_id = analysis.get('template_id_final')
-        template_meta = self.registry['templates'][template_id]
-        tailored = json.loads(analysis.get('tailored_resume') or '{}')
+        template_meta = self.registry.get('templates', {}).get(template_id)
+        if not template_meta:
+            print(f"[Renderer] Unknown template: {template_id}")
+            return None
+        if 'slot_schema' not in template_meta:
+            print(f"[Renderer] Template {template_id} missing slot_schema")
+            return None
+        try:
+            tailored = json.loads(analysis.get('tailored_resume') or '{}')
+        except json.JSONDecodeError as e:
+            print(f"[Renderer] Invalid tier-2 JSON for {job_id}: {e}")
+            return None
         schema = template_meta['slot_schema']
         errors = validate_tier2_output(tailored, schema)
         if errors:
