@@ -542,8 +542,12 @@ class JobDatabase:
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
         COUNT(DISTINCT CASE WHEN an.resume_tier = 'USE_TEMPLATE' THEN j.id END) as use_template_count,
         COUNT(DISTINCT CASE WHEN an.resume_tier = 'ADAPT_TEMPLATE' THEN j.id END) as adapt_template_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'ADAPT_TEMPLATE' AND an.c3_decision = 'PASS' THEN j.id END) as tier_2_pass,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'ADAPT_TEMPLATE' AND an.c3_decision = 'FAIL' THEN j.id END) as tier_2_fail,
         COUNT(DISTINCT CASE WHEN an.resume_tier = 'FULL_CUSTOMIZE' THEN j.id END) as full_customize_count,
-        COUNT(DISTINCT CASE WHEN an.resume_tier IS NULL AND an.id IS NOT NULL THEN j.id END) as legacy_analysis_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier IS NULL AND an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}' THEN j.id END) as legacy_analysis_count,
+        COUNT(DISTINCT CASE WHEN an.routing_override_reason IS NOT NULL THEN j.id END) as override_count,
+        COUNT(DISTINCT CASE WHEN an.escalation_reason IS NOT NULL THEN j.id END) as escalation_count,
         COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
         COUNT(DISTINCT CASE WHEN a.status = 'rejected' THEN j.id END) as rejected,
         COUNT(DISTINCT CASE WHEN a.status = 'interview' THEN j.id END) as interview,
@@ -1113,6 +1117,7 @@ class JobDatabase:
                 WHERE cl.id IS NULL
                   AND (
                       a.resume_tier = 'USE_TEMPLATE'
+                      OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.c3_decision = 'PASS' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.c3_decision = 'FAIL')
                       OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')

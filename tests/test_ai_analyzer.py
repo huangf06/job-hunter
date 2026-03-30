@@ -487,45 +487,68 @@ def test_build_tier2_prompt_preserves_template_schema_json():
     assert 'Keep {{named}} slot stable' in prompt
 
 
-def test_analyze_job_below_threshold_skips_c2_for_non_template_tiers():
+def test_analyze_batch_does_not_double_save_analysis():
     from src.ai_analyzer import AIAnalyzer
 
     analyzer = AIAnalyzer.__new__(AIAnalyzer)
-    analyzer.registry = {"templates": {"ML": {"pdf": "templates/pdf/Fei_Huang_ML.pdf"}}}
-    analyzer.config = {"thresholds": {"ai_score_generate_resume": 4.0}}
-
-    saved_results = []
+    analyzer.db = type("DBStub", (), {"batch_mode": lambda self: __import__("contextlib").nullcontext()})()
+    save_calls = []
 
     class DBStub:
-        def save_analysis(self, result):
-            saved_results.append(result)
+        def get_jobs_needing_analysis(self, limit=None):
+            return [_make_job()]
 
-        def save_resume(self, resume):
-            pytest.fail("Low-score adapt path should not create resume record")
+        def save_analysis(self, result):
+            save_calls.append(result.job_id)
+
+        def batch_mode(self):
+            return __import__("contextlib").nullcontext()
 
     analyzer.db = DBStub()
-    analyzer.evaluate_job = lambda job: AnalysisResult(
+    analyzer.analyze_job = lambda job: AnalysisResult(
         job_id=job["id"],
-        ai_score=2.0,
-        recommendation="SKIP",
-        reasoning=json.dumps({"reasoning": "low fit", "application_brief": {}}),
+        ai_score=7.0,
+        recommendation="APPLY",
+        reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
         tailored_resume="{}",
         model="claude_code",
-        resume_tier="ADAPT_TEMPLATE",
-        template_id_initial="ML",
-        template_id_final="ML",
-        routing_confidence=0.5,
-        routing_payload=json.dumps({"tier": "ADAPT_TEMPLATE"}),
+        resume_tier="USE_TEMPLATE",
     )
-    analyzer.tailor_resume = lambda *args, **kwargs: pytest.fail("Low-score single-job flow should skip C2")
-    analyzer.run_c3_gate = lambda *args, **kwargs: pytest.fail("Low-score single-job flow should skip C3")
 
-    result = analyzer.analyze_job(_make_job(title="ML Engineer"))
+    analyzed = analyzer.analyze_batch()
 
-    assert result.resume_tier == "ADAPT_TEMPLATE"
-    assert result.tailored_resume == "{}"
-    assert result.c3_decision is None
-    assert len(saved_results) == 1
+    assert analyzed == 1
+    assert save_calls == []
+
+
+def test_analyze_single_does_not_double_save_analysis():
+    from src.ai_analyzer import AIAnalyzer
+
+    analyzer = AIAnalyzer.__new__(AIAnalyzer)
+
+    class DBStub:
+        def get_job(self, job_id):
+            return _make_job(job_id=job_id)
+
+        def save_analysis(self, result):
+            pytest.fail("analyze_single should not save again after analyze_job")
+
+    analyzer.db = DBStub()
+    analyzer.analyze_job = lambda job: AnalysisResult(
+        job_id=job["id"],
+        ai_score=7.0,
+        recommendation="APPLY",
+        reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
+        tailored_resume="{}",
+        model="claude_code",
+        resume_tier="USE_TEMPLATE",
+        template_id_final="DE",
+    )
+
+    result = analyzer.analyze_single("job-1")
+
+    assert result is not None
+    assert result.job_id == "job-1"
 
 
 # =============================================================================

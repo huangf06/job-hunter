@@ -315,4 +315,15 @@ def test_get_jobs_needing_cover_letter_includes_tier_aware_cases():
     assert "job-adapt-fail" in job_ids
     assert "job-full" in job_ids
     assert "job-legacy" in job_ids
-    assert "job-adapt-pass" not in job_ids
+    assert "job-adapt-pass" in job_ids
+
+
+def test_build_views_sql_contains_required_tier_counters():
+    db = JobDatabase.__new__(JobDatabase)
+    sql = db._build_views_sql()
+
+    assert "tier_2_pass" in sql
+    assert "tier_2_fail" in sql
+    assert "override_count" in sql
+    assert "escalation_count" in sql
+    assert "legacy_analysis_count" in sql

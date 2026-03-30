@@ -1101,10 +1101,9 @@ class AIAnalyzer:
             return None
 
         c1_routing = json.loads(c1_result.routing_payload) if c1_result.routing_payload else {}
-        c2_threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
         if c1_result.resume_tier == 'USE_TEMPLATE':
             pass
-        elif c1_result.resume_tier in ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE') and c1_result.ai_score >= c2_threshold:
+        elif c1_result.resume_tier in ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'):
             analysis = {
                 'ai_score': c1_result.ai_score,
                 'recommendation': c1_result.recommendation,
@@ -1205,7 +1204,6 @@ class AIAnalyzer:
                 try:
                     result = self.analyze_job(job)
                     if result:
-                        self.db.save_analysis(result)
                         analyzed += 1
                         print(f"-> {result.recommendation} ({result.ai_score:.1f})")
                     else:
@@ -1229,7 +1227,6 @@ class AIAnalyzer:
         print(f"[AI Analyzer] Analyzing (C1+C2): {job['title']} @ {job['company']}")
         result = self.analyze_job(job)
         if result:
-            self.db.save_analysis(result)
             print(f"  Score: {result.ai_score:.1f} | {result.recommendation}")
             tier = result.resume_tier or ""
             tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
