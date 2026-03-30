@@ -3,7 +3,6 @@ templates:
     enabled: true
     svg: "templates/Fei_Huang_DE_Resume.svg"
     pdf: "templates/pdf/Fei_Huang_DE.pdf"
-    adapt_html: "templates/adapt_de.html"
     target_roles:
       - "data engineer"
       - "data platform"
@@ -91,7 +90,6 @@ templates:
     enabled: true
     svg: "templates/Fei_Huang_ML_Resume.svg"
     pdf: "templates/pdf/Fei_Huang_ML.pdf"
-    adapt_html: "templates/adapt_ml.html"
     target_roles:
       - "machine learning"
       - "ml engineer"
@@ -187,7 +185,6 @@ templates:
     enabled: false
     svg: "templates/Fei_Huang_Backend_Resume.svg"
     pdf: "templates/pdf/Fei_Huang_Backend.pdf"
-    adapt_html: "templates/adapt_backend.html"
     target_roles:
       - "software engineer"
       - "backend"

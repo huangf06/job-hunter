@@ -330,13 +330,14 @@ class ResumeRenderer:
                 print(f"[Renderer] Tier 2 validation error: {error}")
             return None
 
-        template = self.jinja_env.get_template(Path(template_meta['adapt_html']).name)
+        template = self.jinja_env.get_template("adapt_template.html")
         html_content = template.render(
             schema=schema,
             slot_overrides=tailored.get('slot_overrides', {}),
             skills_override=tailored.get('skills_override', {}),
             entry_visibility=tailored.get('entry_visibility', {}),
             candidate=self.base_context,
+            template_title=f"Adapted {template_id} Resume",
         )
 
         paths = self._build_output_paths(job)
