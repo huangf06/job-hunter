@@ -147,14 +147,6 @@ class ResumeRenderer:
             print(f"[Renderer] Skipping job {job_id}: tailored resume was rejected by analyzer")
             return None
 
-        # Validate structure before rendering
-        is_valid, validation_errors = self._validate_tailored_structure(tailored)
-        if not is_valid:
-            print(f"[Renderer] Invalid tailored resume structure for job: {job_id}")
-            for err in validation_errors:
-                print(f"  - {err}")
-            return None
-
         # Get job details for filename
         job = self.db.get_job(job_id)
         if not job:
@@ -406,66 +398,6 @@ class ResumeRenderer:
                     unique.append(item)
             group['skills_list'] = ', '.join(unique)
         return [g for g in skills if isinstance(g.get('skills_list'), str) and g['skills_list'].strip()]
-
-    def _validate_tailored_structure(self, tailored: Dict) -> tuple:
-        """Validate AI-generated tailored resume JSON structure.
-
-        Returns:
-            (is_valid, errors): tuple of bool and list of error strings
-        """
-        errors = []
-
-        # Check bio (optional - null or string are both valid)
-        bio = tailored.get('bio')
-        if bio is not None and not isinstance(bio, str):
-            errors.append("'bio' field must be a string or null")
-
-        # Check experiences
-        experiences = tailored.get('experiences')
-        if not isinstance(experiences, list) or len(experiences) == 0:
-            errors.append("Missing or empty 'experiences' list")
-        else:
-            for i, exp in enumerate(experiences):
-                if not isinstance(exp, dict):
-                    errors.append(f"Experience {i} is not a dict")
-                    continue
-                for field in ['company', 'title', 'date']:
-                    if not exp.get(field):
-                        errors.append(f"Experience {i} missing '{field}'")
-                if not isinstance(exp.get('bullets'), list):
-                    errors.append(f"Experience {i} missing or invalid 'bullets'")
-
-        # Check projects
-        projects = tailored.get('projects')
-        if not isinstance(projects, list):
-            errors.append("'projects' is not a list")
-        elif projects:
-            for i, proj in enumerate(projects):
-                if not isinstance(proj, dict):
-                    errors.append(f"Project {i} is not a dict")
-                    continue
-                if not proj.get('name'):
-                    errors.append(f"Project {i} missing 'name'")
-                if not proj.get('date'):
-                    errors.append(f"Project {i} missing 'date'")
-                if not isinstance(proj.get('bullets'), list):
-                    errors.append(f"Project {i} missing or invalid 'bullets'")
-
-        # Check skills
-        skills = tailored.get('skills')
-        if not isinstance(skills, list):
-            errors.append("'skills' is not a list")
-        elif skills:
-            for i, skill in enumerate(skills):
-                if not isinstance(skill, dict):
-                    errors.append(f"Skill {i} is not a dict")
-                    continue
-                if not skill.get('category'):
-                    errors.append(f"Skill {i} missing 'category'")
-                if not skill.get('skills_list'):
-                    errors.append(f"Skill {i} missing 'skills_list'")
-
-        return len(errors) == 0, errors
 
     def _post_render_qa(self, html_content: str) -> list:
         """Post-render quality assurance checks on generated HTML.
