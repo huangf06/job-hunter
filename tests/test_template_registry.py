@@ -48,6 +48,7 @@ def test_load_registry_uses_repo_config_file():
     [
         ("Senior Data Engineer", "DE", 0.9, False),
         ("ML Platform Engineer", "ML", 0.5, True),
+        ("MLOps Engineer", "ML", 0.9, False),
         ("Business Intelligence Manager", "DE", 0.3, False),
     ],
 )
