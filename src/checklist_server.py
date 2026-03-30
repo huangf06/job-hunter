@@ -127,7 +127,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 <p class="summary" id="summary"></p>
 
 <script>
-let state = {json.dumps(state).replace("</", "<\\\\/")};
+let state = JSON.parse({json.dumps(json.dumps(state)).replace("</", "<\\\\/")});
 
 function updateSummary() {{
   const checked = Object.values(state.jobs).filter(j => j.applied).length;
@@ -245,13 +245,6 @@ def start_server(ready_dir: Path, port: int = 8234):
 
             self.send_response(404)
             self.end_headers()
-
-        def _send_json(self, code: int, data: dict):
-            """Send a JSON response."""
-            self.send_response(code)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(data).encode())
 
         def log_message(self, format, *args):
             pass

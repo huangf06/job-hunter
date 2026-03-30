@@ -42,6 +42,7 @@ def get_db_stats() -> dict:
         "today_analyzed": 0,
         "today_tokens": 0,
         "today_new_ready": [],
+        "today_generated": 0,
         "applied": 0,
         "interview": 0,
         "rejected": 0,
@@ -55,12 +56,6 @@ def get_db_stats() -> dict:
         ready = db.get_ready_to_apply()
         stats["ready"] = ready
         stats["total_ready"] = len(ready)
-
-        # Application status counts
-        funnel = db.get_funnel_stats()
-        stats["applied"] = funnel.get("applied", 0)
-        stats["interview"] = funnel.get("interview", 0)
-        stats["rejected"] = funnel.get("rejected", 0)
 
         # Get proper counts from applications table
         with db._get_conn() as conn:
@@ -122,6 +117,14 @@ def get_db_stats() -> dict:
             """).fetchall()
             stats["today_new_ready"] = [dict(r) for r in today_ready]
 
+            # Today's resume generation count
+            today_gen = conn.execute("""
+                SELECT COUNT(*) as cnt
+                FROM resumes
+                WHERE DATE(generated_at) = DATE('now')
+            """).fetchone()
+            stats["today_generated"] = today_gen["cnt"] if today_gen else 0
+
     except Exception as e:
         print(f"[notify] DB query failed: {e}")
     return stats
@@ -151,6 +154,7 @@ def format_message(status: str, failed_step: str = "",
     today_analyzed = db.get("today_analyzed", 0)
     today_high_score = db.get("today_high_score", 0)
     today_tokens = db.get("today_tokens", 0)
+    today_generated = db.get("today_generated", 0)
     total_ready = db.get("total_ready", 0)
     new_ready = db.get("today_new_ready", [])
     ready = db.get("ready", [])
@@ -186,6 +190,9 @@ def format_message(status: str, failed_step: str = "",
             lines.append(f"Tokens: {today_tokens / 1000:.1f}k today")
         else:
             lines.append(f"Tokens: {today_tokens} today")
+
+    if today_generated > 0:
+        lines.append(f"Generated: {today_generated} resumes")
 
     # Ready-to-apply list
     if ready:
