@@ -14,7 +14,7 @@ Combined audit-and-refine pass for Block E (Deliver: `--prepare`, `--finalize`, 
 | `src/checklist_server.py` | E | 268 | XSS in JSON embedding; dead method |
 | `scripts/notify.py` | F | ~250 | Dead code; missing generate stats |
 | `scripts/notify_discord.py` | F | 120 | Unused; delete |
-| `.github/workflows/job-pipeline-optimized.yml` | F | 176 | Bug: duplicate step check |
+| `.github/workflows/job-pipeline-optimized.yml` | F | 176 | Clean; no changes needed |
 | `src/db/job_db.py` (application methods) | E | ~100 | Clean; no changes needed |
 
 ### Key Findings
@@ -60,12 +60,9 @@ Combined audit-and-refine pass for Block E (Deliver: `--prepare`, `--finalize`, 
 - **Risk**: Low -- additive message change, no logic change
 - **Test**: `--dry-run` with jobs that have today's resume records
 
-### EF-6: Fix CI workflow duplicate step check
+### ~~EF-6: Fix CI workflow duplicate step check~~ DROPPED
 
-- **What**: In `.github/workflows/job-pipeline-optimized.yml`, fix line 170: change duplicated `ai_tailor` outcome check to `generate`
-- **Why**: Bug -- `generate` step failures are silently swallowed, notification incorrectly reports success
-- **Risk**: Very low -- 1-line fix
-- **Test**: Verify YAML correctness; confirmed by next CI run
+Audit false positive. Lines 169-171 correctly check `ai_evaluate`, `ai_tailor`, and `generate` respectively. No bug.
 
 ### EF-7: Add `state.json` schema validation in `cmd_finalize()`
 
@@ -95,9 +92,8 @@ Approach A (fix-by-file):
 1. `notify_discord.py` -- delete (EF-1)
 2. `checklist_server.py` -- XSS fix + dead code removal (EF-2, EF-3)
 3. `notify.py` -- dead code removal + generate stats (EF-4, EF-5)
-4. CI workflow -- bug fix (EF-6)
-5. `job_pipeline.py` -- state.json validation (EF-7)
-6. Tests (EF-8)
+4. `job_pipeline.py` -- state.json validation (EF-7)
+5. Tests (EF-8)
 
 ## Environment
 
