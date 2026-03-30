@@ -168,3 +168,68 @@ def test_render_resume_full_customize_uses_legacy_render_path():
     assert result is not None
     assert Path(result["html_path"]).exists()
     assert Path(result["pdf_path"]).exists()
+
+
+def test_render_template_copy_unknown_template_returns_none():
+    tmp_dir = _local_tmp_dir("renderer_unknown_tpl_copy")
+    renderer = _make_renderer(
+        tmp_dir,
+        {
+            "resume_tier": "USE_TEMPLATE",
+            "template_id_final": "NONEXISTENT",
+            "tailored_resume": "{}",
+        },
+    )
+    result = renderer.render_resume("job-1")
+    assert result is None
+    assert renderer.db.saved_resume is None
+
+
+def test_render_adapt_template_unknown_template_returns_none():
+    tmp_dir = _local_tmp_dir("renderer_unknown_tpl_adapt")
+    renderer = _make_renderer(
+        tmp_dir,
+        {
+            "resume_tier": "ADAPT_TEMPLATE",
+            "template_id_final": "NONEXISTENT",
+            "c3_decision": "PASS",
+            "tailored_resume": "{}",
+        },
+    )
+    result = renderer.render_resume("job-1")
+    assert result is None
+    assert renderer.db.saved_resume is None
+
+
+def test_render_adapt_template_invalid_json_returns_none():
+    tmp_dir = _local_tmp_dir("renderer_bad_json_adapt")
+    renderer = _make_renderer(
+        tmp_dir,
+        {
+            "resume_tier": "ADAPT_TEMPLATE",
+            "template_id_final": "DE",
+            "c3_decision": "PASS",
+            "tailored_resume": "NOT VALID JSON {{{",
+        },
+    )
+    result = renderer.render_resume("job-1")
+    assert result is None
+    assert renderer.db.saved_resume is None
+
+
+def test_render_adapt_template_missing_slot_schema_returns_none():
+    tmp_dir = _local_tmp_dir("renderer_no_schema_adapt")
+    renderer = _make_renderer(
+        tmp_dir,
+        {
+            "resume_tier": "ADAPT_TEMPLATE",
+            "template_id_final": "DE",
+            "c3_decision": "PASS",
+            "tailored_resume": json.dumps(
+                {"slot_overrides": {"bio": "X"}, "change_summary": "test"}
+            ),
+        },
+    )
+    del renderer.registry["templates"]["DE"]["slot_schema"]
+    result = renderer.render_resume("job-1")
+    assert result is None
