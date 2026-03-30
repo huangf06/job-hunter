@@ -227,7 +227,7 @@ class ResumeRenderer:
         # Save to database (allows retry of PDF generation on subsequent runs if pdf_path is empty)
         resume_record = Resume(
             job_id=job_id,
-            role_type=self._detect_role_type(job),
+            role_type=analysis.get('template_id_final') or 'general',
             template_version="ai_v1",
             html_path=str(html_path),
             pdf_path=str(pdf_path) if pdf_success else '',
@@ -443,21 +443,6 @@ class ResumeRenderer:
         # Remove leading/trailing underscores
         safe = safe.strip('_')
         return safe or 'unknown'
-
-    def _detect_role_type(self, job: Dict) -> str:
-        """根据职位标题检测角色类型"""
-        title = job.get('title', '').lower()
-
-        if any(kw in title for kw in ['ml', 'machine learning', 'deep learning']) or re.search(r'\bai\b', title):
-            return 'ml_engineer'
-        elif any(kw in title for kw in ['data engineer', 'pipeline', 'etl']):
-            return 'data_engineer'
-        elif any(kw in title for kw in ['quant', 'trading', 'alpha']):
-            return 'quant'
-        elif any(kw in title for kw in ['data scientist', 'analytics']):
-            return 'data_scientist'
-        else:
-            return 'general'
 
     def _html_to_pdf(self, html_path: Path, pdf_path: Path) -> bool:
         """使用 Playwright 将 HTML 转换为 PDF"""
