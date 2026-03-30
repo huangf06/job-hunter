@@ -80,10 +80,10 @@ resume:
   pdf:
     format: "A4"
     margin:
-      top: "42pt"
-      right: "42pt"
-      bottom: "36pt"
-      left: "42pt"
+      top: "0.583in"
+      right: "0.583in"
+      bottom: "0.5in"
+      left: "0.583in"
     print_background: true
 
   # Career gap explanation (rendered below experience section)
