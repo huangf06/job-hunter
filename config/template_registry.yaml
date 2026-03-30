@@ -1,0 +1,216 @@
+templates:
+  DE:
+    enabled: true
+    svg: "templates/Fei_Huang_DE_Resume.svg"
+    pdf: "templates/pdf/Fei_Huang_DE.pdf"
+    adapt_html: "templates/adapt_de.html"
+    target_roles:
+      - "data engineer"
+      - "data platform"
+      - "etl"
+      - "pipeline"
+      - "big data"
+      - "analytics engineer"
+      - "bi engineer"
+    bio_positioning: "Data Engineer"
+    key_strengths:
+      - "Spark/Delta Lake"
+      - "AWS data stack"
+      - "financial domain"
+      - "Python"
+    weak_areas:
+      - "no frontend"
+      - "no pure backend API"
+      - "no DevOps/K8s emphasis"
+    slot_schema:
+      bio:
+        slot_id: "bio"
+        default: "Data Engineer with 6+ years of experience building data platforms across e-commerce, market data, and credit risk. Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up. M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on experience in Spark and Delta Lake."
+      sections:
+        - section_id: "experience"
+          entries:
+            - entry_id: "glp"
+              company: "GLP Technology (Fintech)"
+              title: "Lead Data Engineer"
+              date: "JULY 2017 - AUGUST 2019"
+              bullets:
+                - slot_id: "glp_1"
+                  default: "Built the credit risk data platform from scratch as the founding data engineer, enabling production lending workflows across ingestion, Redshift warehousing, automated decisioning, and post-loan monitoring."
+                - slot_id: "glp_2"
+                  default: "Developed the core data layer, ingesting 30+ production tables into Redshift and transforming nested credit bureau JSON into 5 normalized analytical tables for downstream risk analysis and decision support."
+                - slot_id: "glp_3"
+                  default: "Implemented an automated risk decision engine with 29 rejection rules, 36 borrower segments, and a 19-feature scorecard for production credit decisions and first-payment-default assessment."
+            - entry_id: "bq"
+              company: "BQ Investment (Hedge Fund)"
+              title: "Quant Developer"
+              date: "JULY 2015 - JUNE 2017"
+              bullets:
+                - slot_id: "bq_1"
+                  default: "Engineered market data pipelines and infrastructure for trading and research workflows, covering 3,000+ securities across 5+ years of tick-level futures data from multiple vendor feeds."
+                - slot_id: "bq_2"
+                  default: "Implemented data quality controls for deduplication, completeness, and cross-source validation, improving data reliability for downstream analytics and live trading."
+            - entry_id: "ele"
+              company: "Ele.me (Alibaba Group)"
+              title: "Data Analyst"
+              date: "SEPTEMBER 2013 - JULY 2015"
+              bullets:
+                - slot_id: "ele_1"
+                  default: "Built anti-fraud detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern-matching algorithms: same-phone, high-frequency, and repeat-order detection."
+                - slot_id: "ele_2"
+                  default: "Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, reducing scanned data by 80% (500GB to 100GB) across 30+ warehouse tables."
+            - entry_id: "henan"
+              company: "Henan Energy Group"
+              title: "Business Analyst"
+              date: "JULY 2010 - AUGUST 2013"
+              bullets:
+                - slot_id: "henan_1"
+                  default: "Created a pipeline to ingest, validate, and consolidate non-standard Excel reports from 70+ business units, reducing monthly processing time from 2 days to 2 hours."
+        - section_id: "projects"
+          entries:
+            - entry_id: "greenhouse"
+              company: "Recent Project"
+              title: "Greenhouse Sensor Data Pipeline"
+              date: "FEBRUARY 2026"
+              bullets:
+                - slot_id: "greenhouse_1"
+                  default: "Built a PySpark pipeline for a commercial greenhouse operator using medallion architecture, idempotent ingestion, and 6 data quality checks for reliable downstream reporting."
+                - slot_id: "greenhouse_2"
+                  default: "Implemented 15-minute, hourly, and daily Delta aggregations, handling noisy and schema-changing sensor data while preserving anomalies for monitoring and excluding invalid outputs."
+        - section_id: "skills"
+          categories:
+            - cat_id: "programming"
+              default: "Python, SQL, Bash"
+            - cat_id: "data_engineering"
+              default: "PySpark, Spark, Delta Lake, Databricks, Airflow, Redshift, ETL/ELT, Data Modeling, Data Quality, Structured Streaming, Schema Evolution, Medallion Architecture"
+            - cat_id: "infrastructure"
+              default: "AWS, Docker, Git, CI/CD"
+            - cat_id: "analytics_ml"
+              default: "Pandas, NumPy, scikit-learn, PyTorch, A/B Testing, Tableau"
+
+  ML:
+    enabled: true
+    svg: "templates/Fei_Huang_ML_Resume.svg"
+    pdf: "templates/pdf/Fei_Huang_ML.pdf"
+    adapt_html: "templates/adapt_ml.html"
+    target_roles:
+      - "machine learning"
+      - "ml engineer"
+      - "ml platform"
+      - "mlops"
+      - "data scientist"
+      - "ai engineer"
+      - "deep learning"
+      - "nlp"
+      - "computer vision"
+      - "research scientist"
+      - "research engineer"
+      - "ml research"
+      - "applied scientist"
+      - "genai"
+      - "quant"
+      - "quantitative"
+    bio_positioning: "ML Engineer / Data Scientist"
+    key_strengths:
+      - "PyTorch"
+      - "RL thesis"
+      - "research background"
+      - "model deployment"
+    weak_areas:
+      - "no production pipeline emphasis"
+      - "no cloud infrastructure focus"
+    slot_schema:
+      bio:
+        slot_id: "bio"
+        default: "ML Engineer with 6+ years building and deploying ML-driven decision systems across fintech, trading, and e-commerce. Built credit risk models, automated underwriting logic, and data pipelines supporting portfolio monitoring in production. M.Sc. in AI (VU Amsterdam) with thesis on uncertainty quantification in Deep RL; combines applied modeling, evaluation rigor, and strong structured-data ML foundations."
+      sections:
+        - section_id: "experience"
+          entries:
+            - entry_id: "glp"
+              company: "GLP Technology (Fintech)"
+              title: "Data Scientist & Team Lead"
+              date: "JULY 2017 - AUGUST 2019"
+              bullets:
+                - slot_id: "glp_1"
+                  default: "First data hire at a consumer lending startup; built the production lending decision stack from data ingestion and feature preparation through risk decisioning and portfolio monitoring for live lending operations."
+                - slot_id: "glp_2"
+                  default: "Owned credit scoring for automated underwriting: designed 29 data-driven rejection rules, 36 borrower segments, and a 19-feature scorecard predicting first-payment default, directly powering approve/reject lending decisions for loan applications."
+                - slot_id: "glp_3"
+                  default: "Built the data foundation for risk modeling and monitoring: daily ETL of 30+ production tables into AWS Redshift, plus a credit bureau parser normalizing nested JSON into 5 structured tables feeding underwriting features and post-loan performance tracking."
+            - entry_id: "bq"
+              company: "BQ Investment (Hedge Fund)"
+              title: "Quantitative Researcher"
+              date: "JULY 2015 - JUNE 2017"
+              bullets:
+                - slot_id: "bq_1"
+                  default: "Developed and deployed an intraday CSI index futures strategy from research and backtesting through live execution, delivering 14.6% annualized return with real capital."
+                - slot_id: "bq_2"
+                  default: "Built a factor evaluation pipeline across 4 signal families (value, momentum, flow, event) for 3,000+ securities; signals that passed validation were incorporated into the fund's live portfolio decisions."
+                - slot_id: "bq_3"
+                  default: "Engineered market data pipelines for trading and research: 3,000+ securities across 5+ years of tick-level futures data from multiple vendor feeds, supporting repeatable research, backtesting, and live strategy execution."
+            - entry_id: "ele"
+              company: "Ele.me (Alibaba Group)"
+              title: "Data Analyst"
+              date: "SEPTEMBER 2013 - JULY 2015"
+              bullets:
+                - slot_id: "ele_1"
+                  default: "Built rule-based fraud detection that surfaced 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern-based methods (device clustering, frequency analysis, repeat-order detection) that supported fraud-loss prevention during a hyper-growth phase."
+                - slot_id: "ele_2"
+                  default: "Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, cutting scan volume 5x (500GB to 100GB) and improving access to data across 30+ warehouse tables used by fraud, operations, and marketing teams."
+        - section_id: "projects"
+          entries:
+            - entry_id: "uq_benchmark"
+              company: "Project"
+              title: "Uncertainty Quantification Benchmark"
+              date: "FEBRUARY 2025 - AUGUST 2025"
+              bullets:
+                - slot_id: "uq_1"
+                  default: "Developed benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN superiority with 31% lower CRPS (p < 0.001) over ensemble and dropout baselines."
+            - entry_id: "expedia"
+              company: "Project"
+              title: "Expedia Hotel Recommendation"
+              date: "APRIL 2024 - MAY 2024"
+              bullets:
+                - slot_id: "expedia_1"
+                  default: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered temporal, behavioral, and aggregation features (price normalization, competitor rates, estimated position); achieved NDCG@5 = 0.392 on Kaggle evaluation."
+        - section_id: "skills"
+          categories:
+            - cat_id: "programming"
+              default: "Python, SQL"
+            - cat_id: "machine_learning"
+              default: "PyTorch, scikit-learn, LightGBM, XGBoost, Learning to Rank, Statistical Testing"
+            - cat_id: "data_systems"
+              default: "Redshift, Airflow, Hadoop, Hive, ETL/ELT, Data Quality"
+            - cat_id: "infrastructure"
+              default: "AWS, Docker, Git"
+
+  Backend:
+    enabled: false
+    svg: "templates/Fei_Huang_Backend_Resume.svg"
+    pdf: "templates/pdf/Fei_Huang_Backend.pdf"
+    adapt_html: "templates/adapt_backend.html"
+    target_roles:
+      - "software engineer"
+      - "backend"
+      - "platform engineer"
+      - "python developer"
+      - "python engineer"
+      - "infrastructure"
+    bio_positioning: "Software Engineer"
+    key_strengths:
+      - "Python"
+      - "Docker"
+      - "API design"
+      - "system architecture"
+      - "data-intensive systems"
+    weak_areas:
+      - "no frontend"
+      - "less ML/model focus"
+    slot_schema:
+      bio:
+        slot_id: "bio"
+        default: "Software Engineer with 6+ years building data-intensive Python systems."
+      sections:
+        - section_id: "experience"
+          entries: []
+        - section_id: "skills"
+          categories: []

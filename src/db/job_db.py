@@ -115,6 +115,16 @@ class AnalysisResult:
     tailored_resume: str = ""  # JSON
     model: str = ""
     tokens_used: int = 0
+    resume_tier: Optional[str] = None
+    template_id_initial: Optional[str] = None
+    template_id_final: Optional[str] = None
+    routing_confidence: Optional[float] = None
+    routing_override_reason: Optional[str] = None
+    escalation_reason: Optional[str] = None
+    routing_payload: Optional[str] = None
+    c3_decision: Optional[str] = None
+    c3_confidence: Optional[float] = None
+    c3_reason: Optional[str] = None
 
 
 @dataclass
@@ -411,6 +421,18 @@ class JobDatabase:
         -- 定制简历 (JSON)
         tailored_resume TEXT,
 
+        -- 三档简历路由状态
+        resume_tier TEXT,
+        template_id_initial TEXT,
+        template_id_final TEXT,
+        routing_confidence REAL,
+        routing_override_reason TEXT,
+        escalation_reason TEXT,
+        routing_payload TEXT,
+        c3_decision TEXT,
+        c3_confidence REAL,
+        c3_reason TEXT,
+
         -- 元数据
         model TEXT,
         tokens_used INTEGER,
@@ -463,15 +485,12 @@ class JobDatabase:
         j.*,
         f.passed as filter_passed,
         f.reject_reason,
-        s.score as rule_score,
-        s.recommendation as rule_recommendation,
         an.ai_score,
         an.recommendation as ai_recommendation,
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
     LEFT JOIN filter_results f ON j.id = f.job_id
-    LEFT JOIN ai_scores s ON j.id = s.job_id
     LEFT JOIN job_analysis an ON j.id = an.job_id
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
@@ -485,7 +504,12 @@ class JobDatabase:
         r.pdf_path as resume_path,
         a.status as application_status
     FROM jobs j
-    JOIN job_analysis an ON j.id = an.job_id AND an.ai_score >= {ai_score_apply_now} AND an.tailored_resume != '{{}}'
+    JOIN job_analysis an ON j.id = an.job_id
+        AND an.ai_score >= {ai_score_apply_now}
+        AND (
+            an.resume_tier = 'USE_TEMPLATE'
+            OR (an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}')
+        )
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id
     ORDER BY an.ai_score DESC;
@@ -509,17 +533,27 @@ class JobDatabase:
     SELECT
         COUNT(DISTINCT j.id) as total_scraped,
         COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
-        COUNT(DISTINCT CASE WHEN s.score >= {rule_score_apply} THEN j.id END) as scored_high,
         COUNT(DISTINCT CASE WHEN an.id IS NOT NULL THEN j.id END) as ai_analyzed,
-        COUNT(DISTINCT CASE WHEN an.ai_score >= {ai_score_generate_resume} AND an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}' THEN j.id END) as ai_scored_high,
+        COUNT(DISTINCT CASE
+            WHEN an.ai_score >= {ai_score_generate_resume}
+             AND ((an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}')
+                  OR an.resume_tier = 'USE_TEMPLATE')
+            THEN j.id END) as ai_scored_high,
         COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'USE_TEMPLATE' THEN j.id END) as use_template_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'ADAPT_TEMPLATE' THEN j.id END) as adapt_template_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'ADAPT_TEMPLATE' AND an.c3_decision = 'PASS' THEN j.id END) as tier_2_pass,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'ADAPT_TEMPLATE' AND an.c3_decision = 'FAIL' THEN j.id END) as tier_2_fail,
+        COUNT(DISTINCT CASE WHEN an.resume_tier = 'FULL_CUSTOMIZE' THEN j.id END) as full_customize_count,
+        COUNT(DISTINCT CASE WHEN an.resume_tier IS NULL AND an.tailored_resume IS NOT NULL AND an.tailored_resume != '{{}}' THEN j.id END) as legacy_analysis_count,
+        COUNT(DISTINCT CASE WHEN an.routing_override_reason IS NOT NULL THEN j.id END) as override_count,
+        COUNT(DISTINCT CASE WHEN an.escalation_reason IS NOT NULL THEN j.id END) as escalation_count,
         COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
         COUNT(DISTINCT CASE WHEN a.status = 'rejected' THEN j.id END) as rejected,
         COUNT(DISTINCT CASE WHEN a.status = 'interview' THEN j.id END) as interview,
         COUNT(DISTINCT CASE WHEN a.status = 'offer' THEN j.id END) as offer
     FROM jobs j
     LEFT JOIN filter_results f ON j.id = f.job_id
-    LEFT JOIN ai_scores s ON j.id = s.job_id
     LEFT JOIN job_analysis an ON j.id = an.job_id
     LEFT JOIN resumes r ON j.id = r.job_id
     LEFT JOIN applications a ON j.id = a.job_id;
@@ -566,6 +600,9 @@ class JobDatabase:
                 statement = statement.strip()
                 if statement:
                     conn.execute(statement)
+            # Migrations must run before recreating views because newer view
+            # definitions may reference columns added during migration.
+            self._migrate(conn)
             # Drop and recreate views to ensure they're up-to-date
             conn.execute("DROP VIEW IF EXISTS v_pending_jobs")
             conn.execute("DROP VIEW IF EXISTS v_high_score_jobs")
@@ -576,20 +613,17 @@ class JobDatabase:
                 statement = statement.strip()
                 if statement:
                     conn.execute(statement)
-            # Migrations: add columns that may not exist in older databases
-            self._migrate(conn)
 
     @staticmethod
     def _load_view_thresholds() -> Dict[str, float]:
         """Load thresholds from config files for DB views.
 
-        Returns dict with keys: ai_score_apply_now, ai_score_generate_resume,
-        rule_score_apply. Falls back to hardcoded defaults if config unavailable.
+        Returns dict with keys: ai_score_apply_now, ai_score_generate_resume.
+        Falls back to hardcoded defaults if config unavailable.
         """
         defaults = {
             'ai_score_apply_now': 7.0,
             'ai_score_generate_resume': 5.0,
-            'rule_score_apply': 5.5,
         }
         try:
             ai_config_path = CONFIG_DIR / "ai_config.yaml"
@@ -599,13 +633,6 @@ class JobDatabase:
                 thresholds = ai_cfg.get('thresholds', {})
                 defaults['ai_score_apply_now'] = float(thresholds.get('ai_score_apply_now', defaults['ai_score_apply_now']))
                 defaults['ai_score_generate_resume'] = float(thresholds.get('ai_score_generate_resume', defaults['ai_score_generate_resume']))
-
-            scoring_path = CONFIG_DIR / "base" / "scoring.yaml"
-            if scoring_path.exists():
-                with open(scoring_path, 'r', encoding='utf-8') as f:
-                    scoring_cfg = yaml.safe_load(f) or {}
-                score_thresholds = scoring_cfg.get('thresholds', {})
-                defaults['rule_score_apply'] = float(score_thresholds.get('apply', defaults['rule_score_apply']))
         except Exception:
             pass  # Use defaults on any config error
         return defaults
@@ -617,9 +644,26 @@ class JobDatabase:
 
     def _migrate(self, conn):
         """Add columns introduced after initial schema."""
-        existing = {row[1] for row in conn.execute("PRAGMA table_info(resumes)").fetchall()}
-        if 'submit_dir' not in existing:
+        resume_columns = {row[1] for row in conn.execute("PRAGMA table_info(resumes)").fetchall()}
+        if 'submit_dir' not in resume_columns:
             conn.execute("ALTER TABLE resumes ADD COLUMN submit_dir TEXT")
+
+        analysis_columns = {row[1] for row in conn.execute("PRAGMA table_info(job_analysis)").fetchall()}
+        analysis_migrations = {
+            'resume_tier': "ALTER TABLE job_analysis ADD COLUMN resume_tier TEXT",
+            'template_id_initial': "ALTER TABLE job_analysis ADD COLUMN template_id_initial TEXT",
+            'template_id_final': "ALTER TABLE job_analysis ADD COLUMN template_id_final TEXT",
+            'routing_confidence': "ALTER TABLE job_analysis ADD COLUMN routing_confidence REAL",
+            'routing_override_reason': "ALTER TABLE job_analysis ADD COLUMN routing_override_reason TEXT",
+            'escalation_reason': "ALTER TABLE job_analysis ADD COLUMN escalation_reason TEXT",
+            'routing_payload': "ALTER TABLE job_analysis ADD COLUMN routing_payload TEXT",
+            'c3_decision': "ALTER TABLE job_analysis ADD COLUMN c3_decision TEXT",
+            'c3_confidence': "ALTER TABLE job_analysis ADD COLUMN c3_confidence REAL",
+            'c3_reason': "ALTER TABLE job_analysis ADD COLUMN c3_reason TEXT",
+        }
+        for column, sql in analysis_migrations.items():
+            if column not in analysis_columns:
+                conn.execute(sql)
 
     @contextmanager
     def _get_conn(self, *, sync_before=True):
@@ -845,17 +889,6 @@ class JobDatabase:
 
     # ==================== Score 操作 ====================
 
-    def save_score(self, result: ScoreResult):
-        """保存评分结果"""
-        with self._get_conn(sync_before=False) as conn:
-            conn.execute("""
-                INSERT OR REPLACE INTO ai_scores
-                (job_id, score, model, score_breakdown, matched_keywords, analysis, recommendation, scored_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (result.job_id, result.score, result.model, result.score_breakdown,
-                  result.matched_keywords, result.analysis, result.recommendation,
-                  datetime.now(timezone.utc).isoformat()))
-
     def get_score(self, job_id: str) -> Optional[Dict]:
         """获取评分结果"""
         with self._get_conn() as conn:
@@ -865,23 +898,6 @@ class JobDatabase:
             )
             row = cursor.fetchone()
             return dict(row) if row else None
-
-    def get_unscored_jobs(self, limit: int = None) -> List[Dict]:
-        """获取已通过筛选但未评分的职位"""
-        with self._get_conn() as conn:
-            query = """
-                SELECT j.* FROM jobs j
-                JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
-                LEFT JOIN ai_scores s ON j.id = s.job_id
-                WHERE s.id IS NULL
-                ORDER BY j.scraped_at DESC
-            """
-            params = []
-            if limit is not None:
-                query += " LIMIT ?"
-                params.append(limit)
-            cursor = conn.execute(query, params)
-            return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Resume 操作 ====================
 
@@ -916,12 +932,20 @@ class JobDatabase:
             conn.execute("""
                 INSERT OR REPLACE INTO job_analysis
                 (job_id, ai_score, skill_match, experience_fit, growth_potential,
-                 recommendation, reasoning, tailored_resume, model, tokens_used, analyzed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 recommendation, reasoning, tailored_resume,
+                 resume_tier, template_id_initial, template_id_final,
+                 routing_confidence, routing_override_reason, escalation_reason,
+                 routing_payload, c3_decision, c3_confidence, c3_reason,
+                 model, tokens_used, analyzed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (result.job_id, result.ai_score, result.skill_match,
                   result.experience_fit, result.growth_potential,
                   result.recommendation, result.reasoning,
-                  result.tailored_resume, result.model, result.tokens_used,
+                  result.tailored_resume,
+                  result.resume_tier or None, result.template_id_initial or None, result.template_id_final or None,
+                  result.routing_confidence, result.routing_override_reason or None, result.escalation_reason or None,
+                  result.routing_payload or None, result.c3_decision or None, result.c3_confidence, result.c3_reason or None,
+                  result.model, result.tokens_used,
                   datetime.now(timezone.utc).isoformat()))
 
     def get_analysis(self, job_id: str) -> Optional[Dict]:
@@ -934,21 +958,60 @@ class JobDatabase:
             row = cursor.fetchone()
             return dict(row) if row else None
 
-    def get_jobs_needing_analysis(self, min_rule_score: float = 3.0, limit: int = None) -> List[Dict]:
-        """获取通过筛选、达到规则评分阈值、但未经 AI 分析的职位 (排除已投递)"""
+    def update_analysis_resume(
+        self,
+        job_id: str,
+        tailored_resume: str,
+        c3_decision: Optional[str] = None,
+        c3_confidence: Optional[float] = None,
+        c3_reason: Optional[str] = None,
+    ):
+        """Update tailored_resume for an existing analysis (C2 writes to C1's row)."""
+        with self._get_conn(sync_before=False) as conn:
+            conn.execute("""
+                UPDATE job_analysis
+                SET tailored_resume = ?,
+                    c3_decision = ?,
+                    c3_confidence = ?,
+                    c3_reason = ?
+                WHERE job_id = ?
+            """, (tailored_resume, c3_decision, c3_confidence, c3_reason, job_id))
+
+    def get_jobs_needing_tailor(self, min_score: float = 4.0, limit: int = None) -> List[Dict]:
+        """Get jobs with C1 evaluation but no C2 tailored resume yet."""
         with self._get_conn() as conn:
             query = """
-                SELECT j.*, s.score as rule_score, s.recommendation as rule_recommendation
+                SELECT j.*, a.ai_score, a.recommendation, a.reasoning
+                FROM jobs j
+                JOIN job_analysis a ON j.id = a.job_id
+                LEFT JOIN applications app ON j.id = app.job_id
+                WHERE a.ai_score >= ?
+                  AND (a.tailored_resume IS NULL OR a.tailored_resume = '{}')
+                  AND (a.resume_tier IS NULL OR a.resume_tier IN ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'))
+                  AND app.job_id IS NULL
+                ORDER BY a.ai_score DESC
+            """
+            params = [min_score]
+            if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+            cursor = conn.execute(query, params)
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_jobs_needing_analysis(self, limit: int = None) -> List[Dict]:
+        """Get jobs that passed filter but have no AI analysis yet (excludes applied)."""
+        with self._get_conn() as conn:
+            query = """
+                SELECT j.*
                 FROM jobs j
                 JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
-                JOIN ai_scores s ON j.id = s.job_id AND s.score >= ?
                 LEFT JOIN job_analysis a ON j.id = a.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE a.id IS NULL
                   AND app.job_id IS NULL
-                ORDER BY s.score DESC
+                ORDER BY j.created_at DESC
             """
-            params = [min_rule_score]
+            params = []
             if limit is not None:
                 query += " LIMIT ?"
                 params.append(limit)
@@ -966,8 +1029,12 @@ class JobDatabase:
                 LEFT JOIN resumes r ON j.id = r.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE (r.id IS NULL OR (r.pdf_path IS NULL OR r.pdf_path = ''))
-                  AND a.tailored_resume IS NOT NULL
-                  AND a.tailored_resume != '{}'
+                  AND (
+                      a.resume_tier = 'USE_TEMPLATE'
+                      OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                  )
                   AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
@@ -992,7 +1059,7 @@ class JobDatabase:
         """清除被拒绝的 AI 分析结果 (tailored_resume = '{}')，允许重新分析"""
         with self._get_conn(sync_before=False) as conn:
             cursor = conn.execute(
-                "DELETE FROM job_analysis WHERE tailored_resume = '{}' OR tailored_resume IS NULL"
+                "DELETE FROM job_analysis WHERE (tailored_resume = '{}' OR tailored_resume IS NULL) AND resume_tier IS NULL"
             )
             return cursor.rowcount
 
@@ -1002,10 +1069,12 @@ class JobDatabase:
             cursor = conn.execute("""
                 DELETE FROM job_analysis
                 WHERE tailored_resume = '{}'
+                  AND resume_tier IS NULL
                   AND (reasoning LIKE '[PARSE_FAIL]%'
                        OR reasoning LIKE 'Failed to parse AI response:%'
                        OR reasoning LIKE 'Response truncated%'
                        OR reasoning LIKE 'Empty API response%'
+                       OR reasoning LIKE 'Claude Code CLI returned empty response%'
                        OR reasoning LIKE 'Analysis error:%')
             """)
             return cursor.rowcount
@@ -1046,8 +1115,13 @@ class JobDatabase:
                 JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
                 LEFT JOIN cover_letters cl ON j.id = cl.job_id
                 WHERE cl.id IS NULL
-                  AND a.tailored_resume IS NOT NULL
-                  AND a.tailored_resume != '{}'
+                  AND (
+                      a.resume_tier = 'USE_TEMPLATE'
+                      OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.c3_decision = 'PASS' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.c3_decision = 'FAIL')
+                      OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                  )
                 ORDER BY a.ai_score DESC
             """
             params = [min_ai_score]
@@ -1437,11 +1511,9 @@ class JobDatabase:
                     COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed_filter,
                     COUNT(DISTINCT CASE WHEN a.status = 'applied' THEN j.id END) as applied,
                     COUNT(DISTINCT CASE WHEN a.status IN ('interview', 'offer') THEN j.id END) as positive_response,
-                    AVG(s.score) as avg_rule_score,
                     AVG(an.ai_score) as avg_ai_score
                 FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
-                LEFT JOIN ai_scores s ON j.id = s.job_id
                 LEFT JOIN job_analysis an ON j.id = an.job_id
                 LEFT JOIN applications a ON j.id = a.job_id
                 GROUP BY j.company
@@ -1453,23 +1525,20 @@ class JobDatabase:
 
     def get_daily_stats(self, days: int = 7) -> List[Dict]:
         """获取每日统计"""
-        thresholds = self._load_view_thresholds()
         with self._get_conn() as conn:
             cursor = conn.execute("""
                 SELECT
                     DATE(j.scraped_at) as date,
                     COUNT(DISTINCT j.id) as scraped,
                     COUNT(DISTINCT CASE WHEN f.passed = 1 THEN j.id END) as passed,
-                    COUNT(DISTINCT CASE WHEN s.score >= ? THEN j.id END) as high_score,
                     COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN j.id END) as resume_generated
                 FROM jobs j
                 LEFT JOIN filter_results f ON j.id = f.job_id
-                LEFT JOIN ai_scores s ON j.id = s.job_id
                 LEFT JOIN resumes r ON j.id = r.job_id
                 WHERE j.scraped_at >= DATE('now', ?)
                 GROUP BY DATE(j.scraped_at)
                 ORDER BY date DESC
-            """, (thresholds['rule_score_apply'], f'-{days} days'))
+            """, (f'-{days} days',))
             return [dict(row) for row in cursor.fetchall()]
 
     def get_daily_token_usage(self) -> int:
@@ -1503,25 +1572,6 @@ class JobDatabase:
                 )
             else:
                 cursor = conn.execute("DELETE FROM filter_results")
-            return cursor.rowcount
-
-    def clear_scores(self, model: str = None) -> int:
-        """清除评分结果，以便重新处理
-
-        Args:
-            model: 如果指定，只清除该模型的结果；否则清除全部
-
-        Returns:
-            删除的记录数
-        """
-        with self._get_conn(sync_before=False) as conn:
-            if model:
-                cursor = conn.execute(
-                    "DELETE FROM ai_scores WHERE model = ?",
-                    (model,)
-                )
-            else:
-                cursor = conn.execute("DELETE FROM ai_scores")
             return cursor.rowcount
 
     # ==================== 批量操作 ====================
@@ -1606,7 +1656,7 @@ class JobDatabase:
                 params.append(filters["profile"])
 
             if filters.get("min_score"):
-                query += " AND id IN (SELECT job_id FROM ai_scores WHERE score >= ?)"
+                query += " AND id IN (SELECT job_id FROM job_analysis WHERE ai_score >= ?)"
                 params.append(filters["min_score"])
 
             cursor = conn.execute(query, params)
@@ -1654,11 +1704,10 @@ def main():
 
     elif args.command == "stats":
         stats = db.get_funnel_stats()
-        view_thresholds = JobDatabase._load_view_thresholds()
         print("\n=== 漏斗统计 ===")
-        print(f"总抓取: {stats.get('total_scraped', 0)}")
-        print(f"通过筛选: {stats.get('passed_filter', 0)}")
-        print(f"高分 (>={view_thresholds['rule_score_apply']}): {stats.get('scored_high', 0)}")
+        print(f"\u603b\u6293\u53d6: {stats.get('total_scraped', 0)}")
+        print(f"\u901a\u8fc7\u7b5b\u9009: {stats.get('passed_filter', 0)}")
+        print(f"AI 分析: {stats.get('ai_analyzed', 0)}")
         print(f"已生成简历: {stats.get('resume_generated', 0)}")
         print(f"已申请: {stats.get('applied', 0)}")
         print(f"面试: {stats.get('interview', 0)}")

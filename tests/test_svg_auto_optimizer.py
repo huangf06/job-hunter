@@ -11,8 +11,14 @@ Following TDD principles:
 import pytest
 from pathlib import Path
 import json
-import tempfile
-import shutil
+import uuid
+from unittest.mock import patch
+
+
+def _local_tmp_dir(name: str) -> Path:
+    path = Path("_tmp_test_artifacts") / f"{name}_{uuid.uuid4().hex[:8]}"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 # ============================================================================
@@ -37,25 +43,25 @@ class TestSVGResumeGenerator:
         """Should generate SVG file with iteration number"""
         from scripts.svg_auto_optimizer import SVGResumeGenerator
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            generator = SVGResumeGenerator(output_dir=tmpdir)
-            svg_path = generator.generate_svg(iteration=0)
+        tmpdir = _local_tmp_dir("svg_generate")
+        generator = SVGResumeGenerator(output_dir=str(tmpdir))
+        svg_path = generator.generate_svg(iteration=0)
 
-            assert svg_path.exists()
-            assert svg_path.suffix == '.svg'
-            assert 'iteration_0' in str(svg_path)
+        assert svg_path.exists()
+        assert svg_path.suffix == '.svg'
+        assert 'iteration_0' in str(svg_path)
 
     def test_generate_svg_contains_valid_svg_markup(self):
         """Generated SVG should have valid XML structure"""
         from scripts.svg_auto_optimizer import SVGResumeGenerator
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            generator = SVGResumeGenerator(output_dir=tmpdir)
-            svg_path = generator.generate_svg(iteration=0)
+        tmpdir = _local_tmp_dir("svg_markup")
+        generator = SVGResumeGenerator(output_dir=str(tmpdir))
+        svg_path = generator.generate_svg(iteration=0)
 
-            content = svg_path.read_text(encoding='utf-8')
-            assert content.startswith('<?xml') or content.startswith('<svg')
-            assert '</svg>' in content
+        content = svg_path.read_text(encoding='utf-8')
+        assert content.startswith('<?xml') or content.startswith('<svg')
+        assert '</svg>' in content
 
     def test_apply_fixes_modifies_svg_content(self):
         """Should apply fixes to SVG content and return modified version"""
@@ -90,18 +96,51 @@ class TestVisualQualityChecker:
         from scripts.svg_auto_optimizer import VisualQualityChecker
 
         # Create minimal valid SVG
-        with tempfile.TemporaryDirectory() as tmpdir:
-            svg_path = Path(tmpdir) / 'test.svg'
-            svg_path.write_text(
-                '<svg width="800" height="1000"><text>Test</text></svg>',
-                encoding='utf-8'
-            )
+        tmpdir = _local_tmp_dir("render_screenshot")
+        svg_path = tmpdir / 'test.svg'
+        svg_path.write_text(
+            '<svg width="800" height="1000"><text>Test</text></svg>',
+            encoding='utf-8'
+        )
 
-            checker = VisualQualityChecker()
+        checker = VisualQualityChecker()
+
+        class _FakePage:
+            def goto(self, *_args, **_kwargs):
+                return None
+
+            def wait_for_load_state(self, *_args, **_kwargs):
+                return None
+
+            def wait_for_timeout(self, *_args, **_kwargs):
+                return None
+
+            def screenshot(self, *, path, full_page):
+                Path(path).write_bytes(b"fake-png")
+                assert full_page is True
+
+        class _FakeBrowser:
+            def new_page(self, **_kwargs):
+                return _FakePage()
+
+            def close(self):
+                return None
+
+        class _FakePlaywright:
+            chromium = type("Chromium", (), {"launch": staticmethod(lambda headless=True: _FakeBrowser())})()
+
+        class _FakeContextManager:
+            def __enter__(self):
+                return _FakePlaywright()
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        with patch("playwright.sync_api.sync_playwright", return_value=_FakeContextManager()):
             screenshot_path = checker.render_screenshot(svg_path)
 
-            assert screenshot_path.exists()
-            assert screenshot_path.suffix == '.png'
+        assert screenshot_path.exists()
+        assert screenshot_path.suffix == '.png'
 
     def test_analyze_with_vision_returns_structured_feedback(self):
         """Should call Claude Vision API and return structured JSON feedback"""
@@ -110,21 +149,21 @@ class TestVisualQualityChecker:
         checker = VisualQualityChecker()
 
         # Create dummy image
-        with tempfile.TemporaryDirectory() as tmpdir:
-            image_path = Path(tmpdir) / 'test.png'
-            # Create 1x1 pixel PNG (minimal valid PNG)
-            image_path.write_bytes(
-                b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
-                b'\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89'
-                b'\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01'
-                b'\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
-            )
+        tmpdir = _local_tmp_dir("vision_feedback")
+        image_path = tmpdir / 'test.png'
+        # Create 1x1 pixel PNG (minimal valid PNG)
+        image_path.write_bytes(
+            b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
+            b'\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89'
+            b'\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01'
+            b'\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+        )
 
-            feedback = checker.analyze_with_vision(image_path)
+        feedback = checker.analyze_with_vision(image_path)
 
-            assert isinstance(feedback, dict)
-            assert 'status' in feedback
-            assert feedback['status'] in ['NEEDS_FIX', 'APPROVED']
+        assert isinstance(feedback, dict)
+        assert 'status' in feedback
+        assert feedback['status'] in ['NEEDS_FIX', 'APPROVED']
 
     def test_parse_feedback_extracts_issues(self):
         """Should parse Vision API response and extract issues list"""
@@ -242,24 +281,24 @@ class TestIterationController:
         """Should save SVG, screenshot, and feedback in iteration directory"""
         from scripts.svg_auto_optimizer import IterationController
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            controller = IterationController(output_dir=tmpdir)
+        tmpdir = _local_tmp_dir("save_iteration")
+        controller = IterationController(output_dir=str(tmpdir))
 
-            svg_path = Path(tmpdir) / 'test.svg'
-            svg_path.write_text('<svg></svg>', encoding='utf-8')
+        svg_path = tmpdir / 'test.svg'
+        svg_path.write_text('<svg></svg>', encoding='utf-8')
 
-            screenshot_path = Path(tmpdir) / 'test.png'
-            screenshot_path.write_bytes(b'fake_png_data')
+        screenshot_path = tmpdir / 'test.png'
+        screenshot_path.write_bytes(b'fake_png_data')
 
-            feedback = {'status': 'NEEDS_FIX', 'issues': []}
+        feedback = {'status': 'NEEDS_FIX', 'issues': []}
 
-            controller.save_iteration(0, svg_path, screenshot_path, feedback)
+        controller.save_iteration(0, svg_path, screenshot_path, feedback)
 
-            iteration_dir = Path(tmpdir) / 'iteration_0'
-            assert iteration_dir.exists()
-            assert (iteration_dir / 'resume.svg').exists()
-            assert (iteration_dir / 'preview.png').exists()
-            assert (iteration_dir / 'feedback.json').exists()
+        iteration_dir = tmpdir / 'iteration_0'
+        assert iteration_dir.exists()
+        assert (iteration_dir / 'resume.svg').exists()
+        assert (iteration_dir / 'preview.png').exists()
+        assert (iteration_dir / 'feedback.json').exists()
 
     def test_is_approved_checks_approval_criteria(self):
         """Should return True only if all approval criteria met"""
@@ -287,18 +326,32 @@ class TestIterationController:
         """Should run optimization loop and return final SVG path"""
         from scripts.svg_auto_optimizer import IterationController
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            controller = IterationController(
-                output_dir=tmpdir,
-                max_iterations=1  # Limit to 1 for fast testing
-            )
+        tmpdir = _local_tmp_dir("optimization_loop")
+        controller = IterationController(
+            output_dir=str(tmpdir),
+            max_iterations=1  # Limit to 1 for fast testing
+        )
 
-            # Should complete and return a Path
-            final_path = controller.run_optimization_loop()
+        # Should complete and return a Path
+        def _fake_render_screenshot(_svg_path):
+            screenshot_path = tmpdir / "preview.png"
+            screenshot_path.write_bytes(b"fake-png")
+            return screenshot_path
 
-            assert isinstance(final_path, Path)
-            assert final_path.exists()
-            assert final_path.suffix == '.pdf'
+        def _fake_analyze_with_vision(_image_path):
+            return {"status": "APPROVED", "overall_quality_score": 9, "issues": []}
+
+        def _fake_svg_to_pdf(_svg_path, pdf_path):
+            pdf_path.write_bytes(b"fake-pdf")
+
+        with patch("scripts.svg_auto_optimizer.VisualQualityChecker.render_screenshot", side_effect=_fake_render_screenshot):
+            with patch("scripts.svg_auto_optimizer.VisualQualityChecker.analyze_with_vision", side_effect=_fake_analyze_with_vision):
+                with patch.object(IterationController, "_svg_to_pdf", side_effect=_fake_svg_to_pdf):
+                    final_path = controller.run_optimization_loop()
+
+        assert isinstance(final_path, Path)
+        assert final_path.exists()
+        assert final_path.suffix == '.pdf'
 
 
 # ============================================================================

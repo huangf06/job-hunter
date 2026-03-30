@@ -44,7 +44,7 @@ def main():
                 ("Rejected filter", "SELECT COUNT(*) as c FROM filter_results WHERE passed = 0"),
                 ("Rule scored >= 3.0", "SELECT COUNT(*) as c FROM ai_scores WHERE score >= 3.0"),
                 ("AI analyzed", "SELECT COUNT(*) as c FROM job_analysis"),
-                ("AI score >= 5.0", f"SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= 5.0 AND tailored_resume != ?"),
+                ("AI score >= 5.0", f"SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= 5.0 AND (resume_tier = 'USE_TEMPLATE' OR tailored_resume != ?)"),
                 ("Resume generated", "SELECT COUNT(*) as c FROM resumes WHERE pdf_path IS NOT NULL AND pdf_path != ''"),
                 ("Applied", "SELECT COUNT(*) as c FROM applications"),
             ]
@@ -78,7 +78,10 @@ def main():
             LEFT JOIN applications app ON j.id = app.job_id
             WHERE (r.id IS NULL OR r.pdf_path IS NULL OR r.pdf_path = '')
               AND a.ai_score >= 5.0
-              AND a.tailored_resume != ?
+              AND (
+                  a.resume_tier = 'USE_TEMPLATE'
+                  OR a.tailored_resume != ?
+              )
               AND app.job_id IS NULL
             ORDER BY a.ai_score DESC
         """, (EMPTY_RESUME,)).fetchall()

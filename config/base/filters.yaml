@@ -1,5 +1,5 @@
 # =============================================================================
-# 硬性筛选规则配置 v2.0
+# 硬性筛选规则配置 v3.0 — whitelist-only design
 # =============================================================================
 # 规则按 priority 顺序执行，匹配任一规则即被拒绝
 # 支持正则表达式和计数检测
@@ -62,14 +62,20 @@ hard_reject_rules:
     # 标题必须包含至少一个目标关键词 (否则被拒)
     title_must_contain_one_of:
       - "data"
+      - "dataflow"
       - "machine learning"
       - "ml"
       - "ai"
+      - "genai"
       - "artificial intelligence"
+      - "computer vision"
+      - "machine vision"
+      - "vision"
       - "python"
       - "quant"
       - "quantitative"
       - "analytics"
+      - "bi"
       - "scientist"
       - "research"
       - "researcher"
@@ -84,26 +90,6 @@ hard_reject_rules:
       - "platform"
       - "pipeline"
       - "applied scientist"
-    # 标题包含以下任一关键词直接拒绝 (优先于上面的白名单)
-    title_reject_patterns:
-      - "\\bpolicy\\b"
-      - "\\bmarketing\\b"
-      - "\\bproduct\\s*manager\\b"
-      - "\\bsales\\b"
-      - "\\brecruiter\\b"
-      - "(?<![/\\d])\\bhr\\b"
-      - "\\blegal\\b"
-      - "\\bfinance\\s*manager\\b"
-      - "\\baccountant\\b"
-      - "\\bcontrol\\s*software\\b"
-      - "\\bkernel\\b"
-      - "\\bembedded\\b"
-      - "\\bplc\\b"
-      - "\\bsystems?\\s*engineer\\b(?!.*(?:data|ml|machine\\s*learning|ai|platform))"
-      - "\\bsiem\\b"
-      - "\\bsecurity\\s*engineer\\b"
-      - "\\brelease\\s*engineer\\b"
-      - "\\bnetwork\\s*engineer\\b"
 
   # 规则4: 非目标技术栈 (分标题和正文检查)
   wrong_tech_stack:
@@ -117,27 +103,11 @@ hard_reject_rules:
       - "\\b(android|ios|mobile)\\s*(developer|engineer)\\b"
       - "\\b(frontend|front-end|front end|ui/ux)\\s*(developer|engineer)\\b"
       - "\\b(devops|sre|site reliability)\\s*(engineer)\\b"
-      - "\\bdotnet\\b|\\b\\.net\\b|\\bc#\\b"
+      - "\\bdotnet\\b|\\.net(?!\\w)|\\bc#(?!\\w)"
       - "\\bjava\\b(?!.*(?:script|data|ml|machine learning|ai))"
       - "\\bruby\\b"
       - "\\breact\\b.*\\b(developer|engineer)\\b"
       - "\\bangular\\b.*\\b(developer|engineer)\\b"
-    # 正文中不相关技术栈关键词 (>= threshold 个则拒绝)
-    body_irrelevant_keywords:
-      - "react"
-      - "angular"
-      - "vue"
-      - "typescript"
-      - "node.js"
-      - "spring boot"
-      - "microservice"
-      - ".net"
-      - "c#"
-      - "ruby on rails"
-      - "graphql"
-      - "swift"
-      - "kotlin"
-    body_irrelevant_threshold: 7  # Increased from 5 to reduce false positives
     # 如果标题也包含这些词，不拒绝 (例外)
     exceptions:
       - "data"
@@ -182,41 +152,7 @@ hard_reject_rules:
       - "EUR\\s*1[0-5]00.*per\\s*month"
       - "1[0-4]00\\s*eur\\s*per\\s*month"
 
-  # 规则6.5: 特定技术栈年限要求过高
-  specific_tech_experience:
-    enabled: true
-    priority: 5.5
-    type: "regex"
-    description: "JD requires years of specific tech candidate cannot claim"
-    patterns:
-      - "(5|6|7|8|9|10)\\+?\\s*years?.{0,30}\\b(java|c\\+\\+|scala|ruby|\\.net)\\b"
-      - "\\b(java|c\\+\\+|scala|ruby|\\.net)\\b.{0,30}(5|6|7|8|9|10)\\+?\\s*years?"
-      - "(7|8|9|10)\\+?\\s*years?.{0,30}\\bazure\\b"
-      - "\\bazure\\b.{0,30}(7|8|9|10)\\+?\\s*years?"
-    exceptions:
-      - "python"
-      - "data"
-      - "machine learning"
-
-  # 规则7: 经验年限过高 (DISABLED - moved to soft reject in scoring.yaml)
-  experience_too_high:
-    enabled: false  # Changed to soft reject to avoid false positives
-    priority: 6
-    type: "regex"
-    max_years: 8
-    patterns:
-      - "(8|9|10|15|20)\\+?\\s*years?\\s*(of\\s*)?experience"
-      - "minimum\\s*(8|9|10)\\+?\\s*years"
-      - "senior.*with\\s*\\d{2}\\+?\\s*years"
-      - "at\\s*least\\s*(8|9|10)\\+?\\s*years"
-    description: "要求经验年限超过阈值"
-    exceptions:
-      - "python"
-      - "data"
-      - "machine learning"
-      - "data science"
-
-  # 规则8: 高级管理职位 (title-only check to avoid false-rejecting mid-level roles)
+  # 规则7: 高级管理职位 (title-only check to avoid false-rejecting mid-level roles)
   senior_management:
     enabled: true
     priority: 7
@@ -236,21 +172,6 @@ hard_reject_rules:
       - "senior ai engineer"
       - "senior research"
 
-  # 规则9: 地点限制
-  location_restricted:
-    enabled: true
-    priority: 8
-    type: "regex"
-    patterns:
-      - "(onsite|on-site|office).{0,30}(only|mandatory|required)"
-      - "no\\s*(relocation|visa|sponsorship)"
-      - "must\\s*be\\s*located\\s*in"
-      - "local\\s*candidates\\s*only"
-    description: "地点限制过于严格"
-    exceptions:
-      - "hybrid"
-      - "flexible"
-
 # =============================================================================
 # 软性筛选规则 (用于评分，不直接拒绝)
 # =============================================================================
@@ -263,7 +184,7 @@ hard_reject_rules:
 # =============================================================================
 
 metadata:
-  version: "2.0.0"
-  last_updated: "2026-02-05"
+  version: "3.0.0"
+  last_updated: "2026-03-28"
   author: "Fei Huang"
   description: "Job filtering configuration - improved with Dutch detection, role filtering, tech stack checks"

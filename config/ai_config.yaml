@@ -12,62 +12,20 @@
 # See .env.example for required variables.
 # =============================================================================
 
-# Active model for job analysis (switch between "opus", "kimi", "claude_code")
-active_model: "claude_code"
-
+# Only Claude Code CLI path (flat subscription, no API key needed)
 models:
-  # Claude Code CLI (local use — no API key needed, uses Claude Code's auth)
   claude_code:
     provider: "claude_code"
     model: "default"  # uses whatever model Claude Code is configured with
     max_tokens: 8192
-    temperature: 0.3
-
-  # Claude Opus via codesome.cn proxy (Account 1)
-  opus:
-    provider: "anthropic"
-    model: "claude-opus-4-6"
-    max_tokens: 8192
-    temperature: 0.3
-    env_key: "ANTHROPIC_API_KEY"
-    env_url: "ANTHROPIC_BASE_URL"
-    auth_type: "bearer"  # codesome.cn proxy requires Bearer auth
-
-  # Kimi Coding - uses Anthropic SDK format (messages.create)
-  kimi:
-    provider: "anthropic"
-    model: "k2p5"
-    max_tokens: 8192
-    temperature: 0.3
-    env_key: "KIMI_API_KEY"
-    env_url: "KIMI_BASE_URL"
 
 # =============================================================================
 # Scoring Thresholds
 # =============================================================================
 
 thresholds:
-  # Minimum rule-based score to trigger AI analysis
-  # Lower threshold = more jobs analyzed = more tokens used
-  rule_score_for_ai: 3.0
-
-  # AI score thresholds for actions
-  ai_score_generate_resume: 4.0  # >= 4.0: generate tailored resume (lowered from 5.0 to include maybe zone)
+  ai_score_generate_resume: 4.0  # >= 4.0: trigger C2 resume tailoring
   ai_score_apply_now: 7.0        # >= 7.0: mark as priority
-
-# =============================================================================
-# Token Budget
-# =============================================================================
-
-budget:
-  # Daily token limit (approximate)
-  daily_limit: 10000000
-  warn_threshold: 8000000
-
-  # Cost tracking (matches configured models)
-  cost_per_1k_tokens:
-    claude_opus_input: 0.015
-    claude_opus_output: 0.075
 
 # =============================================================================
 # Prompt Construction Settings
@@ -171,8 +129,97 @@ resume:
 # =============================================================================
 
 prompts:
-  # Main analysis prompt (variables: {bullet_library}, {job_title}, {job_company}, {job_description})
-  analyzer: |
+  # C1: Evaluation prompt — scoring + application brief (short, no bullet library)
+  evaluator: |
+    # Job Match Evaluation
+
+    ## Candidate Profile
+    Name: Fei Huang
+    Education: M.Sc. in Artificial Intelligence, VU Amsterdam (GPA 8.2/10, Aug 2025)
+    Bachelor: B.Eng. Industrial Engineering, Tsinghua University (#1 in China)
+    Certification: Databricks Certified Data Engineer Professional (2026)
+
+    Key Skills: Python (Expert), PyTorch, PySpark, SQL, Delta Lake, AWS, Docker, Airflow
+    Experience: ~6 years across data science, quantitative research, data engineering
+    Recent: Financial Data Lakehouse project (Databricks, Spark, AWS, Delta Lake)
+    Thesis: Uncertainty Quantification in Deep Reinforcement Learning
+
+    ## Hard Reject Signals (score 1-2, recommendation: SKIP)
+    If ANY of the following is true, score overall 1-2 and recommend SKIP:
+    - Title indicates non-target role: recruiter, HR, policy, accountant,
+      finance manager, pure marketing/sales/legal (without data/ML qualifier)
+    - Primary tech stack is clearly wrong: embedded systems, kernel, PLC,
+      SIEM, network engineering, release engineering, pure frontend
+    - JD requires visa/residency candidate cannot provide:
+      "no visa sponsorship", "must be located in [non-NL country]"
+    - JD requires 5+ years of specific tech candidate lacks
+      (Java, C++, Scala, Ruby, .NET, Azure)
+    - Role is too senior: Director, VP, CTO, Head of, Principal
+      (exception: "Senior Data/ML/AI Engineer/Scientist" is fine)
+    - JD requires native Dutch speaker
+    - Compensation far below market (< EUR 3000/month)
+
+    ## Scoring Guidelines
+    {scoring_guidelines}
+
+    ## Target Job
+    Title: {job_title}
+    Company: {job_company}
+
+    Job Description:
+    {job_description}
+
+    ## Resume Routing Decision
+    We have professionally designed template resumes, human-reviewed through multiple
+    iterations for narrative coherence, visual design, and cross-section resonance.
+    AI-generated alternatives cannot replicate these qualities.
+
+    Principle: when in doubt, use the template. Minor content gaps do not justify
+    replacing a polished template with an AI-generated alternative.
+
+    Available templates:
+    {available_templates}
+
+    Pre-selected template: {preselected_template_id} (confidence: {preselected_confidence})
+    {ambiguous_warning}
+
+    Routing rules:
+    - USE_TEMPLATE: Default. Choose unless hiring manager would question fit at first glance.
+      Acceptable gaps: missing a mentioned technology, different domain emphasis, slightly different experience years.
+    - ADAPT_TEMPLATE: Only when structural positioning mismatch exists: bio positioning is wrong,
+      or more than half the bullets are irrelevant, or skill ordering misrepresents fit.
+    - FULL_CUSTOMIZE: Only when no template is remotely close.
+
+    ## Output (JSON only, no markdown)
+    {{
+      "scoring": {{
+        "overall_score": 7.5,
+        "skill_match": 8.0,
+        "experience_fit": 7.0,
+        "growth_potential": 7.5,
+        "recommendation": "APPLY",
+        "reasoning": "2-3 sentences explaining the score"
+      }},
+      "application_brief": {{
+        "hook": "One sentence: strongest connection between candidate and role",
+        "key_angle": "One sentence: main selling point for this application",
+        "gap_mitigation": "One sentence: biggest gap and how to address it, or null",
+        "company_connection": "Personal connection to company mission, or null if none"
+      }},
+      "resume_routing": {{
+        "tier": "USE_TEMPLATE",
+        "template_id": "{preselected_template_id}",
+        "override": false,
+        "override_reason": null,
+        "gaps": ["specific gap 1"],
+        "adapt_instructions": null
+      }}
+    }}
+
+    recommendation values: "APPLY_NOW" (>={apply_now_threshold}), "APPLY" (>={apply_threshold}), "MAYBE" (>={maybe_threshold}), "SKIP" (<{maybe_threshold})
+
+  # C2: Resume tailoring prompt (long, includes bullet library)
+  tailor: |
     # Job Match Analysis & Resume Tailoring
 
     You are an expert career advisor helping a job seeker tailor their resume.
@@ -200,77 +247,26 @@ prompts:
     Job Description:
     {job_description}
 
-    ## Your Tasks
+    ## C1 Analysis Context
+    This job was evaluated and scored {c1_score}/10 ({c1_recommendation}).
+    C1 Reasoning: {c1_reasoning}
+    Application Brief: {c1_brief}
 
-    1. **Score the match (0-10)** for these dimensions:
-       - skill_match: How well candidate's skills align with requirements
-       - experience_fit: How relevant the work experience is
-       - growth_potential: Career growth opportunity at this role
-       - overall_score: Weighted average considering all factors
-
-    ## Scoring Guidelines (IMPORTANT - Be STRICT)
-
-    Most jobs should score 4-6, NOT 7-9. High scores are rare.
-
-    **Score Distribution Target:**
-    - 9-10: Perfect match (RARE, <5% of jobs)
-      - ALL required skills present at required level
-      - Experience level exact match
-      - Company/role highly aligned with career goals
-      - Example: "Data Engineer at Databricks requiring PySpark + Delta Lake + AWS"
-
-    - 7-8: Excellent match (10-15% of jobs)
-      - MOST required skills present
-      - Experience level close match (±1 year)
-      - Strong career growth potential
-      - Example: "ML Engineer requiring PyTorch + Python + cloud, candidate has all"
-
-    - 5-6: Good match (30-40% of jobs)
-      - Core skills present, some gaps in secondary skills
-      - Experience level reasonable (±2 years)
-      - Worth applying
-      - Example: "Data Engineer requiring Spark + Kafka, candidate has Spark but not Kafka"
-
-    - 3-4: Moderate match (30-40% of jobs)
-      - Significant skill gaps (missing 2+ required skills)
-      - Experience mismatch (too junior or too senior)
-      - Apply only if nothing better
-      - Example: "Senior role requiring 8+ years, candidate has 6 years"
-
-    - 1-2: Poor match (10-20% of jobs)
-      - Major skill gaps (missing core skills)
-      - Wrong experience level or domain
-      - Likely to be rejected
-      - Example: "Frontend role requiring React + TypeScript, candidate is backend"
-
-    **Negative Examples (Common Mistakes to Avoid):**
-    - If JD requires "5+ years Java" but candidate has 0 years Java → score 3-4 MAX (not 6-7)
-    - If JD requires "PhD in CS" but candidate has M.Sc. AI → score 4-5 MAX (not 7-8)
-    - If JD is 80% frontend (React, Angular) but candidate is backend → score 2-3 MAX (not 5-6)
-    - If JD requires "10+ years experience" but candidate has 6 years → score 3-4 MAX (not 6-7)
-    - If JD requires "native Dutch speaker" → score 0-1 (hard reject)
-
-    2. **Tailor the resume** by selecting the most relevant content:
-       - Bio: write 2-3 sentences if it adds value, or set to null
-       - MUST select 2-3 different work experiences from different companies
-       - Select 1-3 projects based on JD relevance
-       - Select bullets BY THEIR ID (shown in [square brackets] in the library above)
-       - Provide 4-6 skill categories from the allowed list
-       - Focus on RELEVANCE — include all bullets that match the JD, no artificial limits
+    ## Your Task
+    **Tailor the resume** by selecting the most relevant content:
+    - Bio: write 2-3 sentences if it adds value, or set to null
+    - MUST select 2-3 different work experiences from different companies
+    - Select 1-3 projects based on JD relevance
+    - Select bullets BY THEIR ID (shown in [square brackets] in the library above)
+    - Provide 4-6 skill categories from the allowed list
+    - Focus on RELEVANCE — include all bullets that match the JD, no artificial limits
+    - Use the application brief's key_angle and hook to guide your narrative choices
 
     ## Output Format (JSON)
 
     Respond with ONLY valid JSON (no markdown, no explanation):
 
     {{
-      "scoring": {{
-        "overall_score": 7.5,
-        "skill_match": 8.0,
-        "experience_fit": 7.0,
-        "growth_potential": 7.5,
-        "recommendation": "APPLY",
-        "reasoning": "Strong Python/ML match. PySpark experience aligns with data pipeline requirements."
-      }},
       "tailored_resume": {{
         "bio": {{
           "role_title": "Data Engineer",
@@ -442,12 +438,61 @@ prompts:
     2. MUST include 2-3 different work experiences from different companies
     3. Select bullets that best match the JD requirements AND form a coherent narrative per section
     4. Prefer narrative composition over exhaustive coverage — omit a relevant bullet if it breaks the narrative flow
-    5. Scoring criteria:
-       - 8-10: Excellent match, should apply immediately
-       - 6-7: Good match, worth applying
-       - 4-5: Moderate match, apply if nothing better
-       - 1-3: Poor match, likely to be rejected
-    6. recommendation values: "APPLY_NOW" (>={apply_now_threshold}), "APPLY" (>={apply_threshold}), "MAYBE" (>={maybe_threshold}), "SKIP" (<{maybe_threshold})
+
+  tailor_adapt: |
+    # Template Adaptation
+
+    You are adapting a polished resume template for a specific job. Do not rewrite the full resume.
+
+    ## Target Job
+    Title: {job_title}
+    Company: {job_company}
+
+    Job Description:
+    {job_description}
+
+    ## Routing Context
+    Gaps: {routing_gaps}
+    Adapt instructions: {adapt_instructions}
+
+    ## Template Schema
+    {template_schema}
+
+    ## Output JSON
+    {{
+      "slot_overrides": {{
+        "bio": "Optional replacement bio"
+      }},
+      "skills_override": {{
+        "programming": "Optional replacement skill line"
+      }},
+      "entry_visibility": {{
+        "glp": true
+      }},
+      "change_summary": "One sentence summary of the changes"
+    }}
+
+  c3_gate: |
+    You are reviewing whether adapting a polished resume template improves job fit enough
+    to justify using the adapted version over the original.
+
+    The original template has been professionally designed through 9+ iterations for
+    narrative coherence, visual design, and cross-section resonance.
+
+    {structured_diff}
+
+    ## Decision criteria
+    - Does each change demonstrably improve fit for THIS specific job?
+    - Are the new bullet texts of comparable quality to the originals?
+    - Is the change density proportionate? (>60% modified = essentially a rewrite -> FAIL)
+    - Would a hiring manager notice the gaps if we used the unmodified template?
+
+    Output JSON:
+    {{
+      "decision": "PASS",
+      "confidence": 0.8,
+      "reason": "one sentence"
+    }}
 
 # =============================================================================
 # Metadata
@@ -477,8 +522,8 @@ interview_scheduler:
     late_afternoon: -0.5    # 15:30-17:00
 
 metadata:
-  version: "2.0.0"
+  version: "3.0.0"
   created: "2026-02-05"
-  updated: "2026-02-19"
+  updated: "2026-03-28"
   author: "Fei Huang"
-  description: "AI-powered job analysis and resume generation configuration (v2: bullet-by-ID)"
+  description: "AI-powered job analysis and resume generation configuration (v3: C1/C2 split, Claude Code CLI only)"

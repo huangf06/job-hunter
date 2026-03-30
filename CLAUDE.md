@@ -2,32 +2,30 @@
 
 ## 项目概述
 
-自动化求职系统：爬取职位 → 硬规则筛选 → 规则评分 → AI 分析 → 生成定制简历 → 追踪申请
+自动化求职系统：爬取职位 → 硬规则筛选 → AI 分析 → 生成定制简历 → 追踪申请
 
-### v2.0 架构 (2026-02-05)
+### v3.0 架构 (2026-03-27)
+
+> 完整架构文档: `docs/plans/2026-03-27-pipeline-block-architecture.md`
 
 ```
-┌──────────┐    ┌──────────────┐    ┌──────────────┐
-│  Scrape  │───▶│ Hard Filter  │───▶│ Rule PreScore│
-│  (jobs)  │    │  (v2.0)      │    │   (v2.0)     │
-└──────────┘    └──────────────┘    └──────────────┘
-                      │                   │
-                 rejected             rule_score >= 3.0
-                      ▼                   ▼
-                 ┌─────────┐      ┌──────────────────────────────┐
-                 │  SKIP   │      │  AI Analyzer (Claude Opus)   │
-                 └─────────┘      │  - 评分 (skill_match, etc)   │
-                                  │  - 输出 tailored resume JSON  │
-                                  └──────────────────────────────┘
-                                             │
-                                             ▼ ai_score >= 5.0
-                                  ┌──────────────────────────────┐
-                                  │  Resume Renderer (Jinja2)    │
-                                  │  - 填充 base_template.html   │
-                                  │  - 生成 HTML + PDF            │
-                                  └──────────────────────────────┘
-                                             │
-                                             ▼
+┌──────────┐    ┌──────────────┐    ┌──────────────────────────────┐
+│ Block A  │───▶│   Block B    │───▶│         Block C               │
+│  Scrape  │    │ Hard Filter  │    │  C1: Evaluate (评分+brief)    │
+│  (jobs)  │    │ (whitelist)  │    │  C2: Tailor (简历定制)        │
+└──────────┘    └──────────────┘    │  score >= 4.0 触发 C2         │
+                      │             │  Application Brief 替代 CL    │
+                 rejected           └──────────────────────────────┘
+                      ▼                          │
+                 ┌─────────┐                     ▼ ai_score >= 4.0
+                 │  SKIP   │          ┌──────────────────────────────┐
+                 └─────────┘          │       Block D                │
+                                      │  Resume Renderer (Jinja2)    │
+                                      │  - 填充 base_template.html   │
+                                      │  - 生成 HTML + PDF            │
+                                      └──────────────────────────────┘
+                                                 │
+                                                 ▼
                                   ┌──────────────────────────────┐
                                   │  output/Fei_Huang_*.pdf      │
                                   └──────────────────────────────┘
@@ -49,27 +47,32 @@ python scripts/scrape.py --all --profile data_engineering --save-to-db
 
 ### 2. 处理职位流水线
 ```bash
-# 完整流程 (导入 → 筛选 → 规则评分)
+# 完整流程 (导入 → 硬规则筛选)
 python scripts/job_pipeline.py --process
 
 # 分步执行
 python scripts/job_pipeline.py --import-only   # 只导入
 python scripts/job_pipeline.py --filter        # 只筛选
-python scripts/job_pipeline.py --score         # 只规则评分
 ```
 
 ### 3. AI 分析与简历生成
 ```bash
-# AI 分析高分职位 (调用 Claude Opus)
+# C1 评分 + application brief (快速，无 bullet library)
+python scripts/job_pipeline.py --ai-evaluate
+
+# C2 简历定制 (仅 score >= 4.0 的职位)
+python scripts/job_pipeline.py --ai-tailor
+
+# C1 + C2 一起执行 (向后兼容)
 python scripts/job_pipeline.py --ai-analyze
 
-# 分析单个职位
+# 分析单个职位 (C1+C2)
 python scripts/job_pipeline.py --analyze-job JOB_ID
 ```
 
 可选参数:
 - `--min-score N`: 最低分数阈值
-- `--limit N`: 最大处理数量 (默认 50)
+- `--limit N`: 最大处理数量
 
 ### 4. 本地投递工作流 (推荐)
 ```bash
@@ -178,7 +181,8 @@ job-hunter/
 │
 ├── src/                        # 可复用模块
 │   ├── __init__.py
-│   ├── ai_analyzer.py              # AI 分析器 (Claude Opus)
+│   ├── hard_filter.py               # 硬规则筛选器 (Block B)
+│   ├── ai_analyzer.py              # AI 分析器 (Claude)
 │   ├── resume_renderer.py          # 简历渲染器 (Jinja2 + Playwright)
 │   ├── resume_validator.py         # 简历验证器 (v3.0)
 │   ├── cover_letter_generator.py   # Cover Letter AI 生成
@@ -203,8 +207,7 @@ job-hunter/
 │   ├── search_profiles.yaml    # 搜索配置 (LinkedIn + IamExpat)
 │   ├── target_companies.yaml   # 目标公司 ATS 配置 (Greenhouse)
 │   └── base/                   # 基础配置
-│       ├── filters.yaml            # 硬规则 v2.0
-│       └── scoring.yaml            # 评分规则 v2.0
+│       └── filters.yaml            # 硬规则 v2.0
 │
 ├── templates/
 │   ├── base_template.html      # 主模板 (Jinja2)
@@ -241,7 +244,7 @@ SQLite 本地数据库 + Turso 云同步 (embedded replica 模式)。
 |------|------|
 | `jobs` | 所有爬取的职位 |
 | `filter_results` | 硬规则筛选结果 |
-| `ai_scores` | 规则评分结果 |
+| `ai_scores` | 规则评分结果 (已废弃，不再写入新数据) |
 | `job_analysis` | AI 分析结果 + 定制简历 JSON |
 | `resumes` | 生成的简历记录 |
 | `cover_letters` | Cover Letter 记录 |
@@ -294,16 +297,13 @@ print(db.get_funnel_stats())
 ## 配置说明
 
 ### AI 配置 (`config/ai_config.yaml`)
-- `models.analyzer`: Claude Opus 用于智能分析
-- `thresholds.rule_score_for_ai`: 进入 AI 分析的最低规则分 (默认 3.0)
+- `models.analyzer`: Claude 用于智能分析
 - `thresholds.ai_score_generate_resume`: 生成简历的最低 AI 分 (默认 5.0)
 - `budget.daily_limit`: 每日 token 预算
 
-### 评分阈值 (`config/base/scoring.yaml`)
-- `apply_now`: >= 7.0 (高优先级)
-- `apply`: >= 5.5 (正常申请)
-- `maybe`: >= 4.0 (待定)
-- `skip`: < 4.0 (跳过)
+### 硬规则筛选 (`config/base/filters.yaml`)
+- 6 条硬拒绝规则 (whitelist-only: 荷兰语检测、白名单角色、标题技术栈等)
+- 通过 Hard Filter 的职位进入 C1 评分，score >= 4.0 进入 C2 简历定制
 
 ## 注意事项
 

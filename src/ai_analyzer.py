@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 """
-AI Job Analyzer - 统一评分与简历定制
-=====================================
+AI Job Analyzer — Claude Code CLI
+==================================
 
-一次 AI 调用同时完成:
-1. 职位匹配评分 (skill_match, experience_fit, growth_potential)
-2. 简历内容定制 (bio, experiences, projects, skills)
-
-使用 Claude Opus (via proxy) 进行分析，结果保存到 job_analysis 表。
-
-API keys 从 .env 文件加载。
+Evaluates jobs and tailors resumes via Claude Code CLI (`claude -p`).
+No Anthropic SDK dependency — flat subscription model.
 """
 
 import json
@@ -25,18 +20,17 @@ import yaml
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Load .env file
-try:
-    from dotenv import load_dotenv
-    load_dotenv(PROJECT_ROOT / ".env", override=True)
-except ImportError:
-    pass  # dotenv not installed, rely on env vars directly
-
-from anthropic import Anthropic, RateLimitError, APITimeoutError, AuthenticationError, APIConnectionError, InternalServerError
 from src import TRANSFERABLE_SKIP_WORDS
-from src.db.job_db import JobDatabase, AnalysisResult
+from src.db.job_db import JobDatabase, AnalysisResult, Resume
 from src.language_guidance import format_language_guidance_for_prompt
 from src.resume_validator import ResumeValidator
+from src.template_registry import (
+    apply_tier1_safeguard,
+    load_registry,
+    resolve_routing,
+    select_template,
+    validate_tier2_output,
+)
 
 
 class AIAnalyzer:
@@ -49,55 +43,16 @@ class AIAnalyzer:
         'graphsage_gnn', 'obama_tts', 'lifeos', 'job_hunter_automation',
     ]
 
-    def __init__(self, config_path: Path = None, model_override: str = None):
+    def __init__(self, config_path: Path = None):
         self.config = self._load_config(config_path)
         self.db = JobDatabase()
-
-        # Determine which model to use
-        active = model_override or self.config.get('active_model', 'opus')
-        model_config = self.config.get('models', {}).get(active, {})
-
-        if not model_config:
-            raise ValueError(f"Model config not found: {active}")
-
-        self.provider = model_config.get('provider', 'anthropic')
-        self.model = model_config.get('model', 'claude-opus-4-6')
-        self.max_tokens = model_config.get('max_tokens', 8192)
-        self.temperature = model_config.get('temperature', 0.3)
-
-        # Load API credentials from env (not needed for claude_code provider)
-        if self.provider != 'claude_code':
-            env_key = model_config.get('env_key', 'ANTHROPIC_API_KEY')
-            env_url = model_config.get('env_url', 'ANTHROPIC_BASE_URL')
-            self.api_key = os.environ.get(env_key)
-            self.base_url = os.environ.get(env_url)
-            self.auth_type = model_config.get('auth_type', 'api_key')
-            self.client = self._init_client()
-        else:
-            self.api_key = None
-            self.base_url = None
-            self.auth_type = None
-            self.client = None
+        self.registry = load_registry()
         self.bullet_library = self._load_bullet_library()
-        self.valid_bullets = self._extract_valid_bullets()  # Set of all valid bullet texts
-        self.bullet_id_lookup = self._build_bullet_id_lookup()  # ID -> text
-        self.validator = ResumeValidator()  # Early validation to catch issues before saving
-
-        print(f"[AI Analyzer] Using: {active} ({self.model})")
-        print(f"[AI Analyzer] Loaded {len(self.bullet_id_lookup)} bullet IDs for resolution")
-
-    def _init_client(self):
-        """初始化 API client (统一使用 Anthropic SDK)"""
-        kwargs = {}
-        if self.api_key:
-            kwargs['api_key'] = self.api_key
-        if self.base_url:
-            kwargs['base_url'] = self.base_url
-        # For proxies that require Bearer auth (e.g. codesome.cn)
-        if self.auth_type == 'bearer' and self.api_key:
-            kwargs['api_key'] = 'bearer-auth-placeholder'  # SDK requires non-empty api_key
-            kwargs['default_headers'] = {"Authorization": f"Bearer {self.api_key}"}
-        return Anthropic(**kwargs)
+        self.valid_bullets = self._extract_valid_bullets()
+        self.bullet_id_lookup = self._build_bullet_id_lookup()
+        self.validator = ResumeValidator()
+        print(f"[AI Analyzer] Claude Code CLI mode")
+        print(f"[AI Analyzer] Loaded {len(self.bullet_id_lookup)} bullet IDs")
 
     def _load_config(self, config_path: Path = None) -> dict:
         """加载 AI 配置"""
@@ -571,26 +526,84 @@ class AIAnalyzer:
 
         return ' '.join(parts), []
 
-    def _build_prompt(self, job: Dict) -> str:
-        """构建分析 prompt"""
-        prompt_template = self.config.get('prompts', {}).get('analyzer', '')
+    # NOTE: legacy _build_prompt() removed — C1/C2 now use _build_evaluate_prompt / _build_tailor_prompt
+
+    def _build_scoring_guidelines(self) -> str:
+        """Build scoring guidelines text for C1 evaluator prompt."""
+        return """Most jobs should score 4-6, NOT 7-9. High scores are rare.
+
+**Score Distribution Target:**
+- 9-10: Perfect match (RARE, <5% of jobs) — ALL required skills, exact experience level
+- 7-8: Excellent match (10-15%) — MOST required skills, experience ±1 year
+- 5-6: Good match (30-40%) — Core skills present, some secondary gaps
+- 3-4: Moderate match (30-40%) — Significant skill gaps or experience mismatch
+- 1-2: Poor match (10-20%) — Major skill gaps, wrong domain
+
+**Common Mistakes:**
+- JD requires "5+ years Java" but candidate has 0 → score 3-4 MAX
+- JD requires "PhD in CS" but candidate has M.Sc. → score 4-5 MAX
+- JD is 80% frontend but candidate is backend → score 2-3 MAX
+- JD requires "10+ years" but candidate has 6 → score 3-4 MAX"""
+
+    def _build_evaluate_prompt(self, job: Dict, code_decision) -> str:
+        """Build C1 evaluation prompt (scoring + application brief). No bullet library."""
+        prompt_template = self.config.get('prompts', {}).get('evaluator', '')
         if not prompt_template:
-            raise ValueError("No analyzer prompt template found in config")
+            raise ValueError("No evaluator prompt template found in config")
+
+        ai_thresholds = self.config.get('ai_recommendation_thresholds', {})
+        prompt_settings = self.config.get('prompt_settings', {})
+        jd_max = prompt_settings.get('job_description_max_chars', 10000)
+        jd_text = (job.get('description') or '')[:jd_max]
+
+        scoring_guidelines = self._build_scoring_guidelines()
+
+        # Escape braces
+        jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
+        job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
+        job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
+        scoring_safe = scoring_guidelines.replace('{', '{{').replace('}', '}}')
+        available_templates = []
+        for template_id, meta in self.registry.get('templates', {}).items():
+            if not meta.get('enabled', True):
+                continue
+            strengths = ', '.join(meta.get('key_strengths', []))
+            available_templates.append(
+                f"- {template_id}: {meta.get('bio_positioning', template_id)}. Strengths: {strengths}"
+            )
+        available_templates_safe = '\n'.join(available_templates).replace('{', '{{').replace('}', '}}')
+        ambiguous_warning = "⚠ AMBIGUOUS: title matched multiple templates" if code_decision.ambiguous else ""
+
+        return prompt_template.format(
+            scoring_guidelines=scoring_safe,
+            job_title=job_title,
+            job_company=job_company,
+            job_description=jd_safe,
+            available_templates=available_templates_safe,
+            preselected_template_id=code_decision.template_id,
+            preselected_confidence=code_decision.confidence,
+            ambiguous_warning=ambiguous_warning,
+            apply_now_threshold=ai_thresholds.get('apply_now', 7),
+            apply_threshold=ai_thresholds.get('apply', 5),
+            maybe_threshold=ai_thresholds.get('maybe', 3),
+        )
+
+    def _build_tailor_prompt(self, job: Dict, analysis: Dict) -> str:
+        """Build C2 tailor prompt (resume tailoring). Includes bullet library + C1 context."""
+        prompt_template = self.config.get('prompts', {}).get('tailor', '')
+        if not prompt_template:
+            raise ValueError("No tailor prompt template found in config")
         language_guidance = format_language_guidance_for_prompt("experience_bullet")
 
         prompt_settings = self.config.get('prompt_settings', {})
-        ai_thresholds = self.config.get('ai_recommendation_thresholds', {})
-
         jd_max = prompt_settings.get('job_description_max_chars', 10000)
-
         jd_text = (job.get('description') or '')[:jd_max]
 
-        # Build dynamic context blocks (v3.0) — use original JD for keyword matching
+        # Build dynamic context
         skill_context = self._build_skill_context(jd_text)
         title_context = self._build_title_context()
         bio_constraints = self._build_bio_constraints()
 
-        # Build dynamic lists from bullet_library.yaml (replaces hardcoded lists in prompt)
         bio_titles = self._bio_builder.get('allowed_titles', [])
         bio_titles_str = ', '.join(f'"{t}"' for t in bio_titles) if bio_titles else '"Data Engineer"'
 
@@ -609,25 +622,39 @@ class AIAnalyzer:
         cat_list = self._allowed_categories if self._allowed_categories else []
         cat_str = ', '.join(f'"{c}"' for c in cat_list) if cat_list else '"Languages & Core"'
 
-        # Escape braces in user-supplied text to prevent str.format() crashes
+        # Extract C1 context
+        c1_score = analysis.get('ai_score', 0)
+        c1_recommendation = analysis.get('recommendation', 'UNKNOWN')
+        c1_reasoning_raw = analysis.get('reasoning', '')
+        # Parse reasoning JSON if it contains application_brief
+        try:
+            reasoning_data = json.loads(c1_reasoning_raw)
+            c1_reasoning = reasoning_data.get('reasoning', c1_reasoning_raw)
+            c1_brief = json.dumps(reasoning_data.get('application_brief', {}), ensure_ascii=False)
+        except (json.JSONDecodeError, TypeError):
+            c1_reasoning = c1_reasoning_raw
+            c1_brief = '{}'
+
+        # Escape braces
         jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
         job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
         job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
-
-        # Escape braces in dynamic content blocks to prevent str.format() crashes
         bullet_lib_safe = self.bullet_library.replace('{', '{{').replace('}', '}}')
         skill_ctx_safe = skill_context.replace('{', '{{').replace('}', '}}')
         title_ctx_safe = title_context.replace('{', '{{').replace('}', '}}')
         bio_cstr_safe = bio_constraints.replace('{', '{{').replace('}', '}}')
+        c1_reasoning_safe = c1_reasoning.replace('{', '{{').replace('}', '}}')
+        c1_brief_safe = c1_brief.replace('{', '{{').replace('}', '}}')
 
         prompt_body = prompt_template.format(
             bullet_library=bullet_lib_safe,
             job_title=job_title,
             job_company=job_company,
             job_description=jd_safe,
-            apply_now_threshold=ai_thresholds.get('apply_now', 7),
-            apply_threshold=ai_thresholds.get('apply', 5),
-            maybe_threshold=ai_thresholds.get('maybe', 3),
+            c1_score=c1_score,
+            c1_recommendation=c1_recommendation,
+            c1_reasoning=c1_reasoning_safe,
+            c1_brief=c1_brief_safe,
             skill_context=skill_ctx_safe,
             title_context=title_ctx_safe,
             bio_constraints=bio_cstr_safe,
@@ -636,6 +663,322 @@ class AIAnalyzer:
             allowed_skill_categories_list=cat_str,
         )
         return f"{language_guidance}\n\n{prompt_body}"
+
+    def _build_tier2_prompt(self, job: Dict, analysis: Dict, c1_routing: Dict) -> str:
+        prompt_template = self.config.get('prompts', {}).get('tailor_adapt', '')
+        if not prompt_template:
+            raise ValueError("No tailor_adapt prompt template found in config")
+
+        prompt_settings = self.config.get('prompt_settings', {})
+        jd_max = prompt_settings.get('job_description_max_chars', 10000)
+        jd_text = (job.get('description') or '')[:jd_max]
+        template_id = analysis.get('template_id_final')
+        schema = self.registry['templates'][template_id]['slot_schema']
+
+        return prompt_template.format(
+            job_title=(job.get('title') or '').replace('{', '{{').replace('}', '}}'),
+            job_company=(job.get('company') or '').replace('{', '{{').replace('}', '}}'),
+            job_description=jd_text.replace('{', '{{').replace('}', '}}'),
+            routing_gaps=json.dumps(c1_routing.get('gaps', []), ensure_ascii=False).replace('{', '{{').replace('}', '}}'),
+            adapt_instructions=(c1_routing.get('adapt_instructions') or '').replace('{', '{{').replace('}', '}}'),
+            template_schema=json.dumps(schema, ensure_ascii=False, indent=2),
+        )
+
+    def evaluate_job(self, job: Dict) -> Optional[AnalysisResult]:
+        """C1: Score + application brief. Short prompt, fast."""
+        job_id = job['id']
+        code_decision = select_template(job.get('title', ''), self.registry)
+        prompt = self._build_evaluate_prompt(job, code_decision)
+
+        text = self._call_claude(prompt)
+        if not text:
+            return AnalysisResult(
+                job_id=job_id, ai_score=0.0,
+                recommendation='REJECTED',
+                reasoning='Claude Code CLI returned empty response',
+                tailored_resume='{}',
+                model='claude_code', tokens_used=0,
+            )
+
+        parsed = self._parse_response(text)
+        if not parsed:
+            preview = text[:300].replace('\n', ' ')
+            print(f"  [WARN] Failed to parse C1 response for {job_id}")
+            return AnalysisResult(
+                job_id=job_id, ai_score=0.0,
+                recommendation='REJECTED',
+                reasoning=f'[PARSE_FAIL] {preview[:200]}',
+                tailored_resume='{}',
+                model='claude_code', tokens_used=0,
+            )
+
+        scoring = parsed.get('scoring', {})
+        brief = parsed.get('application_brief', {})
+        c1_routing = parsed.get('resume_routing') or {
+            'tier': 'USE_TEMPLATE',
+            'template_id': code_decision.template_id,
+            'override': False,
+            'override_reason': None,
+            'gaps': [],
+            'adapt_instructions': None,
+        }
+        routing = resolve_routing(code_decision, c1_routing)
+        routing = apply_tier1_safeguard(routing, code_decision)
+
+        def _safe_float(val, default=0.0):
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                return default
+
+        return AnalysisResult(
+            job_id=job_id,
+            ai_score=_safe_float(scoring.get('overall_score', 0)),
+            skill_match=_safe_float(scoring.get('skill_match', 0)),
+            experience_fit=_safe_float(scoring.get('experience_fit', 0)),
+            growth_potential=_safe_float(scoring.get('growth_potential', 0)),
+            recommendation=scoring.get('recommendation', 'SKIP'),
+            reasoning=json.dumps({"reasoning": scoring.get('reasoning', ''),
+                                   "application_brief": brief}, ensure_ascii=False),
+            tailored_resume='{}',
+            model='claude_code',
+            tokens_used=0,
+            resume_tier=routing.get('resume_tier'),
+            template_id_initial=routing.get('template_id_initial'),
+            template_id_final=routing.get('template_id_final'),
+            routing_confidence=routing.get('routing_confidence'),
+            routing_override_reason=routing.get('routing_override_reason'),
+            escalation_reason=routing.get('escalation_reason'),
+            routing_payload=routing.get('routing_payload'),
+        )
+
+    def tailor_resume(self, job: Dict, analysis: Dict, c1_routing: Dict = None) -> Optional[str]:
+        """C2: Resume tailoring. Long prompt, only for high-scoring jobs.
+        Returns tailored_resume JSON string, or None on failure."""
+        job_id = job['id']
+        tier = analysis.get('resume_tier')
+        if tier == 'ADAPT_TEMPLATE':
+            prompt = self._build_tier2_prompt(job, analysis, c1_routing or {})
+        else:
+            prompt = self._build_tailor_prompt(job, analysis)
+
+        text = self._call_claude(prompt)
+        if not text:
+            print(f"  [WARN] C2 empty response for {job_id}")
+            return None
+
+        parsed = self._parse_response(text)
+        if not parsed:
+            print(f"  [WARN] C2 parse failed for {job_id}")
+            return None
+
+        if tier == 'ADAPT_TEMPLATE':
+            errors = validate_tier2_output(parsed, self.registry['templates'][analysis['template_id_final']]['slot_schema'])
+            if errors:
+                for error in errors:
+                    print(f"    [TIER2 VALIDATION] {error}")
+                return None
+            return json.dumps(parsed, ensure_ascii=False)
+
+        tailored = parsed.get('tailored_resume', {})
+        if not tailored:
+            print(f"  [WARN] C2 no tailored_resume in response for {job_id}")
+            return None
+
+        tailored, bullet_errors = self._resolve_bullet_ids(tailored)
+        self._inject_technical_skills(tailored)
+        if bullet_errors:
+            for err in bullet_errors:
+                print(f"    [BULLET WARN] {err}")
+
+        # Bio assembly
+        bio_spec = tailored.get('bio')
+        assembled_bio, bio_errors = self._assemble_bio(bio_spec, job)
+        if bio_errors:
+            for err in bio_errors:
+                print(f"    [BIO ERROR] {err}")
+            return None
+        tailored['bio'] = assembled_bio
+
+        # Validation
+        validation = self.validator.validate(tailored, job)
+        if not validation.passed:
+            for err in validation.errors:
+                print(f"    [VALIDATION] {err}")
+            return None
+        if validation.warnings:
+            for warn in validation.warnings:
+                print(f"    [VALID WARN] {warn}")
+
+        return json.dumps(tailored, ensure_ascii=False)
+
+    def build_c3_input(self, template_schema: Dict, c2_output: Dict, c1_routing: Dict, jd_summary: str) -> str:
+        lines = []
+        lines.append(f"## Job Summary\n{jd_summary}\n")
+        lines.append(f"## Identified Gaps\n{', '.join(c1_routing.get('gaps', []))}\n")
+        lines.append("## Changes Made (before -> after)\n")
+
+        change_count = 0
+        total_changeable = 1
+
+        if c2_output.get('slot_overrides', {}).get('bio'):
+            lines.append("**Bio:**")
+            lines.append(f"  BEFORE: {template_schema['bio']['default']}")
+            lines.append(f"  AFTER:  {c2_output['slot_overrides']['bio']}\n")
+            change_count += 1
+
+        for section in template_schema.get('sections', []):
+            for entry in section.get('entries', []):
+                for bullet in entry.get('bullets', []):
+                    total_changeable += 1
+                    override = c2_output.get('slot_overrides', {}).get(bullet['slot_id'])
+                    if override:
+                        lines.append(f"**{bullet['slot_id']}:**")
+                        lines.append(f"  BEFORE: {bullet['default']}")
+                        lines.append(f"  AFTER:  {override}\n")
+                        change_count += 1
+            for category in section.get('categories', []):
+                total_changeable += 1
+                override = c2_output.get('skills_override', {}).get(category['cat_id'])
+                if override:
+                    lines.append(f"**skills.{category['cat_id']}:**")
+                    lines.append(f"  BEFORE: {category['default']}")
+                    lines.append(f"  AFTER:  {override}\n")
+                    change_count += 1
+
+        all_entries = set()
+        for section in template_schema.get('sections', []):
+            for entry in section.get('entries', []):
+                all_entries.add(entry['entry_id'])
+        total_changeable += len(all_entries)
+
+        hidden = [entry_id for entry_id, visible in c2_output.get('entry_visibility', {}).items() if not visible]
+        if hidden:
+            lines.append(f"**Hidden entries:** {', '.join(hidden)}")
+            change_count += len(hidden)
+
+        density = change_count / max(total_changeable, 1) * 100
+        lines.append(
+            f"\n**Change density:** {change_count} of {total_changeable} changeable items modified ({density:.0f}%)"
+        )
+        return "\n".join(lines)
+
+    def run_c3_gate(self, analysis: AnalysisResult, c1_routing: Dict, job: Dict) -> Dict:
+        template_id = analysis.template_id_final
+        schema = self.registry['templates'][template_id]['slot_schema']
+        c2_output = json.loads(analysis.tailored_resume or '{}')
+        reasoning_data = json.loads(analysis.reasoning or '{}')
+        brief = reasoning_data.get('application_brief', {})
+        jd_summary = brief.get('key_angle') or brief.get('hook') or job.get('title', '')
+        structured_diff = self.build_c3_input(schema, c2_output, c1_routing, jd_summary)
+        prompt = self.config.get('prompts', {}).get('c3_gate', '').format(
+            structured_diff=structured_diff
+        )
+        text = self._call_claude(prompt)
+        parsed = self._parse_response(text or '')
+        if not parsed:
+            return {'decision': 'FAIL', 'confidence': 0.0, 'reason': 'C3 parse failed'}
+        return {
+            'decision': parsed.get('decision', 'FAIL'),
+            'confidence': float(parsed.get('confidence', 0.0) or 0.0),
+            'reason': parsed.get('reason', ''),
+        }
+
+    def evaluate_batch(self, limit: int = None) -> int:
+        """C1: Evaluate all jobs needing analysis."""
+        jobs = self.db.get_jobs_needing_analysis(limit=limit)
+        if not jobs:
+            print("[AI C1] No jobs to evaluate")
+            return 0
+
+        print(f"\n[AI C1] Evaluating {len(jobs)} jobs...")
+        count = 0
+        with self.db.batch_mode():
+            for i, job in enumerate(jobs):
+                title = job.get('title', '')[:45]
+                company = job.get('company', '')[:20]
+                print(f"  [{i+1}/{len(jobs)}] {title} @ {company}...", end=' ')
+                try:
+                    result = self.evaluate_job(job)
+                    if result:
+                        self.db.save_analysis(result)
+                        if result.resume_tier == 'USE_TEMPLATE' and result.template_id_final:
+                            template_pdf = self.registry['templates'][result.template_id_final]['pdf']
+                            self.db.save_resume(Resume(
+                                job_id=job['id'],
+                                role_type=result.template_id_final,
+                                template_version="template_v1",
+                                pdf_path=template_pdf,
+                            ))
+                        count += 1
+                        print(f"-> {result.recommendation} ({result.ai_score:.1f})")
+                    else:
+                        print("-> SKIPPED")
+                except Exception as e:
+                    print(f"-> ERROR: {e}")
+                if i < len(jobs) - 1:
+                    time.sleep(1)
+
+        print(f"\n[AI C1] Done: {count}/{len(jobs)} evaluated")
+        return count
+
+    def tailor_batch(self, min_score: float = None, limit: int = None) -> int:
+        """C2: Tailor resumes for evaluated jobs above threshold."""
+        if min_score is None:
+            min_score = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
+        jobs = self.db.get_jobs_needing_tailor(min_score=min_score, limit=limit)
+        if not jobs:
+            print(f"[AI C2] No jobs needing tailoring (min_score={min_score})")
+            return 0
+
+        print(f"\n[AI C2] Tailoring {len(jobs)} jobs (score >= {min_score})...")
+        count = 0
+        with self.db.batch_mode():
+            for i, job in enumerate(jobs):
+                title = job.get('title', '')[:45]
+                company = job.get('company', '')[:20]
+                score = job.get('ai_score', 0)
+                print(f"  [{i+1}/{len(jobs)}] {title} @ {company} ({score:.1f})...", end=' ')
+                try:
+                    analysis = self.db.get_analysis(job['id'])
+                    if not analysis:
+                        print("-> NO ANALYSIS")
+                        continue
+                    c1_routing = json.loads(analysis.get('routing_payload') or '{}')
+                    resume_json = self.tailor_resume(job, analysis, c1_routing=c1_routing)
+                    if resume_json:
+                        c3_decision = None
+                        c3_confidence = None
+                        c3_reason = None
+                        if analysis.get('resume_tier') == 'ADAPT_TEMPLATE':
+                            temp_result = AnalysisResult(
+                                job_id=job['id'],
+                                reasoning=analysis.get('reasoning', ''),
+                                tailored_resume=resume_json,
+                                template_id_final=analysis.get('template_id_final'),
+                            )
+                            c3 = self.run_c3_gate(temp_result, c1_routing, job)
+                            c3_decision = c3['decision']
+                            c3_confidence = c3['confidence']
+                            c3_reason = c3['reason']
+                        self.db.update_analysis_resume(
+                            job['id'],
+                            resume_json,
+                            c3_decision=c3_decision,
+                            c3_confidence=c3_confidence,
+                            c3_reason=c3_reason,
+                        )
+                        count += 1
+                        print("-> TAILORED")
+                    else:
+                        print("-> FAILED")
+                except Exception as e:
+                    print(f"-> ERROR: {e}")
+                if i < len(jobs) - 1:
+                    time.sleep(1)
+
+        print(f"\n[AI C2] Done: {count}/{len(jobs)} tailored")
+        return count
 
     def _post_parse_analysis(self, job_id: str, job: Dict, parsed: Dict,
                               tokens_used: int, prompt: str = '') -> AnalysisResult:
@@ -703,11 +1046,11 @@ class AIAnalyzer:
             recommendation=recommendation,
             reasoning=reasoning,
             tailored_resume=json.dumps(tailored, ensure_ascii=False),
-            model=self.model,
+            model='claude_code',
             tokens_used=tokens_used
         )
 
-    def _analyze_via_claude_code(self, prompt: str) -> Optional[str]:
+    def _call_claude(self, prompt: str) -> Optional[str]:
         """Call Claude Code CLI to analyze a job.
 
         Pipes the prompt via stdin to `claude -p` and returns the raw text
@@ -724,9 +1067,6 @@ class AIAnalyzer:
 
         try:
             cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '1']
-            # Only pass --model if explicitly configured (skip to use Claude Code's default)
-            if self.model and self.model != 'default':
-                cmd.extend(['--model', self.model])
             # Strip ANTHROPIC_BASE_URL/API_KEY from env — they may point to an
             # expired proxy and would override Claude Code's native auth.
             clean_env = os.environ.copy()
@@ -755,189 +1095,43 @@ class AIAnalyzer:
             return None
 
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
-        """分析单个职位: 评分 + 简历定制"""
-        job_id = job['id']
-        prompt = self._build_prompt(job)
+        """分析单个职位: C1 evaluate + route + conditional C2/C3."""
+        c1_result = self.evaluate_job(job)
+        if not c1_result:
+            return None
 
-        try:
-            # ── Claude Code CLI provider ──
-            if self.provider == 'claude_code':
-                text = self._analyze_via_claude_code(prompt)
-                if not text:
-                    return AnalysisResult(
-                        job_id=job_id, ai_score=0.0,
-                        recommendation='REJECTED',
-                        reasoning='Claude Code CLI returned empty response',
-                        tailored_resume='{}',
-                        model=self.model, tokens_used=0,
-                    )
-                tokens_used = 0  # CLI doesn't report token usage
-                # Fall through to JSON parsing below
-                parsed = self._parse_response(text)
-                if not parsed:
-                    preview = text[:300].replace('\n', ' ')
-                    print(f"  [WARN] Failed to parse Claude Code response for {job_id}")
-                    print(f"    Raw response preview: {preview}")
-                    return AnalysisResult(
-                        job_id=job_id, ai_score=0.0,
-                        recommendation='REJECTED',
-                        reasoning=f'[PARSE_FAIL] {preview[:200]}',
-                        tailored_resume='{}',
-                        model=self.model, tokens_used=0,
-                    )
-                # Jump to post-parse processing (shared with API path)
-                return self._post_parse_analysis(job_id, job, parsed, tokens_used, prompt)
+        c1_routing = json.loads(c1_result.routing_payload) if c1_result.routing_payload else {}
+        if c1_result.resume_tier == 'USE_TEMPLATE':
+            pass
+        elif c1_result.resume_tier in ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'):
+            analysis = {
+                'ai_score': c1_result.ai_score,
+                'recommendation': c1_result.recommendation,
+                'reasoning': c1_result.reasoning,
+                'tailored_resume': c1_result.tailored_resume,
+                'resume_tier': c1_result.resume_tier,
+                'template_id_final': c1_result.template_id_final,
+            }
+            resume_json = self.tailor_resume(job, analysis, c1_routing=c1_routing)
+            if resume_json:
+                c1_result.tailored_resume = resume_json
+                if c1_result.resume_tier == 'ADAPT_TEMPLATE':
+                    c3 = self.run_c3_gate(c1_result, c1_routing, job)
+                    c1_result.c3_decision = c3['decision']
+                    c1_result.c3_confidence = c3['confidence']
+                    c1_result.c3_reason = c3['reason']
 
-            # ── Anthropic SDK provider ──
-            response = None
-            for attempt in range(3):
-                try:
-                    response = self.client.messages.create(
-                        model=self.model,
-                        max_tokens=self.max_tokens,
-                        temperature=self.temperature,
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    if not response or not response.content:
-                        if attempt < 2:
-                            wait = 2 ** (attempt + 1)
-                            print(f"\n    [RETRY] Empty response, waiting {wait}s...", end=' ')
-                            time.sleep(wait)
-                            continue
-                        else:
-                            print(f"  [WARN] Empty response from API for {job_id} after 3 attempts")
-                            return AnalysisResult(
-                                job_id=job_id, ai_score=0.0,
-                                recommendation='REJECTED',
-                                reasoning='Empty API response after 3 attempts',
-                                tailored_resume='{}',
-                                model=self.model, tokens_used=0,
-                            )
-                    break
-                except (RateLimitError, APITimeoutError, APIConnectionError, InternalServerError) as e:
-                    if attempt < 2:
-                        import random
-                        # Rate limits need longer backoff than timeouts/connection errors
-                        base = 30 * (attempt + 1) if isinstance(e, RateLimitError) else 2 ** (attempt + 1)
-                        wait = base + random.uniform(0, base * 0.5)
-                        print(f"\n    [RETRY] {e}, waiting {wait:.0f}s...", end=' ')
-                        time.sleep(wait)
-                    else:
-                        raise
+        self.db.save_analysis(c1_result)
+        if c1_result.resume_tier == 'USE_TEMPLATE' and c1_result.template_id_final:
+            template_pdf = self.registry['templates'][c1_result.template_id_final]['pdf']
+            self.db.save_resume(Resume(
+                job_id=job['id'],
+                role_type=c1_result.template_id_final,
+                template_version="template_v1",
+                pdf_path=template_pdf,
+            ))
 
-            if not response or not response.content:
-                print(f"  [WARN] Empty response from API for {job_id}")
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning='Empty API response',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=0,
-                )
-
-            if response.stop_reason == "max_tokens":
-                # Track tokens even for truncated responses (API still charges)
-                usage = response.usage
-                tokens_used = 0
-                if usage:
-                    tokens_used = getattr(usage, 'input_tokens', 0) + getattr(usage, 'output_tokens', 0)
-                print(f"\n    [WARN] Response truncated (max_tokens={self.max_tokens}) — saving sentinel")
-                # Save sentinel to prevent infinite retry on same job
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning='Response truncated (max_tokens) — JD too complex for token limit',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=tokens_used
-                )
-
-            text_blocks = [b for b in response.content if getattr(b, 'type', None) == 'text']
-            if not text_blocks:
-                print(f"  [WARN] No text content in response for {job_id}")
-                return None
-            # Concatenate ALL text blocks — thinking blocks may split text output
-            text = ''.join(b.text for b in text_blocks).strip()
-            usage = response.usage
-            tokens_used = 0
-            if usage:
-                tokens_used = getattr(usage, 'input_tokens', 0) + getattr(usage, 'output_tokens', 0)
-
-            # Parse JSON from response
-            parsed = self._parse_response(text)
-            if not parsed:
-                # Retry: re-call API once for parse failures (transient API issues)
-                print(f"\n    [RETRY] Parse failed, retrying API call...")
-                time.sleep(2)
-                try:
-                    retry_resp = self.client.messages.create(
-                        model=self.model,
-                        max_tokens=self.max_tokens,
-                        temperature=self.temperature,
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    if retry_resp and retry_resp.content and retry_resp.stop_reason != "max_tokens":
-                        retry_blocks = [b for b in retry_resp.content if getattr(b, 'type', None) == 'text']
-                        if retry_blocks:
-                            retry_text = ''.join(b.text for b in retry_blocks).strip()
-                            retry_usage = retry_resp.usage
-                            if retry_usage:
-                                tokens_used += getattr(retry_usage, 'input_tokens', 0) + getattr(retry_usage, 'output_tokens', 0)
-                            parsed = self._parse_response(retry_text)
-                            if parsed:
-                                text = retry_text
-                                print(f"    [RETRY] Parse succeeded on retry")
-                except Exception as retry_err:
-                    print(f"    [RETRY] Retry API call failed: {retry_err}")
-
-            if not parsed:
-                preview = text[:300].replace('\n', ' ')
-                print(f"  [WARN] Failed to parse AI response for {job_id}")
-                print(f"    Raw response preview: {preview}")
-                # Save sentinel — marked as parse failure for selective retry
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning=f'[PARSE_FAIL] {preview[:200]}',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=tokens_used
-                )
-
-            return self._post_parse_analysis(job_id, job, parsed, tokens_used, prompt)
-
-        except AuthenticationError as e:
-            print(f"  [FATAL] Authentication failed: {e}")
-            raise
-        except RateLimitError as e:
-            # Quota exhaustion — do NOT save sentinel, allow retry when quota resets
-            error_msg = str(e)
-            if 'DAILY_LIMIT_EXCEEDED' in error_msg or 'usage limit exceeded' in error_msg.lower():
-                print(f"  [QUOTA] Daily quota exhausted — skipping (will retry when quota resets)")
-                return None  # No sentinel, job remains unanalyzed
-            else:
-                # Other rate limits (per-minute, etc.) — save sentinel to avoid infinite retry
-                print(f"  [ERROR] Rate limit error: {error_msg[:200]}")
-                return AnalysisResult(
-                    job_id=job_id, ai_score=0.0,
-                    recommendation='REJECTED',
-                    reasoning=f'Rate limit: {error_msg[:200]}',
-                    tailored_resume='{}',
-                    model=self.model, tokens_used=0
-                )
-        except Exception as e:
-            error_msg = str(e)
-            # Insufficient balance (403) — transient billing issue, do NOT save sentinel
-            if 'INSUFFICIENT_BALANCE' in error_msg or 'Insufficient account balance' in error_msg:
-                print(f"  [BALANCE] Insufficient balance — skipping (will retry after top-up)")
-                return None  # No sentinel, job remains unanalyzed
-            print(f"  [ERROR] AI analysis failed for {job_id}: {ascii(error_msg)}")
-            # Save sentinel to prevent infinite retry on deterministic errors
-            return AnalysisResult(
-                job_id=job_id, ai_score=0.0,
-                recommendation='REJECTED',
-                reasoning=f'Analysis error: {error_msg[:200]}',
-                tailored_resume='{}',
-                model=self.model, tokens_used=0
-            )
+        return c1_result
 
     def _parse_response(self, text: str) -> Optional[Dict]:
         """解析 AI 的 JSON 响应"""
@@ -991,89 +1185,63 @@ class AIAnalyzer:
 
         return None
 
-    def analyze_batch(self, min_rule_score: float = None, limit: int = None) -> int:
-        """批量分析职位"""
-        threshold = min_rule_score
-        if threshold is None:
-            threshold = self.config.get('thresholds', {}).get('rule_score_for_ai', 3.0)
-
-        jobs = self.db.get_jobs_needing_analysis(min_rule_score=threshold, limit=limit)
+    def analyze_batch(self, limit: int = None) -> int:
+        """批量分析职位: C1 evaluate + C2 tailor combined."""
+        jobs = self.db.get_jobs_needing_analysis(limit=limit)
         if not jobs:
             print("[AI Analyzer] No jobs to analyze")
             return 0
 
-        print(f"\n[AI Analyzer] Analyzing {len(jobs)} jobs (model: {self.model})...")
+        print(f"\n[AI Analyzer] Analyzing {len(jobs)} jobs (C1+C2)...")
         analyzed = 0
 
-        # Query cumulative daily token usage for budget tracking
-        total_tokens = 0
-        try:
-            total_tokens = self.db.get_daily_token_usage()
-            if total_tokens > 0:
-                print(f"  Today's token usage so far: {total_tokens}")
-        except Exception as e:
-            print(f"  [WARN] Could not query daily token usage: {e} — starting from 0")
-            total_tokens = 0
-
-        consecutive_none = 0  # Track consecutive None returns (quota/balance issues)
         with self.db.batch_mode():
             for i, job in enumerate(jobs):
                 title = job.get('title', '')[:45]
                 company = job.get('company', '')[:20]
-                rule_score = job.get('rule_score', 0)
-                print(f"  [{i+1}/{len(jobs)}] [{rule_score:.1f}] {title} @ {company}...", end=' ')
+                print(f"  [{i+1}/{len(jobs)}] {title} @ {company}...", end=' ')
 
                 try:
                     result = self.analyze_job(job)
                     if result:
-                        self.db.save_analysis(result)
                         analyzed += 1
-                        total_tokens += result.tokens_used
-                        consecutive_none = 0
                         print(f"-> {result.recommendation} ({result.ai_score:.1f})")
                     else:
-                        consecutive_none += 1
-                        print("-> SKIPPED (transient)")
-                        if consecutive_none >= 3:
-                            print(f"\n[AI Analyzer] 3 consecutive failures (quota/balance) — stopping batch early.")
-                            break
-                except AuthenticationError:
-                    print(f"\n[AI Analyzer] Authentication failed — stopping batch. Check API key.")
-                    break
+                        print("-> SKIPPED")
                 except Exception as e:
                     print(f"-> ERROR: {e}")
 
-                # Rate limiting
                 if i < len(jobs) - 1:
                     time.sleep(1)
 
-                # Token budget warning + hard stop
-                budget_config = self.config.get('budget', {})
-                warn_limit = budget_config.get('warn_threshold', 80000)
-                budget_limit = budget_config.get('daily_limit', 100000)
-                if total_tokens >= warn_limit and total_tokens < budget_limit:
-                    print(f"\n  [WARN] Approaching token budget ({total_tokens}/{budget_limit} tokens)")
-                if total_tokens >= budget_limit:
-                    print(f"\n[AI Analyzer] Token budget reached ({total_tokens} tokens)")
-                    break
-
-        print(f"\n[AI Analyzer] Done: {analyzed}/{len(jobs)} analyzed, {total_tokens} tokens used")
+        print(f"\n[AI Analyzer] Done: {analyzed}/{len(jobs)} analyzed")
         return analyzed
 
     def analyze_single(self, job_id: str) -> Optional[AnalysisResult]:
-        """分析单个职位 (by ID)"""
+        """分析单个职位 (by ID): C1 evaluate + C2 tailor."""
         job = self.db.get_job(job_id)
         if not job:
             print(f"[AI Analyzer] Job not found: {job_id}")
             return None
 
-        print(f"[AI Analyzer] Analyzing: {job['title']} @ {job['company']}")
+        print(f"[AI Analyzer] Analyzing (C1+C2): {job['title']} @ {job['company']}")
         result = self.analyze_job(job)
         if result:
-            self.db.save_analysis(result)
             print(f"  Score: {result.ai_score:.1f} | {result.recommendation}")
-            print(f"  Reasoning: {result.reasoning}")
-            print(f"  Tokens: {result.tokens_used}")
+            tier = result.resume_tier or ""
+            tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
+            if tier == "USE_TEMPLATE":
+                print(f"  Resume: template {result.template_id_final} (no adaptation)")
+            elif tier == "ADAPT_TEMPLATE":
+                slot_count = len((tailored or {}).get("slot_overrides", {}))
+                if result.c3_decision == "FAIL":
+                    print(f"  Resume: adapted {result.template_id_final} rejected by C3, using template")
+                else:
+                    print(f"  Resume: adapted {result.template_id_final} ({slot_count} slots overridden)")
+            elif tailored and tailored != {}:
+                print(f"  Resume: tailored ({len(tailored.get('experiences', []))} experiences)")
+            else:
+                print(f"  Resume: not tailored (score below threshold or C2 failed)")
         return result
 
 
@@ -1081,32 +1249,27 @@ def main():
     """CLI 入口"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="AI Job Analyzer")
-    parser.add_argument('--batch', action='store_true', help='Analyze all pending jobs')
-    parser.add_argument('--job', type=str, help='Analyze a single job by ID')
-    parser.add_argument('--min-score', type=float, default=None,
-                        help='Minimum rule score threshold')
+    parser = argparse.ArgumentParser(description="AI Job Analyzer (C1/C2)")
+    parser.add_argument('--batch', action='store_true', help='C1+C2 for all pending jobs')
+    parser.add_argument('--evaluate', action='store_true', help='C1 only: evaluate pending jobs')
+    parser.add_argument('--tailor', action='store_true', help='C2 only: tailor evaluated jobs')
+    parser.add_argument('--job', type=str, help='C1+C2 for a single job by ID')
     parser.add_argument('--limit', type=int, default=50,
-                        help='Max jobs to analyze in batch')
-    parser.add_argument('--model', type=str, default=None,
-                        choices=['opus', 'kimi'],
-                        help='Model to use: opus (Claude) or kimi')
-
+                        help='Max jobs to process in batch')
     args = parser.parse_args()
 
-    analyzer = AIAnalyzer(model_override=args.model)
+    analyzer = AIAnalyzer()
 
     if args.job:
         analyzer.analyze_single(args.job)
+    elif args.evaluate:
+        analyzer.evaluate_batch(limit=args.limit)
+    elif args.tailor:
+        analyzer.tailor_batch(limit=args.limit)
     elif args.batch:
-        analyzer.analyze_batch(min_rule_score=args.min_score, limit=args.limit)
+        analyzer.analyze_batch(limit=args.limit)
     else:
         parser.print_help()
-        print("\nExamples:")
-        print("  python ai_analyzer.py --batch                    # Use default model from config")
-        print("  python ai_analyzer.py --batch --model kimi       # Force Kimi")
-        print("  python ai_analyzer.py --batch --model opus       # Force Claude Opus")
-        print("  python ai_analyzer.py --job abc123 --model kimi")
 
 
 if __name__ == "__main__":
