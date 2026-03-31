@@ -174,10 +174,7 @@ job-hunter/
 │   ├── job_parser.py               # JD 解析器
 │   ├── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
 │   ├── notify.py                   # Telegram 通知 (CI/CD)
-│   ├── notify_discord.py           # Discord 通知
-│   ├── svg_auto_optimizer.py       # SVG 简历自动优化 (Vision API 迭代)
-│   ├── generate_svg_preview.py     # SVG → PNG 预览
-│   └── svg_to_pdf.py              # SVG → PDF 转换
+│   └── notify_discord.py           # Discord 通知
 │
 ├── src/                        # 可复用模块
 │   ├── __init__.py
@@ -225,7 +222,8 @@ job-hunter/
 │
 ├── .github/
 │   └── workflows/
-│       └── job-pipeline-optimized.yml  # CI/CD 自动化流水线
+│       ├── job-pipeline-optimized.yml  # CI/CD 自动化流水线
+│       └── test.yml                    # pytest on push/PR
 │
 ├── output/                     # 生成的简历
 ├── ready_to_send/              # --prepare 生成的投递材料 + checklist

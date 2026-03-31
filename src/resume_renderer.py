@@ -129,18 +129,22 @@ class ResumeRenderer:
         if tier == 'USE_TEMPLATE' or (tier == 'ADAPT_TEMPLATE' and analysis.get('c3_decision') == 'FAIL'):
             return self._render_template_copy(job_id, analysis)
         if tier == 'ADAPT_TEMPLATE':
-            return self._render_adapt_template(job_id, analysis)
+            result = self._render_adapt_template(job_id, analysis)
+            if result is None:
+                print(f"[Renderer] ADAPT_TEMPLATE failed for {job_id}, falling back to USE_TEMPLATE")
+                return self._render_template_copy(job_id, analysis)
+            return result
 
         tailored_json = analysis.get('tailored_resume', '')
         if not tailored_json:
-            print(f"[Renderer] No tailored resume for job: {job_id}")
-            return None
+            print(f"[Renderer] No tailored resume for job: {job_id}, falling back to USE_TEMPLATE")
+            return self._render_template_copy(job_id, analysis)
 
         try:
             tailored = json.loads(tailored_json)
         except json.JSONDecodeError as e:
-            print(f"[Renderer] Invalid tailored_resume JSON: {e}")
-            return None
+            print(f"[Renderer] Invalid tailored_resume JSON: {e}, falling back to USE_TEMPLATE")
+            return self._render_template_copy(job_id, analysis)
 
         # Early exit for rejected resumes (empty dict from analyzer)
         if not tailored:
@@ -156,10 +160,10 @@ class ResumeRenderer:
         # v3.0: Run post-generation validation
         validation = self.validator.validate(tailored, job)
         if not validation.passed:
-            print(f"[Renderer] Validation FAILED for job: {job_id}")
+            print(f"[Renderer] Validation FAILED for job: {job_id}, falling back to USE_TEMPLATE")
             for err in validation.errors:
                 print(f"  [ERROR] {err}")
-            return None
+            return self._render_template_copy(job_id, analysis)
         if validation.warnings:
             print(f"[Renderer] Validation warnings for job: {job_id}")
             for warn in validation.warnings:

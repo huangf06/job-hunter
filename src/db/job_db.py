@@ -887,18 +887,6 @@ class JobDatabase:
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
-    # ==================== Score 操作 ====================
-
-    def get_score(self, job_id: str) -> Optional[Dict]:
-        """获取评分结果"""
-        with self._get_conn() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM ai_scores WHERE job_id = ? ORDER BY scored_at DESC LIMIT 1",
-                (job_id,)
-            )
-            row = cursor.fetchone()
-            return dict(row) if row else None
-
     # ==================== Resume 操作 ====================
 
     def save_resume(self, resume: Resume):

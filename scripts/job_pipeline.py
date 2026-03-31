@@ -163,6 +163,9 @@ class JobPipeline:
         print(f"AI high (>={threshold}):  {stats.get('ai_scored_high', 0)}")
         print(f"Resume generated: {stats.get('resume_generated', 0)}")
         print(f"Applied:          {stats.get('applied', 0)}")
+        print(f"Rejected:         {stats.get('rejected', 0)}")
+        print(f"Interview:        {stats.get('interview', 0)}")
+        print(f"Offer:            {stats.get('offer', 0)}")
 
         print("\n=== Filter Reject Reasons ===")
         for stat in self.db.get_filter_stats():
@@ -233,78 +236,20 @@ class JobPipeline:
         print(f"  Avg confidence (FAIL): {0 if fail_conf is None else fail_conf:.2f}")
 
     def show_ready(self):
-        """Show jobs ready to apply and generate application checklist"""
+        """Show jobs ready to apply (simplified -- use --prepare for full workflow)"""
         ready = self.db.get_ready_to_apply()
         if not ready:
             print("No jobs ready to apply")
             return
         print(f"\nReady to apply ({len(ready)}):")
-        for i, job in enumerate(ready, 1):
-            submit_dir = job.get('submit_dir', '')
-            submit_pdf = str(Path(submit_dir) / "Fei_Huang_Resume.pdf") if submit_dir else ''
-            dupes = self.db.find_applied_duplicates(job['id'])
-            repost_tag = f" [REPOST - applied {dupes[0]['applied_at'][:10]}]" if dupes else ""
-            print(f"{i:2}. [{job.get('score', 0):.1f}] {job['title'][:50]} @ {job['company'][:25]}{repost_tag}")
-            print(f"    URL:  {job.get('url', 'N/A')}")
-            if submit_pdf:
-                print(f"    Send: {submit_pdf}")
-            print(f"    Full: {job.get('resume_path', 'N/A')}")
-
-        # Generate HTML checklist file
-        checklist_path = PROJECT_ROOT / "ready_to_send" / "apply_checklist.html"
-        checklist_path.parent.mkdir(parents=True, exist_ok=True)
-        from datetime import datetime
-        from html import escape
-        now = datetime.now().strftime('%Y-%m-%d %H:%M')
-
-        rows_html = []
+        print(f"{'#':>3}  {'Score':>5}  {'Company':<25}  {'Title':<50}")
+        print(f"{'---':>3}  {'-----':>5}  {'-' * 25:<25}  {'-' * 50:<50}")
         for i, job in enumerate(ready, 1):
             score = job.get('score', 0)
-            rec = job.get('recommendation', '')
-            title = escape(job.get('title', ''))
-            company = escape(job.get('company', ''))
-            url = escape(job.get('url', ''))
-            pdf = job.get('resume_path', '')
-            submit_dir = job.get('submit_dir', '')
-            submit_pdf = str(Path(submit_dir) / "Fei_Huang_Resume.pdf") if submit_dir else ''
-            dupes = self.db.find_applied_duplicates(job['id'])
-            repost_badge = f' <span style="color:#d32f2f;font-weight:bold" title="Applied {escape(dupes[0]["applied_at"][:10])}">REPOST</span>' if dupes else ''
-
-            score_color = '#2e7d32' if score >= 7.0 else '#e65100' if score >= 6.0 else '#555'
-            rows_html.append(f"""<tr>
-  <td><input type="checkbox"></td>
-  <td><span style="color:{score_color};font-weight:bold">{score:.1f}</span> {escape(rec)}</td>
-  <td>{company}{repost_badge}</td>
-  <td>{title}</td>
-  <td><a href="{url}" target="_blank">Open</a></td>
-  <td>{f'<a href="file:///{submit_pdf}" target="_blank">Submit PDF</a>' if submit_pdf else ''}</td>
-  <td style="font-size:0.8em;color:#888">{escape(pdf)}</td>
-</tr>""")
-
-        html = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Application Checklist</title>
-<style>
-  body {{ font-family: -apple-system, 'Segoe UI', sans-serif; margin: 2em; background: #fafafa; }}
-  h1 {{ margin-bottom: 0.2em; }}
-  .meta {{ color: #666; margin-bottom: 1.5em; }}
-  table {{ border-collapse: collapse; width: 100%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-  th, td {{ padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }}
-  th {{ background: #f5f5f5; font-weight: 600; position: sticky; top: 0; }}
-  tr:hover {{ background: #f0f7ff; }}
-  input[type=checkbox] {{ transform: scale(1.3); cursor: pointer; }}
-  a {{ color: #1a73e8; text-decoration: none; }}
-  a:hover {{ text-decoration: underline; }}
-  tr:has(input:checked) {{ background: #e8f5e9; opacity: 0.6; }}
-</style></head><body>
-<h1>Application Checklist</h1>
-<p class="meta">Generated: {now} | Total: {len(ready)} jobs</p>
-<table>
-<tr><th></th><th>Score</th><th>Company</th><th>Title</th><th>Job Link</th><th>Resume</th><th>Tracking Path</th></tr>
-{"".join(rows_html)}
-</table></body></html>"""
-
-        checklist_path.write_text(html, encoding="utf-8")
-        print(f"\nChecklist saved: {checklist_path}")
+            company = job.get('company', '')[:25]
+            title = job.get('title', '')[:50]
+            print(f"{i:3}  {score:5.1f}  {company:<25}  {title:<50}")
+        print(f"\nTip: Use --prepare for the full workflow with checklist and resume generation.")
 
     # ==================== AI Analysis & Resume Generation ====================
 
@@ -361,9 +306,8 @@ class JobPipeline:
         generator = CoverLetterGenerator()
         generated = generator.generate_batch(min_ai_score=min_ai_score, limit=limit)
 
-        if generated > 0:
-            renderer = CoverLetterRenderer()
-            renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
+        renderer = CoverLetterRenderer()
+        renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
 
     def cmd_prepare(self, min_ai_score: float = None, limit: int = None):
         """One-command: generate all materials + launch checklist server."""

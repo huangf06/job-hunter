@@ -204,7 +204,7 @@ def test_render_adapt_template_unknown_template_returns_none():
     assert renderer.db.saved_resume is None
 
 
-def test_render_adapt_template_invalid_json_returns_none():
+def test_render_adapt_template_invalid_json_falls_back_to_template():
     tmp_dir = _local_tmp_dir("renderer_bad_json_adapt")
     renderer = _make_renderer(
         tmp_dir,
@@ -216,11 +216,14 @@ def test_render_adapt_template_invalid_json_returns_none():
         },
     )
     result = renderer.render_resume("job-1")
-    assert result is None
-    assert renderer.db.saved_resume is None
+    assert result is not None, "Should fall back to USE_TEMPLATE"
+    copied = Path(result["pdf_path"]).read_bytes()
+    assert copied == b"template-pdf-bytes"
+    assert renderer.db.saved_resume is not None
+    assert renderer.db.saved_resume.template_version == "template_v1"
 
 
-def test_render_adapt_template_missing_slot_schema_returns_none():
+def test_render_adapt_template_missing_slot_schema_falls_back_to_template():
     tmp_dir = _local_tmp_dir("renderer_no_schema_adapt")
     renderer = _make_renderer(
         tmp_dir,
@@ -235,7 +238,9 @@ def test_render_adapt_template_missing_slot_schema_returns_none():
     )
     del renderer.registry["templates"]["DE"]["slot_schema"]
     result = renderer.render_resume("job-1")
-    assert result is None
+    assert result is not None, "Should fall back to USE_TEMPLATE"
+    copied = Path(result["pdf_path"]).read_bytes()
+    assert copied == b"template-pdf-bytes"
 
 
 def test_render_resume_c3_fail_routes_to_template_copy():
@@ -283,8 +288,8 @@ def test_render_resume_legacy_null_tier_uses_full_customize():
     assert Path(result["html_path"]).exists()
 
 
-def test_render_resume_validator_still_runs():
-    """ResumeValidator.validate() must still execute in the renderer."""
+def test_render_resume_validator_failure_falls_back_to_template():
+    """ResumeValidator.validate() failure should fall back to USE_TEMPLATE."""
     tmp_dir = _local_tmp_dir("renderer_validator_runs")
 
     class _FailingValidator:
@@ -314,7 +319,9 @@ def test_render_resume_validator_still_runs():
     )
     renderer.validator = _FailingValidator()
     result = renderer.render_resume("job-1")
-    assert result is None, "Validator failure should prevent rendering"
+    assert result is not None, "Validator failure should fall back to USE_TEMPLATE"
+    copied = Path(result["pdf_path"]).read_bytes()
+    assert copied == b"template-pdf-bytes"
 
 
 def test_post_render_qa_blocking_prevents_save():

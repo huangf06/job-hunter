@@ -1,8 +1,5 @@
 # Dependencies — pinned for reproducible CI builds
 
-# Daemon scheduler
-apscheduler>=3.10.0
-
 # Config parsing
 pyyaml==6.0.3
 
@@ -27,5 +24,3 @@ libsql==0.1.11
 # Gmail IMAP client
 imapclient==3.1.0
 
-# Todoist API
-todoist-api-python

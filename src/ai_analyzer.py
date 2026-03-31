@@ -692,13 +692,8 @@ class AIAnalyzer:
 
         text = self._call_claude(prompt)
         if not text:
-            return AnalysisResult(
-                job_id=job_id, ai_score=0.0,
-                recommendation='REJECTED',
-                reasoning='Claude Code CLI returned empty response',
-                tailored_resume='{}',
-                model='claude_code', tokens_used=0,
-            )
+            print(f"  [WARN] _call_claude returned None for {job_id}, skipping (will retry later)")
+            return None
 
         parsed = self._parse_response(text)
         if not parsed:
@@ -902,14 +897,6 @@ class AIAnalyzer:
                     result = self.evaluate_job(job)
                     if result:
                         self.db.save_analysis(result)
-                        if result.resume_tier == 'USE_TEMPLATE' and result.template_id_final:
-                            template_pdf = self.registry['templates'][result.template_id_final]['pdf']
-                            self.db.save_resume(Resume(
-                                job_id=job['id'],
-                                role_type=result.template_id_final,
-                                template_version="template_v1",
-                                pdf_path=template_pdf,
-                            ))
                         count += 1
                         print(f"-> {result.recommendation} ({result.ai_score:.1f})")
                     else:

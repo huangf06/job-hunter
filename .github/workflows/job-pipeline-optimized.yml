@@ -33,12 +33,11 @@ on:
         required: false
         default: false
         type: boolean
-      # TEMP DISABLED: restore after pipeline fix
-      # ai_limit:
-      #   description: 'Max jobs for AI analysis (empty = auto)'
-      #   required: false
-      #   default: ''
-      #   type: string
+      ai_limit:
+        description: 'Max jobs for AI analysis (empty = auto)'
+        required: false
+        default: ''
+        type: string
 env:
   PYTHONUNBUFFERED: '1'
   TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
@@ -134,7 +133,8 @@ jobs:
         continue-on-error: true
         run: |
           echo "=== Running AI evaluation (C1) ==="
-          python scripts/job_pipeline.py --ai-evaluate --limit 30
+          AI_LIMIT="${{ github.event.inputs.ai_limit }}"
+          python scripts/job_pipeline.py --ai-evaluate --limit ${AI_LIMIT:-30}
 
       # ==========================================
       # Step 4: AI Tailor (C2: resume generation)
