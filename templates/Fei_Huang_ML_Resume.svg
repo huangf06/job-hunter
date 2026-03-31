@@ -49,7 +49,7 @@
   <text class="section" x="42" y="84.5" id="s1">BIO</text>
   <text class="bio" x="42" y="99.5" id="b1"><tspan style="font-weight:bold">Machine Learning Engineer</tspan> with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring</text>
   <text class="bio" x="42" y="111.5" id="b2">systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and</text>
-  <text class="bio" x="42" y="123.5" id="b3">end-to-end ML pipelines — from raw data through production deployment.</text>
+  <text class="bio" x="42" y="123.5" id="b3">end-to-end ML pipelines, from raw data through production deployment.</text>
 
   <!-- ==================== LEFT: EXPERIENCE ==================== -->
   <text class="section" x="42" y="156.5" id="s2">EXPERIENCE</text>
@@ -76,8 +76,8 @@
   <text class="date" x="42" y="392.5" id="e17">JULY 2015 - JUNE 2017</text>
   <text class="body" x="42" y="405.5" id="e18">Developed and deployed a signal-driven intraday</text>
   <text class="body" x="42" y="418.5" id="e19">predictive model from research through live production</text>
-  <text class="body" x="42" y="431.5" id="e20">on CSI index futures — <tspan style="font-weight:bold">14.6% annualized return</tspan></text>
-  <text class="body" x="42" y="444.5" id="e21">with real capital.</text>
+  <text class="body" x="42" y="431.5" id="e20">on CSI index futures, delivering <tspan style="font-weight:bold">14.6% annualized</tspan></text>
+  <text class="body" x="42" y="444.5" id="e21"><tspan style="font-weight:bold">return</tspan> with real capital.</text>
   <text class="body" x="42" y="460.5" id="e22">Built systematic feature validation pipeline evaluating</text>
   <text class="body" x="42" y="473.5" id="e23">4 factor families across <tspan style="font-weight:bold">3,000+ securities</tspan> using</text>
   <text class="body" x="42" y="486.5" id="e24">cross-sectional regression; validated features</text>

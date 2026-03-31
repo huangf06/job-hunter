@@ -125,8 +125,8 @@ templates:
     slot_schema:
       bio:
         slot_id: "bio"
-        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment."
-        senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in production. First data hire at GLP Technology, built the credit risk prediction system and grew the data team. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment."
+        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines, from raw data through production deployment."
+        senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in production. First data hire at GLP Technology, built the credit risk prediction system and grew the data team. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines, from raw data through production deployment."
       sections:
         - section_id: "experience"
           entries:
@@ -145,7 +145,7 @@ templates:
               date: "JULY 2015 - JUNE 2017"
               bullets:
                 - slot_id: "bq_1"
-                  default: "Developed and deployed a signal-driven intraday predictive model from research through live production on CSI index futures — 14.6% annualized return with real capital."
+                  default: "Developed and deployed a signal-driven intraday predictive model from research through live production on CSI index futures, delivering 14.6% annualized return with real capital."
                 - slot_id: "bq_2"
                   default: "Built systematic feature validation pipeline evaluating 4 factor families across 3,000+ securities using cross-sectional regression; validated features integrated into the fund's live portfolio construction."
             - entry_id: "ele"
