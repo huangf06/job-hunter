@@ -89,7 +89,7 @@ templates:
 
   ML:
     enabled: true
-    svg: "templates/Fei_Huang_ML_Resume_v9.svg"
+    svg: "templates/Fei_Huang_ML_Resume.svg"
     pdf: "templates/pdf/Fei_Huang_ML.pdf"
     target_roles:
       - "machine learning"
@@ -125,23 +125,23 @@ templates:
     slot_schema:
       bio:
         slot_id: "bio"
-        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment. Applied ML: learning-to-rank (5M records), Deep RL uncertainty quantification (150+ runs), and NLP with Hugging Face Transformers."
-        senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in production. First technical hire at GLP Technology, built the credit risk prediction system and grew the data team. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment."
+        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment. Applied ML: learning-to-rank, Deep RL uncertainty quantification, and NLP (Hugging Face Transformers)."
+        senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in production. First data hire at GLP Technology, built the credit risk prediction system and grew the data team. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment."
       sections:
         - section_id: "experience"
           entries:
             - entry_id: "glp"
               company: "GLP Technology (Fintech)"
-              title: "Data Scientist & Team Lead"
+              title: "Data Scientist"
               date: "JULY 2017 - AUGUST 2019"
               bullets:
                 - slot_id: "glp_1"
-                  default: "Joined as first technical hire and built the end-to-end credit risk prediction system: engineered 19 features from raw bureau and transactional data, developed a first-payment default scorecard with 36-segment borrower classification, and deployed the model into production underwriting serving real lending decisions."
+                  default: "Joined as first data hire and built the end-to-end credit risk prediction system: engineered 19 features from raw bureau and transactional data, developed a first-payment default scorecard with 36-segment borrower classification, and deployed the model into production underwriting serving real lending decisions."
                 - slot_id: "glp_2"
                   default: "Built the feature pipeline powering all risk models: automated ingestion of 30+ production tables and credit bureau data, transforming raw nested JSON into structured analytical features for model training, scoring, and post-loan monitoring."
             - entry_id: "bq"
               company: "BQ Investment (Hedge Fund)"
-              title: "Quantitative Researcher"
+              title: "Quant Researcher"
               date: "JULY 2015 - JUNE 2017"
               bullets:
                 - slot_id: "bq_1"
@@ -163,9 +163,9 @@ templates:
               date: "FEBRUARY 2025 - AUGUST 2025"
               bullets:
                 - slot_id: "uq_1"
-                  default: "Developed benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN with 31% lower CRPS (p < 0.001) vs. ensemble and dropout baselines."
+                  default: "Built reproducible benchmark evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM) with automated 6-stage calibration pipeline."
                 - slot_id: "uq_2"
-                  default: "Designed 6-stage reproducible evaluation pipeline with automated calibration benchmarking."
+                  default: "Discovered a noise paradox: moderate observation noise unexpectedly improved ensemble uncertainty estimates, challenging standard assumptions in UQ method evaluation."
             - entry_id: "expedia"
               company: "Project"
               title: "Expedia Hotel Recommendation"
