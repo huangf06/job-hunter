@@ -140,6 +140,11 @@ class CoverLetter:
     tokens_used: int = 0
 
 
+class _RowsWithMeta(list):
+    """A list subclass that carries affected_row_count metadata."""
+    affected_row_count: int = 0
+
+
 class TursoHTTPClient:
     """Turso HTTP API v2 client using httpx.
 
@@ -158,18 +163,34 @@ class TursoHTTPClient:
         self._client = httpx.Client(timeout=30.0)
 
     def execute(self, sql: str, params: tuple = ()) -> list:
-        """Execute a single SQL statement, return list of dicts."""
-        results = self.execute_batch([(sql, params)])
-        return results[0] if results else []
+        """Execute a single SQL statement, return list of dicts.
+
+        Returns a list of dicts. The list has an extra attribute
+        ``affected_row_count`` (int) extracted from the Turso response.
+        """
+        results, meta = self.execute_batch_with_meta([(sql, params)])
+        out = results[0] if results else []
+        # Attach affected_row_count so _TursoCursor can expose rowcount
+        if not isinstance(out, _RowsWithMeta):
+            out = _RowsWithMeta(out)
+        out.affected_row_count = meta[0] if meta else 0
+        return out
 
     def execute_batch(self, statements: list) -> list:
         """Execute multiple statements in one HTTP call.
 
-        Args:
-            statements: list of (sql, params) tuples
-
         Returns:
             list of list-of-dicts, one per statement
+        """
+        results, _ = self.execute_batch_with_meta(statements)
+        return results
+
+    def execute_batch_with_meta(self, statements: list):
+        """Execute multiple statements, returning rows and affected_row_counts.
+
+        Returns:
+            (results, meta) where results is list of list-of-dicts
+            and meta is list of affected_row_count ints.
         """
         requests = []
         for sql, params in statements:
@@ -186,6 +207,7 @@ class TursoHTTPClient:
         data = resp.json()
 
         results = []
+        meta = []
         for item in data.get('results', []):
             if item.get('type') == 'ok':
                 response = item.get('response', {})
@@ -196,10 +218,11 @@ class TursoHTTPClient:
                     values = [self._extract_value(cell) for cell in row]
                     rows.append(dict(zip(cols, values)))
                 results.append(rows)
+                meta.append(result.get('affected_row_count', 0))
             elif item.get('type') == 'error':
                 error = item.get('error', {})
                 raise RuntimeError(f"Turso HTTP error: {error.get('message', 'unknown')}")
-        return results
+        return results, meta
 
     @staticmethod
     def _convert_params(params):
@@ -268,6 +291,8 @@ class _TursoCursor:
             self.description = [(k,) for k in rows[0].keys()]
         else:
             self.description = None
+        # Expose affected_row_count from Turso response as rowcount
+        self.rowcount = getattr(rows, 'affected_row_count', 0)
 
     def fetchone(self):
         try:
