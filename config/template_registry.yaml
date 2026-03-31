@@ -89,7 +89,7 @@ templates:
 
   ML:
     enabled: true
-    svg: "templates/Fei_Huang_ML_Resume.svg"
+    svg: "templates/Fei_Huang_ML_Resume_v9.svg"
     pdf: "templates/pdf/Fei_Huang_ML.pdf"
     target_roles:
       - "machine learning"
@@ -125,8 +125,8 @@ templates:
     slot_schema:
       bio:
         slot_id: "bio"
-        default: "ML Engineer with 6+ years building and deploying ML-driven decision systems across fintech, trading, and e-commerce. Built credit risk models, automated underwriting logic, and data pipelines supporting portfolio monitoring in production. M.Sc. in AI (VU Amsterdam) with thesis on uncertainty quantification in Deep RL; combines applied modeling, evaluation rigor, and strong structured-data ML foundations."
-        senior: "Senior ML Engineer with 6+ years building ML-driven decision systems in production. Led data science and engineering at GLP Technology as first technical hire, owning credit scoring, automated underwriting, and portfolio monitoring for live lending operations. M.Sc. in AI (VU Amsterdam) with thesis on uncertainty quantification in Deep RL; combines leadership, applied modeling, and strong structured-data ML foundations."
+        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment. Applied ML: learning-to-rank (5M records), Deep RL uncertainty quantification (150+ runs), and NLP with Hugging Face Transformers."
+        senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in production. First technical hire at GLP Technology, built the credit risk prediction system and grew the data team. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment."
       sections:
         - section_id: "experience"
           entries:
@@ -136,31 +136,25 @@ templates:
               date: "JULY 2017 - AUGUST 2019"
               bullets:
                 - slot_id: "glp_1"
-                  default: "First data hire at a consumer lending startup; built the production lending decision stack from data ingestion and feature preparation through risk decisioning and portfolio monitoring for live lending operations."
+                  default: "Joined as first technical hire and built the end-to-end credit risk prediction system: engineered 19 features from raw bureau and transactional data, developed a first-payment default scorecard with 36-segment borrower classification, and deployed the model into production underwriting serving real lending decisions."
                 - slot_id: "glp_2"
-                  default: "Owned credit scoring for automated underwriting: designed 29 data-driven rejection rules, 36 borrower segments, and a 19-feature scorecard predicting first-payment default, directly powering approve/reject lending decisions for loan applications."
-                - slot_id: "glp_3"
-                  default: "Built the data foundation for risk modeling and monitoring: daily ETL of 30+ production tables into AWS Redshift, plus a credit bureau parser normalizing nested JSON into 5 structured tables feeding underwriting features and post-loan performance tracking."
+                  default: "Built the feature pipeline powering all risk models: automated ingestion of 30+ production tables and credit bureau data, transforming raw nested JSON into structured analytical features for model training, scoring, and post-loan monitoring."
             - entry_id: "bq"
               company: "BQ Investment (Hedge Fund)"
               title: "Quantitative Researcher"
               date: "JULY 2015 - JUNE 2017"
               bullets:
                 - slot_id: "bq_1"
-                  default: "Developed and deployed an intraday CSI index futures strategy from research and backtesting through live execution, delivering 14.6% annualized return with real capital."
+                  default: "Developed and deployed a signal-driven intraday predictive model from research through live production on CSI index futures — 14.6% annualized return with real capital."
                 - slot_id: "bq_2"
-                  default: "Built a factor evaluation pipeline across 4 signal families (value, momentum, flow, event) for 3,000+ securities; signals that passed validation were incorporated into the fund's live portfolio decisions."
-                - slot_id: "bq_3"
-                  default: "Engineered market data pipelines for trading and research: 3,000+ securities across 5+ years of tick-level futures data from multiple vendor feeds, supporting repeatable research, backtesting, and live strategy execution."
+                  default: "Built systematic feature validation pipeline evaluating 4 factor families across 3,000+ securities using cross-sectional regression; validated features integrated into the fund's live portfolio construction."
             - entry_id: "ele"
               company: "Ele.me (Alibaba Group)"
               title: "Data Analyst"
               date: "SEPTEMBER 2013 - JULY 2015"
               bullets:
                 - slot_id: "ele_1"
-                  default: "Built rule-based fraud detection that surfaced 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern-based methods (device clustering, frequency analysis, repeat-order detection) that supported fraud-loss prevention during a hyper-growth phase."
-                - slot_id: "ele_2"
-                  default: "Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, cutting scan volume 5x (500GB to 100GB) and improving access to data across 30+ warehouse tables used by fraud, operations, and marketing teams."
+                  default: "Built anomaly detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using pattern-matching algorithms (same-phone, high-frequency, repeat-order); deployed during Ele.me's hyper-growth phase pre-Alibaba acquisition."
         - section_id: "projects"
           entries:
             - entry_id: "uq_benchmark"
@@ -169,24 +163,33 @@ templates:
               date: "FEBRUARY 2025 - AUGUST 2025"
               bullets:
                 - slot_id: "uq_1"
-                  default: "Developed benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN superiority with 31% lower CRPS (p < 0.001) over ensemble and dropout baselines."
+                  default: "Developed benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN with 31% lower CRPS (p < 0.001) vs. ensemble and dropout baselines."
+                - slot_id: "uq_2"
+                  default: "Designed 6-stage reproducible evaluation pipeline with automated calibration benchmarking."
             - entry_id: "expedia"
               company: "Project"
               title: "Expedia Hotel Recommendation"
               date: "APRIL 2024 - MAY 2024"
               bullets:
                 - slot_id: "expedia_1"
-                  default: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered temporal, behavioral, and aggregation features (price normalization, competitor rates, estimated position); achieved NDCG@5 = 0.392 on Kaggle evaluation."
+                  default: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered 50+ temporal, behavioral, and price-normalization features; achieved NDCG@5 = 0.392 on held-out Kaggle evaluation."
+            - entry_id: "imu_sensor"
+              company: "Course Project"
+              title: "IMU Sensor Classification (ML4QS)"
+              date: "JUNE 2024"
+              bullets:
+                - slot_id: "imu_1"
+                  default: "Built end-to-end ML pipeline for IMU sensor classification (4 subjects, 6 activities): Kalman Filter for noise reduction on 12 sensor channels, 576 FFT-based features (time + frequency domain), and LightGBM + bidirectional LSTM achieving 94-99% sex classification accuracy."
         - section_id: "skills"
           categories:
+            - cat_id: "ml_modeling"
+              default: "PyTorch, Hugging Face Transformers, scikit-learn, LightGBM, XGBoost, Learning-to-Rank, Deep RL, Statistical Testing"
             - cat_id: "programming"
-              default: "Python, SQL"
-            - cat_id: "machine_learning"
-              default: "PyTorch, scikit-learn, LightGBM, XGBoost, Learning to Rank, Statistical Testing"
-            - cat_id: "data_systems"
-              default: "Redshift, Airflow, Hadoop, Hive, ETL/ELT, Data Quality"
-            - cat_id: "infrastructure"
-              default: "AWS, Docker, Git"
+              default: "Python, SQL, NumPy, pandas, Bash"
+            - cat_id: "data_infrastructure"
+              default: "PySpark, Airflow, FastAPI, AWS (Redshift, S3, EC2), Delta Lake, Docker, Git"
+            - cat_id: "domains"
+              default: "Feature Engineering, NLP, Time-Series, Anomaly Detection, Uncertainty Quantification"
 
   Backend:
     enabled: true

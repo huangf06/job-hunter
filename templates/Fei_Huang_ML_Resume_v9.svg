@@ -106,64 +106,61 @@
   <text class="body" x="42" y="762" id="sk8"><tspan class="body-bold">Domains:</tspan> Feature Engineering, NLP, Time-Series,</text>
   <text class="body" x="42" y="775" id="sk9">Anomaly Detection, Uncertainty Quantification</text>
 
-  <!-- ==================== LEFT: LANGUAGES ==================== -->
-  <text class="section" x="42" y="797" id="s4">LANGUAGES</text>
-  <text class="body" x="42" y="810" id="l1"><tspan x="42">English - Fluent</tspan><tspan x="130">|</tspan><tspan x="142">Mandarin - Native</tspan></text>
-
   <!-- ==================== RIGHT: EDUCATION ==================== -->
   <text class="section" x="326" y="156.5" id="s5">EDUCATION</text>
   <text x="326" y="171.5" id="ed1"><tspan class="org">Vrije Universiteit Amsterdam</tspan></text>
   <text x="326" y="185" id="ed2"><tspan class="role">M.Sc. in Artificial Intelligence (GPA: 8.2/10)</tspan></text>
   <text class="date" x="326" y="198.5" id="ed3">SEPTEMBER 2023 - AUGUST 2025</text>
-  <text class="body" x="326" y="214" id="ed4">Thesis: Uncertainty Quantification in Deep RL;</text>
-  <text class="body" x="326" y="227" id="ed5">built reproducible benchmark across 3 methods,</text>
-  <text class="body" x="326" y="240" id="ed6">5 environments, and 150 training runs.</text>
-  <text class="body" x="326" y="253" id="ed7">Courses: Deep Learning (9.5), NLP (9.0),</text>
-  <text class="body" x="326" y="266" id="ed8">ML4QS (9.5), Data Mining (9.0).</text>
+  <text class="body" x="326" y="214" id="ed7">Courses: Deep Learning (9.5), NLP (9.0),</text>
+  <text class="body" x="326" y="227" id="ed8">ML4QS (9.5), Data Mining (9.0).</text>
 
-  <text x="326" y="284" id="ed9"><tspan class="org">Tsinghua University (#1 in China)</tspan></text>
-  <text x="326" y="299" id="ed10"><tspan class="role">B.Eng. in Industrial Engineering</tspan></text>
-  <text class="date" x="326" y="312.5" id="ed11">SEPTEMBER 2006 - JULY 2010</text>
+  <text x="326" y="245" id="ed9"><tspan class="org">Tsinghua University (#1 in China)</tspan></text>
+  <text x="326" y="260" id="ed10"><tspan class="role">B.Eng. in Industrial Engineering</tspan></text>
+  <text class="date" x="326" y="273.5" id="ed11">SEPTEMBER 2006 - JULY 2010</text>
 
   <!-- ==================== RIGHT: CERTIFICATIONS ==================== -->
-  <text class="section" x="326" y="337" id="s6">CERTIFICATIONS</text>
-  <text class="body" x="326" y="352" id="c1"><tspan class="body-bold">Databricks Certified Data Engineer Professional</tspan></text>
-  <text class="date" x="326" y="365" id="c2">FEBRUARY 2026</text>
+  <text class="section" x="326" y="298" id="s6">CERTIFICATIONS</text>
+  <text class="body" x="326" y="313" id="c1"><tspan class="body-bold">Databricks Certified Data Engineer Professional</tspan></text>
+  <text class="date" x="326" y="326" id="c2">FEBRUARY 2026</text>
 
   <!-- ==================== RIGHT: PROJECTS ==================== -->
-  <text class="section" x="326" y="389" id="s7">PROJECTS</text>
+  <text class="section" x="326" y="350" id="s7">PROJECTS</text>
 
   <!-- Thesis UQ Benchmark -->
-  <text x="326" y="404" id="p1"><tspan class="org">Uncertainty Quantification Benchmark</tspan></text>
-  <text class="date" x="326" y="416.5" id="p2">FEBRUARY 2025 - AUGUST 2025</text>
-  <text class="body" x="326" y="431" id="p3">Developed benchmarking framework evaluating</text>
-  <text class="body" x="326" y="444" id="p4">5 uncertainty quantification methods for Deep RL</text>
-  <text class="body" x="326" y="457" id="p5">across <tspan style="font-weight:bold">150+</tspan> training runs on HPC (SLURM);</text>
-  <text class="body" x="326" y="470" id="p6">demonstrated QR-DQN with <tspan style="font-weight:bold">31% lower CRPS</tspan></text>
-  <text class="body" x="326" y="483" id="p7">(p &lt; 0.001) vs. ensemble and dropout baselines.</text>
-  <text class="body" x="326" y="496" id="p8">Designed 6-stage reproducible evaluation pipeline</text>
-  <text class="body" x="326" y="509" id="p9">with automated calibration benchmarking.</text>
-  <text class="body" x="326" y="522" id="p10"><tspan class="body-bold">Skills:</tspan> PyTorch, Deep RL, HPC, Statistical Testing</text>
+  <text x="326" y="365" id="p1"><tspan class="org">Uncertainty Quantification Benchmark</tspan></text>
+  <text class="date" x="326" y="377.5" id="p2">FEBRUARY 2025 - AUGUST 2025</text>
+  <text class="body" x="326" y="392" id="p3">Developed benchmarking framework evaluating</text>
+  <text class="body" x="326" y="405" id="p4">5 uncertainty quantification methods for Deep RL</text>
+  <text class="body" x="326" y="418" id="p5">across <tspan style="font-weight:bold">150+</tspan> training runs on HPC (SLURM);</text>
+  <text class="body" x="326" y="431" id="p6">demonstrated QR-DQN with <tspan style="font-weight:bold">31% lower CRPS</tspan></text>
+  <text class="body" x="326" y="444" id="p7">(p &lt; 0.001) vs. ensemble and dropout baselines.</text>
+  <text class="body" x="326" y="460" id="p8">Designed 6-stage reproducible evaluation pipeline</text>
+  <text class="body" x="326" y="473" id="p9">with automated calibration benchmarking.</text>
+  <text class="body" x="326" y="486" id="p10"><tspan class="body-bold">Skills:</tspan> PyTorch, Deep RL, HPC, Statistical Testing</text>
 
   <!-- Expedia Hotel Recommendation -->
-  <text x="326" y="546" id="p11"><tspan class="org">Expedia Hotel Recommendation</tspan></text>
-  <text class="date" x="326" y="558.5" id="p12">APRIL 2024 - MAY 2024</text>
-  <text class="body" x="326" y="573" id="p13">Built hotel recommendation system using</text>
-  <text class="body" x="326" y="586" id="p14"><tspan style="font-weight:bold">LightGBM LambdaRank</tspan> on 4.96M Expedia search</text>
-  <text class="body" x="326" y="599" id="p15">records; engineered 50+ temporal, behavioral, and</text>
-  <text class="body" x="326" y="612" id="p16">price-normalization features; achieved</text>
-  <text class="body" x="326" y="625" id="p17"><tspan style="font-weight:bold">NDCG@5 = 0.392</tspan> on held-out Kaggle evaluation.</text>
-  <text class="body" x="326" y="638" id="p18"><tspan class="body-bold">Skills:</tspan> LightGBM, Learning-to-Rank, Feature Eng.</text>
+  <text x="326" y="510" id="p11"><tspan class="org">Expedia Hotel Recommendation</tspan></text>
+  <text class="date" x="326" y="522.5" id="p12">APRIL 2024 - MAY 2024</text>
+  <text class="body" x="326" y="537" id="p13">Built hotel recommendation system using</text>
+  <text class="body" x="326" y="550" id="p14"><tspan style="font-weight:bold">LightGBM LambdaRank</tspan> on 4.96M Expedia search</text>
+  <text class="body" x="326" y="563" id="p15">records; engineered 50+ temporal, behavioral, and</text>
+  <text class="body" x="326" y="576" id="p16">price-normalization features; achieved</text>
+  <text class="body" x="326" y="589" id="p17"><tspan style="font-weight:bold">NDCG@5 = 0.392</tspan> on held-out Kaggle evaluation.</text>
+  <text class="body" x="326" y="602" id="p18"><tspan class="body-bold">Skills:</tspan> LightGBM, Learning-to-Rank, Feature Eng.</text>
 
   <!-- ML4QS Sensor Classification -->
-  <text x="326" y="662" id="p19"><tspan class="org">IMU Sensor Classification (ML4QS)</tspan></text>
-  <text class="date" x="326" y="674.5" id="p20">JUNE 2024</text>
-  <text class="body" x="326" y="689" id="p21">Built end-to-end ML pipeline for IMU sensor</text>
-  <text class="body" x="326" y="702" id="p22">classification (4 subjects, 6 activities): Kalman</text>
-  <text class="body" x="326" y="715" id="p23">Filter for noise reduction on 12 sensor channels,</text>
-  <text class="body" x="326" y="728" id="p24"><tspan style="font-weight:bold">576 FFT-based features</tspan> (time + frequency domain),</text>
-  <text class="body" x="326" y="741" id="p25">and LightGBM + bidirectional LSTM achieving</text>
-  <text class="body" x="326" y="754" id="p26"><tspan style="font-weight:bold">94-99% sex classification</tspan> accuracy.</text>
-  <text class="body" x="326" y="767" id="p27"><tspan class="body-bold">Skills:</tspan> LightGBM, LSTM, Feature Eng., Time-Series</text>
+  <text x="326" y="626" id="p19"><tspan class="org">IMU Sensor Classification (ML4QS)</tspan></text>
+  <text class="date" x="326" y="638.5" id="p20">JUNE 2024</text>
+  <text class="body" x="326" y="653" id="p21">Built end-to-end ML pipeline for IMU sensor</text>
+  <text class="body" x="326" y="666" id="p22">classification (4 subjects, 6 activities): Kalman</text>
+  <text class="body" x="326" y="679" id="p23">Filter for noise reduction on 12 sensor channels,</text>
+  <text class="body" x="326" y="692" id="p24"><tspan style="font-weight:bold">576 FFT-based features</tspan> (time + frequency domain),</text>
+  <text class="body" x="326" y="705" id="p25">and LightGBM + bidirectional LSTM achieving</text>
+  <text class="body" x="326" y="718" id="p26"><tspan style="font-weight:bold">94-99% sex classification</tspan> accuracy.</text>
+  <text class="body" x="326" y="731" id="p27"><tspan class="body-bold">Skills:</tspan> LightGBM, LSTM, Feature Eng., Time-Series</text>
+
+  <!-- ==================== RIGHT: LANGUAGES ==================== -->
+  <text class="section" x="326" y="753" id="s8">LANGUAGES</text>
+  <text class="body" x="326" y="766" id="l1"><tspan x="326">English - Fluent</tspan><tspan x="414">|</tspan><tspan x="426">Mandarin - Native</tspan></text>
 
 </svg>
