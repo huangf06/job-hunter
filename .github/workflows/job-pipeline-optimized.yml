@@ -1,15 +1,13 @@
-name: Job Pipeline v4.0 - Single Runner
+name: Job Pipeline v5.0 - Single Runner
 # =====================================
-# 合并为单 job：减少 Turso sync 流量 ~85%
+# 单 job 流水线：scrape → filter → C1 evaluate → C2 tailor → D render → notify
 # 所有 step 共享同一 runner，embedded replica 只下载一次
 
 on:
   schedule:
-    # 每天2次：早上 + 下午 (非整点，避开 GitHub Actions 高峰)
-    # 荷兰时间: 09:37 / 15:37 (CET) 或 10:37 / 16:37 (CEST)
-    # 减少频率以降低 LinkedIn 反爬风险，同时覆盖主要发布时段
+    # 工作日 2 次 (NL 时间 ~10:37 / ~16:37 CEST)
     - cron: '37 8,14 * * 1-5'
-    # 周末中午一次，捕获周五晚/周六早发布的职位
+    # 周末中午 1 次
     - cron: '23 11 * * 0,6'
 
   workflow_dispatch:
@@ -34,16 +32,17 @@ on:
         default: false
         type: boolean
       ai_limit:
-        description: 'Max jobs for AI analysis (empty = auto)'
+        description: 'Max jobs for AI analysis (empty = 30)'
         required: false
         default: ''
         type: string
+
 env:
   PYTHONUNBUFFERED: '1'
   TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
   TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
   CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-  # DB_TRANSPORT: http (auto-detected from TURSO_DATABASE_URL)
+
 jobs:
   pipeline:
     runs-on: ubuntu-latest
@@ -54,7 +53,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Cache Playwright browsers
@@ -79,14 +78,14 @@ jobs:
           printf '%s' "$COOKIES_JSON" > config/linkedin_cookies.json
 
       # ==========================================
-      # Step 1: 爬取 (增量更新)
+      # Step 1: Scrape (LinkedIn + Greenhouse)
       # ==========================================
       - name: Scrape jobs
         id: scrape
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         run: |
           PROFILE="${{ github.event.inputs.profile || 'all' }}"
-          echo "=== Starting unified scrape (LinkedIn + Greenhouse): $PROFILE ==="
+          echo "=== Scraping ($PROFILE) ==="
           START_TIME=$(date +%s)
 
           if [ "$PROFILE" = "all" ]; then
@@ -101,9 +100,9 @@ jobs:
           NEW_JOBS=$(python -c "import json; m=json.load(open('data/scrape_metrics.json')); print(m.get('new_jobs', 0))")
           echo "new_jobs_count=$NEW_JOBS" >> $GITHUB_OUTPUT
           echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
-          echo "✅ Scraped in ${DURATION}s, new jobs: $NEW_JOBS"
+          echo "Scraped in ${DURATION}s, new jobs: $NEW_JOBS"
 
-      - name: Upload scrape stats
+      - name: Upload scrape metrics
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -113,51 +112,49 @@ jobs:
           if-no-files-found: ignore
 
       # ==========================================
-      # Step 1b: 多平台爬取 (ATS API + IamExpat)
-      # ==========================================
-
-      # ==========================================
-      # Step 2: 导入 + 硬规则筛选
+      # Step 2: Import + Hard Filter (Block B)
       # ==========================================
       - name: Import and hard filter
         id: filter
         run: |
-          echo "=== Running import + hard filter ==="
+          echo "=== Import + hard filter ==="
           python scripts/job_pipeline.py --process
 
       # ==========================================
-      # Step 3: AI Evaluate (C1: scoring + brief)
+      # Step 3: AI Evaluate (Block C1)
       # ==========================================
       - name: AI Evaluate (C1)
         id: ai_evaluate
         continue-on-error: true
         run: |
-          echo "=== Running AI evaluation (C1) ==="
+          echo "=== AI evaluation (C1) ==="
           AI_LIMIT="${{ github.event.inputs.ai_limit }}"
           python scripts/job_pipeline.py --ai-evaluate --limit ${AI_LIMIT:-30}
 
       # ==========================================
-      # Step 4: AI Tailor (C2: resume generation)
+      # Step 4: AI Tailor (Block C2)
       # ==========================================
       - name: AI Tailor (C2)
         id: ai_tailor
         continue-on-error: true
         run: |
-          echo "=== Running AI resume tailoring (C2) ==="
-          python scripts/job_pipeline.py --ai-tailor --limit 30
+          echo "=== AI resume tailoring (C2) ==="
+          AI_LIMIT="${{ github.event.inputs.ai_limit }}"
+          python scripts/job_pipeline.py --ai-tailor --limit ${AI_LIMIT:-30}
 
       # ==========================================
-      # Step 4b: Generate resumes (Block D)
+      # Step 5: Generate Resumes (Block D)
       # ==========================================
       - name: Generate resumes
         id: generate
         continue-on-error: true
         run: |
-          echo "=== Generating resumes ==="
-          python scripts/job_pipeline.py --generate --limit 30
+          echo "=== Rendering resumes ==="
+          AI_LIMIT="${{ github.event.inputs.ai_limit }}"
+          python scripts/job_pipeline.py --generate --limit ${AI_LIMIT:-30}
 
       # ==========================================
-      # Step 5: 通知
+      # Step 6: Notify
       # ==========================================
       - name: Send Telegram notification
         if: always()
@@ -166,7 +163,6 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          # Collect failed steps
           FAILED_STEPS=""
           [ "${{ steps.scrape.outcome }}" == "failure" ] && FAILED_STEPS="scrape"
           [ "${{ steps.filter.outcome }}" == "failure" ] && FAILED_STEPS="${FAILED_STEPS:+$FAILED_STEPS, }filter"
@@ -180,7 +176,7 @@ jobs:
           fi
 
       # ==========================================
-      # Step 6: 统计汇总
+      # Step 7: Stats
       # ==========================================
       - name: Pipeline stats
         if: always()
