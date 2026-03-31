@@ -879,12 +879,15 @@ class AIAnalyzer:
             'reason': parsed.get('reason', ''),
         }
 
-    def evaluate_batch(self, limit: int = None) -> int:
-        """C1: Evaluate all jobs needing analysis."""
+    def evaluate_batch(self, limit: int = None) -> tuple:
+        """C1: Evaluate all jobs needing analysis.
+
+        Returns (attempted, succeeded) tuple.
+        """
         jobs = self.db.get_jobs_needing_analysis(limit=limit)
         if not jobs:
             print("[AI C1] No jobs to evaluate")
-            return 0
+            return (0, 0)
 
         print(f"\n[AI C1] Evaluating {len(jobs)} jobs...")
         count = 0
@@ -907,16 +910,19 @@ class AIAnalyzer:
                     time.sleep(1)
 
         print(f"\n[AI C1] Done: {count}/{len(jobs)} evaluated")
-        return count
+        return (len(jobs), count)
 
-    def tailor_batch(self, min_score: float = None, limit: int = None) -> int:
-        """C2: Tailor resumes for evaluated jobs above threshold."""
+    def tailor_batch(self, min_score: float = None, limit: int = None) -> tuple:
+        """C2: Tailor resumes for evaluated jobs above threshold.
+
+        Returns (attempted, succeeded) tuple.
+        """
         if min_score is None:
             min_score = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
         jobs = self.db.get_jobs_needing_tailor(min_score=min_score, limit=limit)
         if not jobs:
             print(f"[AI C2] No jobs needing tailoring (min_score={min_score})")
-            return 0
+            return (0, 0)
 
         print(f"\n[AI C2] Tailoring {len(jobs)} jobs (score >= {min_score})...")
         count = 0
@@ -965,7 +971,7 @@ class AIAnalyzer:
                     time.sleep(1)
 
         print(f"\n[AI C2] Done: {count}/{len(jobs)} tailored")
-        return count
+        return (len(jobs), count)
 
     def _post_parse_analysis(self, job_id: str, job: Dict, parsed: Dict,
                               tokens_used: int, prompt: str = '') -> AnalysisResult:

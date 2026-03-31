@@ -257,18 +257,18 @@ class JobPipeline:
         """AI 分析通过预筛选的职位 (C1 evaluate + C2 tailor)"""
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer()
-        evaluated = analyzer.evaluate_batch(limit=limit)
-        tailored = analyzer.tailor_batch(limit=limit)
-        return evaluated + tailored
+        _, eval_ok = analyzer.evaluate_batch(limit=limit)
+        _, tail_ok = analyzer.tailor_batch(limit=limit)
+        return eval_ok + tail_ok
 
-    def ai_evaluate_jobs(self, limit: int = None) -> int:
-        """C1: AI evaluation (scoring + application brief)"""
+    def ai_evaluate_jobs(self, limit: int = None) -> tuple:
+        """C1: AI evaluation. Returns (attempted, succeeded)."""
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer()
         return analyzer.evaluate_batch(limit=limit)
 
-    def ai_tailor_jobs(self, min_score: float = None, limit: int = None) -> int:
-        """C2: AI resume tailoring for high-scoring jobs"""
+    def ai_tailor_jobs(self, min_score: float = None, limit: int = None) -> tuple:
+        """C2: AI resume tailoring. Returns (attempted, succeeded)."""
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer()
         return analyzer.tailor_batch(min_score=min_score, limit=limit)
@@ -963,9 +963,13 @@ def main():
         elif args.ready:
             pipeline.show_ready()
         elif args.ai_evaluate:
-            pipeline.ai_evaluate_jobs(limit=args.limit)
+            attempted, succeeded = pipeline.ai_evaluate_jobs(limit=args.limit)
+            if attempted > 0 and succeeded == 0:
+                raise SystemExit(1)
         elif args.ai_tailor:
-            pipeline.ai_tailor_jobs(min_score=args.min_score, limit=args.limit)
+            attempted, succeeded = pipeline.ai_tailor_jobs(min_score=args.min_score, limit=args.limit)
+            if attempted > 0 and succeeded == 0:
+                raise SystemExit(1)
         elif args.ai_analyze:
             pipeline.ai_analyze_jobs(limit=args.limit)
         elif args.generate:
