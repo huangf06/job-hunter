@@ -4,7 +4,7 @@
    height="842pt"
    viewBox="0 0 595 842"
    role="img"
-   aria-label="Fei Huang Machine Learning Engineer resume v9"
+   aria-label="Fei Huang Machine Learning Engineer resume"
    version="1.1"
    id="svg95"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -49,8 +49,7 @@
   <text class="section" x="42" y="84.5" id="s1">BIO</text>
   <text class="bio" x="42" y="99.5" id="b1"><tspan style="font-weight:bold">Machine Learning Engineer</tspan> with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring</text>
   <text class="bio" x="42" y="111.5" id="b2">systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and</text>
-  <text class="bio" x="42" y="123.5" id="b3">end-to-end ML pipelines — from raw data through production deployment. Applied ML: learning-to-rank,</text>
-  <text class="bio" x="42" y="135.5" id="b4">Deep RL uncertainty quantification, and NLP (Hugging Face Transformers).</text>
+  <text class="bio" x="42" y="123.5" id="b3">end-to-end ML pipelines — from raw data through production deployment.</text>
 
   <!-- ==================== LEFT: EXPERIENCE ==================== -->
   <text class="section" x="42" y="156.5" id="s2">EXPERIENCE</text>

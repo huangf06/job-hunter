@@ -125,7 +125,7 @@ templates:
     slot_schema:
       bio:
         slot_id: "bio"
-        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment. Applied ML: learning-to-rank, Deep RL uncertainty quantification, and NLP (Hugging Face Transformers)."
+        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment."
         senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in production. First data hire at GLP Technology, built the credit risk prediction system and grew the data team. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines — from raw data through production deployment."
       sections:
         - section_id: "experience"
