@@ -200,6 +200,43 @@ class TestWrongRole:
         assert result.passed is True
 
 
+class TestM6CompoundWhitelist:
+    """M6: Compound patterns should pass target roles, reject loose matches."""
+
+    def test_data_platform_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="Data Platform Engineer"))
+        assert result.passed is True
+
+    def test_ml_infrastructure_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="ML Infrastructure Engineer"))
+        assert result.passed is True
+
+    def test_software_engineer_passes(self, hf):
+        result = hf.apply(_make_job(title="Software Engineer"))
+        assert result.passed is True
+
+    def test_platform_product_manager_rejected(self, hf):
+        """Standalone 'platform' no longer in whitelist — Product Manager rejected."""
+        job = _make_job(title="Platform Product Manager")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "non_target_role"
+
+    def test_infrastructure_manager_rejected(self, hf):
+        """Standalone 'infrastructure' no longer in whitelist."""
+        job = _make_job(title="Infrastructure Manager")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "non_target_role"
+
+    def test_software_sales_rejected(self, hf):
+        """Standalone 'software' no longer in whitelist."""
+        job = _make_job(title="Software Sales Manager")
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "non_target_role"
+
+
 class TestInsufficientData:
     """Jobs with empty or very short descriptions should be rejected."""
 
@@ -320,14 +357,14 @@ class TestWrongTechStack:
     """Rule 4: Non-target tech stack detection."""
 
     def test_flutter_developer_title_rejected(self, hf):
-        """Flutter Software Engineer: 'software' passes non_target_role, but title matches tech_stack pattern."""
-        job = _make_job(title="Software Flutter Developer")
+        """'Android Developer' with whitelist keyword passes non_target_role but rejected by tech_stack."""
+        job = _make_job(title="Android Developer - Python Backend")
         result = hf.apply(job)
         assert result.passed is False
         assert result.reject_reason == "wrong_tech_stack"
 
     def test_dotnet_in_title_body_rejected(self, hf):
-        """Dotnet keyword in title triggers tech_stack; 'platform' passes non_target_role."""
+        """Dotnet keyword in title triggers tech_stack; 'platform engineer' passes non_target_role."""
         job = _make_job(title="Platform Engineer Dotnet")
         result = hf.apply(job)
         assert result.passed is False
@@ -452,6 +489,83 @@ class TestLowCompensation:
         job = _make_job(description=(
             "Data Engineer. Salary range: €55,000 - €75,000 per year. "
             "Python, SQL, Spark. Amsterdam office with hybrid work."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+
+class TestPhDRequired:
+    """M3: PhD hard requirement detection."""
+
+    def test_phd_required_rejected(self, hf):
+        job = _make_job(description=(
+            "We are looking for a Research Scientist. "
+            "PhD required in Computer Science or related field. "
+            "Experience with deep learning frameworks."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "phd_required"
+
+    def test_requires_phd_rejected(self, hf):
+        job = _make_job(description=(
+            "Applied Scientist position. This role requires a PhD "
+            "in Machine Learning. Strong publication record expected."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "phd_required"
+
+    def test_must_have_phd_rejected(self, hf):
+        job = _make_job(description=(
+            "Senior Research Engineer. Candidates must have a PhD "
+            "in a relevant technical field. 5+ years experience."
+        ))
+        result = hf.apply(job)
+        assert result.passed is False
+        assert result.reject_reason == "phd_required"
+
+    def test_phd_or_equivalent_passes(self, hf):
+        """PhD with 'or equivalent' escape should NOT be rejected."""
+        job = _make_job(description=(
+            "ML Engineer. PhD required or equivalent industry experience. "
+            "Python, PyTorch, distributed systems. Amsterdam office."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+    def test_phd_or_masters_passes(self, hf):
+        """PhD with 'or Master' escape should NOT be rejected."""
+        job = _make_job(description=(
+            "Data Scientist. PhD or Master's degree in a quantitative field. "
+            "Experience with Python, SQL, and statistical modeling."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+    def test_phd_preferred_passes(self, hf):
+        """'PhD preferred' is not a hard requirement — should pass."""
+        job = _make_job(description=(
+            "ML Engineer. PhD preferred but not required. "
+            "Strong Python skills. Experience with ML pipelines."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+    def test_phd_is_a_plus_passes(self, hf):
+        """'PhD is a plus' is not a requirement — should pass."""
+        job = _make_job(description=(
+            "Data Engineer. MSc in CS or related. PhD is a plus. "
+            "Experience with Spark, Airflow, and cloud platforms."
+        ))
+        result = hf.apply(job)
+        assert result.passed is True
+
+    def test_phd_or_msc_passes(self, hf):
+        """'PhD or MSc' escape should NOT be rejected."""
+        job = _make_job(description=(
+            "Research Engineer. Requires a PhD or MSc in Computer Science. "
+            "Experience with NLP and transformer architectures."
         ))
         result = hf.apply(job)
         assert result.passed is True

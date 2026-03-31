@@ -55,6 +55,7 @@ class Job:
     search_profile: str = ""
     search_query: str = ""
     raw_data: str = ""
+    manual_source: str = ""  # referral/career_page/linkedin/other
 
 
 @dataclass
@@ -100,6 +101,8 @@ class Application:
     interview_at: str = ""
     outcome: str = ""
     notes: str = ""
+    rejection_reason: str = ""  # no_response/resume_rejected/interview_rejected/offer_declined/withdrawn
+    rejection_stage: str = ""   # screen/phone/technical/final
 
 
 @dataclass
@@ -355,6 +358,7 @@ class JobDatabase:
         search_profile TEXT,
         search_query TEXT,
         raw_data TEXT,
+        manual_source TEXT,
         created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -407,6 +411,8 @@ class JobDatabase:
         interview_at TEXT,
         outcome TEXT,
         notes TEXT,
+        rejection_reason TEXT,
+        rejection_stage TEXT,
         updated_at TEXT DEFAULT (datetime('now')),
         UNIQUE(job_id)
     );
@@ -545,6 +551,7 @@ class JobDatabase:
     CREATE VIEW IF NOT EXISTS v_ready_to_apply AS
     SELECT
         j.id, j.title, j.company, j.location, j.url,
+        j.posted_date,
         an.ai_score as score, an.recommendation,
         r.pdf_path as resume_path,
         r.submit_dir
@@ -553,7 +560,7 @@ class JobDatabase:
     JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
     LEFT JOIN applications a ON j.id = a.job_id
     WHERE a.id IS NULL
-    ORDER BY an.ai_score DESC;
+    ORDER BY j.posted_date DESC, an.ai_score DESC;
 
     -- 申请漏斗统计视图
     CREATE VIEW IF NOT EXISTS v_funnel_stats AS
@@ -691,6 +698,19 @@ class JobDatabase:
         for column, sql in analysis_migrations.items():
             if column not in analysis_columns:
                 conn.execute(sql)
+
+        # F4: manual_source for jobs table
+        jobs_columns = {row[1] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+        if jobs_columns and 'manual_source' not in jobs_columns:
+            conn.execute("ALTER TABLE jobs ADD COLUMN manual_source TEXT")
+
+        # F10: rejection tracking for applications table
+        app_columns = {row[1] for row in conn.execute("PRAGMA table_info(applications)").fetchall()}
+        if app_columns:
+            if 'rejection_reason' not in app_columns:
+                conn.execute("ALTER TABLE applications ADD COLUMN rejection_reason TEXT")
+            if 'rejection_stage' not in app_columns:
+                conn.execute("ALTER TABLE applications ADD COLUMN rejection_stage TEXT")
 
     @contextmanager
     def _get_conn(self, *, sync_before=True):
@@ -1049,6 +1069,7 @@ class JobDatabase:
                       OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR a.resume_tier IS NULL
                   )
                   AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC

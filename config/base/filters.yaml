@@ -39,6 +39,64 @@ hard_reject_rules:
       - "beschikbaar"
     threshold: 8  # >= 8 Dutch words found = reject (reduced false positives)
 
+  # 规则1b: 法语JD检测 (Greenhouse 无语言过滤)
+  french_language:
+    enabled: true
+    priority: 0
+    type: "word_count"
+    description: "JD written primarily in French"
+    indicators:
+      - "nous"
+      - "vous"
+      - "notre"
+      - "votre"
+      - "pour"
+      - "dans"
+      - "avec"
+      - "cette"
+      - "sont"
+      - "avoir"
+      - "responsable"
+      - "entreprise"
+      - "poste"
+      - "missions"
+      - "profil"
+      - "candidat"
+      - "connaissance"
+      - "environnement"
+      - "gestion"
+      - "developper"
+    threshold: 8
+
+  # 规则1c: 德语JD检测 (Greenhouse 无语言过滤)
+  german_language:
+    enabled: true
+    priority: 0
+    type: "word_count"
+    description: "JD written primarily in German"
+    indicators:
+      - "wir"
+      - "und"
+      - "eine"
+      - "oder"
+      - "ihre"
+      - "unser"
+      - "erfahrung"
+      - "anforderungen"
+      - "aufgaben"
+      - "entwicklung"
+      - "kenntnisse"
+      - "umfeld"
+      - "verantwortung"
+      - "stelle"
+      - "stellenangebot"
+      - "berufserfahrung"
+      - "mitarbeiter"
+      - "unternehmen"
+      - "bereich"
+      - "arbeiten"
+    threshold: 8
+
   # 规则2: 明确要求荷兰语能力
   dutch_required:
     enabled: true
@@ -84,10 +142,15 @@ hard_reject_rules:
       - "nlp"
       - "llm"
       - "mlops"
-      - "software"
+      - "software engineer"
+      - "software developer"
       - "backend"
-      - "infrastructure"
-      - "platform"
+      - "infrastructure engineer"
+      - "data infrastructure"
+      - "ml infrastructure"
+      - "platform engineer"
+      - "data platform"
+      - "ml platform"
       - "pipeline"
       - "applied scientist"
 
@@ -152,10 +215,26 @@ hard_reject_rules:
       - "EUR\\s*1[0-5]00.*per\\s*month"
       - "1[0-4]00\\s*eur\\s*per\\s*month"
 
-  # 规则7: 高级管理职位 (title-only check to avoid false-rejecting mid-level roles)
+  # 规则7: PhD 硬性要求 (M3)
+  phd_required:
+    enabled: true
+    priority: 6
+    type: "regex"
+    description: "JD requires PhD without 'or equivalent/Master' escape"
+    patterns:
+      # "PhD required" / "PhD is required" / "PhD mandatory" without nearby "or equivalent/master"
+      - "\\bphd\\s+(required|is\\s+required|mandatory|is\\s+mandatory)\\b(?!.{0,200}(or\\s+equivalent|or\\s+master|or\\s+msc|or\\s+m\\.?sc|advanced\\s+degree|master.*with.*relevant|master.*with.*experience))"
+      # "requires a PhD" / "require a PhD" without nearby exception
+      - "\\brequires?\\s+a?\\s*\\bphd\\b(?!.{0,200}(or\\s+equivalent|or\\s+master|or\\s+msc|or\\s+m\\.?sc|advanced\\s+degree|master.*with.*relevant|master.*with.*experience))"
+      # "must have a PhD" / "must hold a PhD" without exception
+      - "\\bmust\\s+(have|hold|possess)\\s+a?\\s*\\bphd\\b(?!.{0,200}(or\\s+equivalent|or\\s+master|or\\s+msc|or\\s+m\\.?sc|advanced\\s+degree|master.*with.*relevant|master.*with.*experience))"
+    # Do NOT match: "PhD preferred", "PhD is a plus", "PhD or equivalent experience",
+    #               "PhD or Master's degree", "PhD or MSc", "PhD or advanced degree"
+
+  # 规则8: 高级管理职位 (title-only check to avoid false-rejecting mid-level roles)
   senior_management:
     enabled: true
-    priority: 7
+    priority: 8
     type: "title_check"
     description: "高级管理或架构师职位"
     title_reject_patterns:
@@ -184,7 +263,7 @@ hard_reject_rules:
 # =============================================================================
 
 metadata:
-  version: "3.0.0"
-  last_updated: "2026-03-28"
+  version: "3.2.0"
+  last_updated: "2026-03-31"
   author: "Fei Huang"
   description: "Job filtering configuration - improved with Dutch detection, role filtering, tech stack checks"

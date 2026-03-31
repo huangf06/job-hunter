@@ -18,7 +18,7 @@ def test_load_registry_has_required_templates_and_unique_slot_ids():
 
     assert set(registry["templates"]) >= {"DE", "ML", "Backend"}
 
-    for template_id in ("DE", "ML"):
+    for template_id in ("DE", "ML", "Backend"):
         template = registry["templates"][template_id]
         assert "slot_schema" in template
         assert "bio" in template["slot_schema"]
@@ -50,6 +50,10 @@ def test_load_registry_uses_repo_config_file():
         ("ML Platform Engineer", "ML", 0.5, True),
         ("MLOps Engineer", "ML", 0.9, False),
         ("Business Intelligence Manager", "DE", 0.3, False),
+        ("Software Engineer", "Backend", 0.9, False),
+        ("Backend Engineer", "Backend", 0.9, False),
+        ("Python Developer", "Backend", 0.9, False),
+        ("Infrastructure Engineer", "Backend", 0.9, False),
     ],
 )
 def test_select_template_behaviors(title, expected_template, expected_confidence, expected_ambiguous):
@@ -62,11 +66,24 @@ def test_select_template_behaviors(title, expected_template, expected_confidence
 
 
 def test_select_template_skips_disabled_templates():
+    """When a template is disabled, its target_roles are ignored."""
+    registry = load_registry()
+    # Temporarily disable Backend to verify skip behavior
+    registry["templates"]["Backend"]["enabled"] = False
+    decision = select_template("Backend Platform Engineer", registry)
+
+    # With Backend disabled, no template matches → falls through to DE default
+    assert decision.template_id == "DE"
+    assert decision.confidence == 0.3
+
+
+def test_backend_template_routes_correctly():
+    """Backend template (now enabled) routes software/backend titles."""
     registry = load_registry()
     decision = select_template("Backend Platform Engineer", registry)
 
-    assert decision.template_id == "DE"
-    assert decision.confidence == 0.3
+    assert decision.template_id == "Backend"
+    assert decision.confidence == 0.9
 
 
 def test_resolve_routing_prefers_c1_override_with_reason():

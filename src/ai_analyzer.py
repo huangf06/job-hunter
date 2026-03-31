@@ -530,20 +530,25 @@ class AIAnalyzer:
 
     def _build_scoring_guidelines(self) -> str:
         """Build scoring guidelines text for C1 evaluator prompt."""
-        return """Most jobs should score 4-6, NOT 7-9. High scores are rare.
+        return """Use the FULL 1-10 scale with clear separation between bands.
 
-**Score Distribution Target:**
-- 9-10: Perfect match (RARE, <5% of jobs) — ALL required skills, exact experience level
-- 7-8: Excellent match (10-15%) — MOST required skills, experience ±1 year
-- 5-6: Good match (30-40%) — Core skills present, some secondary gaps
-- 3-4: Moderate match (30-40%) — Significant skill gaps or experience mismatch
-- 1-2: Poor match (10-20%) — Major skill gaps, wrong domain
+**Score Bands (mutually exclusive — pick the ONE that fits best):**
+- 9-10: Near-perfect match (<5%) — ALL required skills present, experience level exact, domain overlap strong
+- 7-8: Strong match (10-15%) — Most required skills, minor gaps in secondary areas only, experience within 1 year
+- 6: Solid match, worth applying (15-20%) — Core skills present, 1-2 secondary gaps, candidate can credibly do the job
+- 5: Borderline (15-20%) — Has relevant foundation but notable gaps; would need to stretch. Apply only if no better options
+- 3-4: Weak match (20-30%) — Major skill or experience gaps, different specialization
+- 1-2: Wrong role entirely (10-15%) — Different domain, tech stack, or seniority level
 
-**Common Mistakes:**
-- JD requires "5+ years Java" but candidate has 0 → score 3-4 MAX
-- JD requires "PhD in CS" but candidate has M.Sc. → score 4-5 MAX
-- JD is 80% frontend but candidate is backend → score 2-3 MAX
-- JD requires "10+ years" but candidate has 6 → score 3-4 MAX"""
+**The key question for 5 vs 6:** Would this candidate get past a 30-second resume screen by a hiring manager who knows the role? If yes → 6+. If maybe → 5. If unlikely → 4-.
+
+**Calibration anchors:**
+- JD requires "5+ years Java" but candidate has 0 Java → 3 MAX (wrong primary stack)
+- JD requires "PhD in CS" but candidate has M.Sc. → 5 MAX (unless "or equivalent" mentioned → 6)
+- JD is 80% frontend but candidate is backend → 2 MAX
+- JD says "10+ years" but candidate has 6 → 4 MAX (significant experience gap)
+- JD matches candidate's DE stack but wants cloud candidate lacks (GCP vs AWS) → 6-7 (transferable)
+- JD is a startup wanting generalist data/ML with Python+SQL → 7-8 (strong fit)"""
 
     def _build_evaluate_prompt(self, job: Dict, code_decision) -> str:
         """Build C1 evaluation prompt (scoring + application brief). No bullet library."""

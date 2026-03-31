@@ -13,11 +13,11 @@
 │ Block A  │───▶│   Block B    │───▶│         Block C               │
 │  Scrape  │    │ Hard Filter  │    │  C1: Evaluate (评分+brief)    │
 │  (jobs)  │    │ (whitelist)  │    │  C2: Tailor (简历定制)        │
-└──────────┘    └──────────────┘    │  score >= 4.0 触发 C2         │
+└──────────┘    └──────────────┘    │  score >= 5.0 触发 C2         │
                       │             │  Application Brief 替代 CL    │
                  rejected           └──────────────────────────────┘
                       ▼                          │
-                 ┌─────────┐                     ▼ ai_score >= 4.0
+                 ┌─────────┐                     ▼ ai_score >= 5.0
                  │  SKIP   │          ┌──────────────────────────────┐
                  └─────────┘          │       Block D                │
                                       │  Resume Renderer (Jinja2)    │
@@ -60,7 +60,7 @@ python scripts/job_pipeline.py --filter        # 只筛选
 # C1 评分 + application brief (快速，无 bullet library)
 python scripts/job_pipeline.py --ai-evaluate
 
-# C2 简历定制 (仅 score >= 4.0 的职位)
+# C2 简历定制 (仅 score >= 5.0 的职位)
 python scripts/job_pipeline.py --ai-tailor
 
 # C1 + C2 一起执行 (向后兼容)
@@ -296,12 +296,12 @@ print(db.get_funnel_stats())
 
 ### AI 配置 (`config/ai_config.yaml`)
 - `models.analyzer`: Claude 用于智能分析
-- `thresholds.ai_score_generate_resume`: 生成简历的最低 AI 分 (默认 4.0)
+- `thresholds.ai_score_generate_resume`: 生成简历的最低 AI 分 (默认 5.0)
 - `budget.daily_limit`: 每日 token 预算
 
 ### 硬规则筛选 (`config/base/filters.yaml`)
 - 6 条硬拒绝规则 (whitelist-only: 荷兰语检测、白名单角色、标题技术栈等)
-- 通过 Hard Filter 的职位进入 C1 评分，score >= 4.0 进入 C2 简历定制
+- 通过 Hard Filter 的职位进入 C1 评分，score >= 5.0 进入 C2 简历定制
 
 ## 注意事项
 

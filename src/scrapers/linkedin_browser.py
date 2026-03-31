@@ -150,6 +150,7 @@ class LinkedInBrowser:
         sort_by: str = "DD",
         job_type: str | None = None,
         workplace_type: str | None = None,
+        language: str | None = None,
     ) -> list[dict]:
         self.diagnostics["last_stage"] = "search"
         params = {
@@ -162,6 +163,8 @@ class LinkedInBrowser:
             params["f_JT"] = job_type
         if workplace_type:
             params["f_WT"] = workplace_type
+        if language:
+            params["f_JC"] = language
 
         await self._goto(f"https://www.linkedin.com/jobs/search?{urlencode(params)}", timeout=45000)
         await self._wait_for_cards()

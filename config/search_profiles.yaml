@@ -12,6 +12,7 @@ defaults:
   # workplace_type removed: LinkedIn 2026 update - new UI only has "Remote" toggle, no Hybrid/On-site split
   # Leaving unset to capture all workplace types (Remote, Hybrid, On-site)
   sort_by: "DD"              # DD=Date, R=Relevance
+  language: "en"             # M1: f_JC=en filters English-language postings (Dutch detection remains as fallback)
   max_jobs: 999
   daemon_interval_minutes: 360   # Default: P2 = every 6 hours
 
@@ -64,7 +65,7 @@ profiles:
   # ============================================================
   backend_engineering:
     name: "Backend Engineering"
-    enabled: true
+    enabled: false   # M2: 0% interview rate (0/1205 scraped), Backend template not enabled
     priority: 2
     daemon_interval_minutes: 360
     queries:
@@ -81,28 +82,27 @@ profiles:
   # Group 4: Data Science & Analytics (EDGE CASE)
   # ============================================================
   data_science:
-    name: "Data Science & Analytics"
+    name: "Data Science"
     enabled: true
     priority: 2
     daemon_interval_minutes: 360
     queries:
-      - keywords: '"Data Scientist" OR "Data Analyst" OR "BI Engineer" OR "Data Consultant"'
-        description: "Data science & analytics roles"
+      - keywords: '"Data Scientist"'
+        description: "Data science roles"
+      # M2: removed "Data Analyst" (underleveled), "BI Engineer" (underleveled),
+      #     "Data Consultant" (consulting firms, need local language)
 
     iamexpat:
       queries:
         - keywords: "data scientist"
-        - keywords: "data analyst"
-        - keywords: "data consultant"
 
   # ============================================================
   # Group 5: Quantitative (HIGH VALUE)
   # ============================================================
   quant:
     name: "Quantitative & Trading"
-    enabled: true
-    priority: 2
-    daemon_interval_minutes: 360
+    enabled: false   # M2: Optiver + Flow Traders already in target_companies.yaml (Greenhouse)
+    priority: 3
     queries:
       - keywords: '"Quantitative Researcher" OR "Quantitative Developer" OR "Quantitative Analyst" OR "Quant Trader"'
         description: "Quant & trading roles"

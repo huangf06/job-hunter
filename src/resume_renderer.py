@@ -106,11 +106,11 @@ class ResumeRenderer:
 
             # Career note (for gap explanation)
             'career_note': self.config.get('resume', {}).get('career_note',
-                'Career Note: 2019–2023 included independent investing, language learning, and graduate preparation.'),
+                'Career transition (2019–2023): Relocated to the Netherlands and completed M.Sc. in Artificial Intelligence at VU Amsterdam (GPA 8.2/10).'),
 
             # Interests
             'interests': self.config.get('resume', {}).get('interests',
-                'Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing'),
+                'Philosophy, strategy games, distance running, analytical writing'),
 
             # Languages (human languages, separate from technical skills)
             'languages': self.config.get('resume', {}).get('languages',
@@ -126,6 +126,20 @@ class ResumeRenderer:
             return None
 
         tier = analysis.get('resume_tier')
+
+        # For legacy jobs without routing metadata, compute template on-the-fly
+        if tier is None and not analysis.get('template_id_final'):
+            job = self.db.get_job(job_id)
+            if job:
+                from src.template_registry import select_template
+                routing = select_template(job.get('title', ''), self.registry)
+                analysis['template_id_final'] = routing.template_id
+                print(f"[Renderer] Legacy job {job_id}: auto-assigned template {routing.template_id}")
+
+        # Legacy jobs without tailored_resume → use template copy
+        if tier is None and not analysis.get('tailored_resume'):
+            return self._render_template_copy(job_id, analysis)
+
         if tier == 'USE_TEMPLATE' or (tier == 'ADAPT_TEMPLATE' and analysis.get('c3_decision') == 'FAIL'):
             return self._render_template_copy(job_id, analysis)
         if tier == 'ADAPT_TEMPLATE':

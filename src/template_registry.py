@@ -20,6 +20,7 @@ class RoutingDecision:
     confidence: float
     matched_keywords: List[str]
     ambiguous: bool
+    seniority: str = "mid"  # "senior" or "mid"
 
 
 def load_registry(path: Optional[Path] = None) -> Dict:
@@ -31,8 +32,20 @@ def load_registry(path: Optional[Path] = None) -> Dict:
     return registry
 
 
+_SENIOR_KEYWORDS = {"senior", "lead", "staff", "principal", "head"}
+
+
+def _detect_seniority(title_lower: str) -> str:
+    """Detect seniority level from job title."""
+    for kw in _SENIOR_KEYWORDS:
+        if kw in title_lower.split():
+            return "senior"
+    return "mid"
+
+
 def select_template(title: str, registry: Dict) -> RoutingDecision:
     title_lower = (title or "").lower()
+    seniority = _detect_seniority(title_lower)
     matches: Dict[str, List[str]] = {}
 
     for template_id, meta in registry.get("templates", {}).items():
@@ -43,16 +56,16 @@ def select_template(title: str, registry: Dict) -> RoutingDecision:
             matches[template_id] = matched
 
     if not matches:
-        return RoutingDecision("DE", confidence=0.3, matched_keywords=[], ambiguous=False)
+        return RoutingDecision("DE", confidence=0.3, matched_keywords=[], ambiguous=False, seniority=seniority)
 
     if len(matches) == 1:
         template_id = next(iter(matches))
         if template_id == "ML" and "platform engineer" in title_lower:
-            return RoutingDecision(template_id, confidence=0.5, matched_keywords=matches[template_id], ambiguous=True)
-        return RoutingDecision(template_id, confidence=0.9, matched_keywords=matches[template_id], ambiguous=False)
+            return RoutingDecision(template_id, confidence=0.5, matched_keywords=matches[template_id], ambiguous=True, seniority=seniority)
+        return RoutingDecision(template_id, confidence=0.9, matched_keywords=matches[template_id], ambiguous=False, seniority=seniority)
 
     best = max(matches, key=lambda template_id: len(matches[template_id]))
-    return RoutingDecision(best, confidence=0.5, matched_keywords=matches[best], ambiguous=True)
+    return RoutingDecision(best, confidence=0.5, matched_keywords=matches[best], ambiguous=True, seniority=seniority)
 
 
 def resolve_routing(code_decision: RoutingDecision, c1_routing: Dict) -> Dict:

@@ -97,6 +97,7 @@ class LinkedInScraper(BaseScraper):
                             sort_by=defaults.get("sort_by", "DD"),
                             job_type=defaults.get("job_type"),
                             workplace_type=defaults.get("workplace_type"),
+                            language=defaults.get("language"),
                         )
                         parsed_jobs = parse_search_cards(cards)
                         jobs_enriched = 0

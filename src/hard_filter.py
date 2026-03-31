@@ -91,15 +91,12 @@ class HardFilter:
 
             rule_type = rule_config.get('type', 'regex')
 
-            # --- Dutch language word count detection ---
+            # --- Language word count detection (Dutch, French, German) ---
             if rule_type == 'word_count':
-                indicators = rule_config.get('dutch_indicators', [])
+                indicators = rule_config.get('indicators', rule_config.get('dutch_indicators', []))
                 threshold = rule_config.get('threshold', 8)
-                # Count how many Dutch indicator words appear in the text
-                # Use word boundary matching to avoid partial matches
                 count = 0
                 for word in indicators:
-                    # Use keyword_boundary_pattern for consistency with rest of pipeline
                     if re.search(keyword_boundary_pattern(word), full_text):
                         count += 1
                 if count >= threshold:
@@ -107,7 +104,7 @@ class HardFilter:
                         job_id=job_id, passed=False,
                         reject_reason=rule_name,
                         filter_version="2.0",
-                        matched_rules=json.dumps({"dutch_word_count": count})
+                        matched_rules=json.dumps({"language_word_count": count})
                     )
 
             # --- Title-based role check ---

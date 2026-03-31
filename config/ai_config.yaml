@@ -24,7 +24,7 @@ models:
 # =============================================================================
 
 thresholds:
-  ai_score_generate_resume: 4.0  # >= 4.0: trigger C2 resume tailoring
+  ai_score_generate_resume: 6.0  # >= 6.0: trigger C2 resume tailoring (raised from 5.0 per F5 audit: 5-6 band is dead zone)
   ai_score_apply_now: 7.0        # >= 7.0: mark as priority
 
 # =============================================================================
@@ -64,8 +64,8 @@ prompt_settings:
 # These tell Claude how to classify ITS OWN scores. Rule-based thresholds are in scoring.yaml.
 ai_recommendation_thresholds:
   apply_now: 7
-  apply: 5
-  maybe: 3
+  apply: 6
+  maybe: 4
 
 # =============================================================================
 # Resume Generation
@@ -87,10 +87,10 @@ resume:
     print_background: true
 
   # Career gap explanation (rendered below experience section)
-  career_note: "Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation."
+  career_note: "Career transition (2019–2023): Relocated to the Netherlands and completed M.Sc. in Artificial Intelligence at VU Amsterdam (GPA 8.2/10)."
 
   # Interests line (rendered at bottom of resume)
-  interests: "Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing"
+  interests: "Philosophy, strategy games, distance running, analytical writing"
 
   # Candidate contact info (used by resume renderer)
   candidate:
@@ -522,8 +522,8 @@ interview_scheduler:
     late_afternoon: -0.5    # 15:30-17:00
 
 metadata:
-  version: "3.0.0"
+  version: "3.1.0"
   created: "2026-02-05"
-  updated: "2026-03-28"
+  updated: "2026-03-31"
   author: "Fei Huang"
   description: "AI-powered job analysis and resume generation configuration (v3: C1/C2 split, Claude Code CLI only)"

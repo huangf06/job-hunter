@@ -167,6 +167,50 @@ class JobPipeline:
         print(f"Interview:        {stats.get('interview', 0)}")
         print(f"Offer:            {stats.get('offer', 0)}")
 
+        # Interview rate by AI score band (diagnostic for scoring anomaly)
+        score_band_rows = self.db.execute("""
+            SELECT
+                CASE
+                    WHEN ja.ai_score < 4 THEN '<4'
+                    WHEN ja.ai_score < 5 THEN '4-5'
+                    WHEN ja.ai_score < 6 THEN '5-6'
+                    WHEN ja.ai_score < 7 THEN '6-7'
+                    ELSE '7+'
+                END AS band,
+                COUNT(*) AS applied,
+                SUM(CASE WHEN a.status = 'interview' THEN 1 ELSE 0 END) AS interviews
+            FROM applications a
+            JOIN job_analysis ja ON ja.job_id = a.job_id
+            WHERE a.status != 'pending'
+            GROUP BY band
+            ORDER BY MIN(ja.ai_score)
+        """)
+        if score_band_rows:
+            print("\n=== Interview Rate by AI Score Band ===")
+            print(f"  {'Band':<8} {'Applied':>8} {'Interviews':>11} {'Rate':>8}")
+            print(f"  {'-'*8} {'-'*8} {'-'*11} {'-'*8}")
+            for row in score_band_rows:
+                applied = row['applied']
+                interviews = row['interviews']
+                rate = (interviews / applied * 100) if applied > 0 else 0
+                print(f"  {row['band']:<8} {applied:>8} {interviews:>11} {rate:>7.1f}%")
+
+        # Application timing metric
+        try:
+            timing_rows = self.db.execute("""
+                SELECT AVG(JULIANDAY(a.applied_at) - JULIANDAY(j.posted_date)) as avg_days
+                FROM applications a
+                JOIN jobs j ON a.job_id = j.id
+                WHERE a.status = 'applied'
+                  AND j.posted_date IS NOT NULL AND j.posted_date != ''
+                  AND a.applied_at IS NOT NULL AND a.applied_at != ''
+            """)
+            avg_days = timing_rows[0]['avg_days'] if timing_rows and timing_rows[0]['avg_days'] is not None else None
+            if avg_days is not None:
+                print(f"\nAvg days to apply: {avg_days:.1f}")
+        except Exception:
+            pass  # Non-critical metric
+
         print("\n=== Filter Reject Reasons ===")
         for stat in self.db.get_filter_stats():
             print(f"  {stat['reject_reason']}: {stat['count']} ({stat['percentage']}%)")
