@@ -192,7 +192,7 @@ templates:
               default: "Feature Engineering, NLP, Time-Series, Anomaly Detection, Uncertainty Quantification"
 
   Backend:
-    enabled: true
+    enabled: false
     svg: "templates/Fei_Huang_Backend_Resume.svg"
     pdf: "templates/pdf/Fei_Huang_Backend.pdf"
     target_roles:
