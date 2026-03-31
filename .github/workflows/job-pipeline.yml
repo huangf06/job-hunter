@@ -1,4 +1,4 @@
-name: Job Pipeline v5.0 - Single Runner
+name: Job Pipeline
 # =====================================
 # 单 job 流水线：scrape → filter → C1 evaluate → C2 tailor → D render → notify
 # 所有 step 共享同一 runner，embedded replica 只下载一次

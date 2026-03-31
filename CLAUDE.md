@@ -160,7 +160,7 @@ interview_prep/YYYYMMDD_Company_Role/
 - **主动问用户** 是否与公司使命有个人联系
 
 ### 8. CI/CD (GitHub Actions)
-流水线自动运行: `.github/workflows/job-pipeline-optimized.yml`
+流水线自动运行: `.github/workflows/job-pipeline.yml`
 - 定时触发: 工作日 3 次 (NL 时间 08:23 / 12:23 / 16:23)，周末 1 次
 - 使用 Turso 云数据库，无需本地 DB
 
@@ -222,7 +222,7 @@ job-hunter/
 │
 ├── .github/
 │   └── workflows/
-│       ├── job-pipeline-optimized.yml  # CI/CD 自动化流水线
+│       ├── job-pipeline.yml  # CI/CD 自动化流水线
 │       └── test.yml                    # pytest on push/PR
 │
 ├── output/                     # 生成的简历
