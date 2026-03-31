@@ -233,6 +233,8 @@ class TursoHTTPClient:
         for p in params:
             if p is None:
                 args.append({'type': 'null', 'value': None})
+            elif isinstance(p, bool):
+                args.append({'type': 'integer', 'value': str(int(p))})
             elif isinstance(p, int):
                 args.append({'type': 'integer', 'value': str(p)})
             elif isinstance(p, float):
