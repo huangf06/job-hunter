@@ -239,7 +239,7 @@ templates:
                   default: "Engineered market data infrastructure for trading and research: ingestion pipelines for tick-level futures data from multiple vendor feeds, supporting 5+ years of historical data for 3,000+ securities."
             - entry_id: "ele"
               company: "Ele.me (Alibaba Group)"
-              title: "Software Engineer"
+              title: "Data Analyst"
               date: "SEPTEMBER 2013 - JULY 2015"
               bullets:
                 - slot_id: "ele_1"

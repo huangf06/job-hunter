@@ -1,5 +1,5 @@
 # =============================================================================
-# VERIFIED BULLET LIBRARY v4.0 — Narrative Architecture (2026-03-10)
+# VERIFIED BULLET LIBRARY v5.0 — Cleanup & Narrative Enforcement (2026-03-31)
 # =============================================================================
 # Single source of truth for resume content. Each bullet reflects real work.
 # System consumes: id + content per bullet. All other fields are structural.
@@ -207,15 +207,6 @@ work_experience:
         narrative_role: optional
         content: "Self-directed study in data science and machine learning, pivoting to AI after the emergence of large language models; admitted to M.Sc. AI program at VU Amsterdam in 2023."
 
-      # DEPRECATED (v4.0): Too vague, indefensible in interview
-      # - id: indie_market_analysis
-      #   content: "Analyzed macroeconomic trends..."
-
-      # DEPRECATED: Too personal or vague for resume
-      # - id: pt_personal_trading (too specific, invites questions about returns)
-      # - id: pt_grad_prep (too weak, just "prepared")
-      # - id: pt_language_learning (too generic)
-      # - id: pt_philosophy (not relevant to data roles)
 
   # ---------------------------------------------------------------------------
   # BAIQUAN INVESTMENT (Jul 2015 - Jun 2017)
@@ -258,11 +249,6 @@ work_experience:
         narrative_role: headline
         content: "Developed and deployed R-Breaker intraday trading strategy for CSI index futures from research through live production — achieved 14.6% annualized return with real capital."
 
-      # DEPRECATED: Merged into bq_de_pipeline and bq_factor_research
-      # - id: bq_de_factor_engine
-      #   content: "Engineered high-performance factor computation engine..."
-      # - id: bq_data_quality
-      #   content: "Designed cross-source data validation framework..."
 
   # ---------------------------------------------------------------------------
   # HENAN ENERGY (Jul 2010 - Aug 2013)
@@ -286,7 +272,7 @@ work_experience:
     recommended_sequences:
       data_engineer: ["he_data_automation", "he_supply_chain_analytics", "he_data_quality"]
       data_analyst: ["he_supply_chain_analytics", "he_data_automation", "he_data_quality"]
-      data_governance: ["he_data_quality", "he_data_standardization", "he_data_automation"]
+      data_governance: ["he_data_quality", "he_data_automation"]
 
     verified_bullets:
 
@@ -302,15 +288,7 @@ work_experience:
         narrative_role: optional
         content: "Established data quality framework and validation rules for multi-source data ingestion, implementing anomaly detection to catch errors, non-standard formats, and data fabrication — built feedback loops to production teams for continuous improvement."
 
-      - id: he_data_standardization
-        narrative_role: optional
-        content: "Led data governance initiative across 20+ business units, standardizing data formats and reporting processes — achieved 7 successful implementations through consulting engagements and user training."
 
-      # DEPRECATED: Replaced with evidence-backed, data-focused bullets
-      # - id: he_operations_management (too generic, lacks data focus)
-      # - id: he_demand_forecasting (no evidence of time-series models)
-      # - id: he_performance_evaluation (merged into he_data_standardization)
-      # - id: he_stakeholder_reporting (implicit in all bullets)
 
   # ---------------------------------------------------------------------------
   # AOSHEN BUSINESS (Sep - Dec 2014)
@@ -339,7 +317,7 @@ work_experience:
     # Recommended bullet sequences by job template
     recommended_sequences:
       data_engineer: ["eleme_sql_optimization", "eleme_fraud_detection", "eleme_user_segmentation"]
-      data_analyst: ["eleme_fraud_detection", "eleme_user_segmentation", "eleme_bi_dashboards"]
+      data_analyst: ["eleme_fraud_detection", "eleme_user_segmentation"]
       data_scientist: ["eleme_fraud_detection", "eleme_user_segmentation", "eleme_sql_optimization"]
       ml_engineer: ["eleme_fraud_detection", "eleme_user_segmentation"]
 
@@ -357,13 +335,7 @@ work_experience:
         narrative_role: optional
         content: "Engineered SQL-based user segmentation pipeline analyzing 2.2M+ users across 4 behavioral cohorts (dual-screen, payment method, campaign engagement, geographic) — delivered actionable customer profiles adopted by marketing for targeted red packet campaigns."
 
-      - id: eleme_bi_dashboards
-        narrative_role: optional
-        content: "Built 5 automated BI email reports (third-party delivery, red packets, fresh food stores, payment methods, campus performance) delivering daily metrics to cross-functional stakeholders — streamlined ad-hoc data requests and reduced manual reporting overhead."
 
-      # DEPRECATED: Replaced with evidence-backed bullets
-      # - id: eleme_ab_testing (merged into eleme_fraud_detection and eleme_user_segmentation)
-      # - id: eleme_sql_reporting (merged into eleme_sql_optimization)
 
 # =============================================================================
 # PROJECTS
@@ -392,15 +364,6 @@ projects:
       - id: thesis_calibration
         narrative_role: optional
         content: "Applied temperature scaling and Bayesian methods to calibrate agent confidence; evaluated post-hoc calibration impact across distributional, ensemble, and dropout-based UQ approaches with rigorous statistical testing."
-
-  # ---------------------------------------------------------------------------
-  # CRYPTO OPTIONS TRADING SYSTEM
-  # ---------------------------------------------------------------------------
-  # DEPRECATED (v4.0): Candidate cannot recall project details; indefensible in interview
-  # deribit_options:
-  #   title: "Automated Crypto Options Trading System"
-  #   institution: "Personal Project"
-  #   period: "Oct. 2025 - Present"
 
   # ---------------------------------------------------------------------------
   # NLP COURSE PROJECTS
@@ -529,25 +492,6 @@ projects:
         content: "Implemented neural network components from first principles: sigmoid/tanh/ReLU activations, L2 regularization, mini-batch gradient descent, and Xavier initialization; debugged gradient computation through numerical gradient checking."
 
   # ---------------------------------------------------------------------------
-  # EVOLUTIONARY ROBOTICS (LEGACY - CONSIDER REMOVING)
-  # ---------------------------------------------------------------------------
-  evolutionary_robotics_legacy:
-    title: "Evolutionary Robotics: Sensor Integration"
-    institution: "VU Amsterdam - Evolutionary Computing Course"
-    period: "2024"
-    note: "DEPRECATED: Replaced by evolutionary_robotics_research (more comprehensive)"
-
-    verified_bullets:
-
-      - id: ec_robotics
-        narrative_role: optional
-        content: "Researched impact of proprioceptive sensors on evolutionary robot performance using Revolve2 framework and MuJoCo physics simulation; evolved robots over 100 generations with NEAT algorithm."
-
-      - id: ec_statistical_analysis
-        narrative_role: optional
-        content: "Conducted rigorous statistical analysis using two-way repeated measures ANOVA; demonstrated significant performance improvement (p < 0.01) in sensor-equipped robots."
-
-  # ---------------------------------------------------------------------------
   # FINANCIAL DATA LAKEHOUSE
   # ---------------------------------------------------------------------------
   financial_data_lakehouse:
@@ -626,36 +570,6 @@ projects:
       - id: job_hunter_operations
         narrative_role: optional
         content: "Designed operational controls for long-running workflow maintenance, including scrape watermarks, configurable YAML rules, checklist state management, rejection-history detection, and cold-data archival; deployed scheduled incremental runs on GitHub Actions to reduce redundant processing and keep the pipeline continuously updated."
-
-  # ---------------------------------------------------------------------------
-  # B.Eng. THESIS: Web-based Collaborative Office System (2010)
-  # ---------------------------------------------------------------------------
-  bsc_thesis_oa:
-    title: "Web-based Collaborative Office Automation System"
-    institution: "Tsinghua University"
-    period: "2010"
-
-    verified_bullets:
-
-      - id: bsc_java_production
-        narrative_role: optional
-        content: "Developed production-grade Java web application using JDK 1.6 and Struts framework with B/S architecture; implemented Struts2 interceptor mechanism for flexible controller proxy logic."
-
-      - id: bsc_data_pipeline_sql
-        narrative_role: optional
-        content: "Designed and managed relational database with 11 core tables in SQL Server; built DAO (Data Access Objects) and data transformation utilities to optimize backend data extraction and preprocessing."
-
-      - id: bsc_security_rbac
-        narrative_role: optional
-        content: "Implemented Role-Based Access Control (RBAC) system with dedicated permission validation classes (CheckUserAble) and online status monitoring to prevent unauthorized data operations."
-
-      - id: bsc_domain_modeling
-        narrative_role: optional
-        content: "Modeled complex cross-domain business logic for academic affairs, financial budgeting, and employment data management systems."
-
-      - id: bsc_testing_monitoring
-        narrative_role: optional
-        content: "Conducted comprehensive functional and usability testing (trial run); proposed fault tolerance optimization strategies demonstrating early awareness of system health monitoring."
 
 # =============================================================================
 # WORK AUTHORIZATION & VISA STATUS

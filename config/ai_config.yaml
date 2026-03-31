@@ -51,10 +51,13 @@ prompt_settings:
     - nlp_projects
     - expedia_recommendation
     - ml4qs
-    - deribit_options
     - graphsage_gnn
-    - obama_tts
     - lifeos
+    - job_hunter_automation
+    - greenhouse_sensor_pipeline
+    - evolutionary_robotics_research
+    - sequence_analysis
+    - deep_learning_fundamentals
 
 # =============================================================================
 # AI Recommendation Thresholds (used in AI prompt)
@@ -385,7 +388,7 @@ prompts:
     Composition rules:
     1. Each section with 2+ bullets MUST lead with a context_setter or depth_prover — NEVER start with foundation or breadth
     2. NEVER select 2 bullets with the same narrative_role in one section
-    3. If a RECOMMENDED SEQUENCE is shown for a section, follow that ordering
+    3. If a RECOMMENDED SEQUENCE exists for this role type, you MUST use exactly those bullets in that order. Do not cherry-pick, reorder, or substitute. You may OMIT the last bullet(s) if space is tight, but the remaining bullets must stay in sequence order. If no sequence matches the target role, fall back to narrative_role ordering
     4. Vary sentence openings across bullets within a section — if one starts with "Built", the next MUST use a different verb pattern (not "Built/Developed/Engineered/Designed")
 
     #### Cross-Section Strategy
