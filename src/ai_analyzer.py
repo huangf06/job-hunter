@@ -1064,7 +1064,7 @@ class AIAnalyzer:
             return None
 
         try:
-            cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '1']
+            cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '2']
             # Strip ANTHROPIC_BASE_URL/API_KEY if present — they override
             # Claude Code's native OAuth auth (CLAUDE_CODE_OAUTH_TOKEN).
             clean_env = os.environ.copy()

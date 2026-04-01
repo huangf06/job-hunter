@@ -676,8 +676,9 @@ title_options:
   glp_technology:
     default: "Lead Data Engineer"
     data_engineer: "Lead Data Engineer"
+    data_engineer_lead: "Data Engineer & Team Lead"
     data_scientist: "Data Scientist & Team Lead"
-    ml_engineer: "Data Scientist & Team Lead"
+    ml_engineer: "ML Engineer & Team Lead"
     risk_analyst: "Credit Risk Analyst"
   baiquan_investment:
     default: "Quantitative Researcher"
