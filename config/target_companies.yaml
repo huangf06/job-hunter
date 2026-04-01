@@ -8,7 +8,8 @@
 #
 # NOTE: Booking.com uses iCIMS (not Greenhouse) — needs custom scraper
 # NOTE: Miro uses Greenhouse internally but doesn't expose public Board API
-# NOTE: Optiver/Backbase have valid GH boards but post jobs infrequently (0 at time of check)
+# NOTE: Optiver has valid GH board but posts jobs infrequently (0 at time of check)
+# NOTE: Backbase Greenhouse board returned 404 as of 2026-03-31 — removed
 # NOTE: Uber, Nike, Snowflake, Confluent, HashiCorp, Notion — not on public Greenhouse API
 
 companies:
@@ -46,11 +47,6 @@ companies:
   - name: Optiver
     ats: greenhouse
     board_token: optiver
-    location_filter: "Amsterdam"
-
-  - name: Backbase
-    ats: greenhouse
-    board_token: backbase
     location_filter: "Amsterdam"
 
   # === Greenhouse — international companies with Amsterdam/NL offices ===
