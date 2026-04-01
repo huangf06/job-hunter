@@ -356,14 +356,20 @@ prompts:
     - Ele.me: ALWAYS set company_note to "(acquired by Alibaba)"
     - Other companies: set to null
 
+    ### PAGE BALANCE (CRITICAL)
+    The resume uses a two-column layout: Experience on the left, Education/Projects/Skills on the right.
+    Both columns MUST be roughly balanced in height. The right column tends to overflow because it
+    contains multiple sections (Education, Certification, Projects, Skills, Languages).
+    Be CONSERVATIVE with right-column content (projects, skill categories).
+
     ### BULLET DISTRIBUTION (GUIDANCE, NOT HARD LIMITS)
     Include bullets based on JD relevance. Typical ranges:
     - Most relevant experience: 2-4 bullets
     - Second experience: 2-3 bullets
     - Third experience (if included): 1-2 bullets
-    - Main project: 2-4 bullets (include all that are relevant)
+    - Main project: 2-3 bullets
     - Second project: 1-2 bullets
-    - Third project (if relevant): 1 bullet
+    - Total project bullets across ALL projects: max 5
 
     ### NARRATIVE COMPOSITION (CRITICAL FOR RESUME QUALITY)
 
@@ -399,7 +405,7 @@ prompts:
     - Together, all sections should cover: technical depth + engineering capability + business awareness
 
     ### SKILLS FORMAT
-    - Provide 4-6 categories from this ALLOWED list ONLY:
+    - Provide 4-5 categories from this ALLOWED list ONLY:
       {allowed_skill_categories_list}
     - Do NOT invent category names outside this list
     - Include proficiency levels for Languages (e.g., "Python (Expert)")
@@ -416,11 +422,10 @@ prompts:
     If the JD requires a skill the candidate lacks, simply omit it — do not fake it.
 
     ### PROJECT SELECTION
-    - Select 1-3 projects based on JD relevance
+    - Select 1-2 projects based on JD relevance (max 2 to maintain page balance)
     - For Data Engineer roles: prioritize Financial Data Lakehouse
     - For ML/DS roles: prioritize Thesis or Expedia
     - For NLP/AI roles: prioritize NLP Projects or Thesis
-    - Include a third project only if it adds clearly different skills
     - THESIS RULE: When including thesis_uq_rl, ALWAYS include thesis_noise_paradox (the original discovery) — do NOT only include thesis_uq_framework (measurement-only looks weak)
 
     ### BULLET SELECTION RULE (ABSOLUTE)

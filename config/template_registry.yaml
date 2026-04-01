@@ -112,6 +112,7 @@ templates:
       - "quant"
       - "quantitative"
       - "algorithm engineer"
+      - "data analyst"
       - "ai researcher"
     bio_positioning: "ML Engineer / Data Scientist"
     key_strengths:

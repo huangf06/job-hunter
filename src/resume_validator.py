@@ -100,12 +100,13 @@ class ResumeValidator:
         self._allowed_categories = data.get('allowed_skill_categories', [])
         self._library_loaded = True
 
-    def validate(self, tailored: dict, job: dict) -> ValidationResult:
+    def validate(self, tailored: dict, job: dict, tier: str = None) -> ValidationResult:
         """Run all validations on tailored resume JSON.
 
         Args:
             tailored: The tailored_resume dict from AI analysis
             job: The job dict (needs 'description' for skill activation)
+            tier: Resume routing tier (ADAPT_TEMPLATE, FULL_CUSTOMIZE, etc.)
 
         Returns:
             ValidationResult with passed/errors/warnings/fixes
@@ -152,6 +153,12 @@ class ResumeValidator:
         # 5. Structure validation
         struct_errors = self._validate_structure(tailored)
         errors.extend(struct_errors)
+
+        # 6. Content volume validation (page balance — two-column layouts only)
+        if tier != 'FULL_CUSTOMIZE':
+            volume_errors, volume_warnings = self._validate_content_volume(tailored)
+            errors.extend(volume_errors)
+            warnings.extend(volume_warnings)
 
         passed = len(errors) == 0
         return ValidationResult(
@@ -404,3 +411,42 @@ class ResumeValidator:
                 errors.append(f"Project '{proj.get('name', i)}' has no bullets")
 
         return errors
+
+    def _validate_content_volume(self, tailored: dict) -> tuple:
+        """Validate content volume for page balance (right column overflow prevention).
+
+        The two-column layout puts Experience on the left and
+        Education/Projects/Skills/Languages on the right. Too much right-column
+        content causes severe left-right height imbalance.
+        """
+        errors = []
+        warnings = []
+
+        projects = tailored.get('projects') or []
+        skills = tailored.get('skills') or []
+
+        # Count total project bullets
+        total_project_bullets = sum(
+            len([b for b in (p.get('bullets') or []) if isinstance(b, str) and b.strip()])
+            for p in projects
+        )
+
+        # Project count: max 3 (block), warn at 3
+        if len(projects) > 3:
+            errors.append(f"Too many projects: {len(projects)} (max 3)")
+        elif len(projects) > 2:
+            warnings.append(f"3 projects may cause right-column overflow; prefer 2")
+
+        # Total project bullets: warn >5, block >8
+        if total_project_bullets > 8:
+            errors.append(f"Too many project bullets: {total_project_bullets} (max 8)")
+        elif total_project_bullets > 5:
+            warnings.append(f"Project bullets ({total_project_bullets}) may cause right-column overflow; prefer <=5")
+
+        # Skill categories: warn >5, block >7
+        if len(skills) > 7:
+            errors.append(f"Too many skill categories: {len(skills)} (max 7)")
+        elif len(skills) > 5:
+            warnings.append(f"Skill categories ({len(skills)}) may cause right-column overflow; prefer <=5")
+
+        return errors, warnings

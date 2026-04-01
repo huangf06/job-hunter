@@ -171,8 +171,8 @@ class ResumeRenderer:
             print(f"[Renderer] Job not found: {job_id}")
             return None
 
-        # v3.0: Run post-generation validation
-        validation = self.validator.validate(tailored, job)
+        # v3.0: Run post-generation validation (skip volume checks for single-column)
+        validation = self.validator.validate(tailored, job, tier=tier)
         if not validation.passed:
             print(f"[Renderer] Validation FAILED for job: {job_id}, falling back to USE_TEMPLATE")
             for err in validation.errors:
@@ -312,6 +312,112 @@ class ResumeRenderer:
         ))
         return {'html_path': None, 'pdf_path': str(paths['pdf_path'])}
 
+    def _schema_to_context(self, schema: Dict, tailored: Dict, analysis: Dict) -> Dict:
+        """Convert slot_schema + tier-2 overrides into a standard Jinja2 context dict.
+
+        This bridges the ADAPT_TEMPLATE tier-2 output format (slot_overrides,
+        skills_override, entry_visibility) into the same context structure that
+        base_template_DE/ML.html expect (experiences, projects, skills lists).
+        """
+        slot_overrides = tailored.get('slot_overrides', {})
+        skills_override = tailored.get('skills_override', {})
+        entry_visibility = tailored.get('entry_visibility', {})
+
+        context = dict(self.base_context)
+
+        # Bio: use slot_override if present, else pick senior/default based on seniority
+        seniority = analysis.get('seniority', 'mid')
+        bio_schema = schema.get('bio', {})
+        if 'bio' in slot_overrides:
+            context['bio'] = slot_overrides['bio']
+        elif seniority == 'senior' and bio_schema.get('senior'):
+            context['bio'] = bio_schema['senior']
+        else:
+            context['bio'] = bio_schema.get('default', '')
+
+        # Build experiences and projects from schema sections
+        experiences = []
+        projects = []
+        for section in schema.get('sections', []):
+            section_id = section.get('section_id', '')
+            for entry in section.get('entries', []):
+                entry_id = entry['entry_id']
+
+                # Skip hidden entries
+                if not entry_visibility.get(entry_id, True):
+                    continue
+
+                bullets = []
+                for bullet in entry.get('bullets', []):
+                    slot_id = bullet['slot_id']
+                    text = slot_overrides.get(slot_id, bullet.get('default', ''))
+                    if text and text.strip():
+                        bullets.append(text)
+
+                item = {
+                    'company': entry.get('company', ''),
+                    'company_note': '',
+                    'title': entry.get('title', ''),
+                    'date': entry.get('date', ''),
+                    'bullets': bullets,
+                    'technical_skills': '',
+                }
+
+                # Parse company_note from parentheses in company name
+                company_raw = entry.get('company', '')
+                if '(' in company_raw and company_raw.endswith(')'):
+                    parts = company_raw.split('(', 1)
+                    item['company'] = parts[0].strip()
+                    item['company_note'] = parts[1].rstrip(')')
+
+                if section_id == 'experience':
+                    experiences.append(item)
+                elif section_id == 'projects':
+                    # For projects, use 'name' key instead of 'company'
+                    proj_item = {
+                        'name': entry.get('title', '') or entry.get('company', ''),
+                        'date': entry.get('date', ''),
+                        'bullets': bullets,
+                        'technical_skills': '',
+                    }
+                    projects.append(proj_item)
+
+        context['experiences'] = experiences
+        context['projects'] = projects
+
+        # Build skills from schema categories + overrides
+        skills = []
+        for section in schema.get('sections', []):
+            if section.get('section_id') != 'skills':
+                continue
+            for cat in section.get('categories', []):
+                cat_id = cat['cat_id']
+                skills_list = skills_override.get(cat_id, cat.get('default', ''))
+                # Map cat_id to display name
+                display_name = cat_id.replace('_', ' ').title()
+                # Common mappings
+                CAT_DISPLAY = {
+                    'programming': 'Programming',
+                    'data_engineering': 'Data Engineering',
+                    'infrastructure': 'Infrastructure',
+                    'analytics_ml': 'Analytics & ML',
+                    'ml_modeling': 'ML & Modeling',
+                    'data_infrastructure': 'Data Infrastructure',
+                    'domains': 'Domains',
+                    'backend_systems': 'Backend Systems',
+                    'data_systems': 'Data Systems',
+                }
+                display_name = CAT_DISPLAY.get(cat_id, display_name)
+                skills.append({
+                    'category': display_name,
+                    'skills_list': skills_list,
+                })
+
+        skills = self._dedup_skills(skills)
+        context['skills'] = skills
+
+        return context
+
     def _render_adapt_template(self, job_id: str, analysis: Dict) -> Optional[Dict[str, str]]:
         job = self.db.get_job(job_id)
         if not job:
@@ -336,21 +442,35 @@ class ResumeRenderer:
                 print(f"[Renderer] Tier 2 validation error: {error}")
             return None
 
-        template = self.jinja_env.get_template("adapt_template.html")
-        html_content = template.render(
-            schema=schema,
-            slot_overrides=tailored.get('slot_overrides', {}),
-            skills_override=tailored.get('skills_override', {}),
-            entry_visibility=tailored.get('entry_visibility', {}),
-            candidate=self.base_context,
-            template_title=f"Adapted {template_id} Resume",
-        )
+        # Select per-template HTML based on template_id
+        template_map = {
+            'DE': 'base_template_DE.html',
+            'ML': 'base_template_ML.html',
+        }
+        template_name = template_map.get(template_id)
+        if not template_name:
+            print(f"[Renderer] No ADAPT template for template_id={template_id}, falling back")
+            return None
+
+        # Convert slot_schema + overrides into standard Jinja2 context
+        context = self._schema_to_context(schema, tailored, analysis)
+
+        from jinja2 import TemplateNotFound
+        try:
+            template = self.jinja_env.get_template(template_name)
+        except TemplateNotFound:
+            print(f"[Renderer] ADAPT template not found: {template_name}")
+            return None
+
+        html_content = template.render(**context)
 
         paths = self._build_output_paths(job)
         with open(paths['html_path'], 'w', encoding='utf-8') as handle:
             handle.write(html_content)
 
-        pdf_success = self._html_to_pdf(paths['html_path'], paths['pdf_path'])
+        # ADAPT templates have CSS body padding baked in — use zero Playwright margins
+        zero_margin = {'top': '0', 'right': '0', 'bottom': '0', 'left': '0'}
+        pdf_success = self._html_to_pdf(paths['html_path'], paths['pdf_path'], margin_override=zero_margin)
         if not pdf_success:
             return None
 
@@ -359,7 +479,7 @@ class ResumeRenderer:
         self.db.save_resume(Resume(
             job_id=job_id,
             role_type=template_id,
-            template_version="adapt_v1",
+            template_version="adapt_v2",
             html_path=str(paths['html_path']),
             pdf_path=str(paths['pdf_path']),
             submit_dir=str(paths['submit_dir']),
@@ -476,8 +596,14 @@ class ResumeRenderer:
         safe = safe.strip('_')
         return safe or 'unknown'
 
-    def _html_to_pdf(self, html_path: Path, pdf_path: Path) -> bool:
-        """使用 Playwright 将 HTML 转换为 PDF"""
+    def _html_to_pdf(self, html_path: Path, pdf_path: Path, margin_override: Dict = None) -> bool:
+        """使用 Playwright 将 HTML 转换为 PDF.
+
+        Args:
+            margin_override: If provided, use these margins instead of config defaults.
+                Pass {'top': '0', 'right': '0', 'bottom': '0', 'left': '0'} for
+                templates that embed their own padding (e.g. ADAPT_TEMPLATE DE/ML).
+        """
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
@@ -487,7 +613,17 @@ class ResumeRenderer:
 
         try:
             pdf_config = self.config.get('resume', {}).get('pdf', {})
-            margin = pdf_config.get('margin', {})
+
+            if margin_override is not None:
+                pdf_margin = margin_override
+            else:
+                margin = pdf_config.get('margin', {})
+                pdf_margin = {
+                    'top': margin.get('top', '0.55in'),
+                    'right': margin.get('right', '0.55in'),
+                    'bottom': margin.get('bottom', '0.55in'),
+                    'left': margin.get('left', '0.55in'),
+                }
 
             with sync_playwright() as p:
                 browser = p.chromium.launch()
@@ -501,12 +637,7 @@ class ResumeRenderer:
                     page.pdf(
                         path=str(pdf_path),
                         format=pdf_config.get('format', 'A4'),
-                        margin={
-                            'top': margin.get('top', '0.55in'),
-                            'right': margin.get('right', '0.55in'),
-                            'bottom': margin.get('bottom', '0.55in'),
-                            'left': margin.get('left', '0.55in'),
-                        },
+                        margin=pdf_margin,
                         print_background=pdf_config.get('print_background', True),
                     )
                 finally:
