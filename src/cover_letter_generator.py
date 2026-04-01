@@ -19,10 +19,8 @@ v2.0 CHANGES (2026-02-24):
 
 import json
 import os
-import random
 import re
 import sys
-import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -38,7 +36,6 @@ try:
 except ImportError:
     pass
 
-from anthropic import Anthropic, RateLimitError, APITimeoutError, APIConnectionError, InternalServerError
 from src.db.job_db import JobDatabase, CoverLetter
 from src.language_guidance import format_language_guidance_for_prompt
 
@@ -123,30 +120,6 @@ class CoverLetterGenerator:
         self.db = JobDatabase()
         from src.template_registry import load_registry
         self.registry = load_registry()
-
-        # Model setup (same pattern as AIAnalyzer)
-        active = model_override or self.config.get('active_model', 'opus')
-        model_cfg = self.config.get('models', {}).get(active, {})
-        self.model_name = model_cfg.get('model', 'claude-opus-4-6')
-        self.max_tokens = model_cfg.get('max_tokens', 4096)
-        self.temperature = model_cfg.get('temperature', 0.3)
-
-        # API credentials
-        env_key = model_cfg.get('env_key', 'ANTHROPIC_API_KEY')
-        env_url = model_cfg.get('env_url', 'ANTHROPIC_BASE_URL')
-        api_key = os.environ.get(env_key, '')
-        base_url = os.environ.get(env_url, None)
-        auth_type = model_cfg.get('auth_type', 'api_key')
-
-        # Init Anthropic client
-        client_kwargs = {}
-        if base_url:
-            client_kwargs['base_url'] = base_url
-        if auth_type == 'bearer':
-            client_kwargs['auth_token'] = api_key
-        else:
-            client_kwargs['api_key'] = api_key
-        self.client = Anthropic(**client_kwargs)
 
         # Load bullet library + cover letter config
         self.bullet_library = self._load_yaml(PROJECT_ROOT / "assets" / "bullet_library.yaml")
@@ -294,6 +267,47 @@ class CoverLetterGenerator:
 
         relevant.sort(key=sort_key)
         return relevant
+
+    # =========================================================================
+    # Claude Code CLI integration
+    # =========================================================================
+
+    def _call_claude_code(self, prompt: str) -> Optional[str]:
+        """Call Claude Code CLI with prompt and return text output."""
+        import shutil
+        import subprocess
+
+        claude_bin = shutil.which('claude')
+        if not claude_bin:
+            print(f"  [CLAUDE_CODE] 'claude' CLI not found in PATH")
+            return None
+
+        try:
+            cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '2']
+            clean_env = os.environ.copy()
+            clean_env.pop('ANTHROPIC_BASE_URL', None)
+            clean_env.pop('ANTHROPIC_API_KEY', None)
+            result = subprocess.run(
+                cmd,
+                input=prompt,
+                capture_output=True,
+                text=True,
+                timeout=300,
+                encoding='utf-8',
+                env=clean_env,
+            )
+            if result.returncode != 0:
+                stderr = (result.stderr or '')[:500]
+                stdout_preview = (result.stdout or '')[:200]
+                print(f"  [CLAUDE_CODE] CLI error (rc={result.returncode}): {stderr} {stdout_preview}")
+                return None
+            return result.stdout.strip()
+        except subprocess.TimeoutExpired:
+            print(f"  [CLAUDE_CODE] CLI timed out after 300s")
+            return None
+        except FileNotFoundError:
+            print(f"  [CLAUDE_CODE] 'claude' CLI not found at {claude_bin}")
+            return None
 
     # =========================================================================
     # Prompt building (v2.0 — completely rewritten)
@@ -659,38 +673,12 @@ Return ONLY the JSON object, no other text."""
         # Build prompt
         prompt = self._build_prompt(job, analysis, custom_requirements)
 
-        # AI call with retry
-        for attempt in range(3):
-            try:
-                response = self.client.messages.create(
-                    model=self.model_name,
-                    max_tokens=self.max_tokens,
-                    temperature=self.temperature,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                break
-            except RateLimitError:
-                wait = 30 * (attempt + 1) + random.uniform(0, 5)
-                print(f"  [RATE LIMIT] Waiting {wait:.0f}s...")
-                time.sleep(wait)
-            except (APITimeoutError, APIConnectionError, InternalServerError) as e:
-                wait = 2 ** (attempt + 1)
-                print(f"  [RETRY] {type(e).__name__}, waiting {wait}s...")
-                time.sleep(wait)
-        else:
-            print(f"[CoverLetter] Failed after 3 attempts")
-            return None
-
-        # Extract response — collect ALL text blocks (skip thinking blocks)
-        # Claude Opus 4.6 may insert thinking blocks between text blocks,
-        # so we must concatenate all text-type blocks to get the full output.
-        text_blocks = [b for b in response.content if getattr(b, 'type', None) == 'text']
-        raw_text = ''.join(b.text for b in text_blocks).strip()
+        # AI call via Claude Code CLI (same pattern as AIAnalyzer)
+        raw_text = self._call_claude_code(prompt)
         if not raw_text:
-            print(f"[CoverLetter] Empty response from AI (no text blocks with content)")
+            print(f"[CoverLetter] Failed to get response from Claude Code CLI")
             return None
-        tokens_used = (response.usage.input_tokens + response.usage.output_tokens
-                       if response.usage else 0)
+        tokens_used = 0  # CLI doesn't report token usage
 
         # Parse JSON
         spec = self._parse_json_response(raw_text)

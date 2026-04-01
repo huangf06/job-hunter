@@ -116,7 +116,7 @@ resume:
       degree: "M.Sc. in Artificial Intelligence"
       date: "Sep. 2023 -- Aug. 2025"
       gpa: "8.2/10"
-      coursework: "Data Mining (9.0), Deep Learning (9.5), Multi-Agent Systems (9.5), NLP (9.0)"
+      coursework: "Deep Learning (9.5), Multi-Agent Systems (9.5), ML4QS (9.5), NLP (9.0)"
       thesis: "Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments"
     bachelor:
       school: "Tsinghua University"

@@ -110,10 +110,10 @@
   <text x="326" y="171.5" id="ed1"><tspan class="org">Vrije Universiteit Amsterdam</tspan></text>
   <text x="326" y="185" id="ed2"><tspan class="role">M.Sc. in Artificial Intelligence (GPA: 8.2/10)</tspan></text>
   <text class="date" x="326" y="198.5" id="ed3">SEPTEMBER 2023 - AUGUST 2025</text>
-  <text class="body" x="326" y="214" id="ed7">Courses: Deep Learning (9.5), NLP (9.0),</text>
-  <text class="body" x="326" y="227" id="ed8">ML4QS (9.5), Data Mining (9.0).</text>
+  <text class="body" x="326" y="214" id="ed7">Courses: Deep Learning (9.5), ML4QS (9.5),</text>
+  <text class="body" x="326" y="227" id="ed8">Multi-Agent System (9.5), NLP (9.0)</text>
 
-  <text x="326" y="245" id="ed9"><tspan class="org">Tsinghua University (#1 in China)</tspan></text>
+  <text x="326" y="245" id="ed9"><tspan class="org">Tsinghua University</tspan><tspan class="place" dx="4">(#1 in China)</tspan></text>
   <text x="326" y="260" id="ed10"><tspan class="role">B.Eng. in Industrial Engineering</tspan></text>
   <text class="date" x="326" y="273.5" id="ed11">SEPTEMBER 2006 - JULY 2010</text>
 
