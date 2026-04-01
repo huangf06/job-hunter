@@ -6,9 +6,9 @@ name: Job Pipeline
 on:
   schedule:
     # 工作日 2 次 (NL 时间 ~10:37 / ~16:37 CEST)
-    - cron: '37 8,14 * * 1-5'
+    - cron: '37 7,13 * * 1-5'
     # 周末中午 1 次
-    - cron: '23 11 * * 0,6'
+    - cron: '23 10 * * 0,6'
 
   workflow_dispatch:
     inputs:
