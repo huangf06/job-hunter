@@ -50,10 +50,10 @@ def test_load_registry_uses_repo_config_file():
         ("ML Platform Engineer", "ML", 0.5, True),
         ("MLOps Engineer", "ML", 0.9, False),
         ("Business Intelligence Manager", "DE", 0.3, False),
-        ("Software Engineer", "Backend", 0.9, False),
-        ("Backend Engineer", "Backend", 0.9, False),
-        ("Python Developer", "Backend", 0.9, False),
-        ("Infrastructure Engineer", "Backend", 0.9, False),
+        ("Software Engineer", "DE", 0.3, False),
+        ("Backend Engineer", "DE", 0.3, False),
+        ("Python Developer", "DE", 0.3, False),
+        ("Infrastructure Engineer", "DE", 0.3, False),
     ],
 )
 def test_select_template_behaviors(title, expected_template, expected_confidence, expected_ambiguous):
@@ -77,13 +77,13 @@ def test_select_template_skips_disabled_templates():
     assert decision.confidence == 0.3
 
 
-def test_backend_template_routes_correctly():
-    """Backend template (now enabled) routes software/backend titles."""
+def test_backend_template_disabled_falls_through():
+    """Backend template is disabled, so backend titles fall through to DE default."""
     registry = load_registry()
     decision = select_template("Backend Platform Engineer", registry)
 
-    assert decision.template_id == "Backend"
-    assert decision.confidence == 0.9
+    assert decision.template_id == "DE"
+    assert decision.confidence == 0.3
 
 
 def test_resolve_routing_prefers_c1_override_with_reason():
