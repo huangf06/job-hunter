@@ -537,7 +537,9 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         j.id, j.title, j.company, j.location, j.url,
         j.posted_date,
         an.ai_score as score, an.recommendation,
+        an.resume_tier, an.template_id_final,
         r.pdf_path as resume_path,
+        r.template_version,
         r.submit_dir
     FROM jobs j
     JOIN job_analysis an ON j.id = an.job_id
@@ -1089,7 +1091,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
             return [dict(row) for row in cursor.fetchall()]
 
     def get_analyzed_jobs_for_resume(self, min_ai_score: float = 5.0, limit: int = None) -> List[Dict]:
-        """获取 AI 评分达标但未生成简历的职位 (排除已投递; 含 PDF 生成失败重试)"""
+        """获取 v3.0 管道评分达标但未生成简历的职位 (排除已投递和旧管道数据)"""
         with self._get_conn() as conn:
             query = """
                 SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
@@ -1099,12 +1101,11 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                 LEFT JOIN resumes r ON j.id = r.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE (r.id IS NULL OR (r.pdf_path IS NULL OR r.pdf_path = ''))
+                  AND a.resume_tier IS NOT NULL
                   AND (
                       a.resume_tier = 'USE_TEMPLATE'
                       OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
-                      OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
-                      OR a.resume_tier IS NULL
                   )
                   AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC

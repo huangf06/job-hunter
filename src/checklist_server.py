@@ -37,6 +37,9 @@ def generate_checklist(jobs: list[dict], ready_dir: Path) -> Path:
             "applied": False,
             "repost_applied_at": job.get("repost_applied_at", ""),
             "rejection_rejected_at": job.get("rejection_rejected_at", ""),
+            "resume_tier": job.get("resume_tier", ""),
+            "template_id_final": job.get("template_id_final", ""),
+            "template_version": job.get("template_version", ""),
         }
 
     state_path = ready_dir / "state.json"
@@ -74,6 +77,12 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
         rejected = info.get("rejection_rejected_at", "")
         rejected_badge = f' <span style="color:#ea580c;font-weight:bold" title="Rejected {_esc(rejected)}">REJECTED</span>' if rejected else ''
 
+        # Resume generation pathway badge
+        resume_tier = info.get("resume_tier", "")
+        tpl_id = info.get("template_id_final", "")
+        tpl_ver = info.get("template_version", "")
+        resume_badge = _resume_badge(resume_tier, tpl_id, tpl_ver)
+
         esc_id = _esc(job_id)
 
         rows.append(f"""
@@ -82,6 +91,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
           <td><span style="color:{score_color};font-weight:bold">{score:.1f}</span></td>
           <td>{_esc(info['company'])}{repost_badge}{rejected_badge}</td>
           <td>{_esc(info['title'])}</td>
+          <td>{resume_badge}</td>
           <td>
             <button class="btn" data-path="{_esc(abs_path)}" onclick="openFolder(this.dataset.path)">Open Folder</button>
             <button class="btn" data-path="{_esc(abs_path)}" onclick="copyPath(this.dataset.path, this)">Copy Path</button>
@@ -110,6 +120,10 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
   .btn {{ padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: white; cursor: pointer; font-size: 0.8rem; margin-right: 4px; }}
   .btn:hover {{ background: #f1f5f9; }}
   .btn.copied {{ background: #22c55e; color: white; border-color: #22c55e; }}
+  .badge {{ padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }}
+  .badge-adapt {{ background: #dbeafe; color: #1d4ed8; }}
+  .badge-copy {{ background: #f3f4f6; color: #6b7280; }}
+  .badge-full {{ background: #dcfce7; color: #15803d; }}
   .summary {{ margin-top: 1rem; color: #475569; }}
 </style>
 </head>
@@ -118,7 +132,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 <p class="meta">Generated: {generated} | Total: {len(jobs_sorted)} jobs</p>
 <table>
   <thead>
-    <tr><th></th><th>Score</th><th>Company</th><th>Title</th><th>Actions</th><th>Link</th></tr>
+    <tr><th></th><th>Score</th><th>Company</th><th>Title</th><th>Resume</th><th>Actions</th><th>Link</th></tr>
   </thead>
   <tbody>
     {''.join(rows)}
@@ -189,6 +203,24 @@ def _esc(text: str) -> str:
     """HTML-escape a string (covers attribute and text contexts)."""
     return (text.replace("&", "&amp;").replace("<", "&lt;")
             .replace(">", "&gt;").replace('"', "&quot;").replace("'", "&#39;"))
+
+
+def _resume_badge(tier: str, tpl_id: str, tpl_ver: str) -> str:
+    """Build a colored badge showing the resume generation pathway."""
+    tpl_label = tpl_id or "?"
+    if tier == "ADAPT_TEMPLATE":
+        return (f'<span class="badge badge-adapt" title="Zone-based adapted template">'
+                f'ADAPT/{tpl_label}</span>')
+    elif tier == "USE_TEMPLATE":
+        return (f'<span class="badge badge-copy" title="Template PDF copy">'
+                f'COPY/{tpl_label}</span>')
+    elif tier == "FULL_CUSTOMIZE":
+        return (f'<span class="badge badge-full" title="Fully customized resume">'
+                f'FULL/{tpl_label}</span>')
+    elif tpl_ver == "template_v1":
+        return (f'<span class="badge badge-copy" title="Fallback to template copy">'
+                f'COPY/{tpl_label}</span>')
+    return f'<span class="badge">{_esc(tpl_ver or "?")}</span>'
 
 
 def start_server(ready_dir: Path, port: int = 8234):
