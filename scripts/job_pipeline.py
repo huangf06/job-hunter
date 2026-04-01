@@ -375,6 +375,11 @@ class JobPipeline:
         print("Syncing database...")
         self.db.final_sync()
 
+        # Step 1.5: Clean up stale resume records whose PDF files were deleted
+        orphans = self.db.clear_orphan_resumes()
+        if orphans:
+            print(f"  Cleared {orphans} stale resume records (PDF files missing).")
+
         # Step 2: Generate resumes for jobs that need them
         renderer = ResumeRenderer()
         jobs = self.db.get_analyzed_jobs_for_resume(
@@ -404,9 +409,6 @@ class JobPipeline:
                 results["success"].append(label)
         else:
             print("No new jobs need resume generation.")
-
-        # Step 2.5: Generate cover letters for jobs that have resumes but no CL
-        self.generate_cover_letters_batch(min_ai_score=threshold, limit=limit)
 
         # Step 3: Collect ALL ready-to-apply jobs (new + existing)
         all_ready = self.db.get_ready_to_apply()
@@ -745,8 +747,6 @@ class JobPipeline:
                     if user_input == 'y':
                         generated = self.generate_resumes(min_ai_score=ai_score_threshold, limit=limit)
                         print(f"Resumes generated: {generated}")
-                        # Also generate cover letters
-                        self.generate_cover_letters_batch(min_ai_score=ai_score_threshold, limit=limit)
 
         print("\n" + "=" * 70)
         self.show_stats()
