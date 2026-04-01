@@ -450,3 +450,24 @@ class ResumeValidator:
             warnings.append(f"Skill categories ({len(skills)}) may cause right-column overflow; prefer <=5")
 
         return errors, warnings
+
+    def validate_adapt_zones(self, context: dict) -> 'ValidationResult':
+        """Validate variable zone content for zone-based ADAPT templates.
+
+        Checks:
+        - Bio length (max 280 chars for ~3 lines at 10pt in 512pt width)
+        - Per-entry skills line length (max 70 chars for single line)
+        """
+        warnings = []
+        errors = []
+
+        bio = context.get('bio', '')
+        if len(bio) > 280:
+            warnings.append(f"Bio too long ({len(bio)} chars, max 280) — may overflow zone")
+
+        for key in ('glp_skills', 'bq_skills', 'ele_skills', 'henan_skills'):
+            value = context.get(key, '')
+            if value and len(value) > 70:
+                warnings.append(f"{key} too long ({len(value)} chars, max 70) — may overflow line")
+
+        return ValidationResult(passed=len(errors) == 0, errors=errors, warnings=warnings)

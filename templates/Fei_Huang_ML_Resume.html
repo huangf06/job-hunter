@@ -148,11 +148,10 @@
     <div class="line contact header-shift" style="left:375.6pt; top:61pt;">|</div>
     <div class="line contact header-shift" style="left:386.9pt; top:61pt;"><a href="https://github.com/huangf06">GitHub</a></div>
 
-    <!-- VARIABLE ZONE 1: Bio -->
     <div class="line section content-shift" style="left:42pt; top:77.3pt;">BIO</div>
-    <div class="content-shift" style="position:absolute; left:42pt; top:90.5pt; width:512pt; max-height:38pt; overflow:hidden; line-height:12pt;">
-      <span class="bio">{{ bio | safe }}</span>
-    </div>
+    <div class="line bio content-shift" style="left:42pt; top:90.5pt;"><strong>Machine Learning Engineer</strong> with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring</div>
+    <div class="line bio content-shift" style="left:42pt; top:102.5pt;">systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and</div>
+    <div class="line bio content-shift" style="left:42pt; top:114.5pt;">end-to-end ML pipelines, from raw data through production deployment.</div>
 
     <div class="line section content-shift" style="left:42pt; top:149.3pt;">EXPERIENCE</div>
 
@@ -173,8 +172,8 @@
     <div class="line body content-shift" style="left:42pt; top:295.4pt;">credit bureau data, transforming raw nested JSON into</div>
     <div class="line body content-shift" style="left:42pt; top:308.4pt;">structured analytical features for model training,</div>
     <div class="line body content-shift" style="left:42pt; top:321.4pt;">scoring, and post-loan monitoring.</div>
-    <!-- VARIABLE ZONE 2a: GLP skills -->
-    <div class="line body content-shift" style="left:42pt; top:337.4pt;"><strong>Skills:</strong> {{ glp_skills }}</div>
+    <div class="line body content-shift" style="left:42pt; top:337.4pt;"><strong>Skills:</strong> Python, SQL, PySpark, Feature Engineering,</div>
+    <div class="line body content-shift" style="left:42pt; top:350.4pt;">AWS (Redshift, S3), Airflow</div>
 
     <div class="line content-shift" style="left:42pt; top:372.4pt;">
       <span class="org">BQ Investment (Hedge Fund)</span>
@@ -190,8 +189,7 @@
     <div class="line body content-shift" style="left:42pt; top:466.4pt;">4 factor families across <strong>3,000+ securities</strong> using</div>
     <div class="line body content-shift" style="left:42pt; top:479.4pt;">cross-sectional regression; validated features</div>
     <div class="line body content-shift" style="left:42pt; top:492.4pt;">integrated into the fund's live portfolio construction.</div>
-    <!-- VARIABLE ZONE 2b: BQ skills -->
-    <div class="line body content-shift" style="left:42pt; top:508.4pt;"><strong>Skills:</strong> {{ bq_skills }}</div>
+    <div class="line body content-shift" style="left:42pt; top:508.4pt;"><strong>Skills:</strong> Python, SQL, NumPy, pandas, Statistical Modeling</div>
 
     <div class="line content-shift" style="left:42pt; top:530.4pt;">
       <span class="org">Ele.me (Alibaba Group)</span>
@@ -204,16 +202,17 @@
     <div class="line body content-shift" style="left:42pt; top:582.4pt;">pattern-matching algorithms (same-phone, high-</div>
     <div class="line body content-shift" style="left:42pt; top:595.4pt;">frequency, repeat-order); deployed during Ele.me's</div>
     <div class="line body content-shift" style="left:42pt; top:608.4pt;">hyper-growth phase pre-Alibaba acquisition.</div>
-    <!-- VARIABLE ZONE 2c: Ele.me skills -->
-    <div class="line body content-shift" style="left:42pt; top:624.4pt;"><strong>Skills:</strong> {{ ele_skills }}</div>
+    <div class="line body content-shift" style="left:42pt; top:624.4pt;"><strong>Skills:</strong> Python, SQL, Clustering, Anomaly Detection</div>
 
-    <!-- VARIABLE ZONE 3: Technical Skills (LEFT column) -->
     <div class="line section content-shift" style="left:42pt; top:652.8pt;">TECHNICAL SKILLS</div>
-    <div class="content-shift" style="position:absolute; left:42pt; top:667.9pt; width:268pt; max-height:118pt; overflow:hidden;">
-      {% for skill in skills %}
-      <div class="body" style="line-height:13pt;{% if not loop.first %} margin-top:3pt;{% endif %}"><strong>{{ skill.category }}:</strong> {{ skill.skills_list }}</div>
-      {% endfor %}
-    </div>
+    <div class="line body content-shift" style="left:42pt; top:667.9pt;"><strong>ML &amp; Modeling:</strong> PyTorch, Hugging Face Transformers,</div>
+    <div class="line body content-shift" style="left:42pt; top:680.9pt;">scikit-learn, LightGBM, XGBoost, Learning-to-Rank,</div>
+    <div class="line body content-shift" style="left:42pt; top:693.9pt;">Deep RL, Statistical Testing</div>
+    <div class="line body content-shift" style="left:42pt; top:709.9pt;"><strong>Programming:</strong> Python, SQL, NumPy, pandas, Bash</div>
+    <div class="line body content-shift" style="left:42pt; top:725.9pt;"><strong>Data &amp; Infrastructure:</strong> PySpark, Airflow, FastAPI,</div>
+    <div class="line body content-shift" style="left:42pt; top:738.9pt;">AWS (Redshift, S3, EC2), Delta Lake, Docker, Git</div>
+    <div class="line body content-shift" style="left:42pt; top:754.9pt;"><strong>Domains:</strong> Feature Engineering, NLP, Time-Series,</div>
+    <div class="line body content-shift" style="left:42pt; top:767.9pt;">Anomaly Detection, Uncertainty Quantification</div>
 
     <div class="line section content-shift" style="left:325.9pt; top:149.3pt;">EDUCATION</div>
     <div class="line org content-shift" style="left:325.9pt; top:162.4pt;">Vrije Universiteit Amsterdam</div>

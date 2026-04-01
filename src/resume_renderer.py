@@ -136,11 +136,12 @@ class ResumeRenderer:
                 analysis['template_id_final'] = routing.template_id
                 print(f"[Renderer] Legacy job {job_id}: auto-assigned template {routing.template_id}")
 
-        # Legacy jobs without tailored_resume → use template copy
-        if tier is None and not analysis.get('tailored_resume'):
-            return self._render_template_copy(job_id, analysis)
+        # Legacy jobs (pre-v3.0) without resume_tier → skip, need re-analysis
+        if tier is None:
+            print(f"[Renderer] Skipping legacy job {job_id}: no resume_tier. Run --ai-analyze or --analyze-job {job_id} to re-analyze.")
+            return None
 
-        if tier == 'USE_TEMPLATE' or (tier == 'ADAPT_TEMPLATE' and analysis.get('c3_decision') == 'FAIL'):
+        if tier == 'USE_TEMPLATE':
             return self._render_template_copy(job_id, analysis)
         if tier == 'ADAPT_TEMPLATE':
             result = self._render_adapt_template(job_id, analysis)
@@ -313,17 +314,17 @@ class ResumeRenderer:
         return {'html_path': None, 'pdf_path': str(paths['pdf_path'])}
 
     def _schema_to_context(self, schema: Dict, tailored: Dict, analysis: Dict) -> Dict:
-        """Convert slot_schema + tier-2 overrides into a standard Jinja2 context dict.
+        """Convert slot_schema + tier-2 overrides into a zone-based template context.
 
-        This bridges the ADAPT_TEMPLATE tier-2 output format (slot_overrides,
-        skills_override, entry_visibility) into the same context structure that
-        base_template_DE/ML.html expect (experiences, projects, skills lists).
+        Zone-based templates hardcode most content. This method outputs:
+        - bio: string (from slot_overrides or schema default)
+        - {entry_id}_skills: per-experience skills line string
+        - skills: list of {category, skills_list} for the Technical Skills zone
         """
         slot_overrides = tailored.get('slot_overrides', {})
         skills_override = tailored.get('skills_override', {})
-        entry_visibility = tailored.get('entry_visibility', {})
 
-        context = dict(self.base_context)
+        context = {}
 
         # Bio: use slot_override if present, else pick senior/default based on seniority
         seniority = analysis.get('seniority', 'mid')
@@ -335,55 +336,13 @@ class ResumeRenderer:
         else:
             context['bio'] = bio_schema.get('default', '')
 
-        # Build experiences and projects from schema sections
-        experiences = []
-        projects = []
+        # Per-entry skills lines
         for section in schema.get('sections', []):
-            section_id = section.get('section_id', '')
+            if section.get('section_id') != 'experience':
+                continue
             for entry in section.get('entries', []):
                 entry_id = entry['entry_id']
-
-                # Skip hidden entries
-                if not entry_visibility.get(entry_id, True):
-                    continue
-
-                bullets = []
-                for bullet in entry.get('bullets', []):
-                    slot_id = bullet['slot_id']
-                    text = slot_overrides.get(slot_id, bullet.get('default', ''))
-                    if text and text.strip():
-                        bullets.append(text)
-
-                item = {
-                    'company': entry.get('company', ''),
-                    'company_note': '',
-                    'title': entry.get('title', ''),
-                    'date': entry.get('date', ''),
-                    'bullets': bullets,
-                    'technical_skills': '',
-                }
-
-                # Parse company_note from parentheses in company name
-                company_raw = entry.get('company', '')
-                if '(' in company_raw and company_raw.endswith(')'):
-                    parts = company_raw.split('(', 1)
-                    item['company'] = parts[0].strip()
-                    item['company_note'] = parts[1].rstrip(')')
-
-                if section_id == 'experience':
-                    experiences.append(item)
-                elif section_id == 'projects':
-                    # For projects, use 'name' key instead of 'company'
-                    proj_item = {
-                        'name': entry.get('title', '') or entry.get('company', ''),
-                        'date': entry.get('date', ''),
-                        'bullets': bullets,
-                        'technical_skills': '',
-                    }
-                    projects.append(proj_item)
-
-        context['experiences'] = experiences
-        context['projects'] = projects
+                context[f'{entry_id}_skills'] = entry.get('technical_skills', '')
 
         # Build skills from schema categories + overrides
         skills = []
@@ -393,16 +352,14 @@ class ResumeRenderer:
             for cat in section.get('categories', []):
                 cat_id = cat['cat_id']
                 skills_list = skills_override.get(cat_id, cat.get('default', ''))
-                # Map cat_id to display name
                 display_name = cat_id.replace('_', ' ').title()
-                # Common mappings
                 CAT_DISPLAY = {
                     'programming': 'Programming',
                     'data_engineering': 'Data Engineering',
                     'infrastructure': 'Infrastructure',
                     'analytics_ml': 'Analytics & ML',
                     'ml_modeling': 'ML & Modeling',
-                    'data_infrastructure': 'Data Infrastructure',
+                    'data_infrastructure': 'Data & Infrastructure',
                     'domains': 'Domains',
                     'backend_systems': 'Backend Systems',
                     'data_systems': 'Data Systems',
@@ -461,6 +418,12 @@ class ResumeRenderer:
         except TemplateNotFound:
             print(f"[Renderer] ADAPT template not found: {template_name}")
             return None
+
+        # Validate zone overflow
+        zone_result = self.validator.validate_adapt_zones(context)
+        if zone_result.warnings:
+            for w in zone_result.warnings:
+                print(f"  [ZONE WARN] {w}")
 
         html_content = template.render(**context)
 
@@ -633,12 +596,13 @@ class ResumeRenderer:
                     # Load HTML file
                     page.goto(html_path.absolute().as_uri(), timeout=15000)
 
-                    # Generate PDF
+                    # Generate PDF (single page only — resume must fit one page)
                     page.pdf(
                         path=str(pdf_path),
                         format=pdf_config.get('format', 'A4'),
                         margin=pdf_margin,
                         print_background=pdf_config.get('print_background', True),
+                        page_ranges='1',
                     )
                 finally:
                     browser.close()

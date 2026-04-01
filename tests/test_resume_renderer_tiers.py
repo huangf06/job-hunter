@@ -24,6 +24,9 @@ class _ValidatorStub:
     def validate(self, tailored, job, tier=None):
         return _ValidationPass()
 
+    def validate_adapt_zones(self, context):
+        return _ValidationPass()
+
 
 class _DBStub:
     def __init__(self, analysis, job):
@@ -263,8 +266,8 @@ def test_render_resume_c3_fail_routes_to_template_copy():
     assert renderer.db.saved_resume.template_version == "template_v1"
 
 
-def test_render_resume_legacy_null_tier_uses_full_customize():
-    """Legacy records with resume_tier=NULL should use the FULL_CUSTOMIZE path."""
+def test_render_resume_legacy_null_tier_skips_job():
+    """Legacy records with resume_tier=NULL should be skipped (need re-analysis)."""
     tmp_dir = _local_tmp_dir("renderer_legacy_null")
     renderer = _make_renderer(
         tmp_dir,
@@ -284,8 +287,7 @@ def test_render_resume_legacy_null_tier_uses_full_customize():
         },
     )
     result = renderer.render_resume("job-1")
-    assert result is not None
-    assert Path(result["html_path"]).exists()
+    assert result is None, "Legacy jobs without resume_tier should be skipped"
 
 
 def test_render_resume_validator_failure_falls_back_to_template():
@@ -404,103 +406,51 @@ def test_render_full_customize_uses_build_output_paths():
 
 
 def test_base_template_de_renders_with_standard_context():
-    """base_template_DE.html should render with standard Jinja2 context variables."""
+    """Zone-based base_template_DE.html should render with bio, skills, and per-entry skills."""
     env = Environment(loader=FileSystemLoader(str(Path("templates").resolve())), autoescape=True)
     template = env.get_template("base_template_DE.html")
 
     html = template.render(
-        name="Test User",
-        location="Amsterdam",
-        phone="+31 6 1234",
-        email="test@example.com",
-        linkedin="https://linkedin.com/in/test",
-        github="https://github.com/test",
-        bio="Test bio text",
-        experiences=[{
-            "company": "TestCo",
-            "company_note": "Startup",
-            "title": "Data Engineer",
-            "date": "JAN 2020 - DEC 2022",
-            "bullets": ["Built pipelines", "Optimized queries"],
-            "technical_skills": "Python, SQL",
-        }],
-        projects=[{
-            "name": "Test Project",
-            "date": "2023",
-            "bullets": ["Did something"],
-            "technical_skills": "Spark",
-        }],
-        skills=[{"category": "Programming", "skills_list": "Python, SQL"}],
-        edu_master_school="VU Amsterdam",
-        edu_master_degree="M.Sc. AI",
-        edu_master_date="2023-2025",
-        edu_master_gpa="8.2",
-        edu_master_thesis="",
-        edu_master_coursework="",
-        edu_bachelor_school="Tsinghua",
-        edu_bachelor_degree="B.Eng.",
-        edu_bachelor_date="2006-2010",
-        edu_bachelor_school_note="",
-        edu_bachelor_thesis="",
-        certification="Databricks Certified",
-        career_note="",
-        languages="English - Fluent | Mandarin - Native",
+        bio='<strong>Data Engineer</strong> with 6+ years of experience.',
+        glp_skills="Python, SQL, AWS, Redshift, Airflow, Docker",
+        bq_skills="Python, SQL, MATLAB, Data Quality",
+        ele_skills="Python, SQL, Hadoop, Hive, Tableau",
+        skills=[
+            {"category": "Programming", "skills_list": "Python, SQL, Bash"},
+            {"category": "Data Engineering", "skills_list": "PySpark, Spark, Delta Lake"},
+        ],
     )
-    assert "Test User" in html
-    assert "Test bio text" in html
-    assert "TestCo" in html
-    assert "Built pipelines" in html
-    assert "Test Project" in html
+    # Fixed content should be present
+    assert "Fei Huang" in html
+    assert "GLP Technology" in html
+    assert "Vrije Universiteit Amsterdam" in html
+    # Variable content should be rendered
+    assert "Data Engineer" in html  # bio
+    assert "Python, SQL, AWS" in html  # glp_skills
+    assert "PySpark, Spark, Delta Lake" in html  # skills
 
 
 def test_base_template_ml_renders_with_standard_context():
-    """base_template_ML.html should render with standard Jinja2 context variables."""
+    """Zone-based base_template_ML.html should render with bio, skills, and per-entry skills."""
     env = Environment(loader=FileSystemLoader(str(Path("templates").resolve())), autoescape=True)
     template = env.get_template("base_template_ML.html")
 
     html = template.render(
-        name="Test User",
-        location="Amsterdam",
-        phone="+31 6 1234",
-        email="test@example.com",
-        linkedin="https://linkedin.com/in/test",
-        github="https://github.com/test",
-        bio="ML bio text",
-        experiences=[{
-            "company": "MLCo",
-            "company_note": "",
-            "title": "ML Engineer",
-            "date": "JAN 2021 - DEC 2023",
-            "bullets": ["Trained models"],
-            "technical_skills": "PyTorch",
-        }],
-        projects=[{
-            "name": "UQ Benchmark",
-            "date": "2025",
-            "bullets": ["Built benchmark"],
-            "technical_skills": "PyTorch",
-        }],
-        skills=[{"category": "ML & Modeling", "skills_list": "PyTorch, scikit-learn"}],
-        edu_master_school="VU Amsterdam",
-        edu_master_degree="M.Sc. AI",
-        edu_master_date="2023-2025",
-        edu_master_gpa="8.2",
-        edu_master_thesis="",
-        edu_master_coursework="",
-        edu_bachelor_school="Tsinghua",
-        edu_bachelor_degree="B.Eng.",
-        edu_bachelor_date="2006-2010",
-        edu_bachelor_school_note="",
-        edu_bachelor_thesis="",
-        certification="",
-        career_note="",
-        languages="English - Fluent | Mandarin - Native",
+        bio='<strong>Machine Learning Engineer</strong> with an M.Sc. in AI.',
+        glp_skills="Python, SQL, PySpark, Feature Engineering",
+        bq_skills="Python, SQL, NumPy, pandas, Statistical Modeling",
+        ele_skills="Python, SQL, Clustering, Anomaly Detection",
+        skills=[
+            {"category": "ML & Modeling", "skills_list": "PyTorch, scikit-learn"},
+            {"category": "Programming", "skills_list": "Python, SQL, Bash"},
+        ],
     )
-    assert "Test User" in html
-    assert "ML bio text" in html
-    assert "MLCo" in html
-    assert "Trained models" in html
-    assert "UQ Benchmark" in html
+    assert "Fei Huang" in html
+    assert "GLP Technology" in html
+    assert "Uncertainty Quantification" in html  # fixed project content
+    assert "Machine Learning Engineer" in html  # bio
+    assert "Python, SQL, PySpark" in html  # glp_skills
+    assert "PyTorch, scikit-learn" in html  # skills
 
 
 def test_render_batch_mixed_tiers():
@@ -533,3 +483,77 @@ def test_render_batch_mixed_tiers():
 
     count = renderer.render_batch(min_ai_score=5.0)
     assert callable(renderer.render_batch)
+
+
+def test_schema_to_context_outputs_per_entry_skills():
+    """_schema_to_context should output per-entry skills variables for zone-based templates."""
+    tmp_dir = _local_tmp_dir("renderer_zone_skills")
+    renderer = _make_renderer(
+        tmp_dir,
+        {"resume_tier": "ADAPT_TEMPLATE", "template_id_final": "DE"},
+    )
+    schema = {
+        "bio": {"slot_id": "bio", "default": "Default bio"},
+        "sections": [
+            {
+                "section_id": "experience",
+                "entries": [
+                    {
+                        "entry_id": "glp",
+                        "company": "GLP Technology (Fintech)",
+                        "title": "Senior Data Engineer",
+                        "date": "JULY 2017 - AUGUST 2019",
+                        "technical_skills": "Python, SQL, AWS",
+                        "bullets": [{"slot_id": "glp_1", "default": "Built X"}],
+                    },
+                    {
+                        "entry_id": "bq",
+                        "company": "BQ Investment (Hedge Fund)",
+                        "title": "Quant Developer",
+                        "date": "JULY 2015 - JUNE 2017",
+                        "technical_skills": "Python, SQL, MATLAB",
+                        "bullets": [{"slot_id": "bq_1", "default": "Built Y"}],
+                    },
+                ],
+            },
+            {
+                "section_id": "skills",
+                "categories": [
+                    {"cat_id": "programming", "default": "Python, SQL"},
+                ],
+            },
+        ],
+    }
+    tailored = {
+        "slot_overrides": {"bio": "Custom bio"},
+        "skills_override": {},
+        "entry_visibility": {},
+        "change_summary": "test",
+    }
+    analysis = {"seniority": "mid"}
+
+    context = renderer._schema_to_context(schema, tailored, analysis)
+
+    assert context["bio"] == "Custom bio"
+    assert context["glp_skills"] == "Python, SQL, AWS"
+    assert context["bq_skills"] == "Python, SQL, MATLAB"
+    assert len(context["skills"]) == 1
+    assert context["skills"][0]["category"] == "Programming"
+
+
+def test_validate_adapt_zones_bio_too_long():
+    """Bio exceeding 280 chars should produce a warning."""
+    from src.resume_validator import ResumeValidator
+
+    validator = ResumeValidator()
+    result = validator.validate_adapt_zones({"bio": "A" * 300})
+    assert any("bio" in w.lower() for w in result.warnings)
+
+
+def test_validate_adapt_zones_skills_line_too_long():
+    """Skills line exceeding 70 chars should produce a warning."""
+    from src.resume_validator import ResumeValidator
+
+    validator = ResumeValidator()
+    result = validator.validate_adapt_zones({"bio": "Short", "glp_skills": "A" * 80})
+    assert any("glp_skills" in w for w in result.warnings)
