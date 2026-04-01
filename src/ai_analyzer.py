@@ -530,17 +530,23 @@ class AIAnalyzer:
 
     def _build_scoring_guidelines(self) -> str:
         """Build scoring guidelines text for C1 evaluator prompt."""
-        return """Use the FULL 1-10 scale with clear separation between bands.
+        return """Use the FULL 1-10 scale. INTEGERS ONLY — no decimals (not 7.5, not 8.5).
 
 **Score Bands (mutually exclusive — pick the ONE that fits best):**
-- 9-10: Near-perfect match (<5%) — ALL required skills present, experience level exact, domain overlap strong
-- 7-8: Strong match (10-15%) — Most required skills, minor gaps in secondary areas only, experience within 1 year
-- 6: Solid match, worth applying (15-20%) — Core skills present, 1-2 secondary gaps, candidate can credibly do the job
-- 5: Borderline (15-20%) — Has relevant foundation but notable gaps; would need to stretch. Apply only if no better options
-- 3-4: Weak match (20-30%) — Major skill or experience gaps, different specialization
-- 1-2: Wrong role entirely (10-15%) — Different domain, tech stack, or seniority level
+- 10: Unicorn match (<2%) — Every required skill present, exact experience level, domain overlap, candidate would be a top-3 hire
+- 9: Near-perfect match (<5%) — ALL required skills present, experience level exact, domain overlap strong
+- 8: Strong match, high confidence (10%) — Most required skills, minor gaps only in nice-to-haves, experience within 1 year
+- 7: Good match, worth prioritizing (15%) — Core skills present, 1-2 gaps in secondary requirements, experience close
+- 6: Solid match, worth applying (20%) — Core skills present, 1-2 secondary gaps, candidate can credibly do the job
+- 5: Borderline (15%) — Has relevant foundation but notable gaps; would need to stretch. Apply only if no better options
+- 4: Weak match (15%) — Major skill or experience gaps, different specialization but adjacent
+- 3: Poor match (10%) — Wrong specialization, significant experience gaps
+- 2: Wrong role (5%) — Different domain or tech stack entirely
+- 1: Complete mismatch (<3%) — Nothing in common
 
-**The key question for 5 vs 6:** Would this candidate get past a 30-second resume screen by a hiring manager who knows the role? If yes → 6+. If maybe → 5. If unlikely → 4-.
+**The key distinction for 7 vs 8:** Does the candidate match ALL core requirements with at most nice-to-have gaps? → 8. Are there 1-2 gaps in secondary requirements? → 7.
+
+**The key distinction for 5 vs 6:** Would this candidate get past a 30-second resume screen by a hiring manager who knows the role? If yes → 6. If maybe → 5. If unlikely → 4.
 
 **Calibration anchors:**
 - JD requires "5+ years Java" but candidate has 0 Java → 3 MAX (wrong primary stack)
