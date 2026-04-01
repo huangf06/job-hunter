@@ -1,8 +1,8 @@
-# Job Hunter v2.0 - 执行指南
+# Job Hunter v3.0 - 执行指南
 
 ## 项目概述
 
-自动化求职系统：爬取职位 → 硬规则筛选 → AI 分析 → 生成定制简历 → 追踪申请
+自动化求职系统：爬取职位 → 硬规则筛选 → AI 评分+定制简历 → 渲染 PDF → 追踪申请
 
 ### v3.0 架构 (2026-03-27)
 
@@ -161,7 +161,7 @@ interview_prep/YYYYMMDD_Company_Role/
 
 ### 8. CI/CD (GitHub Actions)
 流水线自动运行: `.github/workflows/job-pipeline.yml`
-- 定时触发: 工作日 3 次 (NL 时间 08:23 / 12:23 / 16:23)，周末 1 次
+- 定时触发: 工作日 2 次 (NL 时间 ~10:37 / ~16:37 CEST)，周末 1 次 (~13:23)
 - 使用 Turso 云数据库，无需本地 DB
 
 ## 文件结构
@@ -171,7 +171,7 @@ job-hunter/
 ├── scripts/                    # CLI 入口
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
 │   ├── scrape.py                   # 统一爬虫 CLI
-│   ├── job_parser.py               # JD 解析器
+│   ├── pipeline_gaps.py             # 漏斗诊断工具
 │   ├── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
 │   ├── notify.py                   # Telegram 通知 (CI/CD)
 │   └── notify_discord.py           # Discord 通知
@@ -242,7 +242,6 @@ SQLite 本地数据库 + Turso 云同步 (embedded replica 模式)。
 |------|------|
 | `jobs` | 所有爬取的职位 |
 | `filter_results` | 硬规则筛选结果 |
-| `ai_scores` | 规则评分结果 (已废弃，不再写入新数据) |
 | `job_analysis` | AI 分析结果 + 定制简历 JSON |
 | `resumes` | 生成的简历记录 |
 | `cover_letters` | Cover Letter 记录 |

@@ -42,7 +42,7 @@ def main():
                 ("Scraped", "SELECT COUNT(*) as c FROM jobs"),
                 ("Passed filter", "SELECT COUNT(*) as c FROM filter_results WHERE passed = 1"),
                 ("Rejected filter", "SELECT COUNT(*) as c FROM filter_results WHERE passed = 0"),
-                ("Rule scored >= 3.0", "SELECT COUNT(*) as c FROM ai_scores WHERE score >= 3.0"),
+                ("AI scored >= 3.0", "SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= 3.0"),
                 ("AI analyzed", "SELECT COUNT(*) as c FROM job_analysis"),
                 ("AI score >= 5.0", f"SELECT COUNT(*) as c FROM job_analysis WHERE ai_score >= 5.0 AND (resume_tier = 'USE_TEMPLATE' OR tailored_resume != ?)"),
                 ("Resume generated", "SELECT COUNT(*) as c FROM resumes WHERE pdf_path IS NOT NULL AND pdf_path != ''"),

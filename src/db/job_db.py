@@ -374,20 +374,6 @@ class JobDatabase:
         UNIQUE(job_id, filter_version)
     );
 
-    -- AI评分表
-    CREATE TABLE IF NOT EXISTS ai_scores (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        job_id TEXT NOT NULL REFERENCES jobs(id),
-        score REAL NOT NULL,
-        model TEXT,
-        score_breakdown TEXT,
-        matched_keywords TEXT,
-        analysis TEXT,
-        recommendation TEXT,
-        scored_at TEXT DEFAULT (datetime('now')),
-        UNIQUE(job_id, model)
-    );
-
     -- 简历生成表
     CREATE TABLE IF NOT EXISTS resumes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -502,9 +488,7 @@ class JobDatabase:
     CREATE INDEX IF NOT EXISTS idx_jobs_scraped_at ON jobs(scraped_at);
     CREATE INDEX IF NOT EXISTS idx_jobs_search_profile ON jobs(search_profile);
     CREATE INDEX IF NOT EXISTS idx_filter_passed ON filter_results(passed);
-    CREATE INDEX IF NOT EXISTS idx_scores_score ON ai_scores(score);
-    CREATE INDEX IF NOT EXISTS idx_scores_recommendation ON ai_scores(recommendation);
-    CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
     CREATE INDEX IF NOT EXISTS idx_job_analysis_score ON job_analysis(ai_score);
     CREATE INDEX IF NOT EXISTS idx_job_analysis_recommendation ON job_analysis(recommendation);
     CREATE INDEX IF NOT EXISTS idx_cover_letters_job ON cover_letters(job_id);
