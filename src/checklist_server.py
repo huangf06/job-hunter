@@ -89,6 +89,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
         <tr data-job-id="{esc_id}">
           <td><input type="checkbox" class="apply-cb" {'checked' if info['applied'] else ''} /></td>
           <td><span style="color:{score_color};font-weight:bold">{score:.1f}</span></td>
+          <td><code class="job-id" onclick="copyJobId(this)" title="Click to copy">{_esc(job_id[:12])}</code></td>
           <td>{_esc(info['company'])}{repost_badge}{rejected_badge}</td>
           <td>{_esc(info['title'])}</td>
           <td>{resume_badge}</td>
@@ -120,6 +121,9 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
   .btn {{ padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: white; cursor: pointer; font-size: 0.8rem; margin-right: 4px; }}
   .btn:hover {{ background: #f1f5f9; }}
   .btn.copied {{ background: #22c55e; color: white; border-color: #22c55e; }}
+  .job-id {{ font-size: 0.75rem; color: #64748b; cursor: pointer; padding: 2px 4px; border-radius: 3px; }}
+  .job-id:hover {{ background: #e2e8f0; }}
+  .job-id.copied {{ background: #22c55e; color: white; }}
   .badge {{ padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }}
   .badge-adapt {{ background: #dbeafe; color: #1d4ed8; }}
   .badge-copy {{ background: #f3f4f6; color: #6b7280; }}
@@ -132,7 +136,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 <p class="meta">Generated: {generated} | Total: {len(jobs_sorted)} jobs</p>
 <table>
   <thead>
-    <tr><th></th><th>Score</th><th>Company</th><th>Title</th><th>Resume</th><th>Actions</th><th>Link</th></tr>
+    <tr><th></th><th>Score</th><th>ID</th><th>Company</th><th>Title</th><th>Resume</th><th>Actions</th><th>Link</th></tr>
   </thead>
   <tbody>
     {''.join(rows)}
@@ -179,6 +183,14 @@ function copyPath(path, btn) {{
     btn.textContent = 'Copied!';
     btn.classList.add('copied');
     setTimeout(() => {{ btn.textContent = 'Copy Path'; btn.classList.remove('copied'); }}, 1500);
+  }});
+}}
+
+function copyJobId(el) {{
+  const jobId = el.closest('tr').dataset.jobId;
+  navigator.clipboard.writeText(jobId).then(() => {{
+    el.classList.add('copied');
+    setTimeout(() => {{ el.classList.remove('copied'); }}, 1000);
   }});
 }}
 
