@@ -816,6 +816,23 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         # 返回不在 complete_ids 中的 URL
         return [url for url, job_id in url_to_id.items() if job_id not in complete_ids]
 
+    def find_semantic_duplicate(self, title: str, company: str, exclude_id: str = None) -> Optional[str]:
+        """Find existing job with same company + normalized title. Returns job_id or None."""
+        norm_title = self._normalize_title(title)
+        if not norm_title:
+            return None
+        with self._get_conn() as conn:
+            cursor = conn.execute(
+                "SELECT id, title FROM jobs WHERE LOWER(company) = ?",
+                (company.lower(),)
+            )
+            for row in cursor.fetchall():
+                if exclude_id and row['id'] == exclude_id:
+                    continue
+                if self._normalize_title(row['title']) == norm_title:
+                    return row['id']
+        return None
+
     def insert_job(self, job_data: Dict) -> tuple:
         """插入新职位"""
         url = job_data.get("url", "")
@@ -826,6 +843,19 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         if not title.strip() or not company.strip():
             print(f"  [WARN] Skipping job with empty title or company: {url[:60]}")
             return job_id, False
+
+        # Semantic dedup: same company + normalized title = same job from different source
+        existing_id = self.find_semantic_duplicate(title, company, exclude_id=job_id)
+        if existing_id:
+            # Update description if the new one is longer
+            desc = job_data.get("description", "")
+            if desc:
+                with self._get_conn(sync_before=False) as conn:
+                    conn.execute("""
+                        UPDATE jobs SET description = ?
+                        WHERE id = ? AND (description IS NULL OR length(description) < ?)
+                    """, (desc, existing_id, len(desc)))
+            return existing_id, False
 
         job = Job(
             id=job_id,
@@ -940,6 +970,27 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
             )
             row = cursor.fetchone()
             return dict(row) if row else None
+
+    def clear_orphan_resumes(self) -> int:
+        """Delete resume (+ cover letter) records whose PDF files no longer exist on disk."""
+        from pathlib import Path
+        with self._get_conn() as conn:
+            rows = conn.execute(
+                "SELECT job_id, pdf_path FROM resumes WHERE pdf_path IS NOT NULL AND pdf_path != ''"
+            ).fetchall()
+
+            orphan_ids = []
+            for row in rows:
+                if not Path(row['pdf_path']).exists():
+                    orphan_ids.append(row['job_id'])
+
+            if not orphan_ids:
+                return 0
+
+            placeholders = ','.join('?' * len(orphan_ids))
+            conn.execute(f"DELETE FROM cover_letters WHERE job_id IN ({placeholders})", orphan_ids)
+            conn.execute(f"DELETE FROM resumes WHERE job_id IN ({placeholders})", orphan_ids)
+            return len(orphan_ids)
 
     # ==================== Application 操作 ====================
 

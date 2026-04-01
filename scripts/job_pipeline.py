@@ -342,7 +342,7 @@ class JobPipeline:
             renderer = CoverLetterRenderer()
             renderer.render(job_id)
 
-    def generate_cover_letters_batch(self, min_ai_score: float = None, limit: int = 50):
+    def generate_cover_letters_batch(self, min_ai_score: float = None, limit: int = None):
         """Batch generate + render cover letters"""
         from src.cover_letter_generator import CoverLetterGenerator
         from src.cover_letter_renderer import CoverLetterRenderer
@@ -353,6 +353,15 @@ class JobPipeline:
         renderer = CoverLetterRenderer()
         renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
 
+    def cmd_repair(self):
+        """Clear orphan resume/CL records whose files are missing from disk."""
+        cleared = self.db.clear_orphan_resumes()
+        if cleared:
+            print(f"[Repair] Cleared {cleared} orphan resume/CL records (PDF files missing)")
+            print(f"[Repair] Run --prepare to regenerate them")
+        else:
+            print("[Repair] No orphan records found — all resume PDFs exist on disk")
+
     def cmd_prepare(self, min_ai_score: float = None, limit: int = None):
         """One-command: generate all materials + launch checklist server."""
         from src.checklist_server import generate_checklist, start_server
@@ -360,7 +369,7 @@ class JobPipeline:
 
         threshold = min_ai_score or self.ai_config.get('thresholds', {}).get(
             'ai_score_generate_resume', 4.0)
-        limit = limit or 50
+        # No default cap — process all eligible jobs unless --limit is specified
 
         # Step 1: Sync from Turso
         print("Syncing database...")
@@ -887,6 +896,8 @@ def main():
                         help='Generate all application materials and launch checklist')
     parser.add_argument('--finalize', action='store_true',
                         help='Archive applied jobs, clean up skipped, sync to cloud')
+    parser.add_argument('--repair', action='store_true',
+                        help='Clear orphan resume/CL records whose PDF files are missing from disk')
 
     # Archive command
     parser.add_argument('--archive', action='store_true',
@@ -967,7 +978,7 @@ def main():
        or args.stats or args.template_stats or args.mark_applied or args.mark_all_applied \
        or args.update_status or args.tracker \
        or args.cover_letter or args.cover_letters \
-       or args.prepare or args.finalize or args.archive \
+       or args.prepare or args.finalize or args.repair or args.archive \
        or args.schedule_interview or args.suggest_availability:
         if not DB_AVAILABLE:
             print("错误: 数据库模块不可用")
@@ -978,6 +989,8 @@ def main():
             pipeline.cmd_prepare(min_ai_score=args.min_score, limit=args.limit)
         elif args.finalize:
             pipeline.cmd_finalize()
+        elif args.repair:
+            pipeline.cmd_repair()
         elif args.archive:
             pipeline.cmd_archive(retention_days=args.retention_days)
         elif args.schedule_interview:
