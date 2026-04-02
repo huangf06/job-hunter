@@ -70,7 +70,12 @@ def _make_renderer(tmp_dir: Path, analysis: dict):
             "DE": {
                 "pdf": str((tmp_dir / "source_de.pdf").resolve()),
                 "slot_schema": {
-                    "bio": {"slot_id": "bio", "default": "Default bio"},
+                    "bio": {
+                        "slot_id": "bio",
+                        "bio_1": {"default": "Default bio line one."},
+                        "bio_2": {"default": "Default bio line two."},
+                        "bio_3": {"default": "Default bio line three."},
+                    },
                     "sections": [
                         {
                             "section_id": "experience",
@@ -136,7 +141,7 @@ def test_render_resume_adapt_template_pass_generates_files():
             "c3_decision": "PASS",
             "tailored_resume": json.dumps(
                 {
-                    "slot_overrides": {"bio": "Adapted bio", "glp_1": "Adapted bullet"},
+                    "slot_overrides": {"bio_1": "Adapted bio line one.", "bio_2": "Adapted line two.", "bio_3": "Adapted line three.", "glp_1": "Adapted bullet"},
                     "skills_override": {"programming": "Python, SQL, Scala"},
                     "entry_visibility": {"glp": True},
                     "change_summary": "Changed bio and bullet",
@@ -411,7 +416,9 @@ def test_base_template_de_renders_with_standard_context():
     template = env.get_template("base_template_DE.html")
 
     html = template.render(
-        bio='<strong>Data Engineer</strong> with 6+ years of experience.',
+        bio_1='Data Engineer with 6+ years of experience building data platforms across e-commerce and credit risk.',
+        bio_2='Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up.',
+        bio_3='M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on Spark and Delta Lake.',
         glp_skills="Python, SQL, AWS, Redshift, Airflow, Docker",
         bq_skills="Python, SQL, MATLAB, Data Quality",
         ele_skills="Python, SQL, Hadoop, Hive, Tableau",
@@ -420,14 +427,13 @@ def test_base_template_de_renders_with_standard_context():
             {"category": "Data Engineering", "skills_list": "PySpark, Spark, Delta Lake"},
         ],
     )
-    # Fixed content should be present
     assert "Fei Huang" in html
     assert "GLP Technology" in html
     assert "Vrije Universiteit Amsterdam" in html
-    # Variable content should be rendered
-    assert "Data Engineer" in html  # bio
-    assert "Python, SQL, AWS" in html  # glp_skills
-    assert "PySpark, Spark, Delta Lake" in html  # skills
+    assert "Data Engineer with 6+ years" in html
+    assert "M.Sc. in Artificial Intelligence" in html
+    assert "Python, SQL, AWS" in html
+    assert "PySpark, Spark, Delta Lake" in html
 
 
 def test_base_template_ml_renders_with_standard_context():
@@ -436,7 +442,9 @@ def test_base_template_ml_renders_with_standard_context():
     template = env.get_template("base_template_ML.html")
 
     html = template.render(
-        bio='<strong>Machine Learning Engineer</strong> with an M.Sc. in AI.',
+        bio_1='Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction.',
+        bio_2='Strengths in feature engineering, model evaluation, and end-to-end ML pipelines.',
+        bio_3='From raw data through production deployment.',
         glp_skills="Python, SQL, PySpark, Feature Engineering",
         bq_skills="Python, SQL, NumPy, pandas, Statistical Modeling",
         ele_skills="Python, SQL, Clustering, Anomaly Detection",
@@ -447,10 +455,10 @@ def test_base_template_ml_renders_with_standard_context():
     )
     assert "Fei Huang" in html
     assert "GLP Technology" in html
-    assert "Uncertainty Quantification" in html  # fixed project content
-    assert "Machine Learning Engineer" in html  # bio
-    assert "Python, SQL, PySpark" in html  # glp_skills
-    assert "PyTorch, scikit-learn" in html  # skills
+    assert "Uncertainty Quantification" in html
+    assert "Machine Learning Engineer" in html
+    assert "Python, SQL, PySpark" in html
+    assert "PyTorch, scikit-learn" in html
 
 
 def test_render_batch_mixed_tiers():
@@ -493,7 +501,12 @@ def test_schema_to_context_outputs_per_entry_skills():
         {"resume_tier": "ADAPT_TEMPLATE", "template_id_final": "DE"},
     )
     schema = {
-        "bio": {"slot_id": "bio", "default": "Default bio"},
+        "bio": {
+            "slot_id": "bio",
+            "bio_1": {"default": "Default bio line one."},
+            "bio_2": {"default": "Default bio line two."},
+            "bio_3": {"default": "Default bio line three."},
+        },
         "sections": [
             {
                 "section_id": "experience",
@@ -525,7 +538,7 @@ def test_schema_to_context_outputs_per_entry_skills():
         ],
     }
     tailored = {
-        "slot_overrides": {"bio": "Custom bio"},
+        "slot_overrides": {"bio_1": "Custom bio"},
         "skills_override": {},
         "entry_visibility": {},
         "change_summary": "test",
@@ -534,7 +547,7 @@ def test_schema_to_context_outputs_per_entry_skills():
 
     context = renderer._schema_to_context(schema, tailored, analysis)
 
-    assert context["bio"] == "Custom bio"
+    assert context["bio_1"] == "Custom bio"
     assert context["glp_skills"] == "Python, SQL, AWS"
     assert context["bq_skills"] == "Python, SQL, MATLAB"
     assert len(context["skills"]) == 1
@@ -551,9 +564,140 @@ def test_validate_adapt_zones_bio_too_long():
 
 
 def test_validate_adapt_zones_skills_line_too_long():
-    """Skills line exceeding 70 chars should produce a warning."""
+    """Skills line exceeding 65 chars should produce a BLOCKING error."""
     from src.resume_validator import ResumeValidator
-
     validator = ResumeValidator()
-    result = validator.validate_adapt_zones({"bio": "Short", "glp_skills": "A" * 80})
-    assert any("glp_skills" in w for w in result.warnings)
+    result = validator.validate_adapt_zones({"bio_1": "A", "bio_2": "B", "bio_3": "C", "glp_skills": "A" * 70})
+    assert not result.passed
+    assert any("glp_skills" in e for e in result.errors)
+
+
+def test_validate_adapt_zones_bio_line_too_long_blocks():
+    """Bio line exceeding 105 chars should produce a BLOCKING error."""
+    from src.resume_validator import ResumeValidator
+    validator = ResumeValidator()
+    result = validator.validate_adapt_zones({
+        "bio_1": "A" * 110,
+        "bio_2": "Short line two.",
+        "bio_3": "Short line three.",
+    })
+    assert not result.passed
+    assert any("bio_1" in e for e in result.errors)
+
+
+def test_validate_adapt_zones_bio_lines_within_limit_passes():
+    """Bio lines within 105 chars should pass."""
+    from src.resume_validator import ResumeValidator
+    validator = ResumeValidator()
+    result = validator.validate_adapt_zones({
+        "bio_1": "Data Engineer with 6+ years of experience building data platforms across e-commerce and credit risk.",
+        "bio_2": "Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up.",
+        "bio_3": "M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on Spark and Delta Lake.",
+    })
+    assert result.passed
+    assert len(result.errors) == 0
+
+
+def test_validate_adapt_zones_skills_line_blocks():
+    """Skills line exceeding 65 chars should produce a BLOCKING error."""
+    from src.resume_validator import ResumeValidator
+    validator = ResumeValidator()
+    result = validator.validate_adapt_zones({
+        "bio_1": "Short.", "bio_2": "Short.", "bio_3": "Short.",
+        "glp_skills": "A" * 70,
+    })
+    assert not result.passed
+    assert any("glp_skills" in e for e in result.errors)
+
+
+def test_validate_adapt_zones_skills_categories_blocks():
+    """More than 5 skill categories should produce a BLOCKING error."""
+    from src.resume_validator import ResumeValidator
+    validator = ResumeValidator()
+    result = validator.validate_adapt_zones({
+        "bio_1": "Short.", "bio_2": "Short.", "bio_3": "Short.",
+        "skills": [{"category": f"Cat{i}", "skills_list": "Python"} for i in range(6)],
+    })
+    assert not result.passed
+    assert any("categor" in e.lower() for e in result.errors)
+
+
+def test_validate_adapt_zones_skills_list_too_long_blocks():
+    """A single skills_list exceeding 80 chars should produce a BLOCKING error."""
+    from src.resume_validator import ResumeValidator
+    validator = ResumeValidator()
+    result = validator.validate_adapt_zones({
+        "bio_1": "Short.", "bio_2": "Short.", "bio_3": "Short.",
+        "skills": [{"category": "Programming", "skills_list": "A" * 85}],
+    })
+    assert not result.passed
+    assert any("skills_list" in e.lower() or "programming" in e.lower() for e in result.errors)
+
+
+def test_schema_to_context_outputs_per_line_bio():
+    """_schema_to_context should output bio_1, bio_2, bio_3 from per-line schema."""
+    tmp_dir = _local_tmp_dir("renderer_perline_bio")
+    renderer = _make_renderer(tmp_dir, {"resume_tier": "ADAPT_TEMPLATE", "template_id_final": "DE"})
+    schema = {
+        "bio": {
+            "slot_id": "bio",
+            "bio_1": {"default": "Line one default.", "senior": "Line one senior."},
+            "bio_2": {"default": "Line two default.", "senior": "Line two senior."},
+            "bio_3": {"default": "Line three default.", "senior": "Line three senior."},
+        },
+        "sections": [
+            {"section_id": "experience", "entries": [
+                {"entry_id": "glp", "company": "GLP", "title": "Lead", "date": "2017-2019",
+                 "technical_skills": "Python, SQL", "bullets": [{"slot_id": "glp_1", "default": "Built X"}]},
+            ]},
+            {"section_id": "skills", "categories": [{"cat_id": "programming", "default": "Python, SQL"}]},
+        ],
+    }
+    tailored = {"slot_overrides": {}, "skills_override": {}, "entry_visibility": {}, "change_summary": "test"}
+    analysis = {"seniority": "mid"}
+    context = renderer._schema_to_context(schema, tailored, analysis)
+    assert context["bio_1"] == "Line one default."
+    assert context["bio_2"] == "Line two default."
+    assert context["bio_3"] == "Line three default."
+    assert "bio" not in context
+
+
+def test_schema_to_context_senior_bio_lines():
+    """Senior seniority should pick senior bio lines."""
+    tmp_dir = _local_tmp_dir("renderer_senior_bio")
+    renderer = _make_renderer(tmp_dir, {"resume_tier": "ADAPT_TEMPLATE", "template_id_final": "DE"})
+    schema = {
+        "bio": {"slot_id": "bio",
+                "bio_1": {"default": "Mid one.", "senior": "Senior one."},
+                "bio_2": {"default": "Mid two.", "senior": "Senior two."},
+                "bio_3": {"default": "Mid three.", "senior": "Senior three."}},
+        "sections": [],
+    }
+    tailored = {"slot_overrides": {}, "skills_override": {}, "entry_visibility": {}, "change_summary": "test"}
+    analysis = {"seniority": "senior"}
+    context = renderer._schema_to_context(schema, tailored, analysis)
+    assert context["bio_1"] == "Senior one."
+    assert context["bio_2"] == "Senior two."
+    assert context["bio_3"] == "Senior three."
+
+
+def test_schema_to_context_slot_override_bio_lines():
+    """AI-generated bio line overrides should take precedence over defaults."""
+    tmp_dir = _local_tmp_dir("renderer_override_bio")
+    renderer = _make_renderer(tmp_dir, {"resume_tier": "ADAPT_TEMPLATE", "template_id_final": "DE"})
+    schema = {
+        "bio": {"slot_id": "bio",
+                "bio_1": {"default": "Default one.", "senior": "Senior one."},
+                "bio_2": {"default": "Default two.", "senior": "Senior two."},
+                "bio_3": {"default": "Default three.", "senior": "Senior three."}},
+        "sections": [],
+    }
+    tailored = {
+        "slot_overrides": {"bio_1": "Custom line one.", "bio_2": "Custom line two.", "bio_3": "Custom line three."},
+        "skills_override": {}, "entry_visibility": {}, "change_summary": "Adapted bio",
+    }
+    analysis = {"seniority": "mid"}
+    context = renderer._schema_to_context(schema, tailored, analysis)
+    assert context["bio_1"] == "Custom line one."
+    assert context["bio_2"] == "Custom line two."
+    assert context["bio_3"] == "Custom line three."

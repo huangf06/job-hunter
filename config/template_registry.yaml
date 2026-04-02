@@ -24,15 +24,23 @@ templates:
     slot_schema:
       bio:
         slot_id: "bio"
-        default: "Data Engineer with 6+ years of experience building data platforms across e-commerce, market data, and credit risk. Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up. M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on experience in Spark and Delta Lake."
-        senior: "Senior Data Engineer with 6+ years building data platforms from scratch. First technical hire at GLP Technology, grew the data team from 0 to 4 engineers while architecting the credit risk data platform. End-to-end ownership across ingestion, warehousing, data quality, and automated decisioning. M.Sc. in AI (VU Amsterdam), Databricks Certified."
+        bio_1:
+          default: "Data Engineer with 6+ years of experience building data platforms across e-commerce, market data, and credit risk."
+          senior: "Senior Data Engineer with 6+ years building data platforms from scratch. First technical hire at GLP Technology,"
+        bio_2:
+          default: "Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up."
+          senior: "grew the data team from 0 to 4 engineers while architecting the credit risk data platform. End-to-end ownership"
+        bio_3:
+          default: "M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on experience in Spark and Delta Lake."
+          senior: "across ingestion, warehousing, data quality, and automated decisioning. M.Sc. in AI, Databricks Certified."
       sections:
         - section_id: "experience"
           entries:
             - entry_id: "glp"
               company: "GLP Technology (Fintech)"
-              title: "Lead Data Engineer"
+              title: "Senior Data Engineer"
               date: "JULY 2017 - AUGUST 2019"
+              technical_skills: "Python, SQL, AWS, Redshift, Airflow, Docker"
               bullets:
                 - slot_id: "glp_1"
                   default: "Built the credit risk data platform from scratch as the founding data engineer, enabling production lending workflows across ingestion, Redshift warehousing, automated decisioning, and post-loan monitoring."
@@ -44,6 +52,7 @@ templates:
               company: "BQ Investment (Hedge Fund)"
               title: "Quant Developer"
               date: "JULY 2015 - JUNE 2017"
+              technical_skills: "Python, SQL, MATLAB, Data Quality"
               bullets:
                 - slot_id: "bq_1"
                   default: "Engineered market data pipelines and infrastructure for trading and research workflows, covering 3,000+ securities across 5+ years of tick-level futures data from multiple vendor feeds."
@@ -53,6 +62,7 @@ templates:
               company: "Ele.me (Alibaba Group)"
               title: "Data Analyst"
               date: "SEPTEMBER 2013 - JULY 2015"
+              technical_skills: "Python, SQL, Hadoop, Hive, Tableau"
               bullets:
                 - slot_id: "ele_1"
                   default: "Built anti-fraud detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern-matching algorithms: same-phone, high-frequency, and repeat-order detection."
@@ -62,6 +72,7 @@ templates:
               company: "Henan Energy Group"
               title: "Business Analyst"
               date: "JULY 2010 - AUGUST 2013"
+              technical_skills: "Python, SQL, Excel, VBA"
               bullets:
                 - slot_id: "henan_1"
                   default: "Created a pipeline to ingest, validate, and consolidate non-standard Excel reports from 70+ business units, reducing monthly processing time from 2 days to 2 hours."
@@ -71,6 +82,7 @@ templates:
               company: "Recent Project"
               title: "Greenhouse Sensor Data Pipeline"
               date: "FEBRUARY 2026"
+              technical_skills: "PySpark, Delta Lake, Data Quality"
               bullets:
                 - slot_id: "greenhouse_1"
                   default: "Built a PySpark pipeline for a commercial greenhouse operator using medallion architecture, idempotent ingestion, and 6 data quality checks for reliable downstream reporting."
@@ -126,8 +138,15 @@ templates:
     slot_schema:
       bio:
         slot_id: "bio"
-        default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines, from raw data through production deployment."
-        senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in production. First data hire at GLP Technology, built the credit risk prediction system and grew the data team. Strengths in feature engineering, model evaluation, and end-to-end ML pipelines, from raw data through production deployment."
+        bio_1:
+          default: "Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring"
+          senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in"
+        bio_2:
+          default: "systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and"
+          senior: "production. First data hire at GLP Technology, built the credit risk prediction system and grew the data team."
+        bio_3:
+          default: "end-to-end ML pipelines, from raw data through production deployment."
+          senior: "Strengths in feature engineering, model evaluation, and end-to-end ML pipelines."
       sections:
         - section_id: "experience"
           entries:
@@ -135,6 +154,7 @@ templates:
               company: "GLP Technology (Fintech)"
               title: "Data Scientist"
               date: "JULY 2017 - AUGUST 2019"
+              technical_skills: "Python, SQL, PySpark, Feature Engineering, AWS (Redshift, S3), Airflow"
               bullets:
                 - slot_id: "glp_1"
                   default: "Joined as first data hire and built the end-to-end credit risk prediction system: engineered 19 features from raw bureau and transactional data, developed a first-payment default scorecard with 36-segment borrower classification, and deployed the model into production underwriting serving real lending decisions."
@@ -144,6 +164,7 @@ templates:
               company: "BQ Investment (Hedge Fund)"
               title: "Quant Researcher"
               date: "JULY 2015 - JUNE 2017"
+              technical_skills: "Python, SQL, NumPy, pandas, Statistical Modeling"
               bullets:
                 - slot_id: "bq_1"
                   default: "Developed and deployed a signal-driven intraday predictive model from research through live production on CSI index futures, delivering 14.6% annualized return with real capital."
@@ -153,6 +174,7 @@ templates:
               company: "Ele.me (Alibaba Group)"
               title: "Data Analyst"
               date: "SEPTEMBER 2013 - JULY 2015"
+              technical_skills: "Python, SQL, Clustering, Anomaly Detection"
               bullets:
                 - slot_id: "ele_1"
                   default: "Built anomaly detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using pattern-matching algorithms (same-phone, high-frequency, repeat-order); deployed during Ele.me's hyper-growth phase pre-Alibaba acquisition."
@@ -162,6 +184,7 @@ templates:
               company: "Project"
               title: "Uncertainty Quantification Benchmark"
               date: "FEBRUARY 2025 - AUGUST 2025"
+              technical_skills: "PyTorch, Deep RL, HPC, Statistical Testing"
               bullets:
                 - slot_id: "uq_1"
                   default: "Built reproducible benchmark evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM) with automated 6-stage calibration pipeline."
@@ -171,6 +194,7 @@ templates:
               company: "Project"
               title: "Expedia Hotel Recommendation"
               date: "APRIL 2024 - MAY 2024"
+              technical_skills: "LightGBM, Learning-to-Rank, Feature Eng."
               bullets:
                 - slot_id: "expedia_1"
                   default: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered 50+ temporal, behavioral, and price-normalization features; achieved NDCG@5 = 0.392 on held-out Kaggle evaluation."
@@ -178,6 +202,7 @@ templates:
               company: "Course Project"
               title: "IMU Sensor Classification (ML4QS)"
               date: "JUNE 2024"
+              technical_skills: "LightGBM, LSTM, Feature Eng., Time-Series"
               bullets:
                 - slot_id: "imu_1"
                   default: "Built end-to-end ML pipeline for IMU sensor classification (4 subjects, 6 activities): Kalman Filter for noise reduction on 12 sensor channels, 576 FFT-based features (time + frequency domain), and LightGBM + bidirectional LSTM achieving 94-99% sex classification accuracy."
@@ -216,8 +241,15 @@ templates:
     slot_schema:
       bio:
         slot_id: "bio"
-        default: "Software Engineer with 6+ years building data-intensive Python systems across fintech, e-commerce, and trading. Built a financial data lakehouse from scratch and led a team of 5 engineers on credit risk decisioning systems. M.Sc. in AI (VU Amsterdam), Databricks Certified Data Engineer Professional."
-        senior: "Senior Software Engineer with 6+ years building data-intensive Python systems. First technical hire at GLP Technology, grew the engineering team from 0 to 4 while architecting credit risk decisioning and data pipeline infrastructure. End-to-end ownership from system design through production deployment. M.Sc. in AI (VU Amsterdam), Databricks Certified."
+        bio_1:
+          default: "Software Engineer with 6+ years building data-intensive Python systems across fintech, e-commerce, and trading."
+          senior: "Senior Software Engineer with 6+ years building data-intensive Python systems. First technical hire at GLP"
+        bio_2:
+          default: "Built a financial data lakehouse from scratch and led a team of 5 engineers on credit risk decisioning systems."
+          senior: "Technology, grew the engineering team from 0 to 4 while architecting credit risk decisioning and pipeline infra."
+        bio_3:
+          default: "M.Sc. in AI (VU Amsterdam), Databricks Certified Data Engineer Professional."
+          senior: "End-to-end ownership from system design through production deployment. M.Sc. in AI, Databricks Certified."
       sections:
         - section_id: "experience"
           entries:
@@ -254,6 +286,7 @@ templates:
               company: "Henan Energy Group"
               title: "Business Analyst"
               date: "JULY 2010 - AUGUST 2013"
+              technical_skills: "Python, SQL, Excel, VBA"
               bullets:
                 - slot_id: "henan_1"
                   default: "Created a pipeline to ingest, validate, and consolidate non-standard Excel reports from 70+ business units, reducing monthly processing time from 2 days to 2 hours."
@@ -263,6 +296,7 @@ templates:
               company: "Recent Project"
               title: "Greenhouse Sensor Data Pipeline"
               date: "FEBRUARY 2026"
+              technical_skills: "PySpark, Delta Lake, Data Quality"
               bullets:
                 - slot_id: "greenhouse_1"
                   default: "Built a PySpark pipeline for a commercial greenhouse operator using medallion architecture, idempotent ingestion, and 6 data quality checks for reliable downstream reporting."

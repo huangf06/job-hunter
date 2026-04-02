@@ -326,15 +326,17 @@ class ResumeRenderer:
 
         context = {}
 
-        # Bio: use slot_override if present, else pick senior/default based on seniority
+        # Bio: per-line (bio_1, bio_2, bio_3)
         seniority = analysis.get('seniority', 'mid')
         bio_schema = schema.get('bio', {})
-        if 'bio' in slot_overrides:
-            context['bio'] = slot_overrides['bio']
-        elif seniority == 'senior' and bio_schema.get('senior'):
-            context['bio'] = bio_schema['senior']
-        else:
-            context['bio'] = bio_schema.get('default', '')
+        for line_key in ('bio_1', 'bio_2', 'bio_3'):
+            line_schema = bio_schema.get(line_key, {})
+            if line_key in slot_overrides:
+                context[line_key] = slot_overrides[line_key]
+            elif seniority == 'senior' and line_schema.get('senior'):
+                context[line_key] = line_schema['senior']
+            else:
+                context[line_key] = line_schema.get('default', '')
 
         # Per-entry skills lines
         for section in schema.get('sections', []):
@@ -419,11 +421,16 @@ class ResumeRenderer:
             print(f"[Renderer] ADAPT template not found: {template_name}")
             return None
 
-        # Validate zone overflow
+        # Validate zone overflow (BLOCKING)
         zone_result = self.validator.validate_adapt_zones(context)
         if zone_result.warnings:
             for w in zone_result.warnings:
                 print(f"  [ZONE WARN] {w}")
+        if not zone_result.passed:
+            for e in zone_result.errors:
+                print(f"  [ZONE BLOCK] {e}")
+            print(f"[Renderer] Zone validation failed for {job_id}, falling back to USE_TEMPLATE")
+            return None
 
         html_content = template.render(**context)
 

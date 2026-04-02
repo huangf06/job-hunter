@@ -150,9 +150,9 @@
 
     <!-- VARIABLE ZONE 1: Bio -->
     <div class="line section content-shift" style="left:42pt; top:77.3pt;">BIO</div>
-    <div class="content-shift" style="position:absolute; left:42pt; top:90.5pt; width:512pt; max-height:38pt; overflow:hidden; line-height:12pt;">
-      <span class="bio">{{ bio | safe }}</span>
-    </div>
+    <div class="line bio content-shift" style="left:42pt; top:90.5pt;">{{ bio_1 }}</div>
+    <div class="line bio content-shift" style="left:42pt; top:102.5pt;">{{ bio_2 }}</div>
+    <div class="line bio content-shift" style="left:42pt; top:114.5pt;">{{ bio_3 }}</div>
 
     <div class="line section content-shift" style="left:42pt; top:149.3pt;">EXPERIENCE</div>
 
@@ -174,7 +174,7 @@
     <div class="line body content-shift" style="left:42pt; top:308.4pt;">structured analytical features for model training,</div>
     <div class="line body content-shift" style="left:42pt; top:321.4pt;">scoring, and post-loan monitoring.</div>
     <!-- VARIABLE ZONE 2a: GLP skills -->
-    <div class="line body content-shift" style="left:42pt; top:337.4pt;"><strong>Skills:</strong> {{ glp_skills }}</div>
+    <div class="line body content-shift" style="left:42pt; top:337.4pt; max-width:275pt; overflow:hidden; text-overflow:ellipsis;"><strong>Skills:</strong> {{ glp_skills }}</div>
 
     <div class="line content-shift" style="left:42pt; top:372.4pt;">
       <span class="org">BQ Investment (Hedge Fund)</span>
@@ -191,7 +191,7 @@
     <div class="line body content-shift" style="left:42pt; top:479.4pt;">cross-sectional regression; validated features</div>
     <div class="line body content-shift" style="left:42pt; top:492.4pt;">integrated into the fund's live portfolio construction.</div>
     <!-- VARIABLE ZONE 2b: BQ skills -->
-    <div class="line body content-shift" style="left:42pt; top:508.4pt;"><strong>Skills:</strong> {{ bq_skills }}</div>
+    <div class="line body content-shift" style="left:42pt; top:508.4pt; max-width:275pt; overflow:hidden; text-overflow:ellipsis;"><strong>Skills:</strong> {{ bq_skills }}</div>
 
     <div class="line content-shift" style="left:42pt; top:530.4pt;">
       <span class="org">Ele.me (Alibaba Group)</span>
@@ -205,13 +205,13 @@
     <div class="line body content-shift" style="left:42pt; top:595.4pt;">frequency, repeat-order); deployed during Ele.me's</div>
     <div class="line body content-shift" style="left:42pt; top:608.4pt;">hyper-growth phase pre-Alibaba acquisition.</div>
     <!-- VARIABLE ZONE 2c: Ele.me skills -->
-    <div class="line body content-shift" style="left:42pt; top:624.4pt;"><strong>Skills:</strong> {{ ele_skills }}</div>
+    <div class="line body content-shift" style="left:42pt; top:624.4pt; max-width:275pt; overflow:hidden; text-overflow:ellipsis;"><strong>Skills:</strong> {{ ele_skills }}</div>
 
     <!-- VARIABLE ZONE 3: Technical Skills (LEFT column) -->
     <div class="line section content-shift" style="left:42pt; top:652.8pt;">TECHNICAL SKILLS</div>
     <div class="content-shift" style="position:absolute; left:42pt; top:667.9pt; width:268pt; max-height:118pt; overflow:hidden;">
       {% for skill in skills %}
-      <div class="body" style="line-height:13pt;{% if not loop.first %} margin-top:3pt;{% endif %}"><strong>{{ skill.category }}:</strong> {{ skill.skills_list }}</div>
+      <div class="body" style="line-height:13pt;{% if not loop.first %} margin-top:{% if skills|length >= 4 %}2{% else %}3{% endif %}pt;{% endif %}"><strong>{{ skill.category }}:</strong> {{ skill.skills_list }}</div>
       {% endfor %}
     </div>
 

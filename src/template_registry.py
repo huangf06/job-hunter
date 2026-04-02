@@ -102,7 +102,7 @@ def apply_tier1_safeguard(routing: Dict, code_decision: RoutingDecision) -> Dict
 
 def validate_tier2_output(output: Dict, schema: Dict) -> List[str]:
     errors: List[str] = []
-    valid_slots = {"bio"}
+    valid_slots = {"bio", "bio_1", "bio_2", "bio_3"}
     valid_entries = set()
     valid_categories = set()
 

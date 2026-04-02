@@ -454,20 +454,42 @@ class ResumeValidator:
     def validate_adapt_zones(self, context: dict) -> 'ValidationResult':
         """Validate variable zone content for zone-based ADAPT templates.
 
-        Checks:
-        - Bio length (max 280 chars for ~3 lines at 10pt in 512pt width)
-        - Per-entry skills line length (max 70 chars for single line)
+        BLOCKING checks (errors):
+        - Each bio line (bio_1, bio_2, bio_3) max 105 chars
+        - Per-entry skills line max 65 chars
+        - Technical skills: max 5 categories, each skills_list max 80 chars
+
+        Backward compat: if 'bio' key present (old format), warn but don't block.
         """
         warnings = []
         errors = []
 
-        bio = context.get('bio', '')
-        if len(bio) > 280:
-            warnings.append(f"Bio too long ({len(bio)} chars, max 280) — may overflow zone")
+        # Per-line bio validation (new format)
+        for key in ('bio_1', 'bio_2', 'bio_3'):
+            value = context.get(key, '')
+            if len(value) > 105:
+                errors.append(f"{key} too long ({len(value)} chars, max 105) — will overflow line")
 
+        # Backward compat: old single 'bio' key
+        if 'bio' in context and 'bio_1' not in context:
+            bio = context.get('bio', '')
+            if len(bio) > 280:
+                warnings.append(f"Bio too long ({len(bio)} chars, max 280) — may overflow zone")
+
+        # Per-entry skills line validation
         for key in ('glp_skills', 'bq_skills', 'ele_skills', 'henan_skills'):
             value = context.get(key, '')
-            if value and len(value) > 70:
-                warnings.append(f"{key} too long ({len(value)} chars, max 70) — may overflow line")
+            if value and len(value) > 65:
+                errors.append(f"{key} too long ({len(value)} chars, max 65) — will overflow line")
+
+        # Technical skills zone validation
+        skills = context.get('skills', [])
+        if len(skills) > 5:
+            errors.append(f"Too many skill categories ({len(skills)}, max 5) — will overflow zone")
+        for skill in skills:
+            sl = skill.get('skills_list', '')
+            cat = skill.get('category', '?')
+            if len(sl) > 80:
+                errors.append(f"skills_list for '{cat}' too long ({len(sl)} chars, max 80) — will wrap excessively")
 
         return ValidationResult(passed=len(errors) == 0, errors=errors, warnings=warnings)
