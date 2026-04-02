@@ -466,19 +466,34 @@ prompts:
     ## Template Schema
     {template_schema}
 
+    ## CONSTRAINTS (HARD LIMITS — violating any will reject the resume)
+    - bio_1, bio_2, bio_3: each line MUST be <= 105 characters. Count carefully.
+    - skills_override values: each MUST be <= 80 characters.
+    - Max 5 skill categories total.
+
     ## Output JSON
     {{
       "slot_overrides": {{
-        "bio": "Optional replacement bio"
+        "bio_1": "First line of bio (max 105 chars)",
+        "bio_2": "Second line of bio (max 105 chars)",
+        "bio_3": "Third line of bio (max 105 chars)"
       }},
       "skills_override": {{
-        "programming": "Optional replacement skill line"
+        "programming": "Optional replacement skill line (max 80 chars)"
       }},
       "entry_visibility": {{
         "glp": true
       }},
       "change_summary": "One sentence summary of the changes"
     }}
+
+    ## Bio Writing Rules
+    - The bio is exactly 3 lines. Each line is rendered independently (no word wrapping).
+    - Line 1: Role + years + domain scope (most important — the hook).
+    - Line 2: Key accomplishment or strength summary.
+    - Line 3: Education credentials + certifications.
+    - Each line must be a complete, readable phrase (no mid-word breaks).
+    - If you don't need to change the bio, omit bio_1/bio_2/bio_3 from slot_overrides entirely.
 
   c3_gate: |
     You are reviewing whether adapting a polished resume template improves job fit enough

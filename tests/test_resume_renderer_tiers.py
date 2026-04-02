@@ -701,3 +701,40 @@ def test_schema_to_context_slot_override_bio_lines():
     assert context["bio_1"] == "Custom line one."
     assert context["bio_2"] == "Custom line two."
     assert context["bio_3"] == "Custom line three."
+
+
+def test_adapt_template_perline_bio_end_to_end():
+    """Full ADAPT_TEMPLATE render with per-line bio should produce HTML with all 3 bio lines."""
+    from jinja2 import Environment, FileSystemLoader
+
+    env = Environment(loader=FileSystemLoader(str(Path("templates").resolve())), autoescape=True)
+    template = env.get_template("base_template_DE.html")
+
+    bio_1 = "Data Engineer with 6+ years of experience building data platforms across e-commerce and credit risk."
+    bio_2 = "Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up."
+    bio_3 = "M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on Spark and Delta Lake."
+
+    assert len(bio_1) <= 105
+    assert len(bio_2) <= 105
+    assert len(bio_3) <= 105
+
+    html = template.render(
+        bio_1=bio_1, bio_2=bio_2, bio_3=bio_3,
+        glp_skills="Python, SQL, AWS, Redshift, Airflow, Docker",
+        bq_skills="Python, SQL, MATLAB, Data Quality",
+        ele_skills="Python, SQL, Hadoop, Hive, Tableau",
+        skills=[
+            {"category": "Programming", "skills_list": "Python, SQL, Bash"},
+            {"category": "Data Engineering", "skills_list": "PySpark, Spark, Delta Lake, Databricks, Airflow"},
+            {"category": "Infrastructure", "skills_list": "AWS, Docker, Git, CI/CD"},
+            {"category": "Analytics & ML", "skills_list": "Pandas, NumPy, scikit-learn, PyTorch"},
+        ],
+    )
+
+    assert bio_1 in html
+    assert bio_2 in html
+    assert bio_3 in html
+    assert '<span class="bio">' not in html
+    assert "Python, SQL, AWS" in html
+    assert "PySpark, Spark, Delta Lake" in html
+    assert "text-overflow:ellipsis" in html

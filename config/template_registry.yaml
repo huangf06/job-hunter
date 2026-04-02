@@ -25,14 +25,14 @@ templates:
       bio:
         slot_id: "bio"
         bio_1:
-          default: "Data Engineer with 6+ years of experience building data platforms across e-commerce, market data, and credit risk."
-          senior: "Senior Data Engineer with 6+ years building data platforms from scratch. First technical hire at GLP Technology,"
+          default: "Data Engineer with 6+ years building data platforms across e-commerce, market data, and credit risk."
+          senior: "Senior Data Engineer with 6+ years building data platforms from scratch. First technical hire at GLP,"
         bio_2:
           default: "Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up."
-          senior: "grew the data team from 0 to 4 engineers while architecting the credit risk data platform. End-to-end ownership"
+          senior: "grew the data team from 0 to 4 while architecting the credit risk data platform. End-to-end ownership"
         bio_3:
-          default: "M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on experience in Spark and Delta Lake."
-          senior: "across ingestion, warehousing, data quality, and automated decisioning. M.Sc. in AI, Databricks Certified."
+          default: "M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on Spark and Delta Lake."
+          senior: "across ingestion, warehousing, data quality, and automated decisioning. M.Sc. in AI, Databricks Cert."
       sections:
         - section_id: "experience"
           entries:
@@ -93,7 +93,7 @@ templates:
             - cat_id: "programming"
               default: "Python, SQL, Bash"
             - cat_id: "data_engineering"
-              default: "PySpark, Spark, Delta Lake, Databricks, Airflow, Redshift, ETL/ELT, Data Modeling, Data Quality, Structured Streaming, Schema Evolution, Medallion Architecture"
+              default: "PySpark, Delta Lake, Databricks, Airflow, Redshift, ETL/ELT, Data Modeling"
             - cat_id: "infrastructure"
               default: "AWS, Docker, Git, CI/CD"
             - cat_id: "analytics_ml"
@@ -143,7 +143,7 @@ templates:
           senior: "Senior ML Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction and scoring systems in"
         bio_2:
           default: "systems in fintech, trading, and e-commerce. Strengths in feature engineering, model evaluation, and"
-          senior: "production. First data hire at GLP Technology, built the credit risk prediction system and grew the data team."
+          senior: "production. First data hire at GLP Technology, built the credit risk prediction system and grew the team."
         bio_3:
           default: "end-to-end ML pipelines, from raw data through production deployment."
           senior: "Strengths in feature engineering, model evaluation, and end-to-end ML pipelines."
@@ -154,7 +154,7 @@ templates:
               company: "GLP Technology (Fintech)"
               title: "Data Scientist"
               date: "JULY 2017 - AUGUST 2019"
-              technical_skills: "Python, SQL, PySpark, Feature Engineering, AWS (Redshift, S3), Airflow"
+              technical_skills: "Python, SQL, PySpark, Feature Eng., AWS (Redshift, S3), Airflow"
               bullets:
                 - slot_id: "glp_1"
                   default: "Joined as first data hire and built the end-to-end credit risk prediction system: engineered 19 features from raw bureau and transactional data, developed a first-payment default scorecard with 36-segment borrower classification, and deployed the model into production underwriting serving real lending decisions."
@@ -209,13 +209,13 @@ templates:
         - section_id: "skills"
           categories:
             - cat_id: "ml_modeling"
-              default: "PyTorch, Hugging Face Transformers, scikit-learn, LightGBM, XGBoost, Learning-to-Rank, Deep RL, Statistical Testing"
+              default: "PyTorch, Hugging Face, scikit-learn, LightGBM, XGBoost, Deep RL, Statistical Testing"
             - cat_id: "programming"
               default: "Python, SQL, NumPy, pandas, Bash"
             - cat_id: "data_infrastructure"
               default: "PySpark, Airflow, FastAPI, AWS (Redshift, S3, EC2), Delta Lake, Docker, Git"
             - cat_id: "domains"
-              default: "Feature Engineering, NLP, Time-Series, Anomaly Detection, Uncertainty Quantification"
+              default: "Feature Engineering, NLP, Time-Series, Anomaly Detection, UQ"
 
   Backend:
     enabled: false
@@ -242,11 +242,11 @@ templates:
       bio:
         slot_id: "bio"
         bio_1:
-          default: "Software Engineer with 6+ years building data-intensive Python systems across fintech, e-commerce, and trading."
-          senior: "Senior Software Engineer with 6+ years building data-intensive Python systems. First technical hire at GLP"
+          default: "Software Engineer with 6+ years building data-intensive Python systems across fintech and e-commerce."
+          senior: "Senior Software Engineer with 6+ years building data-intensive Python systems. First hire at GLP,"
         bio_2:
-          default: "Built a financial data lakehouse from scratch and led a team of 5 engineers on credit risk decisioning systems."
-          senior: "Technology, grew the engineering team from 0 to 4 while architecting credit risk decisioning and pipeline infra."
+          default: "Built a financial data lakehouse from scratch and led a team of 5 on credit risk decisioning systems."
+          senior: "grew the engineering team from 0 to 4 while architecting credit risk decisioning and pipeline infra."
         bio_3:
           default: "M.Sc. in AI (VU Amsterdam), Databricks Certified Data Engineer Professional."
           senior: "End-to-end ownership from system design through production deployment. M.Sc. in AI, Databricks Certified."
