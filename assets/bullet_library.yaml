@@ -129,10 +129,10 @@ work_experience:
     period: "Jul. 2017 - Aug. 2019"
 
     titles:
-      default: "Lead Data Engineer"
-      data_engineer: "Lead Data Engineer"
-      data_scientist: "Data Scientist & Team Lead"
-      ml_engineer: "Data Scientist & Team Lead"
+      default: "Senior Data Engineer"
+      data_engineer: "Senior Data Engineer"
+      data_scientist: "Senior Data Scientist"
+      ml_engineer: "Senior Data Scientist"
 
     # Per-role technical skills line (Toni CV format: listed below bullets)
     technical_skills: "Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI"
@@ -674,11 +674,11 @@ allowed_skill_categories:
 
 title_options:
   glp_technology:
-    default: "Lead Data Engineer"
-    data_engineer: "Lead Data Engineer"
+    default: "Senior Data Engineer"
+    data_engineer: "Senior Data Engineer"
     data_engineer_lead: "Data Engineer & Team Lead"
-    data_scientist: "Data Scientist & Team Lead"
-    ml_engineer: "ML Engineer & Team Lead"
+    data_scientist: "Senior Data Scientist"
+    ml_engineer: "Senior Data Scientist"
     risk_analyst: "Credit Risk Analyst"
   baiquan_investment:
     default: "Quantitative Researcher"

@@ -55,7 +55,7 @@
   <text class="section" x="42" y="156.5" id="s2">EXPERIENCE</text>
 
   <!-- GLP Technology -->
-  <text x="42" y="171.5" id="e1"><tspan class="org">GLP Technology (Fintech)</tspan><tspan class="place" dx="4">-</tspan><tspan class="role" dx="4">Data Scientist</tspan></text>
+  <text x="42" y="171.5" id="e1"><tspan class="org">GLP Technology (Fintech)</tspan><tspan class="place" dx="4">-</tspan><tspan class="role" dx="4">Senior Data Scientist</tspan></text>
   <text class="date" x="42" y="182.5" id="e2">JULY 2017 - AUGUST 2019</text>
   <text class="body" x="42" y="195.5" id="e3">Joined as <tspan style="font-weight:bold">first data hire</tspan> and built the end-to-end</text>
   <text class="body" x="42" y="208.5" id="e4">credit risk prediction system: engineered 19 features</text>
@@ -156,7 +156,7 @@
   <text class="body" x="326" y="692" id="p23">Filter for noise reduction on 12 sensor channels,</text>
   <text class="body" x="326" y="705" id="p24"><tspan style="font-weight:bold">576 FFT-based features</tspan> (time + frequency domain),</text>
   <text class="body" x="326" y="718" id="p25">and LightGBM + bidirectional LSTM achieving</text>
-  <text class="body" x="326" y="731" id="p26"><tspan style="font-weight:bold">94-99% sex classification</tspan> accuracy.</text>
+  <text class="body" x="326" y="731" id="p26"><tspan style="font-weight:bold">94-99% gender classification</tspan> accuracy.</text>
   <text class="body" x="326" y="744" id="p27"><tspan class="body-bold">Skills:</tspan> LightGBM, LSTM, Feature Eng., Time-Series</text>
 
   <!-- ==================== RIGHT: LANGUAGES ==================== -->

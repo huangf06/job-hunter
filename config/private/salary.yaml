@@ -1,6 +1,7 @@
 # Salary strategy — gitignored, not committed to public repo
+# Updated 2026-04-02 based on Glassdoor/TechPays/PayScale market research
 salary_strategy:
-  small_company: "€50,000-60,000"    # SME, startups, non-tech companies
-  mid_company: "€55,000-65,000"      # mid-size tech, established companies
-  large_company: "€65,000-80,000"    # FAANG, top-tier tech, finance
+  small_company: "€60,000-72,000"    # SME, startups, non-tech companies
+  mid_company: "€72,000-85,000"      # mid-size tech, established companies
+  large_company: "€85,000-100,000"   # FAANG, top-tier tech, finance
   note: "Open to discussion depending on full compensation package"
