@@ -1,6 +1,9 @@
 # Personal Brand Optimization: LinkedIn + GitHub + Blog
 
-Generated: 2026-04-02
+Generated: 2026-04-02 | Aligned with career-strategy-2026-04.md
+
+**Strategic framing**: ML/AI Engineer primary, MLOps hedge, DE fallback.
+All brand copy leads with ML/AI identity. DE experience is positioned as differentiator ("I can build the whole pipeline, not just the model"), not as primary identity.
 
 ---
 
@@ -11,21 +14,23 @@ Ready to commit to `huangf06/huangf06` repo.
 ```markdown
 # Fei Huang
 
-Data engineer and AI practitioner based in Amsterdam. M.Sc. in Artificial Intelligence from VU Amsterdam (GPA 8.2/10). Databricks Certified Data Engineer Professional.
+ML Engineer based in Amsterdam. M.Sc. in Artificial Intelligence from VU Amsterdam (GPA 8.2/10). 7+ years building data infrastructure and ML systems in production.
 
-My career has followed a single thread: understanding complex systems through data. Industrial engineering at Tsinghua taught me to think in systems. Quantitative finance taught me to build under uncertainty. Data engineering at a fintech startup taught me to ship. Graduate school in AI brought the formal foundations together.
+Most ML engineers come from either a research background or a software engineering background. I come from neither -- I built data platforms and quantitative trading systems before graduate school in AI. That means I think about models the way an infrastructure person does: how does this thing fail, how does it scale, and who maintains it at 3am.
 
-I write about philosophy and literature at [FeiThink](https://huangf06.github.io/FeiThink/en/) — mostly Kant, Dostoevsky, and the question of how to live well. The intellectual habits that make a good engineer (rigor, honesty about what you don't know, building from first principles) are the same ones that matter in philosophy.
+My thesis investigated uncertainty quantification in deep reinforcement learning -- when models know what they don't know. Before that: credit scoring engines at a fintech startup, systematic alpha research at a quant fund, fraud detection at a hyper-growth food delivery platform. Each role was a step closer to the intersection of data systems and intelligent decision-making.
+
+I also write about philosophy and literature at [FeiThink](https://huangf06.github.io/FeiThink/en/) -- mostly Kant, Dostoevsky, and the question of how to live well.
 
 ## Selected Projects
 
-**[job-hunter](https://github.com/huangf06/job-hunter)** — Automated job search pipeline. Scrapes listings from multiple platforms, applies rule-based filtering and AI-powered evaluation, generates tailored resumes, and tracks applications. Python, SQLite/Turso, Claude API, Playwright, GitHub Actions.
+**[job-hunter](https://github.com/huangf06/job-hunter)** -- AI-powered job search pipeline. LLM-based evaluation (Claude API), automated resume generation, rule-based filtering, and application tracking. Python, SQLite/Turso, Playwright, GitHub Actions.
 
-**[FeiThink](https://github.com/huangf06/FeiThink)** — Bilingual blog (EN/ZH) on philosophy, literature, and moral thought. Hugo + PaperMod with CI/CD deployment. 48 essays and counting.
+**Financial Data Lakehouse** -- ML feature engineering infrastructure on Databricks. Auto Loader + Structured Streaming for real-time market data ingestion, Medallion Architecture, schema evolution, data quality framework with quarantine-and-replay pattern.
 
-**[LifeOS](https://github.com/huangf06/LifeOS)** — Personal productivity platform orchestrating Todoist, Notion, Telegram Bot, and Logseq with automated daily workflows via GitHub Actions. Includes vocabulary pipeline and flashcard generation.
+**M.Sc. Thesis: Uncertainty Quantification in Deep RL** -- Benchmarked 5 UQ methods across 150+ HPC training runs. Demonstrated QR-DQN superiority (31% lower CRPS, p < 0.001). Discovered a "noise paradox" where moderate observation noise improves ensemble uncertainty estimates.
 
-**Financial Data Lakehouse** — Real-time market data processing on Databricks. Auto Loader + Structured Streaming, Medallion Architecture, Delta Lake with schema evolution and fault-tolerant ingestion.
+**[LifeOS](https://github.com/huangf06/LifeOS)** -- Personal productivity platform orchestrating 5 services (Todoist, Notion, Telegram Bot, Logseq, Eudic) with automated workflows via GitHub Actions.
 
 ## Links
 
@@ -38,54 +43,55 @@ I write about philosophy and literature at [FeiThink](https://huangf06.github.io
 
 ## Deliverable 2: LinkedIn Profile Copy
 
-### a) Headline (196 chars)
+### a) Headline (214 chars)
 
 ```
-Data Engineer | M.Sc. Artificial Intelligence, VU Amsterdam | Databricks Certified DE Professional | Python, Spark, Delta Lake | Amsterdam
+ML Engineer | M.Sc. Artificial Intelligence, VU Amsterdam | 7+ Years Data Infrastructure & ML Systems | Databricks Certified | Python, PyTorch, Spark | Amsterdam
 ```
 
-### b) About Section (~1900 chars)
+Alternative (shorter, 156 chars):
+```
+ML Engineer | M.Sc. AI, VU Amsterdam | From Data Pipelines to Production ML | Databricks Certified | Amsterdam
+```
+
+### b) About Section (~2000 chars)
 
 ```
-Every job I've taken was a bet on the same idea: that the most interesting problems sit at the intersection of data, decisions, and uncertainty.
+Most ML engineers come from research or software engineering. I come from data infrastructure -- and that turns out to be a useful place to start.
 
-I started in industrial engineering at Tsinghua University, where I learned to think about systems — supply chains, operations, optimization. My first real job was at Henan Energy (Fortune Global 500), where I built the analytics framework that tracked inventory and procurement timing across 20+ business units.
+I spent 7 years building systems where data quality and pipeline reliability directly determined whether decisions were good or catastrophic. At a fintech startup (GLP Technology), I was the first technical hire: I built the credit scoring decision engine from scratch -- 29 rejection rules, 36-segment borrower classification, a scorecard model combining 19 weighted features for default prediction. The entire system, from data ingestion through model-driven decisioning to post-loan monitoring.
 
-I moved to Shanghai and joined Ele.me during its hyper-growth phase (pre-Alibaba acquisition), building fraud detection systems across 2.2M+ users and optimizing Hadoop queries that cut scan volumes 5x. Then quantitative finance: at BQ Investment, I built backtesting infrastructure and ran systematic alpha research across 3,000+ securities, deploying strategies with real capital.
+Before that: systematic alpha research at a quant fund (factor modeling, backtesting with real capital), and fraud detection at Ele.me during hyper-growth (51K suspicious clusters identified across 2.2M users). Each role pushed me deeper into the question of how to make reliable automated decisions from messy, high-stakes data.
 
-At GLP Technology, I was the first technical hire. I designed and built the complete credit risk data platform from scratch — data ingestion, a 29-rule decision engine, borrower classification, and post-loan monitoring. PySpark, AWS Redshift, the full stack.
+In 2023 I entered the M.Sc. AI program at VU Amsterdam (GPA 8.2/10). My thesis tackled uncertainty quantification in deep reinforcement learning -- 150+ training runs on HPC, evaluating when models know what they don't know. I hold the Databricks Certified Data Engineer Professional certification.
 
-From 2019 to 2023, I stepped back deliberately: independent quantitative research, learning English and German, and preparing for graduate school. In 2023 I entered the M.Sc. AI program at VU Amsterdam (GPA 8.2/10). My thesis investigated uncertainty quantification in deep reinforcement learning — 150+ training runs on HPC, rigorous statistical evaluation of when models know what they don't know.
+What I bring to ML engineering that pure ML graduates don't: I've built the data platforms that feed models. I know what happens upstream. I think about ML systems the way an infrastructure person does -- failure modes, data drift, pipeline reliability, monitoring. Bridging data pipelines and production ML is not an aspiration for me; it's what I've been doing from both sides.
 
-I hold the Databricks Certified Data Engineer Professional certification (2026).
-
-I'm looking for Data Engineering or AI roles in the Netherlands. I have full work authorization (Zoekjaar) and am eligible for Kennismigrant visa sponsorship.
+Looking for ML/AI Engineering roles in the Netherlands. Full work authorization (Zoekjaar), eligible for Kennismigrant visa sponsorship.
 ```
 
 ### c) Experience Entries
 
-**GLP Technology | Data Engineer & Team Lead | Jul 2017 - Aug 2019 | Shanghai**
+**GLP Technology | ML & Data Engineering Lead | Jul 2017 - Aug 2019 | Shanghai**
 
 ```
-First technical hire at a lending fintech. Designed and built the complete credit risk data platform from scratch — from raw data ingestion through automated decisioning to post-loan monitoring.
+First technical hire at a lending fintech. Designed and built the complete credit risk ML platform from scratch -- from raw data ingestion through model-driven automated decisioning to post-loan monitoring.
 
-Core contribution: engineered the decision engine with 29 rejection rules across 4 risk dimensions, a 36-segment borrower classification system, and an early-delinquency scorecard combining 19 weighted features for first-payment default prediction.
+Core system: engineered the credit scoring decision engine with 29 rejection rules across 4 risk dimensions, a 36-segment borrower classification model, and an early-delinquency scorecard combining 19 weighted features for first-payment default prediction. This was a production ML system making real lending decisions.
 
-Built the data foundation powering all risk systems: daily ETL of 30+ production tables into AWS Redshift, plus a credit bureau report parser transforming deeply nested JSON into 5 structured analytical tables.
+Built the underlying data infrastructure: daily ETL of 30+ production tables into AWS Redshift, credit bureau report parser (deeply nested JSON to 5 structured analytical tables), and post-loan monitoring with delinquency tracking and fraud detection API integration.
 
-Extended the platform into post-loan monitoring: delinquency tracking, repayment trend analysis, and third-party fraud detection API integration.
-
-Tech: Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI
+Tech: Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, scikit-learn, pandas, NumPy
 ```
 
 **Independent Quantitative Researcher | Sep 2019 - Aug 2023 | Remote**
 
 ```
-Career transition period combining active technical work with graduate school preparation.
+Deliberate career transition: independent research + graduate school preparation.
 
-Built automated equity research pipeline processing 83K+ daily records across 3,600+ stocks via Tushare API and MySQL. Implemented institutional flow tracking and momentum signal detection for systematic market analysis.
+Built automated equity research pipeline processing 83K+ daily records across 3,600+ stocks. Implemented institutional flow tracking and momentum signal detection for systematic market analysis.
 
-Concurrently: self-directed study in data science and ML, English and German language acquisition, and admission to M.Sc. AI at VU Amsterdam (2023).
+Concurrent: self-directed deep dive into ML/DL (PyTorch, deep learning theory), English and German language acquisition. Admitted to M.Sc. AI at VU Amsterdam (2023).
 ```
 
 **BQ Investment | Quantitative Researcher | Jul 2015 - Jun 2017 | Beijing**
@@ -93,13 +99,13 @@ Concurrently: self-directed study in data science and ML, English and German lan
 ```
 Quantitative hedge fund, 5-person team.
 
-Built end-to-end market data ingestion pipeline processing 3,000+ A-share securities and 5+ years of tick-level futures data. Implemented corporate action handling and deduplication logic.
+Built systematic alpha research pipeline: Fama-MacBeth regression validating 4 factor families (value, momentum, money flow, event-driven) across 3,000+ securities. Factors integrated into live portfolio. Developed and deployed R-Breaker intraday trading strategy achieving 14.6% annualized return with real capital.
 
-Architected event-driven backtesting framework (Python + MATLAB) supporting strategy simulation, walk-forward validation, and 15+ performance metrics — adopted as core research infrastructure.
+Architected event-driven backtesting framework (Python + MATLAB) with walk-forward validation and 15+ performance metrics -- adopted as core research infrastructure.
 
-Built systematic alpha research pipeline using Fama-MacBeth regression to validate 4 factor families across 3,000+ securities. Developed and deployed R-Breaker intraday trading strategy achieving 14.6% annualized return with real capital.
+Built end-to-end market data pipeline: 3,000+ securities, 5+ years tick-level futures data, corporate action handling, deduplication.
 
-Tech: Python, MATLAB, SAS, SQL, Wind API, NumPy, pandas, scipy
+Tech: Python, MATLAB, SAS, SQL, NumPy, pandas, scipy
 ```
 
 **Ele.me (acquired by Alibaba) | Data Analyst | Sep 2013 - Jul 2015 | Shanghai**
@@ -107,11 +113,9 @@ Tech: Python, MATLAB, SAS, SQL, Wind API, NumPy, pandas, scipy
 ```
 Joined during hyper-growth, pre-Alibaba acquisition.
 
-Built anti-fraud detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern algorithms (same-phone, high-frequency, repeat-order matching), preventing fraudulent subsidy claims.
+Built anti-fraud detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern-matching algorithms (same-phone, high-frequency, repeat-order), preventing fraudulent subsidy claims. This was effectively an anomaly detection / classification problem at scale.
 
-Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, cutting scan volume 5x (500GB to 100GB) and unlocking real-time analytics on 30+ warehouse tables.
-
-Engineered SQL-based user segmentation pipeline analyzing 2.2M+ users across 4 behavioral cohorts — delivered actionable profiles adopted by marketing for targeted campaigns.
+Optimized 90+ Hadoop/Hive queries (partition pruning, subquery pushdown), cutting scan volume 5x (500GB to 100GB). Engineered user segmentation pipeline across 4 behavioral cohorts for targeted marketing.
 
 Tech: SQL, Hadoop, Hive, Python, pandas, A/B Testing
 ```
@@ -119,44 +123,54 @@ Tech: SQL, Hadoop, Hive, Python, pandas, A/B Testing
 **Henan Energy | Business Analyst | Jul 2010 - Aug 2013 | Zhengzhou**
 
 ```
-Fortune Global 500 (#328), state-owned enterprise.
-
-Built automated pipeline to ingest, validate, and consolidate non-standardized Excel reports from 20+ business units into unified operational reporting — reduced monthly processing from 2 days to under 2 hours.
-
-Designed the group's supply chain analytics framework from scratch, tracking daily sales and inventory to guide procurement timing. Optimization guided by this framework contributed to EUR 32M in documented profit improvements over 3 years.
+Fortune Global 500 (#328). Built automated data consolidation pipeline across 20+ business units (2 days to 2 hours). Designed supply chain analytics framework -- EUR 32M documented profit impact over 3 years.
 ```
 
-### d) Featured Section Suggestions
+### d) Education (LinkedIn section)
+
+**VU Amsterdam | M.Sc. Artificial Intelligence | 2023 - 2025**
+```
+GPA: 8.2/10
+
+Thesis: Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments
+- Benchmarked 5 UQ methods across 150+ HPC training runs (SLURM)
+- QR-DQN superiority: 31% lower CRPS (p < 0.001) over ensemble and dropout baselines
+- Discovered "noise paradox": moderate observation noise improves ensemble-based UQ
+
+Selected courses (all 9.0+): Deep Learning (9.5), Multi-Agent Systems (9.5), ML for Quantified Self (9.5), NLP (9.0), Data Mining (9.0), Evolutionary Computing (9.0)
+```
+
+### e) Featured Section Suggestions
 
 Pin in this order:
-1. **Databricks Certified Data Engineer Professional** — credential link/image
-2. **GitHub: job-hunter** — link to repo with description "Automated job search pipeline (Python, Claude API, Playwright)"
-3. **Blog post: "Why We Read Kant"** — shows intellectual depth without being politically charged
-4. **Blog post: "Skin in the Game"** — connects philosophical thinking to practical decision-making (Taleb resonates with technical/business audiences)
-5. **GitHub: FeiThink** — demonstrates CI/CD, bilingual content
+1. **M.Sc. Thesis** -- link to paper/repo if available. Strongest ML signal.
+2. **Databricks Certified Data Engineer Professional** -- credential link
+3. **GitHub: job-hunter** -- "AI-powered job search pipeline (Claude API, Python, GitHub Actions)"
+4. **Blog post: "What My M.Sc. Thesis Taught Me About Uncertainty"** -- write this first (see Blog Strategy)
+5. **Blog post: "Skin in the Game"** -- analytical thinking, Taleb resonates with technical audiences
 
-Avoid featuring: political commentary posts (Hong Kong articles, White Paper Protests, Li Wenliang tribute). These are honest and well-written but create unnecessary risk in a hiring context.
+Avoid featuring: political commentary posts (Li Wenliang, Hong Kong, White Paper Protests). Keep published, don't promote on LinkedIn.
 
-### e) Skills (ordered by priority, top 3 pinned)
+### f) Skills (ordered for ML/AI Engineer positioning)
 
 **Pin these 3:**
-1. Python
-2. Apache Spark / PySpark
-3. Data Engineering
+1. Machine Learning
+2. Python
+3. PyTorch
 
 **Remaining 12:**
-4. SQL
-5. Databricks
-6. ETL/ELT
-7. Delta Lake
-8. AWS
-9. Machine Learning
-10. PyTorch
-11. Data Pipelines
-12. PostgreSQL
-13. Docker
-14. Airflow
-15. Statistical Analysis
+4. Deep Learning
+5. Data Engineering
+6. Apache Spark / PySpark
+7. SQL
+8. Databricks
+9. scikit-learn
+10. Docker
+11. AWS
+12. Delta Lake
+13. Statistical Modeling
+14. CI/CD
+15. Airflow
 
 ---
 
@@ -164,93 +178,106 @@ Avoid featuring: political commentary posts (Hong Kong articles, White Paper Pro
 
 ### Existing Post Assessment
 
-**Professional assets** (would impress a hiring manager who reads them):
-- "Skin in the Game" — shows analytical thinking about incentive structures, directly relevant to engineering culture
-- "Why We Read Kant" — demonstrates rigorous thinking, originality, commitment to first principles
-- "IKIRU" — shows values (meaning, purpose) without political risk
-- "Subjectivity: How to Become the Protagonist" — agency, self-direction
-- "Reason and Emotion" — shows balanced thinking, relevant to team dynamics
-- "History of Thought" series (4 parts) — shows systematic, long-form intellectual work
+(Unchanged from previous version -- all 48 posts are philosophical/literary. Assessment stands.)
 
-**Neutral** (won't help or hurt): Most literary analyses (Dostoevsky, Garcia Marquez, Vagabond), personal reflections, INTJ essay, emotional care essay. These show you're a human with depth — fine, but won't move the needle professionally.
+**Professional assets**: "Skin in the Game", "Why We Read Kant", "IKIRU", "Reason and Emotion", "History of Thought" series
+**Neutral**: Literary analyses, personal reflections
+**Risk zone**: Political commentary (keep published, don't feature on LinkedIn)
 
-**Risk zone** (honest writing, but a recruiter who skims could misread):
-- "In Memory of Li Wenliang" — touching but politically sensitive in some contexts
-- "Questions About Recent Viral Articles I & II" — Hong Kong political analysis
-- "On Human Nature: What the White Paper Protests Taught Me" — direct political commentary
-- "From Chosin Reservoir to Christmas" — Korea/China historical politics
-- "Reflections on 12.12" — Gwangju uprising
+### Technical Blog Posts to Write (5 suggestions, reordered for ML-first strategy)
 
-These posts are intellectually solid. The question is risk tolerance. In the Dutch market, political awareness is generally respected, but a hiring manager at a large tech company might flag it as "potentially controversial." Recommendation: keep them published (they're part of who you are, and removing them would be dishonest), but don't feature them on LinkedIn.
+**1. "What My M.Sc. Thesis Taught Me About Uncertainty" [HIGHEST PRIORITY]**
+Why first: This is your strongest ML credential. A practitioner-friendly version establishes you as someone who does real ML research, not just tutorials.
+Outline: What is uncertainty quantification? Why production ML needs it (model confidence != accuracy). The noise paradox finding. What 150 HPC runs taught about reproducibility. QR-DQN vs ensembles -- when to use which. Frame for practitioners: "if your model is making decisions, you need to know when it's guessing."
+Target: ML engineers, hiring managers evaluating ML depth.
 
-### Technical Blog Posts to Write (5 suggestions)
-
-**1. "Building a Real-Time Data Lakehouse on Databricks"**
-Outline: Your Financial Data Lakehouse project. Cover: why Medallion Architecture, Auto Loader vs batch, schema evolution challenges, quarantine pattern for data quality. Include architecture diagrams. Target audience: hiring managers and peers evaluating your Databricks skills.
-
-**2. "What My M.Sc. Thesis Taught Me About Uncertainty"**
-Outline: Non-academic version of your thesis. What is uncertainty quantification? Why does it matter for production ML? The "noise paradox" finding. What 150 HPC runs look like in practice. Frame for practitioners, not reviewers. Target: ML engineers, data scientists.
+**2. "From Data Pipelines to Production ML: Why Infrastructure Experience Matters"**
+Why: This IS your differentiating narrative. This post should be the canonical version of "why my background is an asset, not a liability."
+Outline: Factor research is feature engineering. Credit scoring is a production ML system (even if you didn't call it that in 2017). Backtesting is offline evaluation. Data quality is the #1 killer of ML in production. The gap between Jupyter and production is a data engineering problem.
+Target: Hiring managers who are wondering "can a DE do ML?" This post answers yes, with receipts.
 
 **3. "Automating Job Search with Python and Claude"**
-Outline: The job-hunter project. Architecture overview, the filtering pipeline, using LLMs for evaluation (not just chatbots), resume generation, lessons learned. This will get attention — job searching is universal and automating it is novel. Target: broad developer audience, potential viral reach.
+Why: Viral potential + demonstrates LLM integration in production systems.
+Outline: Architecture, the filtering pipeline, LLM-based evaluation (prompt engineering for structured output), resume generation, lessons learned. Honest about what Claude is good/bad at.
+Target: Broad developer audience.
 
-**4. "From Quant Finance to Data Engineering: Why the Skills Transfer"**
-Outline: Career narrative post. Factor research is feature engineering. Backtesting is pipeline testing. Real capital is production. Event-driven architecture in trading vs data systems. This directly addresses the "why did you change careers" question. Target: hiring managers, career changers.
+**4. "Building a Real-Time Data Lakehouse on Databricks"**
+Why: Databricks cert credibility + demonstrates current skills. Also relevant if you pivot to MLOps (feature store infrastructure).
+Outline: Medallion Architecture, Auto Loader vs batch, schema evolution, quarantine pattern. Include architecture diagrams.
+Target: Data/ML engineers, Databricks community.
 
-**5. "Credit Scoring from Scratch at a Fintech Startup"**
-Outline: The GLP story. What it's like being the first technical hire. Building a 29-rule decision engine. The credit bureau JSON parsing problem. Technical depth on scorecard methodology. Target: fintech engineers, startup-curious engineers.
+**5. "Credit Scoring from Scratch: Building an ML Decision System at a Startup"**
+Why: Reframes GLP as ML experience (aligned with resume repackaging in strategy doc).
+Outline: First technical hire story. The 29-rule engine. Scorecard methodology as ML. Feature engineering from credit bureau data. What "production ML" looked like before MLOps was a word.
+Target: Fintech engineers, ML engineers who think "real ML" only means neural nets.
 
 ### Blog Organization
 
-Don't separate into two blogs. Use Hugo's tag system instead:
-- Add tags: `technical`, `philosophy`, `literature`, `career`
-- Create a landing page or pinned post that says: "Looking for technical writing? Start here: [list]. Looking for philosophy? Start here: [list]."
-- On LinkedIn, only link to the `/en/` version and specific technical posts
+Same as previous version: don't separate, use tags (`technical`, `ml`, `philosophy`, `career`). Add a "Technical Writing" menu item once 3+ posts exist.
 
 ### Hugo Config Improvements
 
-- Add `description` meta tag in config for SEO: "Fei Huang's blog on data engineering, AI, philosophy, and moral thought"
-- Add `author` structured data
-- Consider adding `robots.txt` and `sitemap.xml` if not already present
-- Add Open Graph images for social sharing (Hugo PaperMod supports `cover` in frontmatter)
-- Add a "Technical Writing" section to the menu once you have 3+ technical posts
+Same as previous version, plus:
+- Update site description to include ML/AI: "Fei Huang writes about machine learning, data systems, philosophy, and moral thought"
+- Update keywords to lead with ML terms: "machine learning, ML engineering, uncertainty quantification, deep reinforcement learning, data infrastructure, philosophy, Kant"
 
 ---
 
 ## Deliverable 4: Cross-Platform Consistency Audit
 
-### Narrative Alignment
+### Narrative Alignment (Updated for ML-first strategy)
 
-| Element | Resume | LinkedIn (proposed) | GitHub (proposed) | Blog |
-|---------|--------|--------------------|--------------------|------|
-| Career arc | IE -> DA -> Quant -> DE -> AI | Same | Same | Not addressed |
-| Gap framing | "Career Note: independent investing, language learning, grad prep" | "Stepped back deliberately" + technical detail | Not mentioned (correct) | Not addressed |
-| Core identity | Data Engineer | Data Engineer + AI | "Data engineer and AI practitioner" | "Mathematical rigor meets philosophical inquiry" |
-| Intellectual depth | Interests section only | Woven into About | Explicit paragraph about philosophy | Full expression |
+| Element | Resume (to update) | LinkedIn (proposed) | GitHub (proposed) | Blog (to build) |
+|---------|-------------------|--------------------|--------------------|-----------------|
+| Primary identity | ML Engineer | ML Engineer | ML Engineer | (needs technical posts) |
+| Career arc | IE -> DA -> Quant -> DE -> ML/AI | Same | Same | Post #2 tells this story |
+| Differentiator | "bridges data pipelines and production ML" | Same | "thinks about models like an infrastructure person" | Post #2 + #5 |
+| Thesis prominence | Projects section, top | Education section, detailed | Selected Projects, with metrics | Post #1 (highest priority) |
+| GLP framing | "ML-powered decision system" | "credit risk ML platform" | Not detailed | Post #5 |
+| Gap framing | Career note | "Deliberate career transition" | Not mentioned | Not needed |
+| Lakehouse framing | "feature engineering infrastructure" | Not in About (too detailed) | "ML feature engineering infrastructure" | Post #4 |
 
-### Contradictions Found
+### Key Changes from Previous Version
 
-1. **Resume title vs reality**: Resume bio says "Data Engineer with expertise in..." — this is the tailored version for a specific application (Picnic). The master template is fine; just note that LinkedIn/GitHub should use the broader "Data Engineer | AI" framing, not company-specific text.
+1. **LinkedIn headline**: "Data Engineer" -> "ML Engineer"
+2. **LinkedIn pinned skills**: Spark/DE -> Machine Learning/PyTorch
+3. **GitHub README opening**: "Data engineer and AI practitioner" -> "ML Engineer"
+4. **GLP title on LinkedIn**: "Data Engineer & Team Lead" -> "ML & Data Engineering Lead"
+5. **GLP tech stack**: Added "scikit-learn" (the scorecard was effectively a sklearn pipeline)
+6. **About section hook**: Rewritten to frame DE as ML differentiator, not primary identity
+7. **Featured section**: Thesis moved to #1 (was not present before)
+8. **Blog priorities**: Thesis post is now #1 (was #2), career narrative post reframed from "quant to DE" to "data pipelines to production ML"
 
-2. **GLP title inconsistency**: Bullet library allows "Senior Data Engineer", "Data Engineer & Team Lead", "Senior Data Scientist" depending on context. LinkedIn should use one title consistently. Recommendation: **"Data Engineer & Team Lead"** — it's the most honest (first hire who built the team) and the most impressive.
+### Contradictions to Resolve
 
-3. **Blog tagline vs professional brand**: "Where mathematical rigor meets philosophical inquiry" is great for the blog but doesn't connect to data engineering at all. This is fine — the blog serves a different purpose. Just don't use this tagline on LinkedIn.
+1. **Resume master template still says "Data Engineer with expertise in..."** -- needs updating to ML-first framing per strategy doc's recommendation: "ML Engineer with 7+ years in data infrastructure, bridging the gap between data pipelines and production ML systems"
 
-### Gaps to Close
+2. **Bullet library GLP title options**: Currently "Senior Data Engineer" (default) or "Data Engineer & Team Lead". Need to add "ML & Data Engineering Lead" as a title option for ML-targeted applications.
 
-1. **Zero technical blog content** — the biggest gap. Your GitHub shows you build things; your blog shows you think deeply; nothing shows you can explain technical work in writing. The 5 suggested posts above would close this completely.
+3. **Bullet library `skill_tiers`**: ML skills are listed under a generic "ml" category. For ML Engineer positioning, these should be more prominent. Consider reordering so ML appears before data_engineering in the YAML.
 
-2. **No "About" page on the blog that connects to professional identity** — the current blog About page should mention your professional background briefly, linking to LinkedIn/GitHub, so someone arriving from a technical post knows who you are.
+4. **LinkedIn vs Resume GLP title**: LinkedIn will show "ML & Data Engineering Lead" permanently. Resume can vary per application. This is fine -- LinkedIn is a fixed profile, resume is tailored.
 
-3. **GitHub repos may not have good READMEs** — check that job-hunter, LifeOS, and FeiThink repos each have a README that matches the descriptions in the GitHub profile README above.
+### Action Items (Prioritized)
 
-### Unified "About Me" Boilerplate
+| Priority | Action | Where |
+|----------|--------|-------|
+| P0 | Update LinkedIn headline, About, Experience per this doc | LinkedIn (manual) |
+| P0 | Update resume bio_builder default to ML-first framing | bullet_library.yaml |
+| P0 | Add "ML & Data Engineering Lead" to GLP title_options | bullet_library.yaml |
+| P1 | Write thesis blog post (#1 above) | FeiThink |
+| P1 | Create/update GitHub profile README | huangf06/huangf06 repo |
+| P1 | Write career narrative post (#2 above) | FeiThink |
+| P2 | Write job-hunter post (#3) | FeiThink |
+| P2 | Update Hugo config keywords/description | FeiThink config |
+| P2 | Update blog About page to connect to professional identity | FeiThink |
 
-Adapt this core paragraph per platform:
+### Unified "About Me" Boilerplate (ML-first)
 
-> Data engineer and AI practitioner based in Amsterdam. M.Sc. in Artificial Intelligence from VU Amsterdam (GPA 8.2/10), Databricks Certified Data Engineer Professional. Career path from industrial engineering through quantitative finance and data engineering to AI — each step driven by the same interest in understanding complex systems through data. I write about philosophy, literature, and moral thought at FeiThink.
+> ML Engineer based in Amsterdam with 7+ years building data infrastructure and ML systems in production. M.Sc. in Artificial Intelligence from VU Amsterdam (GPA 8.2/10), Databricks Certified Data Engineer Professional. Career path from quantitative finance through data engineering to AI -- each step driven by the same question: how do you make reliable automated decisions from messy, high-stakes data. I write about philosophy, literature, and moral thought at FeiThink.
 
-- **LinkedIn**: expand into full About section (done above)
+Platform adaptations:
+- **LinkedIn**: expand into full About (done above)
 - **GitHub**: use as-is with project links
-- **Blog About page**: lead with intellectual identity, then mention professional background
-- **Resume**: compress to 1-2 line bio tailored per application
+- **Blog About page**: lead with intellectual identity, then professional background
+- **Resume**: compress to 1-2 line bio, tailored per application via bio_builder
