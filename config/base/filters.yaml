@@ -37,7 +37,13 @@ hard_reject_rules:
       - "werkzaamheden"
       - "vereisten"
       - "beschikbaar"
-    threshold: 8  # >= 8 Dutch words found = reject (reduced false positives)
+      - "naar"
+      - "zijn"
+      - "het"
+      - "deze"
+      - "meer"
+      - "bieden"
+    threshold: 7  # >= 7 Dutch words found = reject
 
   # 规则1b: 法语JD检测 (Greenhouse 无语言过滤)
   french_language:
