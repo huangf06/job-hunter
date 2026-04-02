@@ -827,10 +827,24 @@ class AIAnalyzer:
         change_count = 0
         total_changeable = 1
 
-        if c2_output.get('slot_overrides', {}).get('bio'):
+        # Per-line bio (bio_1/bio_2/bio_3) or legacy single bio
+        slot_overrides = c2_output.get('slot_overrides', {})
+        bio_schema = template_schema.get('bio', {})
+        bio_changed = False
+        for line_key in ('bio_1', 'bio_2', 'bio_3'):
+            if slot_overrides.get(line_key):
+                line_default = (bio_schema.get(line_key) or {}).get('default', '')
+                lines.append(f"**{line_key}:**")
+                lines.append(f"  BEFORE: {line_default}")
+                lines.append(f"  AFTER:  {slot_overrides[line_key]}\n")
+                bio_changed = True
+        if not bio_changed and slot_overrides.get('bio'):
+            bio_default = bio_schema.get('default', bio_schema.get('bio_1', {}).get('default', ''))
             lines.append("**Bio:**")
-            lines.append(f"  BEFORE: {template_schema['bio']['default']}")
-            lines.append(f"  AFTER:  {c2_output['slot_overrides']['bio']}\n")
+            lines.append(f"  BEFORE: {bio_default}")
+            lines.append(f"  AFTER:  {slot_overrides['bio']}\n")
+            bio_changed = True
+        if bio_changed:
             change_count += 1
 
         for section in template_schema.get('sections', []):

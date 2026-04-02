@@ -9,7 +9,7 @@ def test_build_c3_input_includes_diff_and_density():
     registry = load_registry()
     schema = registry["templates"]["DE"]["slot_schema"]
     c2_output = {
-        "slot_overrides": {"bio": "New bio", "glp_1": "Updated bullet"},
+        "slot_overrides": {"bio_1": "New bio line one.", "bio_2": "New bio line two.", "bio_3": "New bio line three.", "glp_1": "Updated bullet"},
         "skills_override": {"programming": "Python, SQL, Scala"},
         "entry_visibility": {"henan": False},
         "change_summary": "Changed several items",
@@ -42,7 +42,7 @@ def test_run_c3_gate_parses_model_response():
         template_id_final = "DE"
         tailored_resume = json.dumps(
             {
-                "slot_overrides": {"bio": "New bio"},
+                "slot_overrides": {"bio_1": "New bio line one."},
                 "skills_override": {},
                 "entry_visibility": {},
                 "change_summary": "bio only",
@@ -73,7 +73,7 @@ def test_run_c3_gate_prompt_preserves_structured_diff_braces():
         template_id_final = "DE"
         tailored_resume = json.dumps(
             {
-                "slot_overrides": {"bio": "Processed {batch_size} records"},
+                "slot_overrides": {"bio_1": "Processed {batch_size} records"},
                 "skills_override": {},
                 "entry_visibility": {},
                 "change_summary": "bio only",
