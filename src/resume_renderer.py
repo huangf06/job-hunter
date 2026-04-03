@@ -231,8 +231,9 @@ class ResumeRenderer:
         with open(html_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
-        # Convert to PDF
-        pdf_success = self._html_to_pdf(html_path, pdf_path)
+        # Convert to PDF (template embeds its own padding via body CSS + @page)
+        pdf_success = self._html_to_pdf(html_path, pdf_path,
+                                        margin_override={'top': '0', 'right': '0', 'bottom': '0', 'left': '0'})
 
         if pdf_success:
             import shutil
@@ -603,13 +604,12 @@ class ResumeRenderer:
                     # Load HTML file
                     page.goto(html_path.absolute().as_uri(), timeout=15000)
 
-                    # Generate PDF (single page only — resume must fit one page)
+                    # Generate PDF
                     page.pdf(
                         path=str(pdf_path),
                         format=pdf_config.get('format', 'A4'),
                         margin=pdf_margin,
                         print_background=pdf_config.get('print_background', True),
-                        page_ranges='1',
                     )
                 finally:
                     browser.close()

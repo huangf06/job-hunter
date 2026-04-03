@@ -133,6 +133,7 @@ work_experience:
       data_engineer: "Senior Data Engineer"
       data_scientist: "Senior Data Scientist"
       ml_engineer: "Senior Data Scientist"
+      data_analyst: "Senior Data Analyst"
 
     # Per-role technical skills line (Toni CV format: listed below bullets)
     technical_skills: "Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI"
@@ -221,6 +222,7 @@ work_experience:
       default: "Quantitative Researcher"
       quant: "Quantitative Researcher"
       data_scientist: "Quantitative Analyst"
+      data_analyst: "Senior Data Analyst"
 
     technical_skills: "Python, MATLAB, SAS, SQL, Wind API, NumPy, pandas, scipy"
 
@@ -263,7 +265,8 @@ work_experience:
     titles:
       default: "Business Analyst"
       supply_chain: "Supply Chain & Operations Supervisor"
-      data_analyst: "Business Analyst"
+      business_analyst: "Business Analyst"
+      data_analyst: "Data Analyst"
       data_engineer: "Data Operations Analyst"
 
     technical_skills: "Excel, VBA, Data Automation, SPSS, Data Quality Management"
@@ -680,16 +683,19 @@ title_options:
     data_scientist: "Senior Data Scientist"
     ml_engineer: "Senior Data Scientist"
     risk_analyst: "Credit Risk Analyst"
+    data_analyst: "Senior Data Analyst"
   baiquan_investment:
     default: "Quantitative Researcher"
     data_engineer: "Quantitative Developer"
     data_scientist: "Quantitative Analyst"
     quant: "Quantitative Researcher"
+    data_analyst: "Senior Data Analyst"
   eleme:
     default: "Data Analyst"
   henan_energy:
     default: "Business Analyst"
-    data_analyst: "Business Analyst"
+    business_analyst: "Business Analyst"
+    data_analyst: "Data Analyst"
 
 # =============================================================================
 # BIO CONSTRAINTS — Rules for AI-generated bio text
@@ -726,6 +732,7 @@ bio_constraints:
 bio_builder:
   allowed_titles:
     - "Data Engineer"
+    - "Data Analyst"
     - "ML Engineer"
     - "Machine Learning Engineer"
     - "Data Scientist"

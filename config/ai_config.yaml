@@ -90,7 +90,7 @@ resume:
     print_background: true
 
   # Career gap explanation (rendered below experience section)
-  career_note: "Career transition (2019–2023): Relocated to the Netherlands and completed M.Sc. in Artificial Intelligence at VU Amsterdam (GPA 8.2/10)."
+  career_note: "Career transition (2019–2023): Relocated to the Netherlands and began M.Sc. in Artificial Intelligence at VU Amsterdam."
 
   # Interests line (rendered at bottom of resume)
   interests: "Philosophy, strategy games, distance running, analytical writing"
@@ -116,15 +116,15 @@ resume:
       degree: "M.Sc. in Artificial Intelligence"
       date: "Sep. 2023 -- Aug. 2025"
       gpa: "8.2/10"
-      coursework: "Deep Learning (9.5), Multi-Agent Systems (9.5), ML4QS (9.5), NLP (9.0)"
+      coursework: "Deep Learning (9.5), Multi-Agent Systems (9.5), ML4QS (9.5), Data Mining (9.0), NLP (9.0)"
       thesis: "Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments"
     bachelor:
       school: "Tsinghua University"
       location: "Beijing, China"
       degree: "B.Eng. in Industrial Engineering"
       date: "Sep. 2006 -- Jul. 2010"
-      school_note: "Ranked #1 in China, top 20 globally"
-      thesis: "Design and Implementation of Web-based Collaborative Office System (Java/MVC/SQL Server)"
+      school_note: "#1 in China"
+      thesis: ""
     certification: "Databricks Certified Data Engineer Professional (2026)"
 
 # =============================================================================

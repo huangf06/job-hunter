@@ -21,6 +21,7 @@ body {
     font-size: 10pt;
     line-height: 1.35;
     color: var(--primary-color);
+    font-variant-ligatures: none;
     max-width: 8.27in;
     margin: 0 auto;
     padding: 0.55in;
@@ -102,7 +103,7 @@ body {
     font-size: 10pt;
     color: var(--primary-color);
 }
-.edu-gpa { font-weight: bold; font-style: normal; }
+.edu-gpa { font-weight: normal; font-style: normal; }
 
 .edu-body {
     font-size: 9.5pt;
@@ -127,6 +128,7 @@ body {
     color: var(--primary-color);
 }
 .exp-note { font-weight: normal; }
+.edu-note { font-weight: normal; }
 
 .exp-subheader {
     display: flex;
@@ -236,7 +238,7 @@ body {
 .skill-cat {
     font-weight: bold;
     color: var(--primary-color);
-    min-width: 85pt;
+    min-width: 95pt;
     flex-shrink: 0;
 }
 
@@ -245,9 +247,10 @@ body {
 /* ── Certifications ── */
 .cert-text {
     font-size: 10pt;
-    font-weight: bold;
+    font-weight: normal;
     color: var(--primary-color);
 }
+.cert-label { font-weight: bold; }
 
 /* ── Languages ── */
 .lang-text {
@@ -257,7 +260,6 @@ body {
 
 @media print {
     body { padding: 0; max-width: none; }
-    .section { break-inside: avoid; }
     .exp-item, .edu-item, .proj-item { break-inside: avoid; }
     a { text-decoration: none; color: var(--primary-color); }
     a[href]:after { content: ""; }
@@ -293,7 +295,7 @@ body {
         {% for exp in experiences %}
         <div class="exp-item">
             <div class="exp-header">
-                <span class="exp-org">{{ exp.company }}{% if exp.company_note %} ({{ exp.company_note }}){% endif %}</span>
+                <span class="exp-org">{{ exp.company }}{% if exp.company_note %} <span class="exp-note">({{ exp.company_note }})</span>{% endif %}</span>
                 <span class="exp-date">{{ exp.date }}</span>
             </div>
             <div class="exp-subheader">
@@ -332,7 +334,7 @@ body {
         </div>
         <div class="edu-item">
             <div class="edu-header">
-                <span class="edu-school">{{ edu_bachelor_school }}{% if edu_bachelor_school_note %} ({{ edu_bachelor_school_note }}){% endif %}</span>
+                <span class="edu-school">{{ edu_bachelor_school }}{% if edu_bachelor_school_note %} <span class="edu-note">({{ edu_bachelor_school_note }})</span>{% endif %}</span>
                 <span class="edu-date">{{ edu_bachelor_date }}</span>
             </div>
             <div class="edu-degree">{{ edu_bachelor_degree }}</div>
@@ -342,7 +344,7 @@ body {
         </div>
         {% if certification %}
         <div class="edu-item">
-            <div class="cert-text">Certification: {{ certification }}</div>
+            <div class="cert-text"><span class="cert-label">Certification:</span> {{ certification }}</div>
         </div>
         {% endif %}
     </section>
