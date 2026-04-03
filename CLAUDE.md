@@ -161,7 +161,7 @@ interview_prep/YYYYMMDD_Company_Role/
 
 ### 8. CI/CD (GitHub Actions)
 流水线自动运行: `.github/workflows/job-pipeline.yml`
-- 定时触发: 工作日 2 次 (NL 时间 ~10:37 / ~16:37 CEST)，周末 1 次 (~13:23)
+- 定时触发: 工作日 2 次 (NL 时间 ~09:37 / ~15:37 CEST)，周末 1 次 (~12:23 CEST)
 - 使用 Turso 云数据库，无需本地 DB
 
 ## 文件结构
@@ -172,9 +172,11 @@ job-hunter/
 │   ├── job_pipeline.py             # 主流水线 (统一入口)
 │   ├── scrape.py                   # 统一爬虫 CLI
 │   ├── pipeline_gaps.py             # 漏斗诊断工具
+│   ├── deep_analysis.py            # 深度分析工具
+│   ├── resume_visual_diff.py       # 简历可视化对比
+│   ├── todoist_manager.py          # Todoist 任务管理
 │   ├── google_auth.py              # Google OAuth 授权 (Calendar + Gmail)
-│   ├── notify.py                   # Telegram 通知 (CI/CD)
-│   └── notify_discord.py           # Discord 通知
+│   └── notify.py                   # Telegram 通知 (CI/CD)
 │
 ├── src/                        # 可复用模块
 │   ├── __init__.py
@@ -182,19 +184,23 @@ job-hunter/
 │   ├── ai_analyzer.py              # AI 分析器 (Claude)
 │   ├── resume_renderer.py          # 简历渲染器 (Jinja2 + Playwright)
 │   ├── resume_validator.py         # 简历验证器 (v3.0)
+│   ├── resume_visual_diff.py       # 简历可视化对比
 │   ├── cover_letter_generator.py   # Cover Letter AI 生成
 │   ├── cover_letter_renderer.py    # Cover Letter 渲染
 │   ├── checklist_server.py         # 本地 checklist HTTP server
 │   ├── google_calendar.py          # Google Calendar REST 客户端 (通用)
 │   ├── gmail_client.py             # Gmail IMAP 客户端
 │   ├── interview_scheduler.py      # 智能面试调度 (日历+DB+评分)
+│   ├── language_guidance.py        # 语言检测辅助
+│   ├── template_registry.py        # 模板注册表
 │   ├── scrapers/                   # 多平台爬虫模块
 │   │   ├── base.py                     # BaseScraper 抽象类
 │   │   ├── greenhouse.py               # Greenhouse ATS API
 │   │   ├── linkedin.py                 # LinkedIn 编排
 │   │   ├── linkedin_browser.py         # LinkedIn 浏览器/会话层
 │   │   ├── linkedin_parser.py          # LinkedIn 解析 helpers
-│   │   └── iamexpat.py                 # IamExpat Jobs (Playwright)
+│   │   ├── iamexpat.py                 # IamExpat Jobs (Playwright)
+│   │   └── registry.py                 # 爬虫注册表
 │   └── db/
 │       ├── __init__.py
 │       └── job_db.py               # SQLite + Turso 云数据库模块
@@ -203,6 +209,9 @@ job-hunter/
 │   ├── ai_config.yaml          # AI 配置 (模型、阈值、prompt)
 │   ├── search_profiles.yaml    # 搜索配置 (LinkedIn + IamExpat)
 │   ├── target_companies.yaml   # 目标公司 ATS 配置 (Greenhouse)
+│   ├── template_registry.yaml  # 简历模板注册表
+│   ├── private/                # 私密配置 (不提交 git)
+│   │   └── salary.yaml            # 薪资期望
 │   └── base/                   # 基础配置
 │       └── filters.yaml            # 硬规则 v2.0
 │
@@ -217,7 +226,7 @@ job-hunter/
 │   └── cl_knowledge_base.yaml      # CL 手写片段库
 │
 ├── data/
-│   ├── jobs.db                 # SQLite 数据库 (Turso embedded replica)
+│   ├── jobs.db                 # SQLite 数据库 (本地缓存，云端通过 Turso HTTP)
 │   └── inbox/                  # 待导入 JSON
 │
 ├── .github/
@@ -235,7 +244,7 @@ job-hunter/
 
 ## 数据库结构
 
-SQLite 本地数据库 + Turso 云同步 (embedded replica 模式)。
+SQLite 本地数据库 + Turso 云同步 (HTTP 模式，通过 `TursoHTTPClient`)。
 设置 `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` 环境变量启用云同步。
 
 | 表名 | 用途 |
@@ -246,6 +255,9 @@ SQLite 本地数据库 + Turso 云同步 (embedded replica 模式)。
 | `resumes` | 生成的简历记录 |
 | `cover_letters` | Cover Letter 记录 |
 | `applications` | 申请状态跟踪 |
+| `scrape_watermarks` | 爬虫水位线 (增量抓取) |
+
+常用视图: `v_funnel_stats`, `v_pending_jobs`, `v_high_score_jobs`, `v_ready_to_apply`
 
 查看统计:
 ```python
@@ -253,6 +265,27 @@ from src.db.job_db import JobDatabase
 db = JobDatabase()
 print(db.get_funnel_stats())
 ```
+
+### Ad-hoc 数据库查询 (重要)
+
+**正确方式** — 用 `db.execute()` 返回 `list[dict]`:
+```python
+db = JobDatabase()
+rows = db.execute("SELECT id, title, company FROM jobs LIMIT 5")
+for r in rows:
+    print(r['title'], r['company'])
+```
+
+**或用上下文管理器** `db._get_conn()` 获取 connection (支持 fetchone/fetchall):
+```python
+with db._get_conn() as conn:
+    row = conn.execute("SELECT COUNT(*) as c FROM jobs").fetchone()
+    print(row['c'])
+```
+
+**不存在的 API (不要用):** `db.conn`, `db._get_connection`, `db._get_connection()`, `db.cursor()`
+
+完整漏斗报告: `python scripts/pipeline_gaps.py`
 
 ## 日常工作流
 
@@ -309,7 +342,7 @@ print(db.get_funnel_stats())
 - AI 分析消耗 token，注意预算控制
 - Playwright PDF 需要: `playwright install chromium`
 - Turso 云同步: 设置 `.env` 中的 `TURSO_DATABASE_URL` 和 `TURSO_AUTH_TOKEN`
-- Windows 上 libsql embedded replica 有已知栈溢出 bug，如遇崩溃可取消 Turso 环境变量回退到本地 SQLite
+- Turso 已切换为 HTTP 模式 (不再使用 libsql embedded replica)，如遇连接问题可取消 Turso 环境变量回退到本地 SQLite
 - Google Calendar: token 文件在 `~/.config/google-calendar-mcp/tokens.json`，与 MCP 共享 (原子读写)
 - Google OAuth 凭据在 `~/.config/gcp-oauth.keys.json`，首次使用或添加 scope 时运行 `python scripts/google_auth.py`
 - 面试调度评分可通过 `config/ai_config.yaml` → `interview_scheduler.candidate_energy` 调整个人能量曲线
