@@ -129,7 +129,11 @@ jobs:
         run: |
           echo "=== AI evaluation (C1) ==="
           AI_LIMIT="${{ github.event.inputs.ai_limit }}"
-          python scripts/job_pipeline.py --ai-evaluate --limit ${AI_LIMIT:-30}
+          if [ -n "$AI_LIMIT" ]; then
+            python scripts/job_pipeline.py --ai-evaluate --limit "$AI_LIMIT"
+          else
+            python scripts/job_pipeline.py --ai-evaluate
+          fi
 
       # ==========================================
       # Step 4: AI Tailor (Block C2)
@@ -140,7 +144,11 @@ jobs:
         run: |
           echo "=== AI resume tailoring (C2) ==="
           AI_LIMIT="${{ github.event.inputs.ai_limit }}"
-          python scripts/job_pipeline.py --ai-tailor --limit ${AI_LIMIT:-30}
+          if [ -n "$AI_LIMIT" ]; then
+            python scripts/job_pipeline.py --ai-tailor --limit "$AI_LIMIT"
+          else
+            python scripts/job_pipeline.py --ai-tailor
+          fi
 
       # ==========================================
       # Step 5: Generate Resumes (Block D)
@@ -151,7 +159,11 @@ jobs:
         run: |
           echo "=== Rendering resumes ==="
           AI_LIMIT="${{ github.event.inputs.ai_limit }}"
-          python scripts/job_pipeline.py --generate --limit ${AI_LIMIT:-30}
+          if [ -n "$AI_LIMIT" ]; then
+            python scripts/job_pipeline.py --generate --limit "$AI_LIMIT"
+          else
+            python scripts/job_pipeline.py --generate
+          fi
 
       # ==========================================
       # Step 6: Notify
