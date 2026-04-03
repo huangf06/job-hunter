@@ -24,7 +24,7 @@ models:
 # =============================================================================
 
 thresholds:
-  ai_score_generate_resume: 6.0  # >= 6.0: trigger C2 resume tailoring (raised from 5.0 per F5 audit: 5-6 band is dead zone)
+  ai_score_generate_resume: 5.0  # >= 5.0: trigger C2 resume tailoring (5.0 is actual apply floor per historical data)
   ai_score_apply_now: 7.0        # >= 7.0: mark as priority
 
 # =============================================================================
