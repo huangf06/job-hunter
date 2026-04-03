@@ -175,6 +175,34 @@ class LinkedInBrowser:
     async def fetch_job_description(self, url: str) -> dict:
         self.diagnostics["last_stage"] = "detail_fetch"
         await self._goto(url, timeout=30000)
+
+        # Wait for SPA to render JD content (LinkedIn loads async in logged-in view)
+        for selector in DETAIL_SELECTORS[:5]:
+            try:
+                await self.page.wait_for_selector(selector, timeout=2000)
+                break
+            except Exception:
+                continue
+        else:
+            # No selector appeared after waits — give a final grace period
+            await self.page.wait_for_timeout(3000)
+
+        # Try expanding truncated JD via "Show more" button
+        for btn_selector in (
+            "button[aria-label*='Show more']",
+            "button[aria-label*='See more']",
+            ".jobs-description__footer-button",
+            "button.show-more-less-html__button",
+        ):
+            try:
+                btn = await self.page.query_selector(btn_selector)
+                if btn:
+                    await btn.click()
+                    await self.page.wait_for_timeout(500)
+                    break
+            except Exception:
+                continue
+
         payload = {
             "json_ld_description": await self._extract_json_ld_description(),
             "detail_text": "",
@@ -193,11 +221,7 @@ class LinkedInBrowser:
             except Exception:
                 continue
 
-        try:
-            payload["detail_text"] = (await self.page.inner_text("body")).strip()
-        except Exception:
-            payload["detail_text"] = ""
-            self.diagnostics["detail_fetch_failures"] += 1
+        self.diagnostics["detail_fetch_failures"] += 1
         return payload
 
     async def _goto(self, url: str, *, timeout: int) -> None:
