@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import sqlite3
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
@@ -205,8 +206,19 @@ class TursoHTTPClient:
         requests.append({'type': 'close'})
 
         url = f'{self._base_url}/v3/pipeline'
-        resp = self._client.post(url, json={'requests': requests}, headers=self._headers)
-        resp.raise_for_status()
+        import httpx
+        for attempt in range(3):
+            try:
+                resp = self._client.post(url, json={'requests': requests}, headers=self._headers)
+                resp.raise_for_status()
+                break
+            except (httpx.ConnectError, httpx.TimeoutException) as e:
+                if attempt < 2:
+                    wait = 2 ** attempt
+                    print(f"  [WARN] Turso HTTP retry {attempt+1}/3 after {wait}s: {e}")
+                    time.sleep(wait)
+                else:
+                    raise
         data = resp.json()
 
         results = []
@@ -643,7 +655,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         """
         defaults = {
             'ai_score_apply_now': 7.0,
-            'ai_score_generate_resume': 4.0,
+            'ai_score_generate_resume': 5.0,
         }
         try:
             ai_config_path = CONFIG_DIR / "ai_config.yaml"
@@ -728,7 +740,11 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
 
     @contextmanager
     def batch_mode(self):
-        """Context manager for batch operations. No-op with HTTP transport."""
+        """Context for batch processing. Currently no-op — no transaction grouping.
+
+        TODO: implement job-level locking to prevent concurrent processing
+        of the same jobs by multiple pipeline instances.
+        """
         yield
 
     def final_sync(self):
@@ -1522,7 +1538,10 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                     f"Archive verification failed: expected {len(cold_ids)}, got {archived_count}"
                 )
 
-            # DELETE from live DB (reverse order: dependents first, then jobs)
+            # DELETE from live DB (reverse order: dependents first, then jobs).
+            # All deletes run inside the _get_conn() context manager, which
+            # auto-commits on successful exit and rolls back on exception —
+            # so these are already wrapped in a single transaction.
             for table, fk_col in reversed(related_tables):
                 for chunk_start in range(0, len(cold_ids), CHUNK_SIZE):
                     chunk = cold_ids[chunk_start:chunk_start + CHUNK_SIZE]

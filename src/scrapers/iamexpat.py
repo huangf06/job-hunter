@@ -154,7 +154,12 @@ class IamExpatScraper(BaseScraper):
                     )
                 )
             if detail_tasks:
-                jobs.extend(await asyncio.gather(*detail_tasks))
+                results = await asyncio.gather(*detail_tasks, return_exceptions=True)
+                for r in results:
+                    if isinstance(r, Exception):
+                        logger.warning("[IamExpat] Detail fetch failed: %s", r)
+                    elif r is not None:
+                        jobs.append(r)
 
             if len(cards) < JOBS_PER_PAGE:
                 break

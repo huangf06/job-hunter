@@ -735,7 +735,7 @@ Return ONLY the JSON object, no other text."""
         """Batch generate cover letters for jobs that have resumes but no cover letter"""
         threshold = min_ai_score
         if threshold is None:
-            threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
+            threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 5.0)
 
         jobs = self.db.get_jobs_needing_cover_letter(min_ai_score=threshold, limit=limit)
         if not jobs:

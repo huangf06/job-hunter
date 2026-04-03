@@ -35,8 +35,24 @@ class HardFilter:
     config/search_profiles.yaml on init.
     """
 
+    # Fields in rule configs that contain raw regex patterns (not keyword_boundary_pattern)
+    _REGEX_PATTERN_FIELDS = ('patterns', 'title_patterns', 'title_reject_patterns')
+
     def __init__(self):
         self.filter_config = self._load_config("base/filters.yaml")
+
+        # Pre-validate all regex patterns at init time
+        hard_rules = self.filter_config.get('hard_reject_rules', {})
+        for rule_name, rule_config in hard_rules.items():
+            for field_name in self._REGEX_PATTERN_FIELDS:
+                for pattern in rule_config.get(field_name, []):
+                    try:
+                        re.compile(pattern)
+                    except re.error as e:
+                        raise ValueError(
+                            f"Invalid regex in filter rule '{rule_name}' "
+                            f"field '{field_name}': {pattern!r} — {e}"
+                        )
 
         # Cache company and title blacklists (avoid reloading per-job)
         search_profiles = self._load_config("search_profiles.yaml")

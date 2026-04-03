@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from datetime import datetime
@@ -40,7 +41,12 @@ class GreenhouseScraper(BaseScraper):
             try:
                 resp = requests.get(url, timeout=30)
                 resp.raise_for_status()
-                return resp.json().get("jobs", [])
+                try:
+                    data = resp.json()
+                except (ValueError, json.JSONDecodeError):
+                    logger.warning("[Greenhouse] Invalid JSON response from %s", url)
+                    return []
+                return data.get("jobs", [])
             except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
                 if attempt < 2:
                     import time
@@ -73,8 +79,11 @@ class GreenhouseScraper(BaseScraper):
         for company in self.companies:
             if company.get("ats") != "greenhouse":
                 continue
-            token = company["board_token"]
-            name = company["name"]
+            token = company.get("board_token")
+            name = company.get("name")
+            if not token:
+                logger.warning("[Greenhouse] Skipping company config without board_token: %s", company)
+                continue
             loc_filter = company.get("location_filter")
             try:
                 raw_jobs = self._fetch_jobs(token)

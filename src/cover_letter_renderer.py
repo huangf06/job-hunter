@@ -229,7 +229,7 @@ class CoverLetterRenderer:
         """Batch render cover letters that have specs but no PDF"""
         threshold = min_ai_score
         if threshold is None:
-            threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
+            threshold = self.config.get('thresholds', {}).get('ai_score_generate_resume', 5.0)
 
         # Find cover letters that need rendering (have spec but no pdf_path)
         with self.db._get_conn() as conn:

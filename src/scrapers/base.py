@@ -143,10 +143,6 @@ class BaseScraper(ABC):
 
     def _is_known_duplicate(self, job: Dict, seen_job_ids: set[str], existing_job_ids: set[str]) -> bool:
         url = job.get("url", "")
-        if not url:
-            self.record_error("Skipping job without URL")
-            return True
-
         job_id = JobDatabase.generate_job_id(url)
         if job_id in seen_job_ids:
             return True
@@ -172,6 +168,11 @@ class BaseScraper(ABC):
         for job in jobs:
             if self.is_blacklisted(job):
                 report.skipped_blacklist += 1
+                continue
+
+            if not job.get("url", ""):
+                self.record_error("Skipping job without URL")
+                report.errors = list(self._run_errors)
                 continue
 
             if self._is_known_duplicate(job, seen_job_ids, existing_job_ids):

@@ -96,10 +96,16 @@ class LinkedInBrowser:
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        if self.browser:
-            await self.browser.close()
-        if self.playwright:
-            await self.playwright.stop()
+        try:
+            if self.browser:
+                await self.browser.close()
+        except Exception:
+            pass
+        try:
+            if self.playwright:
+                await self.playwright.stop()
+        except Exception:
+            pass
         return False
 
     async def _load_cookies(self) -> None:

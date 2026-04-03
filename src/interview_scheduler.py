@@ -78,14 +78,16 @@ class InterviewScheduler:
 
     def _lookup_company_score(self, company: str) -> Optional[float]:
         """Get max AI score for a company from the database."""
+        # Escape LIKE wildcards in company name
+        escaped_company = company.lower().replace('%', '\\%').replace('_', '\\_')
         rows = self.db.execute(
             """
             SELECT MAX(a.ai_score) as max_score
             FROM jobs j
             JOIN job_analysis a ON j.id = a.job_id
-            WHERE LOWER(j.company) LIKE ?
+            WHERE LOWER(j.company) LIKE ? ESCAPE '\\'
             """,
-            (f"%{company.lower()}%",),
+            (f"%{escaped_company}%",),
         )
         if rows and rows[0].get("max_score") is not None:
             return float(rows[0]["max_score"])

@@ -146,7 +146,18 @@ class JobPipeline:
                     else:
                         rejected_count += 1
                 except Exception as e:
-                    print(f"  x Filter error for {job.get('id', '?')}: {e}")
+                    print(f"  [FILTER_ERROR] {job.get('id', '?')}: {e}")
+                    try:
+                        from src.hard_filter import FilterResult
+                        self.db.save_filter_result(FilterResult(
+                            job_id=job.get('id', ''),
+                            passed=False,
+                            reject_reason='filter_error',
+                            filter_version='2.0',
+                            matched_rules=json.dumps({"error": str(e)[:200]})
+                        ))
+                    except Exception:
+                        pass
                     continue
 
         print(f"[Filter] Done: {passed_count} passed, {rejected_count} rejected")
@@ -159,7 +170,7 @@ class JobPipeline:
         print(f"Total scraped:    {stats.get('total_scraped', 0)}")
         print(f"Passed filter:    {stats.get('passed_filter', 0)}")
         print(f"AI analyzed:      {stats.get('ai_analyzed', 0)}")
-        threshold = self.ai_config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
+        threshold = self.ai_config.get('thresholds', {}).get('ai_score_generate_resume', 5.0)
         print(f"AI high (>={threshold}):  {stats.get('ai_scored_high', 0)}")
         print(f"Resume generated: {stats.get('resume_generated', 0)}")
         print(f"Applied:          {stats.get('applied', 0)}")
@@ -368,7 +379,7 @@ class JobPipeline:
         from src.resume_renderer import ResumeRenderer
 
         threshold = min_ai_score or self.ai_config.get('thresholds', {}).get(
-            'ai_score_generate_resume', 4.0)
+            'ai_score_generate_resume', 5.0)
         # No default cap — process all eligible jobs unless --limit is specified
 
         # Step 1: Sync from Turso
@@ -617,15 +628,19 @@ class JobPipeline:
             print(f"\n  {edited_count} edited cover letter(s) detected.")
             print(f"  Review in ready_to_send/_edited_cls/ and extract to cl_knowledge_base.yaml")
 
-        # Clean up state files
+        # Sync to Turso FIRST (before deleting local state)
+        print("Syncing to cloud...")
+        try:
+            self.db.final_sync()
+        except Exception as e:
+            print(f"  [WARN] Cloud sync failed: {e}")
+            print(f"  Local state preserved for retry.")
+
+        # Clean up state files (only after sync attempt)
         state_path.unlink(missing_ok=True)
         checklist_path = ready_dir / "apply_checklist.html"
         if checklist_path.exists():
             checklist_path.unlink()
-
-        # Sync to Turso
-        print("Syncing to cloud...")
-        self.db.final_sync()
 
         # Report
         print(f"\n{'='*50}")
@@ -723,7 +738,7 @@ class JobPipeline:
 
         # AI Analysis (optional - only if filtered jobs exist without analysis)
         ai_thresholds = self.ai_config.get('thresholds', {})
-        ai_score_threshold = ai_thresholds.get('ai_score_generate_resume', 4.0)
+        ai_score_threshold = ai_thresholds.get('ai_score_generate_resume', 5.0)
 
         jobs_for_ai = self.db.get_jobs_needing_analysis(limit=limit)
         if jobs_for_ai:

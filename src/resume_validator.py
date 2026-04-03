@@ -116,10 +116,12 @@ class ResumeValidator:
         fixes = {}
         jd_text = job.get('description', '') or ''
 
-        # If bullet_library was not loaded, reject all resumes
+        # If bullet_library was not loaded, fail fast with a clear error
         if not getattr(self, '_library_loaded', False):
-            errors.append("bullet_library.yaml not found — cannot validate resume")
-            return ValidationResult(passed=False, errors=errors)
+            raise RuntimeError(
+                "ResumeValidator: bullet_library.yaml was not loaded. "
+                "Cannot validate resumes. Check file path and restore if missing."
+            )
 
         # 1. Bio validation
         bio = tailored.get('bio')

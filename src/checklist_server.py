@@ -252,6 +252,9 @@ def start_server(ready_dir: Path, port: int = 8234):
 
         def do_POST(self):
             content_length = int(self.headers.get("Content-Length", 0))
+            if content_length > 1_000_000:  # 1MB limit
+                self.send_error(413, "Request body too large")
+                return
             body = self.rfile.read(content_length)
 
             if self.path == "/state":

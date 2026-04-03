@@ -565,12 +565,17 @@ class AIAnalyzer:
         ai_thresholds = self.config.get('ai_recommendation_thresholds', {})
         prompt_settings = self.config.get('prompt_settings', {})
         jd_max = prompt_settings.get('job_description_max_chars', 10000)
-        jd_text = (job.get('description') or '')[:jd_max]
+        jd_full = job.get('description') or ''
+        jd_text = jd_full[:jd_max]
+        if len(jd_full) > jd_max:
+            print(f"    [INFO] JD truncated from {len(jd_full)} to {jd_max} chars")
 
         scoring_guidelines = self._build_scoring_guidelines()
 
         # Escape braces
         jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
+        # Note: job_title/job_company are from untrusted scraped data.
+        # Prompt template should include a disclaimer marking these as external input.
         job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
         job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
         scoring_safe = scoring_guidelines.replace('{', '{{').replace('}', '}}')
@@ -608,7 +613,10 @@ class AIAnalyzer:
 
         prompt_settings = self.config.get('prompt_settings', {})
         jd_max = prompt_settings.get('job_description_max_chars', 10000)
-        jd_text = (job.get('description') or '')[:jd_max]
+        jd_full = job.get('description') or ''
+        jd_text = jd_full[:jd_max]
+        if len(jd_full) > jd_max:
+            print(f"    [INFO] JD truncated from {len(jd_full)} to {jd_max} chars")
 
         # Build dynamic context
         skill_context = self._build_skill_context(jd_text)
@@ -682,7 +690,10 @@ class AIAnalyzer:
 
         prompt_settings = self.config.get('prompt_settings', {})
         jd_max = prompt_settings.get('job_description_max_chars', 10000)
-        jd_text = (job.get('description') or '')[:jd_max]
+        jd_full = job.get('description') or ''
+        jd_text = jd_full[:jd_max]
+        if len(jd_full) > jd_max:
+            print(f"    [INFO] JD truncated from {len(jd_full)} to {jd_max} chars")
         template_id = analysis.get('template_id_final')
         schema = self.registry['templates'][template_id]['slot_schema']
 
@@ -929,8 +940,22 @@ class AIAnalyzer:
                         print(f"-> {result.recommendation} ({result.ai_score:.1f})")
                     else:
                         print("-> SKIPPED")
+                        try:
+                            self.db.execute(
+                                "INSERT OR IGNORE INTO job_analysis (job_id, ai_score, recommendation, analysis_json) VALUES (?, ?, ?, ?)",
+                                (job['id'], 0.0, 'ai_failed', json.dumps({"error": "analysis_failed", "stage": "C1"}))
+                            )
+                        except Exception:
+                            pass
                 except Exception as e:
                     print(f"-> ERROR: {e}")
+                    try:
+                        self.db.execute(
+                            "INSERT OR IGNORE INTO job_analysis (job_id, ai_score, recommendation, analysis_json) VALUES (?, ?, ?, ?)",
+                            (job['id'], 0.0, 'ai_failed', json.dumps({"error": str(e)[:200], "stage": "C1"}))
+                        )
+                    except Exception:
+                        pass
                 if i < len(jobs) - 1:
                     time.sleep(1)
 
@@ -943,7 +968,7 @@ class AIAnalyzer:
         Returns (attempted, succeeded) tuple.
         """
         if min_score is None:
-            min_score = self.config.get('thresholds', {}).get('ai_score_generate_resume', 4.0)
+            min_score = self.config.get('thresholds', {}).get('ai_score_generate_resume', 5.0)
         jobs = self.db.get_jobs_needing_tailor(min_score=min_score, limit=limit)
         if not jobs:
             print(f"[AI C2] No jobs needing tailoring (min_score={min_score})")

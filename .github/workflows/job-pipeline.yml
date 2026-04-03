@@ -97,7 +97,7 @@ jobs:
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
 
-          NEW_JOBS=$(python -c "import json; m=json.load(open('data/scrape_metrics.json')); print(m.get('new_jobs', 0))")
+          NEW_JOBS=$(python -c "import json, os; m=json.load(open('data/scrape_metrics.json')) if os.path.exists('data/scrape_metrics.json') else {}; print(m.get('new_jobs', 0))" 2>/dev/null || echo 0)
           echo "new_jobs_count=$NEW_JOBS" >> $GITHUB_OUTPUT
           echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
           echo "Scraped in ${DURATION}s, new jobs: $NEW_JOBS"
@@ -116,6 +116,7 @@ jobs:
       # ==========================================
       - name: Import and hard filter
         id: filter
+        continue-on-error: true
         run: |
           echo "=== Import + hard filter ==="
           python scripts/job_pipeline.py --process
