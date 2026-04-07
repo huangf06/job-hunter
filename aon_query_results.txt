@@ -1,0 +1,145 @@
+================================================================================
+AON JOB DETAILS
+================================================================================
+
+Basic Info:
+  Job ID: ebf72b62b510
+  Title: Lead Data Engineer
+  Company: Aon
+  Location: Rotterdam, South Holland, Netherlands (Hybrid)
+  URL: https://www.linkedin.com/jobs/view/4336602837/
+
+Job Description (first 1000 chars):
+  About the job
+
+Rotterdam | 38,75h | €4.300 - €5.700
+
+This is an outstanding opportunity to build and influence the data landscape of our organization! This is a hybrid role, combining both virtually and from the Rotterdam office.
+
+About Us
+
+Aon is a leading advisor and insurance broker specializing in Risk Capital and Human Capital Solutions in the Netherlands.
+
+This position will be part of the Data Intelligence Team, which values customer interaction and digitalization. We foster a hands-on, entrepreneurial spirit in a collaborative and informal work environment.
+
+Your Role
+
+As a Lead Data Engineer, you will be instrumental in crafting, building, optimizing and consolidating our data infrastructure and pipelines. Your focus will be on ensuring efficient data flow and accessibility, supporting our cloud data warehouse initiatives, integrating global and regional environments and driving digital transformation through innovative data solutions.
+
+You have the ambition to grow to a solut
+
+AI Analysis:
+  Overall Score: 6.5
+  Skill Match: 7.0
+  Experience Fit: 5.5
+  Growth Potential: 7.5
+  Recommendation: APPLY
+
+Reasoning (641 chars):
+Strong Databricks/PySpark/Delta Lake alignment and certified Data Engineer Professional. Financial Data Lakehouse project directly mirrors their warehouse architecture goals. Python/SQL expertise matches core requirements. Gaps: no Azure experience (they're Azure-first), no T-SQL/PL-SQL, no Data Vault/Dimensional modeling experience, and JD asks for 7+ years in data engineering specifically — candidate has ~6 years total across data roles but not purely DE. The migration mandate (Oracle/Synapse/AWS Databricks → Azure Databricks) is a stretch. Growth potential is high since the role explicitly mentions path to solution/data architect.
+
+Tailored Resume:
+  [Structured resume JSON with keys: ['bio', 'experiences', 'projects', 'skills']]
+  Full JSON (prettified):
+{
+  "bio": "Data Engineer with 6 years of experience in scalable data pipelines and ETL systems and credit scoring and risk analytics. M.Sc. in Artificial Intelligence from Vrije Universiteit Amsterdam (Aug. 2025, GPA 8.2/10). Databricks Certified Data Engineer Professional. Eager to bring these skills to Aon.",
+  "experiences": [
+    {
+      "company": "GLP Technology",
+      "company_note": null,
+      "location": "Shanghai, China",
+      "title": "Data Engineer & Team Lead",
+      "date": "Jul. 2017 -- Aug. 2019",
+      "bullets": [
+        "Spearheaded credit scoring infrastructure as the first data hire at a consumer lending startup — owned the full ML lifecycle from data ingestion through feature engineering, model training and deployment, and portfolio monitoring, enabling automated credit decisions.",
+        "Designed and implemented PySpark ETL pipelines processing consumer credit data across the full loan lifecycle — from application ingestion through repayment tracking; provided technical mentorship to junior analyst on distributed data processing patterns.",
+        "Engineered automated data pipeline and quality framework for consumer lending operations, implementing schema validation and integrity checks across loan origination and repayment flows — ensuring clean inputs for credit scoring models.",
+        "Established compliance reporting framework for consumer lending operations, automating regulatory submissions and audit trail generation for credit decisioning outputs."
+      ]
+    },
+    {
+      "company": "Baiquan Investment",
+      "company_note": null,
+      "location": "Beijing, China",
+      "title": "Quantitative Developer",
+      "date": "Jul. 2015 -- Jun. 2017",
+      "bullets": [
+        "Built automated market data ingestion pipeline integrating multiple vendor feeds for 3,000+ securities; implemented corporate action adjustments (splits, dividends, suspensions) ensuring clean inputs for downstream factor research.",
+        "Engineered high-performance factor computation engine using vectorized NumPy/Pandas operations, computing technical and fundamental indicators across the full equity universe daily — enabling rapid iteration cycles in alpha research.",
+        "Designed cross-source data validation framework detecting vendor data gaps and inconsistencies in market feeds; built automated alerting for missing trading days and stale prices, safeguarding research pipeline integrity."
+      ]
+    },
+    {
+      "company": "Ele.me",
+      "company_note": "(acquired by Alibaba)",
+      "location": "Shanghai, China",
+      "title": "Data Analyst",
+      "date": "Sep. 2013 -- Jul. 2015",
+      "bullets": [
+        "Engineered K-means clustering pipeline on Hadoop/Hive to segment millions of users by behavioral patterns; delivered actionable customer profiles adopted by product and marketing teams for personalized campaign targeting.",
+        "Optimized complex SQL queries on Hadoop/Hive for cross-functional stakeholders, cutting reporting turnaround time by 30%."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Financial Data Lakehouse (Databricks/Spark/AWS)",
+      "date": "Oct. 2025 -- Present",
+      "bullets": [
+        "Architected end-to-end data lakehouse on Databricks processing real-time financial market feeds via Auto Loader and Structured Streaming; implemented schema evolution and checkpoint-based fault tolerance ensuring zero data loss during upstream changes.",
+        "Engineered data quality framework with quarantine-and-replay pattern isolating malformed records across Bronze/Silver/Gold Medallion Architecture layers — achieving automated recovery without manual intervention.",
+        "Optimized Delta Lake storage via Z-ordering and compaction, reducing query latency for downstream analysis.",
+        "Integrated Airflow for orchestration and Docker for consistent deployment across environments."
+      ]
+    },
+    {
+      "name": "AI-Powered Job Application Pipeline",
+      "date": "2025 -- Present",
+      "bullets": [
+        "Built end-to-end job application pipeline leveraging LLM APIs (Claude) for resume personalization; designed multi-stage processing (web scraping via Playwright, rule-based filtering, AI scoring, Jinja2 template rendering to PDF) with SQLite backend, YAML-driven configuration, and configurable quality gates."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "category": "Languages & Core",
+      "skills_list": "Python (Expert), SQL (Expert), Bash"
+    },
+    {
+      "category": "Data Engineering",
+      "skills_list": "PySpark, Spark, Delta Lake, Databricks, ETL/ELT, Auto Loader, Structured Streaming, Schema Evolution, Medallion Architecture"
+    },
+    {
+      "category": "Cloud & DevOps",
+      "skills_list": "AWS, Azure (Data Factory, ADLS), Docker, Airflow, CI/CD, Git"
+    },
+    {
+      "category": "Databases",
+      "skills_list": "PostgreSQL, MySQL, Hadoop, Hive"
+    },
+    {
+      "category": "ML/AI Frameworks",
+      "skills_list": "XGBoost, LightGBM, scikit-learn, Pandas, NumPy, Statistics"
+    },
+    {
+      "category": "NLP & GenAI",
+      "skills_list": "LLM APIs (Claude), Prompt Engineering, Hugging Face Transformers"
+    }
+  ]
+}
+
+================================================================================
+APPLICATIONS
+================================================================================
+
+Total applications found: 1
+
+  Application ID: 256
+  Job ID: ebf72b62b510
+  Status: applied
+  Applied At: 2026-02-13T01:51:11.178337
+  Response At: 
+  Interview At: 
+  Outcome: 
+  Notes:  | Application for Lead Data Engineer at Aon received and confirmed. Documents will be reviewed and candidate will be invited for interview if selected for next phase. | Application received confirmation from Aon for Lead Data Engineer position. Documents have been received and will be reviewed. If selected for the next phase, an interview invitation will follow.
+  Updated At: 2026-02-13T01:51:32.993950
