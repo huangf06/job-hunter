@@ -33,6 +33,11 @@ from src.template_registry import (
 )
 
 
+class QuotaExhaustedError(Exception):
+    """Raised when Claude Code CLI reports quota/rate limit exhaustion."""
+    pass
+
+
 class AIAnalyzer:
     """AI 驱动的职位分析和简历定制"""
 
@@ -947,6 +952,10 @@ class AIAnalyzer:
                             )
                         except Exception:
                             pass
+                except QuotaExhaustedError as e:
+                    print(f"-> QUOTA EXHAUSTED: {e}")
+                    print(f"\n[AI C1] Aborting — Claude Code quota exhausted. Remaining {len(jobs)-i-1} jobs skipped.")
+                    break
                 except Exception as e:
                     print(f"-> ERROR: {e}")
                     try:
@@ -1015,6 +1024,10 @@ class AIAnalyzer:
                         print("-> TAILORED")
                     else:
                         print("-> FAILED")
+                except QuotaExhaustedError as e:
+                    print(f"-> QUOTA EXHAUSTED: {e}")
+                    print(f"\n[AI C2] Aborting — Claude Code quota exhausted. Remaining {len(jobs)-i-1} jobs skipped.")
+                    break
                 except Exception as e:
                     print(f"-> ERROR: {e}")
                 if i < len(jobs) - 1:
@@ -1127,7 +1140,10 @@ class AIAnalyzer:
             if result.returncode != 0:
                 stderr = (result.stderr or '')[:500]
                 stdout_preview = (result.stdout or '')[:200]
+                combined = f"{stderr} {stdout_preview}".lower()
                 print(f"    [CLAUDE_CODE] CLI error (rc={result.returncode}): {stderr} {stdout_preview}")
+                if "hit your limit" in combined or "rate limit" in combined:
+                    raise QuotaExhaustedError(f"Claude Code quota exhausted: {stderr.strip()}")
                 return None
             return result.stdout.strip()
         except subprocess.TimeoutExpired:

@@ -161,7 +161,7 @@ interview_prep/YYYYMMDD_Company_Role/
 
 ### 8. CI/CD (GitHub Actions)
 流水线自动运行: `.github/workflows/job-pipeline.yml`
-- 定时触发: 工作日 2 次 (NL 时间 ~09:37 / ~15:37 CEST)，周末 1 次 (~12:23 CEST)
+- 定时触发: 工作日 2 次 (NL 时间 ~09:37 / ~13:37 CEST)，周末 1 次 (~12:23 CEST)
 - 使用 Turso 云数据库，无需本地 DB
 
 ## 文件结构
