@@ -108,7 +108,6 @@ templates:
       - "ml engineer"
       - "ml platform"
       - "mlops"
-      - "data scientist"
       - "ai engineer"
       - "deep learning"
       - "nlp"
@@ -124,7 +123,6 @@ templates:
       - "quant"
       - "quantitative"
       - "algorithm engineer"
-      - "data analyst"
       - "ai researcher"
     bio_positioning: "ML Engineer / Data Scientist"
     key_strengths:
@@ -216,6 +214,101 @@ templates:
               default: "PySpark, Airflow, FastAPI, AWS (Redshift, S3, EC2), Delta Lake, Docker, Git"
             - cat_id: "domains"
               default: "Feature Engineering, NLP, Time-Series, Anomaly Detection, UQ"
+
+  DS:
+    enabled: true
+    svg: "templates/Fei_Huang_DS_Resume.svg"
+    pdf: "templates/pdf/Fei_Huang_DS.pdf"
+    target_roles:
+      - "data scientist"
+      - "data analyst"
+      - "analytics"
+      - "experimentation"
+      - "statistical"
+    bio_positioning: "Data Scientist"
+    key_strengths:
+      - "A/B Testing"
+      - "Statistical Modeling"
+      - "Feature Engineering"
+      - "Python/SQL"
+    weak_areas:
+      - "no deep learning focus"
+      - "no ML infrastructure"
+    slot_schema:
+      bio:
+        slot_id: "bio"
+        bio_1:
+          default: "Data Scientist with 6+ years building prediction, analytics, and experimentation systems"
+          senior: "Senior Data Scientist with 6+ years building prediction, analytics, and experimentation systems"
+        bio_2:
+          default: "across fintech, e-commerce, and trading. Strengths in statistical modeling, A/B testing,"
+          senior: "in production. First data hire at GLP, built the credit risk scoring system and grew the team."
+        bio_3:
+          default: "and feature engineering. M.Sc. in AI (GPA 8.2), Databricks Certified Data Engineer."
+          senior: "Strengths in statistical modeling, A/B testing, and feature engineering. M.Sc. in AI, Databricks Cert."
+      sections:
+        - section_id: "experience"
+          entries:
+            - entry_id: "glp"
+              company: "GLP Technology (Fintech)"
+              title: "Data Scientist"
+              date: "JULY 2017 - AUGUST 2019"
+              technical_skills: "Python, SQL, PySpark, Feature Eng., A/B Testing, AWS"
+              bullets:
+                - slot_id: "glp_1"
+                  default: "Joined as first data hire and built the end-to-end credit risk scoring system: engineered 19 features from raw bureau and transactional data, developed a first-payment default scorecard with 36-segment borrower classification, and deployed the model into production underwriting serving real lending decisions."
+                - slot_id: "glp_2"
+                  default: "Built the feature pipeline powering all risk models: automated ingestion of 30+ production tables and credit bureau data, transforming raw nested JSON into structured analytical features for model training, scoring, and post-loan monitoring."
+            - entry_id: "bq"
+              company: "BQ Investment (Hedge Fund)"
+              title: "Quant Researcher"
+              date: "JULY 2015 - JUNE 2017"
+              technical_skills: "Python, SQL, NumPy, pandas, Statistical Modeling"
+              bullets:
+                - slot_id: "bq_1"
+                  default: "Built systematic feature validation pipeline evaluating 4 factor families across 3,000+ securities using cross-sectional regression; validated features integrated into the fund's live portfolio construction."
+                - slot_id: "bq_2"
+                  default: "Developed and deployed a signal-driven intraday predictive model from research through live production on CSI index futures, delivering 14.6% annualized return with real capital."
+            - entry_id: "ele"
+              company: "Ele.me (Alibaba Group)"
+              title: "Data Analyst"
+              date: "SEPTEMBER 2013 - JULY 2015"
+              technical_skills: "Python, SQL, Hadoop, Hive, Tableau"
+              bullets:
+                - slot_id: "ele_1"
+                  default: "Built anomaly detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using pattern-matching algorithms (same-phone, high-frequency, repeat-order); deployed during Ele.me's hyper-growth phase pre-Alibaba acquisition."
+                - slot_id: "ele_2"
+                  default: "Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, reducing scanned data by 80% (500GB to 100GB) across 30+ warehouse tables."
+        - section_id: "projects"
+          entries:
+            - entry_id: "expedia"
+              company: "Project"
+              title: "Expedia Hotel Recommendation"
+              date: "APRIL 2024 - MAY 2024"
+              technical_skills: "LightGBM, Learning-to-Rank, Feature Eng."
+              bullets:
+                - slot_id: "expedia_1"
+                  default: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered 50+ temporal, behavioral, and price-normalization features; achieved NDCG@5 = 0.392 on held-out Kaggle evaluation."
+            - entry_id: "imu_sensor"
+              company: "Course Project"
+              title: "IMU Sensor Classification (ML4QS)"
+              date: "JUNE 2024"
+              technical_skills: "LightGBM, LSTM, Feature Eng., Time-Series"
+              bullets:
+                - slot_id: "imu_1"
+                  default: "Built end-to-end ML pipeline for IMU sensor classification (4 subjects, 6 activities): Kalman Filter for noise reduction on 12 sensor channels, 576 FFT-based features (time + frequency domain), and LightGBM + bidirectional LSTM achieving 94-99% sex classification accuracy."
+        - section_id: "skills"
+          categories:
+            - cat_id: "statistical_modeling"
+              default: "A/B Testing, Hypothesis Testing, Regression, scikit-learn, XGBoost, LightGBM"
+            - cat_id: "programming"
+              default: "Python (Expert), SQL (Expert), NumPy, pandas, Bash"
+            - cat_id: "data_infrastructure"
+              default: "PySpark, Airflow, AWS (Redshift, S3), Delta Lake, Docker, Git"
+            - cat_id: "visualization"
+              default: "Tableau, Matplotlib, Seaborn"
+            - cat_id: "ml_ai"
+              default: "PyTorch, Feature Engineering, Anomaly Detection, Time-Series, NLP"
 
   Backend:
     enabled: false

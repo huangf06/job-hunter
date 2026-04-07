@@ -406,6 +406,7 @@ class ResumeRenderer:
         template_map = {
             'DE': 'base_template_DE.html',
             'ML': 'base_template_ML.html',
+            'DS': 'base_template_DS.html',
         }
         template_name = template_map.get(template_id)
         if not template_name:

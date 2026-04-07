@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fei Huang - Resume</title>
+  <style>
+    :root {
+      --page-width: 595.92pt;
+      --page-height: 842.88pt;
+      --font-serif: Georgia, "Times New Roman", serif;
+      --font-sans: Arial, Helvetica, sans-serif;
+      --color-name: #1f1b1b;
+      --color-contact: #2f2f2f;
+      --color-contact-strong: #262626;
+      --color-section: #33455a;
+      --color-body: #4f4f4f;
+      --color-org: #211b1b;
+      --color-role: #4a4040;
+      --color-date: #6a6a6a;
+    }
+
+    @page { size: A4; margin: 0; }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: var(--page-width);
+      height: var(--page-height);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      position: relative;
+      width: var(--page-width);
+      height: var(--page-height);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .line {
+      position: absolute;
+      white-space: nowrap;
+    }
+
+    .header-shift {
+      transform: translateY(1.2pt);
+    }
+
+    .content-shift {
+      transform: translateY(0.7pt);
+    }
+
+    .name {
+      font-family: var(--font-serif);
+      font-size: 34pt;
+      line-height: 34pt;
+      font-weight: 700;
+      color: var(--color-name);
+    }
+
+    .contact,
+    .contact a {
+      font-family: var(--font-sans);
+      font-size: 10pt;
+      line-height: 10pt;
+      font-weight: 400;
+      color: var(--color-contact);
+      text-decoration: none;
+    }
+
+    .contact-strong {
+      font-family: var(--font-sans);
+      font-size: 10pt;
+      line-height: 10pt;
+      font-weight: 700;
+      color: var(--color-contact-strong);
+    }
+
+    .section {
+      font-family: var(--font-sans);
+      font-size: 8pt;
+      line-height: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--color-section);
+    }
+
+    .bio,
+    .body {
+      font-family: var(--font-sans);
+      font-size: 10pt;
+      line-height: 10pt;
+      font-weight: 400;
+      color: var(--color-body);
+    }
+
+    .org {
+      font-family: var(--font-serif);
+      font-size: 10pt;
+      line-height: 10pt;
+      font-weight: 700;
+      color: var(--color-org);
+    }
+
+    .role {
+      font-family: var(--font-serif);
+      font-size: 10pt;
+      line-height: 10pt;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--color-role);
+    }
+
+    .date {
+      font-family: var(--font-sans);
+      font-size: 8pt;
+      line-height: 8pt;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+      font-weight: 400;
+      color: var(--color-date);
+    }
+
+    strong { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="line name header-shift" style="left:42pt; top:24pt;">Fei Huang</div>
+
+    <div class="line contact header-shift" style="left:325.9pt; top:25pt;">Amsterdam, Netherlands</div>
+    <div class="line contact-strong header-shift" style="left:325.9pt; top:37pt;">(+31) 6 45 03 8614</div>
+    <div class="line contact header-shift" style="left:325.9pt; top:49pt;"><a href="mailto:huangf06@gmail.com">huangf06@gmail.com</a></div>
+    <div class="line contact header-shift" style="left:325.9pt; top:61pt;"><a href="https://linkedin.com/in/huangf06">LinkedIn</a></div>
+    <div class="line contact header-shift" style="left:375.6pt; top:61pt;">|</div>
+    <div class="line contact header-shift" style="left:386.9pt; top:61pt;"><a href="https://github.com/huangf06">GitHub</a></div>
+
+    <!-- VARIABLE ZONE 1: Bio -->
+    <div class="line section content-shift" style="left:42pt; top:77.3pt;">BIO</div>
+    <div class="line bio content-shift" style="left:42pt; top:90.5pt;">{{ bio_1 }}</div>
+    <div class="line bio content-shift" style="left:42pt; top:102.5pt;">{{ bio_2 }}</div>
+    <div class="line bio content-shift" style="left:42pt; top:114.5pt;">{{ bio_3 }}</div>
+
+    <div class="line section content-shift" style="left:42pt; top:149.3pt;">EXPERIENCE</div>
+
+    <div class="line content-shift" style="left:42pt; top:162.4pt;">
+      <span class="org">GLP Technology (Fintech)</span>
+      <span class="body" style="margin-left:4pt; color:#211b1b;">-</span>
+      <span class="role" style="margin-left:4pt;">Data Scientist</span>
+    </div>
+    <div class="line date content-shift" style="left:42pt; top:175.4pt;">JULY 2017 - AUGUST 2019</div>
+    <div class="line body content-shift" style="left:42pt; top:188.4pt;">Joined as <strong>first data hire</strong> and built the end-to-end</div>
+    <div class="line body content-shift" style="left:42pt; top:201.4pt;">credit risk prediction system: engineered 19 features</div>
+    <div class="line body content-shift" style="left:42pt; top:214.4pt;">from raw bureau and transactional data, developed a</div>
+    <div class="line body content-shift" style="left:42pt; top:227.4pt;">first-payment default scorecard with 36-segment</div>
+    <div class="line body content-shift" style="left:42pt; top:240.4pt;">borrower classification, and deployed the model into</div>
+    <div class="line body content-shift" style="left:42pt; top:253.4pt;">production underwriting serving real lending decisions.</div>
+    <div class="line body content-shift" style="left:42pt; top:269.4pt;">Built the feature pipeline powering all risk models:</div>
+    <div class="line body content-shift" style="left:42pt; top:282.4pt;">automated ingestion of 30+ production tables and</div>
+    <div class="line body content-shift" style="left:42pt; top:295.4pt;">credit bureau data, transforming raw nested JSON into</div>
+    <div class="line body content-shift" style="left:42pt; top:308.4pt;">structured analytical features for model training,</div>
+    <div class="line body content-shift" style="left:42pt; top:321.4pt;">scoring, and post-loan monitoring.</div>
+    <!-- VARIABLE ZONE 2a: GLP skills -->
+    <div class="line body content-shift" style="left:42pt; top:337.4pt; max-width:275pt; overflow:hidden; text-overflow:ellipsis;"><strong>Skills:</strong> {{ glp_skills }}</div>
+
+    <div class="line content-shift" style="left:42pt; top:372.4pt;">
+      <span class="org">BQ Investment (Hedge Fund)</span>
+      <span class="body" style="margin-left:4pt; color:#211b1b;">-</span>
+      <span class="role" style="margin-left:4pt;">Quant Researcher</span>
+    </div>
+    <div class="line date content-shift" style="left:42pt; top:385.4pt;">JULY 2015 - JUNE 2017</div>
+    <div class="line body content-shift" style="left:42pt; top:398.4pt;">Built systematic feature validation pipeline evaluating</div>
+    <div class="line body content-shift" style="left:42pt; top:411.4pt;">4 factor families across <strong>3,000+ securities</strong> using</div>
+    <div class="line body content-shift" style="left:42pt; top:424.4pt;">cross-sectional regression; validated features</div>
+    <div class="line body content-shift" style="left:42pt; top:437.4pt;">integrated into the fund's live portfolio construction.</div>
+    <div class="line body content-shift" style="left:42pt; top:453.4pt;">Developed and deployed a signal-driven intraday</div>
+    <div class="line body content-shift" style="left:42pt; top:466.4pt;">predictive model from research through live production</div>
+    <div class="line body content-shift" style="left:42pt; top:479.4pt;">on CSI index futures, delivering <strong>14.6% annualized</strong></div>
+    <div class="line body content-shift" style="left:42pt; top:492.4pt;"><strong>return</strong> with real capital.</div>
+    <!-- VARIABLE ZONE 2b: BQ skills -->
+    <div class="line body content-shift" style="left:42pt; top:508.4pt; max-width:275pt; overflow:hidden; text-overflow:ellipsis;"><strong>Skills:</strong> {{ bq_skills }}</div>
+
+    <div class="line content-shift" style="left:42pt; top:530.4pt;">
+      <span class="org">Ele.me (Alibaba Group)</span>
+      <span class="body" style="margin-left:4pt; color:#211b1b;">-</span>
+      <span class="role" style="margin-left:4pt;">Data Analyst</span>
+    </div>
+    <div class="line date content-shift" style="left:42pt; top:543.4pt;">SEPTEMBER 2013 - JULY 2015</div>
+    <div class="line body content-shift" style="left:42pt; top:556.4pt;">Built anomaly detection system identifying <strong>51,000+</strong></div>
+    <div class="line body content-shift" style="left:42pt; top:569.4pt;">suspicious order clusters across <strong>2.2M+ users</strong> using</div>
+    <div class="line body content-shift" style="left:42pt; top:582.4pt;">pattern-matching algorithms (same-phone, high-</div>
+    <div class="line body content-shift" style="left:42pt; top:595.4pt;">frequency, repeat-order); deployed during Ele.me's</div>
+    <div class="line body content-shift" style="left:42pt; top:608.4pt;">hyper-growth phase pre-Alibaba acquisition.</div>
+    <!-- VARIABLE ZONE 2c: Ele.me skills -->
+    <div class="line body content-shift" style="left:42pt; top:624.4pt; max-width:275pt; overflow:hidden; text-overflow:ellipsis;"><strong>Skills:</strong> {{ ele_skills }}</div>
+
+    <!-- VARIABLE ZONE 3: Technical Skills (LEFT column) -->
+    <div class="line section content-shift" style="left:42pt; top:652.8pt;">TECHNICAL SKILLS</div>
+    <div class="content-shift" style="position:absolute; left:42pt; top:667.9pt; width:268pt; max-height:118pt; overflow:hidden;">
+      {% for skill in skills %}
+      <div class="body" style="line-height:13pt;{% if not loop.first %} margin-top:{% if skills|length >= 4 %}2{% else %}3{% endif %}pt;{% endif %}"><strong>{{ skill.category }}:</strong> {{ skill.skills_list }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="line section content-shift" style="left:325.9pt; top:149.3pt;">EDUCATION</div>
+    <div class="line org content-shift" style="left:325.9pt; top:162.4pt;">Vrije Universiteit Amsterdam</div>
+    <div class="line role content-shift" style="left:325.9pt; top:175.9pt;">M.Sc. in Artificial Intelligence (GPA: 8.2/10)</div>
+    <div class="line date content-shift" style="left:325.9pt; top:191.4pt;">SEPTEMBER 2023 - AUGUST 2025</div>
+    <div class="line body content-shift" style="left:325.9pt; top:205pt;">Courses: Deep Learning (9.5), ML4QS (9.5),</div>
+    <div class="line body content-shift" style="left:325.9pt; top:218pt;">Multi-Agent System (9.5), Data Mining (9.0), NLP (9.0)</div>
+
+    <div class="line org content-shift" style="left:325.9pt; top:235.9pt;">Tsinghua University <span style="font-weight:400;">(#1 in China)</span></div>
+    <div class="line role content-shift" style="left:325.9pt; top:250.9pt;">B.Eng. in Industrial Engineering</div>
+    <div class="line date content-shift" style="left:325.9pt; top:266.4pt;">SEPTEMBER 2006 - JULY 2010</div>
+
+    <div class="line section content-shift" style="left:325.9pt; top:290.8pt;">CERTIFICATIONS</div>
+    <div class="line body content-shift" style="left:325.9pt; top:304pt;"><strong>Databricks Certified Data Engineer Professional</strong></div>
+    <div class="line date content-shift" style="left:325.9pt; top:318.9pt;">FEBRUARY 2026</div>
+
+    <div class="line section content-shift" style="left:325.9pt; top:342.8pt;">PROJECTS</div>
+
+    <div class="line org content-shift" style="left:325.9pt; top:355.9pt;">Uncertainty Quantification Benchmark</div>
+    <div class="line date content-shift" style="left:325.9pt; top:370.4pt;">FEBRUARY 2025 - AUGUST 2025</div>
+    <div class="line body content-shift" style="left:325.9pt; top:384.4pt;">Built reproducible benchmark evaluating 5</div>
+    <div class="line body content-shift" style="left:325.9pt; top:397.4pt;">uncertainty quantification methods for Deep RL</div>
+    <div class="line body content-shift" style="left:325.9pt; top:410.4pt;">across <strong>150+ training runs</strong> on HPC (SLURM)</div>
+    <div class="line body content-shift" style="left:325.9pt; top:423.4pt;">with automated 6-stage calibration pipeline.</div>
+    <div class="line body content-shift" style="left:325.9pt; top:439.4pt;">Discovered a <strong>noise paradox</strong>: moderate</div>
+    <div class="line body content-shift" style="left:325.9pt; top:452.4pt;">observation noise unexpectedly improved</div>
+    <div class="line body content-shift" style="left:325.9pt; top:465.4pt;">ensemble uncertainty estimates, challenging</div>
+    <div class="line body content-shift" style="left:325.9pt; top:478.4pt;">standard assumptions in UQ method evaluation.</div>
+    <div class="line body content-shift" style="left:325.9pt; top:491.4pt;"><strong>Skills:</strong> Statistical Testing, Experiment Design, PyTorch</div>
+
+    <div class="line org content-shift" style="left:325.9pt; top:513.9pt;">Expedia Hotel Recommendation</div>
+    <div class="line date content-shift" style="left:325.9pt; top:528.4pt;">APRIL 2024 - MAY 2024</div>
+    <div class="line body content-shift" style="left:325.9pt; top:542.4pt;">Built hotel recommendation system using</div>
+    <div class="line body content-shift" style="left:325.9pt; top:555.4pt;"><strong>LightGBM LambdaRank</strong> on 4.96M Expedia search</div>
+    <div class="line body content-shift" style="left:325.9pt; top:568.4pt;">records; engineered 50+ temporal, behavioral, and</div>
+    <div class="line body content-shift" style="left:325.9pt; top:581.4pt;">price-normalization features; achieved</div>
+    <div class="line body content-shift" style="left:325.9pt; top:594.4pt;"><strong>NDCG@5 = 0.392</strong> on held-out Kaggle evaluation.</div>
+    <div class="line body content-shift" style="left:325.9pt; top:607.4pt;"><strong>Skills:</strong> LightGBM, Learning-to-Rank, Feature Eng.</div>
+
+    <div class="line org content-shift" style="left:325.9pt; top:629.9pt;">IMU Sensor Classification (ML4QS)</div>
+    <div class="line date content-shift" style="left:325.9pt; top:644.4pt;">JUNE 2024</div>
+    <div class="line body content-shift" style="left:325.9pt; top:658.4pt;">Built end-to-end ML pipeline for IMU sensor</div>
+    <div class="line body content-shift" style="left:325.9pt; top:671.4pt;">classification (4 subjects, 6 activities): Kalman</div>
+    <div class="line body content-shift" style="left:325.9pt; top:684.4pt;">Filter for noise reduction on 12 sensor channels,</div>
+    <div class="line body content-shift" style="left:325.9pt; top:697.4pt;"><strong>576 FFT-based features</strong> (time + frequency domain),</div>
+    <div class="line body content-shift" style="left:325.9pt; top:710.4pt;">and LightGBM + bidirectional LSTM achieving</div>
+    <div class="line body content-shift" style="left:325.9pt; top:723.4pt;"><strong>94-99% gender classification</strong> accuracy.</div>
+    <div class="line body content-shift" style="left:325.9pt; top:736.4pt;"><strong>Skills:</strong> LightGBM, LSTM, Feature Eng., Time-Series</div>
+
+    <div class="line section content-shift" style="left:325.9pt; top:758.8pt;">LANGUAGES</div>
+    <div class="line body content-shift" style="left:325.9pt; top:770.1pt;">English - Fluent</div>
+    <div class="line body content-shift" style="left:414pt; top:770.1pt;">|</div>
+    <div class="line body content-shift" style="left:426pt; top:770.1pt;">Mandarin - Native</div>
+  </div>
+</body>
+</html>

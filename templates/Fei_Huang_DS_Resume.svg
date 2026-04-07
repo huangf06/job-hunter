@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="595pt"
+   height="842pt"
+   viewBox="0 0 595 842"
+   role="img"
+   aria-label="Fei Huang Data Scientist resume"
+   version="1.1"
+   id="svg95"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs id="defs1">
+    <style id="style1"><![CDATA[
+      .name { font-family: Georgia, "Times New Roman", serif; font-size: 34px; font-weight: 700; fill: #1f1b1b; }
+      .contact { font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 400; fill: #2f2f2f; }
+      .contact-bold { font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 700; fill: #262626; }
+      .section { font-family: Arial, Helvetica, sans-serif; font-size: 8px; font-weight: 700; fill: #33455a; letter-spacing: 0.4px; }
+      .bio { font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 400; fill: #4f4f4f; }
+      .org { font-family: Georgia, "Times New Roman", serif; font-size: 10px; font-weight: 700; fill: #211b1b; }
+      .place { font-family: Georgia, "Times New Roman", serif; font-size: 10px; font-weight: 400; fill: #211b1b; }
+      .role { font-family: Georgia, "Times New Roman", serif; font-size: 10px; font-style: italic; font-weight: 400; fill: #4a4040; }
+      .body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 400; fill: #4f4f4f; }
+      .body-bold { font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: 700; fill: #4f4f4f; }
+      .date { font-family: Arial, Helvetica, sans-serif; font-size: 8px; font-weight: 400; fill: #6a6a6a; letter-spacing: 0.2px; }
+      a { text-decoration: none; }
+    ]]></style>
+  </defs>
+  <rect x="0" y="0" width="595" height="842" fill="#ffffff" id="rect1"/>
+
+  <!-- ==================== HEADER ==================== -->
+  <text class="name" x="42" y="55" id="h1">Fei Huang</text>
+  <text class="contact" x="326" y="34" id="h2">Amsterdam, Netherlands</text>
+  <text class="contact-bold" x="326" y="46" id="h3">(+31) 6 45 03 8614</text>
+  <a xlink:href="mailto:huangf06@gmail.com" id="ha1">
+    <text class="contact" x="326" y="58" id="h4">huangf06@gmail.com</text>
+  </a>
+  <text class="contact" x="326" y="70" id="h5a">LinkedIn</text>
+  <text class="contact" x="376" y="70" text-anchor="middle" id="h5b">|</text>
+  <text class="contact" x="385" y="70" id="h5c">GitHub</text>
+  <a xlink:href="https://linkedin.com/in/huangf06" id="ha2" transform="translate(0,3)" style="text-decoration:none">
+    <rect x="326" y="62" width="44" height="12" fill="transparent" id="hr1"/>
+  </a>
+  <a xlink:href="https://github.com/huangf06" id="ha3" transform="translate(3,3)" style="text-decoration:none">
+    <rect x="382" y="62" width="38" height="12" fill="transparent" id="hr2"/>
+  </a>
+
+  <!-- ==================== BIO ==================== -->
+  <text class="section" x="42" y="84.5" id="s1">BIO</text>
+  <text class="bio" x="42" y="99.5" id="b1"><tspan style="font-weight:bold">Data Scientist</tspan> with 6+ years building prediction, analytics, and experimentation systems across</text>
+  <text class="bio" x="42" y="111.5" id="b2">fintech, e-commerce, and trading. Strengths in statistical modeling, A/B testing, and feature</text>
+  <text class="bio" x="42" y="123.5" id="b3">engineering. M.Sc. in AI (GPA 8.2), Databricks Certified Data Engineer.</text>
+
+  <!-- ==================== LEFT: EXPERIENCE ==================== -->
+  <text class="section" x="42" y="156.5" id="s2">EXPERIENCE</text>
+
+  <!-- GLP Technology -->
+  <text x="42" y="171.5" id="e1"><tspan class="org">GLP Technology (Fintech)</tspan><tspan class="place" dx="4">-</tspan><tspan class="role" dx="4">Data Scientist</tspan></text>
+  <text class="date" x="42" y="182.5" id="e2">JULY 2017 - AUGUST 2019</text>
+  <text class="body" x="42" y="195.5" id="e3">Joined as <tspan style="font-weight:bold">first data hire</tspan> and built the end-to-end</text>
+  <text class="body" x="42" y="208.5" id="e4">credit risk scoring system: engineered 19 features</text>
+  <text class="body" x="42" y="221.5" id="e5">from raw bureau and transactional data, developed a</text>
+  <text class="body" x="42" y="234.5" id="e6">first-payment default scorecard with 36-segment</text>
+  <text class="body" x="42" y="247.5" id="e7">borrower classification, and deployed the model into</text>
+  <text class="body" x="42" y="260.5" id="e8">production underwriting serving real lending decisions.</text>
+  <text class="body" x="42" y="276.5" id="e9">Built the feature pipeline powering all risk models:</text>
+  <text class="body" x="42" y="289.5" id="e10">automated ingestion of 30+ production tables and</text>
+  <text class="body" x="42" y="302.5" id="e11">credit bureau data, transforming raw nested JSON into</text>
+  <text class="body" x="42" y="315.5" id="e12">structured analytical features for model training,</text>
+  <text class="body" x="42" y="328.5" id="e13">scoring, and post-loan monitoring.</text>
+  <text class="body" x="42" y="344.5" id="e14"><tspan class="body-bold">Skills:</tspan> Python, SQL, PySpark, Feature Engineering,</text>
+  <text class="body" x="42" y="357.5" id="e15">A/B Testing, AWS (Redshift, S3)</text>
+
+  <!-- BQ Investment -->
+  <text x="42" y="381.5" id="e16"><tspan class="org">BQ Investment (Hedge Fund)</tspan><tspan class="place" dx="4">-</tspan><tspan class="role" dx="4">Quant Researcher</tspan></text>
+  <text class="date" x="42" y="392.5" id="e17">JULY 2015 - JUNE 2017</text>
+  <text class="body" x="42" y="405.5" id="e18">Built systematic feature validation pipeline evaluating</text>
+  <text class="body" x="42" y="418.5" id="e19">4 factor families across <tspan style="font-weight:bold">3,000+ securities</tspan> using</text>
+  <text class="body" x="42" y="431.5" id="e20">cross-sectional regression; validated features</text>
+  <text class="body" x="42" y="444.5" id="e21">integrated into the fund's live portfolio construction.</text>
+  <text class="body" x="42" y="460.5" id="e22">Developed and deployed a signal-driven intraday</text>
+  <text class="body" x="42" y="473.5" id="e23">predictive model from research through live production</text>
+  <text class="body" x="42" y="486.5" id="e24">on CSI index futures, delivering <tspan style="font-weight:bold">14.6% annualized</tspan></text>
+  <text class="body" x="42" y="499.5" id="e25"><tspan style="font-weight:bold">return</tspan> with real capital.</text>
+  <text class="body" x="42" y="515.5" id="e26"><tspan class="body-bold">Skills:</tspan> Python, SQL, NumPy, pandas, Statistical Modeling</text>
+
+  <!-- Ele.me -->
+  <text x="42" y="539.5" id="e27"><tspan class="org">Ele.me (Alibaba Group)</tspan><tspan class="place" dx="4">-</tspan><tspan class="role" dx="4">Data Analyst</tspan></text>
+  <text class="date" x="42" y="550.5" id="e28">SEPTEMBER 2013 - JULY 2015</text>
+  <text class="body" x="42" y="563.5" id="e29">Built anomaly detection system identifying <tspan style="font-weight:bold">51,000+</tspan></text>
+  <text class="body" x="42" y="576.5" id="e30">suspicious order clusters across <tspan style="font-weight:bold">2.2M+ users</tspan> using</text>
+  <text class="body" x="42" y="589.5" id="e31">pattern-matching algorithms (same-phone, high-</text>
+  <text class="body" x="42" y="602.5" id="e32">frequency, repeat-order); deployed during Ele.me's</text>
+  <text class="body" x="42" y="615.5" id="e33">hyper-growth phase pre-Alibaba acquisition.</text>
+  <text class="body" x="42" y="631.5" id="e34"><tspan class="body-bold">Skills:</tspan> Python, SQL, A/B Testing, Anomaly Detection</text>
+
+  <!-- ==================== LEFT: TECHNICAL SKILLS ==================== -->
+  <text class="section" x="42" y="660" id="s3">TECHNICAL SKILLS</text>
+  <text class="body" x="42" y="675" id="sk1"><tspan class="body-bold">Statistical Modeling:</tspan> A/B Testing, Hypothesis Testing,</text>
+  <text class="body" x="42" y="688" id="sk2">scikit-learn, LightGBM, XGBoost, Learning-to-Rank,</text>
+  <text class="body" x="42" y="701" id="sk3">Regression, Statistical Testing</text>
+  <text class="body" x="42" y="717" id="sk4"><tspan class="body-bold">Programming:</tspan> Python, SQL, NumPy, pandas, Bash</text>
+  <text class="body" x="42" y="733" id="sk6"><tspan class="body-bold">Data &amp; Infrastructure:</tspan> PySpark, Airflow, AWS</text>
+  <text class="body" x="42" y="746" id="sk7">(Redshift, S3, EC2), Delta Lake, Docker, Git</text>
+  <text class="body" x="42" y="762" id="sk8"><tspan class="body-bold">Visualization &amp; Analytics:</tspan> Tableau, Matplotlib,</text>
+  <text class="body" x="42" y="775" id="sk9">Seaborn, Feature Engineering, Anomaly Detection</text>
+
+  <!-- ==================== RIGHT: EDUCATION ==================== -->
+  <text class="section" x="326" y="156.5" id="s5">EDUCATION</text>
+  <text x="326" y="171.5" id="ed1"><tspan class="org">Vrije Universiteit Amsterdam</tspan></text>
+  <text x="326" y="185" id="ed2"><tspan class="role">M.Sc. in Artificial Intelligence (GPA: 8.2/10)</tspan></text>
+  <text class="date" x="326" y="198.5" id="ed3">SEPTEMBER 2023 - AUGUST 2025</text>
+  <text class="body" x="326" y="214" id="ed7">Courses: Deep Learning (9.5), ML4QS (9.5),</text>
+  <text class="body" x="326" y="227" id="ed8">Multi-Agent System (9.5), Data Mining (9.0), NLP (9.0)</text>
+
+  <text x="326" y="245" id="ed9"><tspan class="org">Tsinghua University</tspan><tspan class="place" dx="4">(#1 in China)</tspan></text>
+  <text x="326" y="260" id="ed10"><tspan class="role">B.Eng. in Industrial Engineering</tspan></text>
+  <text class="date" x="326" y="273.5" id="ed11">SEPTEMBER 2006 - JULY 2010</text>
+
+  <!-- ==================== RIGHT: CERTIFICATIONS ==================== -->
+  <text class="section" x="326" y="298" id="s6">CERTIFICATIONS</text>
+  <text class="body" x="326" y="313" id="c1"><tspan class="body-bold">Databricks Certified Data Engineer Professional</tspan></text>
+  <text class="date" x="326" y="326" id="c2">FEBRUARY 2026</text>
+
+  <!-- ==================== RIGHT: PROJECTS ==================== -->
+  <text class="section" x="326" y="350" id="s7">PROJECTS</text>
+
+  <!-- Thesis UQ Benchmark -->
+  <text x="326" y="365" id="p1"><tspan class="org">Uncertainty Quantification Benchmark</tspan></text>
+  <text class="date" x="326" y="377.5" id="p2">FEBRUARY 2025 - AUGUST 2025</text>
+  <text class="body" x="326" y="392" id="p3">Built reproducible benchmark evaluating 5</text>
+  <text class="body" x="326" y="405" id="p4">uncertainty quantification methods for Deep RL</text>
+  <text class="body" x="326" y="418" id="p5">across <tspan style="font-weight:bold">150+ training runs</tspan> on HPC (SLURM)</text>
+  <text class="body" x="326" y="431" id="p6">with automated 6-stage calibration pipeline.</text>
+  <text class="body" x="326" y="447" id="p7">Discovered a <tspan style="font-weight:bold">noise paradox</tspan>: moderate</text>
+  <text class="body" x="326" y="460" id="p8">observation noise unexpectedly improved</text>
+  <text class="body" x="326" y="473" id="p9">ensemble uncertainty estimates, challenging</text>
+  <text class="body" x="326" y="486" id="p10">standard assumptions in UQ method evaluation.</text>
+  <text class="body" x="326" y="499" id="p10b"><tspan class="body-bold">Skills:</tspan> Statistical Testing, Experiment Design, PyTorch</text>
+
+  <!-- Expedia Hotel Recommendation -->
+  <text x="326" y="523" id="p11"><tspan class="org">Expedia Hotel Recommendation</tspan></text>
+  <text class="date" x="326" y="535.5" id="p12">APRIL 2024 - MAY 2024</text>
+  <text class="body" x="326" y="550" id="p13">Built hotel recommendation system using</text>
+  <text class="body" x="326" y="563" id="p14"><tspan style="font-weight:bold">LightGBM LambdaRank</tspan> on 4.96M Expedia search</text>
+  <text class="body" x="326" y="576" id="p15">records; engineered 50+ temporal, behavioral, and</text>
+  <text class="body" x="326" y="589" id="p16">price-normalization features; achieved</text>
+  <text class="body" x="326" y="602" id="p17"><tspan style="font-weight:bold">NDCG@5 = 0.392</tspan> on held-out Kaggle evaluation.</text>
+  <text class="body" x="326" y="615" id="p18"><tspan class="body-bold">Skills:</tspan> LightGBM, Learning-to-Rank, Feature Eng.</text>
+
+  <!-- ML4QS Sensor Classification -->
+  <text x="326" y="639" id="p19"><tspan class="org">IMU Sensor Classification (ML4QS)</tspan></text>
+  <text class="date" x="326" y="651.5" id="p20">JUNE 2024</text>
+  <text class="body" x="326" y="666" id="p21">Built end-to-end ML pipeline for IMU sensor</text>
+  <text class="body" x="326" y="679" id="p22">classification (4 subjects, 6 activities): Kalman</text>
+  <text class="body" x="326" y="692" id="p23">Filter for noise reduction on 12 sensor channels,</text>
+  <text class="body" x="326" y="705" id="p24"><tspan style="font-weight:bold">576 FFT-based features</tspan> (time + frequency domain),</text>
+  <text class="body" x="326" y="718" id="p25">and LightGBM + bidirectional LSTM achieving</text>
+  <text class="body" x="326" y="731" id="p26"><tspan style="font-weight:bold">94-99% gender classification</tspan> accuracy.</text>
+  <text class="body" x="326" y="744" id="p27"><tspan class="body-bold">Skills:</tspan> LightGBM, LSTM, Feature Eng., Time-Series</text>
+
+  <!-- ==================== RIGHT: LANGUAGES ==================== -->
+  <text class="section" x="326" y="766" id="s8">LANGUAGES</text>
+  <text class="body" x="326" y="779" id="l1"><tspan x="326">English - Fluent</tspan><tspan x="414">|</tspan><tspan x="426">Mandarin - Native</tspan></text>
+
+</svg>
