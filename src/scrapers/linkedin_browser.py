@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -37,6 +38,12 @@ DETAIL_SELECTORS = (
     ".jobs-description",
     "[class*='description']",
     ".job-view-layout",
+)
+GUEST_DETAIL_SELECTORS = (
+    ".show-more-less-html__markup",
+    ".description__text--rich",
+    ".description__text",
+    ".decorated-job-posting__details",
 )
 
 
@@ -227,7 +234,39 @@ class LinkedInBrowser:
             except Exception:
                 continue
 
+        # Logged-in selectors failed — try guest API fallback
+        guest_payload = await self._fetch_guest_description(url)
+        if guest_payload.get("detail_text") or guest_payload.get("detail_html"):
+            logger.info("[LinkedIn] Guest API fallback succeeded for %s", url)
+            return guest_payload
+
         self.diagnostics["detail_fetch_failures"] += 1
+        logger.warning("[LinkedIn] All selectors failed for %s", url)
+        return payload
+
+    async def _fetch_guest_description(self, url: str) -> dict:
+        """Fallback: fetch JD from LinkedIn's public guest API (no auth needed)."""
+        payload = {"json_ld_description": "", "detail_text": "", "detail_html": ""}
+        # Extract job ID from URL like /jobs/view/4398351834/
+        match = re.search(r"/jobs/view/(\d+)", url)
+        if not match:
+            return payload
+        job_id = match.group(1)
+        guest_url = f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}"
+        try:
+            resp = await self.page.goto(guest_url, wait_until="domcontentloaded", timeout=15000)
+            if not resp or resp.status != 200:
+                return payload
+            for selector in GUEST_DETAIL_SELECTORS:
+                element = await self.page.query_selector(selector)
+                if not element:
+                    continue
+                payload["detail_text"] = (await element.inner_text()).strip()
+                payload["detail_html"] = (await element.inner_html()).strip()
+                if payload["detail_text"] or payload["detail_html"]:
+                    return payload
+        except Exception as exc:
+            logger.debug("[LinkedIn] Guest API fallback error: %s", exc)
         return payload
 
     async def _goto(self, url: str, *, timeout: int) -> None:
