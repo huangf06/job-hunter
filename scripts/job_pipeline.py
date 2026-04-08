@@ -533,7 +533,7 @@ class JobPipeline:
             print("Error: state.json 'jobs' is not a dict. Re-run --prepare to regenerate.")
             sys.exit(1)
 
-        required_keys = {"applied", "submit_dir", "company", "title"}
+        required_keys = {"submit_dir", "company", "title"}
         for job_id, info in jobs.items():
             if not isinstance(info, dict):
                 print(f"Error: state.json job '{job_id}' is not an object. Re-run --prepare to regenerate.")
@@ -542,13 +542,17 @@ class JobPipeline:
             if missing:
                 print(f"Error: state.json job '{job_id}' missing keys: {sorted(missing)}. Re-run --prepare to regenerate.")
                 sys.exit(1)
+            # Migrate old boolean 'applied' to 'status' field
+            if "status" not in info:
+                info["status"] = "applied" if info.get("applied") else "pending"
 
         if not jobs:
             print("No jobs in state. Nothing to finalize.")
             return
 
-        applied = {jid: j for jid, j in jobs.items() if j.get("applied")}
-        skipped = {jid: j for jid, j in jobs.items() if not j.get("applied")}
+        applied = {jid: j for jid, j in jobs.items() if j.get("status") == "applied"}
+        skipped = {jid: j for jid, j in jobs.items() if j.get("status") == "pending"}
+        deferred = {jid: j for jid, j in jobs.items() if j.get("status") == "deferred"}
 
         applied_dir = ready_dir / "_applied"
         if applied:
@@ -650,6 +654,10 @@ class JobPipeline:
             print(f"  Applied ({len(applied)}):")
             for jid, info in applied.items():
                 print(f"    -> {info['company']} - {info['title']}")
+        if deferred:
+            print(f"  Deferred ({len(deferred)}) — will reappear in next --prepare:")
+            for jid, info in deferred.items():
+                print(f"    .. {info['company']} - {info['title']}")
         if skipped:
             print(f"  Skipped ({len(skipped)}):")
             for jid, info in skipped.items():

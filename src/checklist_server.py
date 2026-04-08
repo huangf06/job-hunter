@@ -34,7 +34,7 @@ def generate_checklist(jobs: list[dict], ready_dir: Path) -> Path:
             "ai_score": float(score),
             "submit_dir": job.get("submit_dir", ""),
             "url": job.get("url", ""),
-            "applied": False,
+            "status": "pending",
             "repost_applied_at": job.get("repost_applied_at", ""),
             "rejection_rejected_at": job.get("rejection_rejected_at", ""),
             "resume_tier": job.get("resume_tier", ""),
@@ -85,9 +85,15 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 
         esc_id = _esc(job_id)
 
+        status = info.get("status", "pending")
         rows.append(f"""
-        <tr data-job-id="{esc_id}">
-          <td><input type="checkbox" class="apply-cb" {'checked' if info['applied'] else ''} /></td>
+        <tr data-job-id="{esc_id}" data-status="{_esc(status)}">
+          <td class="status-cell">
+            <div class="status-toggle">
+              <button class="st-btn st-applied{' active' if status == 'applied' else ''}" onclick="setStatus(this, 'applied')">Applied</button>
+              <button class="st-btn st-defer{' active' if status == 'deferred' else ''}" onclick="setStatus(this, 'deferred')">Defer</button>
+            </div>
+          </td>
           <td><span style="color:{score_color};font-weight:bold">{score:.1f}</span></td>
           <td><code class="job-id" onclick="copyJobId(this)" title="Click to copy">{_esc(job_id[:12])}</code></td>
           <td>{_esc(info['company'])}{repost_badge}{rejected_badge}</td>
@@ -115,7 +121,13 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
   th {{ background: #1e293b; color: white; padding: 12px 16px; text-align: left; font-weight: 500; }}
   td {{ padding: 10px 16px; border-bottom: 1px solid #e2e8f0; }}
   tr:hover {{ background: #f1f5f9; }}
-  input[type="checkbox"] {{ width: 18px; height: 18px; cursor: pointer; }}
+  .status-toggle {{ display: flex; gap: 4px; }}
+  .st-btn {{ padding: 3px 8px; border: 1px solid #cbd5e1; border-radius: 4px; background: white; cursor: pointer; font-size: 0.75rem; font-weight: 500; color: #64748b; }}
+  .st-btn:hover {{ opacity: 0.85; }}
+  .st-btn.st-applied.active {{ background: #22c55e; color: white; border-color: #22c55e; }}
+  .st-btn.st-defer.active {{ background: #f59e0b; color: white; border-color: #f59e0b; }}
+  tr[data-status="deferred"] {{ background: #fffbeb; }}
+  tr[data-status="applied"] {{ background: #f0fdf4; }}
   a {{ color: #2563eb; text-decoration: none; }}
   a:hover {{ text-decoration: underline; }}
   .btn {{ padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: white; cursor: pointer; font-size: 0.8rem; margin-right: 4px; }}
@@ -147,10 +159,21 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 <script>
 let state = JSON.parse({json.dumps(json.dumps(state)).replace("</", "<\\\\/")});
 
+// Migrate old boolean 'applied' to 'status' field
+Object.entries(state.jobs).forEach(([id, j]) => {{
+  if (!j.status) {{
+    j.status = j.applied ? 'applied' : 'pending';
+    delete j.applied;
+  }}
+}});
+
 function updateSummary() {{
-  const checked = Object.values(state.jobs).filter(j => j.applied).length;
-  const total = Object.values(state.jobs).length;
-  document.getElementById('summary').textContent = checked + ' / ' + total + ' marked as applied';
+  const jobs = Object.values(state.jobs);
+  const applied = jobs.filter(j => j.status === 'applied').length;
+  const deferred = jobs.filter(j => j.status === 'deferred').length;
+  const skip = jobs.length - applied - deferred;
+  document.getElementById('summary').textContent =
+    applied + ' applied, ' + deferred + ' deferred, ' + skip + ' skip  (total: ' + jobs.length + ')';
 }}
 
 function saveState() {{
@@ -161,14 +184,20 @@ function saveState() {{
   }});
 }}
 
-document.querySelectorAll('.apply-cb').forEach(cb => {{
-  cb.addEventListener('change', function() {{
-    const jobId = this.closest('tr').dataset.jobId;
-    state.jobs[jobId].applied = this.checked;
-    saveState();
-    updateSummary();
-  }});
-}});
+function setStatus(btn, status) {{
+  const tr = btn.closest('tr');
+  const jobId = tr.dataset.jobId;
+  const current = state.jobs[jobId].status;
+  // Toggle: click active button to deselect (back to pending/skip)
+  const newStatus = (current === status) ? 'pending' : status;
+  state.jobs[jobId].status = newStatus;
+  tr.dataset.status = newStatus;
+  // Update button active states
+  tr.querySelector('.st-applied').classList.toggle('active', newStatus === 'applied');
+  tr.querySelector('.st-defer').classList.toggle('active', newStatus === 'deferred');
+  saveState();
+  updateSummary();
+}}
 
 function openFolder(path) {{
   fetch('/open-folder', {{
@@ -196,13 +225,24 @@ function copyJobId(el) {{
 
 updateSummary();
 
-// Restore latest state from state.json (checkboxes survive page reload)
+// Restore latest state from state.json (survives page reload)
 fetch('/state.json').then(r => r.json()).then(saved => {{
   if (!saved || !saved.jobs) return;
   state = saved;
-  document.querySelectorAll('.apply-cb').forEach(cb => {{
-    const jobId = cb.closest('tr').dataset.jobId;
-    if (state.jobs[jobId]) cb.checked = state.jobs[jobId].applied;
+  // Migrate old boolean format
+  Object.entries(state.jobs).forEach(([id, j]) => {{
+    if (!j.status) {{
+      j.status = j.applied ? 'applied' : 'pending';
+      delete j.applied;
+    }}
+  }});
+  document.querySelectorAll('tr[data-job-id]').forEach(tr => {{
+    const jobId = tr.dataset.jobId;
+    if (!state.jobs[jobId]) return;
+    const s = state.jobs[jobId].status;
+    tr.dataset.status = s;
+    tr.querySelector('.st-applied').classList.toggle('active', s === 'applied');
+    tr.querySelector('.st-defer').classList.toggle('active', s === 'deferred');
   }});
   updateSummary();
 }}).catch(() => {{}});
