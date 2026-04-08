@@ -257,6 +257,12 @@ SQLite 本地数据库 + Turso 云同步 (HTTP 模式，通过 `TursoHTTPClient`
 | `applications` | 申请状态跟踪 |
 | `scrape_watermarks` | 爬虫水位线 (增量抓取) |
 
+**常用表列名 (ad-hoc 查询时直接用，不要猜):**
+- `jobs`: id, source, source_id, url, title, company, location, description, posted_date, scraped_at, search_profile, search_query, raw_data, created_at, manual_source
+- `job_analysis`: id, job_id, ai_score, skill_match, experience_fit, growth_potential, recommendation, reasoning, tailored_resume, model, tokens_used, analyzed_at, resume_tier, template_id_initial, template_id_final, routing_confidence, routing_override_reason, escalation_reason, routing_payload, c3_decision, c3_confidence, c3_reason
+- `applications`: id, job_id, status, applied_at, response_at, interview_at, outcome, notes, updated_at, rejection_reason, rejection_stage
+- `cover_letters`: id, job_id, spec_json, custom_requirements, standard_text, short_text, html_path, pdf_path, tokens_used, created_at
+
 常用视图: `v_funnel_stats`, `v_pending_jobs`, `v_high_score_jobs`, `v_ready_to_apply`
 
 查看统计:
