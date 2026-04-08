@@ -77,13 +77,29 @@ class TestCallClaude:
         mock_run.return_value = MagicMock(
             returncode=1,
             stdout="",
-            stderr="Error: rate limited",
+            stderr="Error: unknown failure",
         )
 
         analyzer = _make_analyzer()
         result = analyzer._call_claude("test prompt")
 
         assert result is None
+
+    @patch("shutil.which", return_value="/usr/bin/claude")
+    @patch("subprocess.run")
+    def test_quota_exhausted_raises_on_rate_limit(self, mock_run, mock_which):
+        """Rate-limit stderr triggers QuotaExhaustedError."""
+        from src.ai_analyzer import QuotaExhaustedError
+
+        mock_run.return_value = MagicMock(
+            returncode=1,
+            stdout="",
+            stderr="Error: rate limited",
+        )
+
+        analyzer = _make_analyzer()
+        with pytest.raises(QuotaExhaustedError):
+            analyzer._call_claude("test prompt")
 
     @patch("shutil.which", return_value="/usr/bin/claude")
     @patch("subprocess.run")
