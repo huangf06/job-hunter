@@ -427,10 +427,16 @@ class JobPipeline:
         # Step 3.1: Restore submit_dirs cleaned by previous --finalize
         candidate_name = renderer._safe_filename(
             renderer.candidate.get('name', 'Resume'))
+
+        def _resolve_ready_path(raw: str) -> Path:
+            """Resolve submit_dir (absolute or relative) to path under ready_dir."""
+            p = Path(raw)
+            return p if p.is_absolute() else ready_dir / p.name
+
         restored = 0
         for job in all_ready:
             submit_dir = job.get('submit_dir')
-            if submit_dir and Path(submit_dir).is_dir():
+            if submit_dir and _resolve_ready_path(submit_dir).is_dir():
                 continue  # Already exists on disk
 
             # Look up source PDF in output/
@@ -442,7 +448,7 @@ class JobPipeline:
                 continue
 
             # Re-create submit_dir and copy resume PDF
-            target_dir = Path(resume_rec['submit_dir']) if resume_rec.get('submit_dir') else None
+            target_dir = _resolve_ready_path(resume_rec['submit_dir']) if resume_rec.get('submit_dir') else None
             if not target_dir:
                 continue
             target_dir.mkdir(parents=True, exist_ok=True)
@@ -466,7 +472,7 @@ class JobPipeline:
 
         # Filter out jobs whose submit_dir still doesn't exist (source PDF gone)
         before_count = len(all_ready)
-        all_ready = [j for j in all_ready if j.get('submit_dir') and Path(j['submit_dir']).is_dir()]
+        all_ready = [j for j in all_ready if j.get('submit_dir') and _resolve_ready_path(j['submit_dir']).is_dir()]
         if before_count > len(all_ready):
             print(f"  Skipped {before_count - len(all_ready)} jobs (resume files missing).")
 
@@ -490,8 +496,19 @@ class JobPipeline:
             print("\nNo jobs ready to apply. All caught up!")
             return
 
+        # Step 3.5: Clean up orphan dated folders (from previous unfinalised runs)
+        active_folders = {_resolve_ready_path(j['submit_dir']).name for j in all_ready if j.get('submit_dir')}
+        orphan_cleaned = 0
+        for entry in ready_dir.iterdir():
+            if not entry.is_dir() or not entry.name[:8].isdigit() or entry.name.startswith('_'):
+                continue
+            if entry.name not in active_folders:
+                shutil.rmtree(entry)
+                orphan_cleaned += 1
+        if orphan_cleaned:
+            print(f"  Cleaned {orphan_cleaned} orphan folders from previous runs.")
+
         # Step 4: Generate checklist
-        ready_dir = Path(PROJECT_ROOT) / "ready_to_send"
         generate_checklist(all_ready, ready_dir)
 
         # Step 5: Summary report
@@ -562,13 +579,25 @@ class JobPipeline:
 
         skipped_dir = ready_dir / "_skipped"
 
+        def _resolve_submit_dir(raw: str) -> Path:
+            """Resolve submit_dir to absolute path under ready_dir.
+
+            DB stores submit_dir inconsistently — some absolute, some relative
+            (e.g. 'ready_to_send\\20260403_Foo'). Extract folder name to avoid
+            doubled paths like ready_to_send/ready_to_send/...
+            """
+            p = Path(raw)
+            if p.is_absolute():
+                return p
+            return ready_dir / p.name
+
         # Process applied jobs
         for job_id, info in applied.items():
             try:
                 self.db.update_application_status(job_id, "applied", applied_at=now)
                 if not info.get("submit_dir"):
                     continue
-                src = ready_dir / info["submit_dir"]
+                src = _resolve_submit_dir(info["submit_dir"])
                 if src.exists() and src.is_dir():
                     dest = applied_dir / src.name
                     if dest.exists():
@@ -583,7 +612,7 @@ class JobPipeline:
                 self.db.update_application_status(job_id, "skipped")
                 if not info.get("submit_dir"):
                     continue
-                src = ready_dir / info["submit_dir"]
+                src = _resolve_submit_dir(info["submit_dir"])
                 if src.exists() and src.is_dir():
                     skipped_dir.mkdir(parents=True, exist_ok=True)
                     dest = skipped_dir / src.name

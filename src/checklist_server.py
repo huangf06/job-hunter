@@ -71,7 +71,8 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
             score_color = "#6b7280"
 
         submit_dir = info["submit_dir"]
-        abs_path = str((ready_dir / submit_dir).resolve())
+        submit_path = Path(submit_dir)
+        abs_path = str((submit_path if submit_path.is_absolute() else ready_dir / submit_path.name).resolve())
         repost = info.get("repost_applied_at", "")
         repost_badge = f' <span style="color:#dc2626;font-weight:bold" title="Applied {_esc(repost)}">REPOST</span>' if repost else ''
         rejected = info.get("rejection_rejected_at", "")
