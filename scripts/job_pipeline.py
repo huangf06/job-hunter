@@ -381,6 +381,7 @@ class JobPipeline:
         threshold = min_ai_score or self.ai_config.get('thresholds', {}).get(
             'ai_score_generate_resume', 5.0)
         # No default cap — process all eligible jobs unless --limit is specified
+        ready_dir = Path(PROJECT_ROOT) / "ready_to_send"
 
         # Step 1: Sync from Turso
         print("Syncing database...")
