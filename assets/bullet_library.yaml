@@ -521,18 +521,19 @@ projects:
         content: "Integrated Airflow for orchestration and Docker for consistent deployment across environments."
 
   # ---------------------------------------------------------------------------
-  # GREENHOUSE SENSOR PIPELINE (Source.ag Take-home)
+  # GREENHOUSE SENSOR PIPELINE (Portfolio Project)
   # ---------------------------------------------------------------------------
   greenhouse_sensor_pipeline:
     title: "Greenhouse Sensor Data Pipeline (PySpark + Delta Lake)"
-    institution: "Take-home Assignment — Source.ag"
-    period: "2026"
+    institution: "Personal Project"
+    period: "2025"
+    github: "https://github.com/huangf06/greenhouse-sensor-pipeline"
 
     verified_bullets:
 
       - id: greenhouse_etl_pipeline
         narrative_role: headline
-        content: "Built batch ETL pipeline ingesting 3,842 JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing."
+        content: "Built production-style ETL pipeline ingesting 3,842 JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing — 58 tests, CI via GitHub Actions."
 
       - id: greenhouse_data_quality
         narrative_role: optional
