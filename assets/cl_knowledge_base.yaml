@@ -278,6 +278,35 @@ fragments:
       to build my career here long-term.
 
   # =========================================================================
+  # FROM SEEDTAG COVER LETTER (handwritten, ~Apr 2026)
+  # =========================================================================
+
+  - id: seedtag_privacy_stance
+    source_company: "Seedtag"
+    source_date: "2026-04"
+    origin: handwritten
+    type: company_observation
+    role_types: [ml_engineer, data_scientist]
+    text: >
+      Most adtech treats users as data points to be extracted. Seedtag's
+      bet — that contextual understanding can replace user tracking without
+      sacrificing effectiveness — is a genuinely different position.
+
+  - id: seedtag_indirect_path
+    source_company: "Seedtag"
+    source_date: "2026-04"
+    origin: handwritten
+    type: career_narrative
+    role_types: [ml_engineer, data_scientist]
+    text: >
+      My path to ML was indirect — years in quantitative trading and
+      fintech before going back for an M.Sc. in AI. At a fintech startup
+      I was the first data hire, building credit scoring pipelines where
+      a wrong prediction meant approving bad loans. The pattern is the
+      same: models that work under real traffic, validated continuously
+      in production, at a scale where latency matters.
+
+  # =========================================================================
   # GENERAL REUSABLE FRAGMENTS
   # =========================================================================
 
