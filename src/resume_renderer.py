@@ -141,25 +141,40 @@ class ResumeRenderer:
             print(f"[Renderer] Skipping legacy job {job_id}: no resume_tier. Run --ai-analyze or --analyze-job {job_id} to re-analyze.")
             return None
 
-        if tier == 'USE_TEMPLATE':
-            return self._render_template_copy(job_id, analysis)
-        if tier == 'ADAPT_TEMPLATE':
-            result = self._render_adapt_template(job_id, analysis)
-            if result is None:
-                print(f"[Renderer] ADAPT_TEMPLATE failed for {job_id}, falling back to USE_TEMPLATE")
-                return self._render_template_copy(job_id, analysis)
-            return result
+        # 2026-04-17 revert: USE_TEMPLATE (static PDF) and ADAPT_TEMPLATE (zone) are
+        # retired. Legacy tiers stored in pre-revert job_analysis rows are upgraded
+        # to FULL_CUSTOMIZE transparently. If the stored tailored_resume is still
+        # zone-schema (slot_overrides / entry_visibility), rendering is skipped —
+        # the job must be re-analyzed under the new FULL_CUSTOMIZE C2 prompt.
+        if tier in ('USE_TEMPLATE', 'ADAPT_TEMPLATE'):
+            print(f"[Renderer] Upgrading legacy tier {tier} -> FULL_CUSTOMIZE for {job_id}")
+            tier = 'FULL_CUSTOMIZE'
 
         tailored_json = analysis.get('tailored_resume', '')
         if not tailored_json:
-            print(f"[Renderer] No tailored resume for job: {job_id}, falling back to USE_TEMPLATE")
-            return self._render_template_copy(job_id, analysis)
+            print(f"[Renderer] No tailored resume for {job_id}. Re-run: python scripts/job_pipeline.py --analyze-job {job_id}")
+            return None
 
         try:
             tailored = json.loads(tailored_json)
         except json.JSONDecodeError as e:
-            print(f"[Renderer] Invalid tailored_resume JSON: {e}, falling back to USE_TEMPLATE")
-            return self._render_template_copy(job_id, analysis)
+            print(f"[Renderer] Invalid tailored_resume JSON for {job_id}: {e}")
+            return None
+
+        # Detect legacy zone-schema output (slot_overrides / entry_visibility) and
+        # refuse to render — re-analysis is required under the post-revert prompt.
+        is_zone_schema = (
+            'slot_overrides' in tailored
+            or 'skills_override' in tailored
+            or 'entry_visibility' in tailored
+        )
+        has_flow_schema = isinstance(tailored.get('experiences'), list)
+        if is_zone_schema and not has_flow_schema:
+            print(
+                f"[Renderer] Legacy zone-schema tailored_resume for {job_id}. "
+                f"Re-run: python scripts/job_pipeline.py --analyze-job {job_id}"
+            )
+            return None
 
         # Early exit for rejected resumes (empty dict from analyzer)
         if not tailored:
@@ -287,6 +302,12 @@ class ResumeRenderer:
         }
 
     def _render_template_copy(self, job_id: str, analysis: Dict) -> Optional[Dict[str, str]]:
+        """DEPRECATED 2026-04-17: static PDF copy path is retired.
+
+        Kept for reference only; not reachable from render_resume() after the
+        tier revert. Delete after 2 weeks of stable FULL_CUSTOMIZE operation
+        (target: 2026-05-01).
+        """
         job = self.db.get_job(job_id)
         template_id = analysis.get('template_id_final')
         if not job or not template_id:
@@ -315,8 +336,13 @@ class ResumeRenderer:
         return {'html_path': None, 'pdf_path': str(paths['pdf_path'])}
 
     def _schema_to_context(self, schema: Dict, tailored: Dict, analysis: Dict) -> Dict:
-        """Convert slot_schema + tier-2 overrides into a zone-based template context.
+        """DEPRECATED 2026-04-17: zone-based render path is retired.
 
+        Kept for reference only; not reachable from render_resume() after the
+        tier revert. Delete after 2 weeks of stable FULL_CUSTOMIZE operation
+        (target: 2026-05-01).
+
+        Convert slot_schema + tier-2 overrides into a zone-based template context.
         Zone-based templates hardcode most content. This method outputs:
         - bio: string (from slot_overrides or schema default)
         - {entry_id}_skills: per-experience skills line string
@@ -379,6 +405,12 @@ class ResumeRenderer:
         return context
 
     def _render_adapt_template(self, job_id: str, analysis: Dict) -> Optional[Dict[str, str]]:
+        """DEPRECATED 2026-04-17: zone-based ADAPT_TEMPLATE path is retired.
+
+        Kept for reference only; not reachable from render_resume() after the
+        tier revert. Delete after 2 weeks of stable FULL_CUSTOMIZE operation
+        (target: 2026-05-01).
+        """
         job = self.db.get_job(job_id)
         if not job:
             return None

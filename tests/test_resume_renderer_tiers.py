@@ -113,48 +113,10 @@ def _make_renderer(tmp_dir: Path, analysis: dict):
     return renderer
 
 
-def test_render_resume_use_template_copies_pdf_byte_identically():
-    tmp_dir = _local_tmp_dir("renderer_test_workspace_use")
-    renderer = _make_renderer(
-        tmp_dir,
-        {
-            "resume_tier": "USE_TEMPLATE",
-            "template_id_final": "DE",
-            "tailored_resume": "{}",
-        },
-    )
-
-    result = renderer.render_resume("job-1")
-
-    assert result is not None
-    copied = Path(result["pdf_path"]).read_bytes()
-    assert copied == b"template-pdf-bytes"
-
-
-def test_render_resume_adapt_template_pass_generates_files():
-    tmp_dir = _local_tmp_dir("renderer_test_workspace_adapt")
-    renderer = _make_renderer(
-        tmp_dir,
-        {
-            "resume_tier": "ADAPT_TEMPLATE",
-            "template_id_final": "DE",
-            "c3_decision": "PASS",
-            "tailored_resume": json.dumps(
-                {
-                    "slot_overrides": {"bio_1": "Adapted bio line one.", "bio_2": "Adapted line two.", "bio_3": "Adapted line three.", "glp_1": "Adapted bullet"},
-                    "skills_override": {"programming": "Python, SQL, Scala"},
-                    "entry_visibility": {"glp": True},
-                    "change_summary": "Changed bio and bullet",
-                }
-            ),
-        },
-    )
-
-    result = renderer.render_resume("job-1")
-
-    assert result is not None
-    assert Path(result["html_path"]).exists()
-    assert Path(result["pdf_path"]).exists()
+# Tests for USE_TEMPLATE byte-identical copy and ADAPT_TEMPLATE zone rendering
+# were deleted 2026-04-17: both tiers are retired and transparently upgraded to
+# FULL_CUSTOMIZE. See tests/test_resume_renderer_full_customize_only.py for the
+# replacement regression tests.
 
 
 def test_render_resume_full_customize_uses_legacy_render_path():
@@ -212,63 +174,10 @@ def test_render_adapt_template_unknown_template_returns_none():
     assert renderer.db.saved_resume is None
 
 
-def test_render_adapt_template_invalid_json_falls_back_to_template():
-    tmp_dir = _local_tmp_dir("renderer_bad_json_adapt")
-    renderer = _make_renderer(
-        tmp_dir,
-        {
-            "resume_tier": "ADAPT_TEMPLATE",
-            "template_id_final": "DE",
-            "c3_decision": "PASS",
-            "tailored_resume": "NOT VALID JSON {{{",
-        },
-    )
-    result = renderer.render_resume("job-1")
-    assert result is not None, "Should fall back to USE_TEMPLATE"
-    copied = Path(result["pdf_path"]).read_bytes()
-    assert copied == b"template-pdf-bytes"
-    assert renderer.db.saved_resume is not None
-    assert renderer.db.saved_resume.template_version == "template_v1"
-
-
-def test_render_adapt_template_missing_slot_schema_falls_back_to_template():
-    tmp_dir = _local_tmp_dir("renderer_no_schema_adapt")
-    renderer = _make_renderer(
-        tmp_dir,
-        {
-            "resume_tier": "ADAPT_TEMPLATE",
-            "template_id_final": "DE",
-            "c3_decision": "PASS",
-            "tailored_resume": json.dumps(
-                {"slot_overrides": {"bio": "X"}, "change_summary": "test"}
-            ),
-        },
-    )
-    del renderer.registry["templates"]["DE"]["slot_schema"]
-    result = renderer.render_resume("job-1")
-    assert result is not None, "Should fall back to USE_TEMPLATE"
-    copied = Path(result["pdf_path"]).read_bytes()
-    assert copied == b"template-pdf-bytes"
-
-
-def test_render_resume_c3_fail_routes_to_template_copy():
-    """ADAPT_TEMPLATE with c3_decision=FAIL should use template copy, not adapt render."""
-    tmp_dir = _local_tmp_dir("renderer_c3_fail")
-    renderer = _make_renderer(
-        tmp_dir,
-        {
-            "resume_tier": "ADAPT_TEMPLATE",
-            "template_id_final": "DE",
-            "c3_decision": "FAIL",
-            "tailored_resume": json.dumps({"slot_overrides": {"bio": "Ignored"}}),
-        },
-    )
-    result = renderer.render_resume("job-1")
-    assert result is not None
-    copied = Path(result["pdf_path"]).read_bytes()
-    assert copied == b"template-pdf-bytes"
-    assert renderer.db.saved_resume is not None
-    assert renderer.db.saved_resume.template_version == "template_v1"
+# Tests for ADAPT_TEMPLATE fallback paths (invalid JSON, missing slot_schema,
+# c3_decision=FAIL) were deleted 2026-04-17: the entire ADAPT_TEMPLATE dispatch
+# is retired. Zone-schema tailored_resume now triggers a re-analyze hint — see
+# tests/test_resume_renderer_full_customize_only.py::test_render_resume_rejects_zone_schema_tailored_json.
 
 
 def test_render_resume_legacy_null_tier_skips_job():
