@@ -135,26 +135,27 @@ def test_apply_tier1_safeguard_keeps_high_confidence_template():
     assert "escalation_reason" not in guarded
 
 
-def test_apply_tier1_safeguard_escalates_ambiguous_low_confidence():
+def test_apply_tier1_safeguard_is_noop_after_2026_04_17_revert():
+    # Post-2026-04-17: USE_TEMPLATE and ADAPT_TEMPLATE are retired; safeguard is pass-through.
     routing = {"resume_tier": "USE_TEMPLATE"}
     guarded = apply_tier1_safeguard(
         routing,
         RoutingDecision("ML", 0.5, ["ml engineer"], True),
     )
 
-    assert guarded["resume_tier"] == "ADAPT_TEMPLATE"
-    assert f"{TIER1_CONFIDENCE_THRESHOLD}" in guarded["escalation_reason"]
+    assert guarded["resume_tier"] == "USE_TEMPLATE"
+    assert "escalation_reason" not in guarded
 
 
-def test_apply_tier1_safeguard_escalates_no_match_default():
+def test_apply_tier1_safeguard_noop_on_low_confidence_no_match():
     routing = {"resume_tier": "USE_TEMPLATE"}
     guarded = apply_tier1_safeguard(
         routing,
         RoutingDecision("DE", 0.3, [], False),
     )
 
-    assert guarded["resume_tier"] == "ADAPT_TEMPLATE"
-    assert "Auto-escalated" in guarded["escalation_reason"]
+    assert guarded["resume_tier"] == "USE_TEMPLATE"
+    assert "escalation_reason" not in guarded
 
 
 def test_apply_tier1_safeguard_ignores_non_tier1_routing():

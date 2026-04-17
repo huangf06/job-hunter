@@ -737,7 +737,7 @@ class AIAnalyzer:
         scoring = parsed.get('scoring', {})
         brief = parsed.get('application_brief', {})
         c1_routing = parsed.get('resume_routing') or {
-            'tier': 'USE_TEMPLATE',
+            'tier': 'FULL_CUSTOMIZE',
             'template_id': code_decision.template_id,
             'override': False,
             'override_reason': None,

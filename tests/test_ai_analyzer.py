@@ -288,12 +288,13 @@ class TestEvaluateResponseParsing:
             override=False,
         )
 
+        # Post-2026-04-17: safeguard is a no-op; tier passes through unchanged.
         result = analyzer.evaluate_job(_make_job(title="ML Platform Engineer"))
 
         assert result.template_id_initial == "ML"
         assert result.routing_confidence == 0.5
-        assert result.resume_tier == "ADAPT_TEMPLATE"
-        assert "Auto-escalated" in result.escalation_reason
+        assert result.resume_tier == "USE_TEMPLATE"
+        assert result.escalation_reason is None
 
 
 # =============================================================================

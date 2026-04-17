@@ -173,12 +173,10 @@ prompts:
     {job_description}
 
     ## Resume Routing Decision
-    We have professionally designed template resumes, human-reviewed through multiple
-    iterations for narrative coherence, visual design, and cross-section resonance.
-    AI-generated alternatives cannot replicate these qualities.
-
-    Principle: when in doubt, use the template. Minor content gaps do not justify
-    replacing a polished template with an AI-generated alternative.
+    After the 2026-04-17 revert, every job is rendered through a per-job customized
+    2-page flow-layout resume. Static PDF copies (USE_TEMPLATE) and zone-compressed
+    single-page variants (ADAPT_TEMPLATE) have been retired because they produced 0
+    interview invitations across 74 applications (2026-04-02 to 2026-04-17).
 
     Available templates:
     {available_templates}
@@ -187,11 +185,10 @@ prompts:
     {ambiguous_warning}
 
     Routing rules:
-    - USE_TEMPLATE: Default. Choose unless hiring manager would question fit at first glance.
-      Acceptable gaps: missing a mentioned technology, different domain emphasis, slightly different experience years.
-    - ADAPT_TEMPLATE: Only when structural positioning mismatch exists: bio positioning is wrong,
-      or more than half the bullets are irrelevant, or skill ordering misrepresents fit.
-    - FULL_CUSTOMIZE: Only when no template is remotely close.
+    - FULL_CUSTOMIZE: ALWAYS use this tier. Bullets are selected from the bullet library
+      per-job by the C2 tailoring prompt; template_id (DE / ML / DS) controls which bullet
+      sequences and skill categories C2 prioritizes.
+    - USE_TEMPLATE, ADAPT_TEMPLATE: RETIRED. Do not emit these values.
 
     ## Output (JSON only, no markdown)
     {{
@@ -210,7 +207,7 @@ prompts:
         "company_connection": "Personal connection to company mission, or null if none"
       }},
       "resume_routing": {{
-        "tier": "USE_TEMPLATE",
+        "tier": "FULL_CUSTOMIZE",
         "template_id": "{preselected_template_id}",
         "override": false,
         "override_reason": null,

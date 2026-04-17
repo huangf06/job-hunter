@@ -87,16 +87,8 @@ def resolve_routing(code_decision: RoutingDecision, c1_routing: Dict) -> Dict:
 
 
 def apply_tier1_safeguard(routing: Dict, code_decision: RoutingDecision) -> Dict:
-    if routing["resume_tier"] != "USE_TEMPLATE":
-        return routing
-
-    if code_decision.confidence < TIER1_CONFIDENCE_THRESHOLD:
-        routing["resume_tier"] = "ADAPT_TEMPLATE"
-        routing["escalation_reason"] = (
-            f"Auto-escalated: code selector confidence {code_decision.confidence:.2f} "
-            f"< threshold {TIER1_CONFIDENCE_THRESHOLD}"
-        )
-
+    # 2026-04-17 revert: USE_TEMPLATE and ADAPT_TEMPLATE retired; every job is
+    # FULL_CUSTOMIZE. Kept as a no-op pass-through for backward compatibility.
     return routing
 
 
