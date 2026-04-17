@@ -81,10 +81,16 @@ def test_backend_template_disabled_falls_through():
     assert decision.confidence == 0.3
 
 
-def test_resolve_routing_prefers_c1_override_with_reason():
+def test_resolve_routing_forces_full_customize_even_when_ai_emits_adapt_template():
+    """Post-2026-04-17 revert: resolve_routing MUST force resume_tier to FULL_CUSTOMIZE
+    regardless of what the AI emits. This is the defensive guard that prevents the
+    USE_TEMPLATE/ADAPT_TEMPLATE regression (82% of post-upgrade apps shipped as
+    byte-identical static PDFs, producing 0 interviews in 77 applications).
+
+    Template override with reason is still honored for template_id selection."""
     code_decision = RoutingDecision("DE", 0.9, ["data engineer"], False)
     c1_routing = {
-        "tier": "ADAPT_TEMPLATE",
+        "tier": "ADAPT_TEMPLATE",  # AI emits retired tier
         "template_id": "ML",
         "override": True,
         "override_reason": "JD is model-heavy",
@@ -94,7 +100,7 @@ def test_resolve_routing_prefers_c1_override_with_reason():
 
     resolved = resolve_routing(code_decision, c1_routing)
 
-    assert resolved["resume_tier"] == "ADAPT_TEMPLATE"
+    assert resolved["resume_tier"] == "FULL_CUSTOMIZE"  # forced
     assert resolved["template_id_initial"] == "DE"
     assert resolved["template_id_final"] == "ML"
     assert resolved["routing_confidence"] == 0.9
@@ -102,10 +108,10 @@ def test_resolve_routing_prefers_c1_override_with_reason():
     assert "routing_payload" in resolved
 
 
-def test_resolve_routing_keeps_code_template_without_valid_override_reason():
+def test_resolve_routing_forces_full_customize_when_ai_emits_use_template():
     code_decision = RoutingDecision("DE", 0.9, ["data engineer"], False)
     c1_routing = {
-        "tier": "USE_TEMPLATE",
+        "tier": "USE_TEMPLATE",  # retired tier from cached AI response
         "template_id": "ML",
         "override": True,
         "override_reason": None,
@@ -115,8 +121,24 @@ def test_resolve_routing_keeps_code_template_without_valid_override_reason():
 
     resolved = resolve_routing(code_decision, c1_routing)
 
-    assert resolved["template_id_final"] == "DE"
+    assert resolved["resume_tier"] == "FULL_CUSTOMIZE"
+    assert resolved["template_id_final"] == "DE"  # no valid override reason → keep code choice
     assert resolved["routing_override_reason"] is None
+
+
+def test_resolve_routing_forces_full_customize_when_tier_missing():
+    code_decision = RoutingDecision("DE", 0.9, ["data engineer"], False)
+    c1_routing = {
+        "template_id": "DE",
+        "override": False,
+        "override_reason": None,
+        "gaps": [],
+        "adapt_instructions": None,
+    }
+
+    resolved = resolve_routing(code_decision, c1_routing)
+
+    assert resolved["resume_tier"] == "FULL_CUSTOMIZE"
 
 
 def test_apply_tier1_safeguard_keeps_high_confidence_template():

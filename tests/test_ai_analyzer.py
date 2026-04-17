@@ -225,7 +225,9 @@ class TestEvaluateResponseParsing:
 
         result = analyzer.evaluate_job(_make_job(title="Data Engineer"))
 
-        assert result.resume_tier == "ADAPT_TEMPLATE"
+        # Post-2026-04-17 revert: resume_tier is forced to FULL_CUSTOMIZE regardless
+        # of what the AI emits. Template override (ML) is still honored.
+        assert result.resume_tier == "FULL_CUSTOMIZE"
         assert result.template_id_initial == "DE"
         assert result.template_id_final == "ML"
         assert result.routing_confidence == 0.9
@@ -259,7 +261,8 @@ class TestEvaluateResponseParsing:
 
         result = analyzer.evaluate_job(_make_job(title="Data Engineer"))
 
-        assert result.resume_tier == "USE_TEMPLATE"
+        # Post-2026-04-17 revert: retired USE_TEMPLATE emission is coerced to FULL_CUSTOMIZE.
+        assert result.resume_tier == "FULL_CUSTOMIZE"
         assert result.template_id_initial == "DE"
         assert result.template_id_final == "DE"
         assert result.routing_override_reason is None
@@ -288,12 +291,12 @@ class TestEvaluateResponseParsing:
             override=False,
         )
 
-        # Post-2026-04-17: safeguard is a no-op; tier passes through unchanged.
+        # Post-2026-04-17: safeguard is a no-op, but resolve_routing forces FULL_CUSTOMIZE.
         result = analyzer.evaluate_job(_make_job(title="ML Platform Engineer"))
 
         assert result.template_id_initial == "ML"
         assert result.routing_confidence == 0.5
-        assert result.resume_tier == "USE_TEMPLATE"
+        assert result.resume_tier == "FULL_CUSTOMIZE"
         assert result.escalation_reason is None
 
 
@@ -321,6 +324,122 @@ class TestTailorResponseParsing:
         parsed = analyzer_cls._parse_response(response)
         assert parsed is not None
         assert parsed["tailored_resume"] == {}
+
+
+class TestBioAssemblyCompanyHook:
+    """Lock down interview-winning signal #1: bio last sentence names the target company.
+
+    All 8 pre-upgrade interview-winning resumes had a company-named closer
+    ("Eager to bring these skills to Source.ag.", etc.). This test ensures the
+    structured bio assembly preserves that behavior under the FULL_CUSTOMIZE flow.
+    """
+
+    def _make_analyzer(self):
+        from src.ai_analyzer import AIAnalyzer
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer._bio_builder = {
+            "allowed_titles": ["Data Engineer", "ML Engineer"],
+            "domain_claims": {
+                "data_pipelines": {"text": "scalable data pipelines and ETL systems"},
+            },
+            "closer_options": {
+                "eager_company": {"text": "Eager to bring these skills to {company}."},
+                "seeking_impact": {"text": "Looking forward to delivering data-driven impact at {company}."},
+                "generic": {"text": "Eager to contribute to a team where data engineering drives real impact."},
+            },
+        }
+        analyzer._bio_constraints = {"max_years_claim": 6, "min_years_claim": 4}
+        analyzer.config = {
+            "resume": {
+                "education": {
+                    "master": {"degree": "M.Sc. in AI", "school": "VU Amsterdam", "date": "-- Aug. 2025", "gpa": "8.2/10"},
+                    "certification": "Databricks Certified Data Engineer Professional (2026)",
+                }
+            }
+        }
+        return analyzer
+
+    def test_eager_company_closer_substitutes_company_name(self):
+        analyzer = self._make_analyzer()
+        bio_spec = {
+            "role_title": "Data Engineer",
+            "years": 6,
+            "domain_claims": ["data_pipelines"],
+            "include_education": True,
+            "include_certification": True,
+            "closer_id": "eager_company",
+        }
+        bio, errors = analyzer._assemble_bio(bio_spec, {"company": "Source.ag"})
+
+        assert errors == []
+        assert bio.endswith("Eager to bring these skills to Source.ag.")
+        assert "{company}" not in bio
+
+    def test_generic_closer_omits_company_name(self):
+        analyzer = self._make_analyzer()
+        bio_spec = {
+            "role_title": "Data Engineer",
+            "years": 6,
+            "domain_claims": ["data_pipelines"],
+            "include_education": False,
+            "include_certification": False,
+            "closer_id": "generic",
+        }
+        bio, errors = analyzer._assemble_bio(bio_spec, {"company": "Hays"})
+
+        assert errors == []
+        assert "Hays" not in bio
+        assert bio.endswith("real impact.")
+
+    def test_null_closer_produces_no_closing_sentence(self):
+        analyzer = self._make_analyzer()
+        bio_spec = {
+            "role_title": "Data Engineer",
+            "years": 6,
+            "domain_claims": ["data_pipelines"],
+            "include_education": False,
+            "include_certification": False,
+            "closer_id": None,
+        }
+        bio, errors = analyzer._assemble_bio(bio_spec, {"company": "Acme"})
+
+        assert errors == []
+        assert "Eager" not in bio
+        assert "Looking forward" not in bio
+
+
+class TestTitleContextPerSection:
+    """Lock down interview-winning signal #2: role titles rotate per experience.
+
+    Pre-upgrade interview resumes used different titles per company (e.g., "Data
+    Engineer & Team Lead" at GLP for DE roles, "ML Engineer and Team Lead" at GLP
+    for ML roles). The title_context feeds the AI a per-company list so it can pick.
+    """
+
+    def test_title_context_lists_each_company_with_its_options(self):
+        from src.ai_analyzer import AIAnalyzer
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer._title_options = {
+            "glp_technology": {"de": "Data Engineer & Team Lead", "ml": "ML Engineer and Team Lead"},
+            "baiquan_investment": {"de": "Quantitative Developer", "ml": "Quantitative Researcher"},
+        }
+
+        context = analyzer._build_title_context()
+
+        assert "Glp Technology" in context
+        assert "Data Engineer & Team Lead" in context
+        assert "ML Engineer and Team Lead" in context
+        assert "Baiquan Investment" in context
+        assert "Quantitative Developer" in context
+
+    def test_title_context_empty_when_no_options(self):
+        from src.ai_analyzer import AIAnalyzer
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer._title_options = {}
+
+        context = analyzer._build_title_context()
+
+        assert "most relevant title" in context.lower()
 
 
 class TestAnalyzeJobFlow:

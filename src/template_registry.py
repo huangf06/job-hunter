@@ -69,6 +69,9 @@ def select_template(title: str, registry: Dict) -> RoutingDecision:
 
 
 def resolve_routing(code_decision: RoutingDecision, c1_routing: Dict) -> Dict:
+    # 2026-04-17 revert: force FULL_CUSTOMIZE. USE_TEMPLATE / ADAPT_TEMPLATE retired
+    # after 82% of post-upgrade applications shipped as byte-identical static PDFs
+    # (0 interviews across 77 applications).
     final_template = code_decision.template_id
     override_reason = None
 
@@ -77,7 +80,7 @@ def resolve_routing(code_decision: RoutingDecision, c1_routing: Dict) -> Dict:
         override_reason = c1_routing["override_reason"]
 
     return {
-        "resume_tier": c1_routing["tier"],
+        "resume_tier": "FULL_CUSTOMIZE",
         "template_id_initial": code_decision.template_id,
         "template_id_final": final_template,
         "routing_confidence": code_decision.confidence,
