@@ -136,17 +136,14 @@ class ResumeRenderer:
                 analysis['template_id_final'] = routing.template_id
                 print(f"[Renderer] Legacy job {job_id}: auto-assigned template {routing.template_id}")
 
-        # Legacy jobs (pre-v3.0) without resume_tier → skip, need re-analysis
+        # 2026-04-17 revert: every resume is FULL_CUSTOMIZE.
+        # - Legacy pre-v3.0 rows (resume_tier=None) with full tailored_resume → FULL_CUSTOMIZE
+        # - Post-upgrade USE_TEMPLATE / ADAPT_TEMPLATE rows → FULL_CUSTOMIZE (zone schema
+        #   detection below blocks rendering if tailored_resume is still slot-based)
         if tier is None:
-            print(f"[Renderer] Skipping legacy job {job_id}: no resume_tier. Run --ai-analyze or --analyze-job {job_id} to re-analyze.")
-            return None
-
-        # 2026-04-17 revert: USE_TEMPLATE (static PDF) and ADAPT_TEMPLATE (zone) are
-        # retired. Legacy tiers stored in pre-revert job_analysis rows are upgraded
-        # to FULL_CUSTOMIZE transparently. If the stored tailored_resume is still
-        # zone-schema (slot_overrides / entry_visibility), rendering is skipped —
-        # the job must be re-analyzed under the new FULL_CUSTOMIZE C2 prompt.
-        if tier in ('USE_TEMPLATE', 'ADAPT_TEMPLATE'):
+            print(f"[Renderer] Legacy job {job_id}: treating as FULL_CUSTOMIZE")
+            tier = 'FULL_CUSTOMIZE'
+        elif tier in ('USE_TEMPLATE', 'ADAPT_TEMPLATE'):
             print(f"[Renderer] Upgrading legacy tier {tier} -> FULL_CUSTOMIZE for {job_id}")
             tier = 'FULL_CUSTOMIZE'
 
@@ -190,10 +187,14 @@ class ResumeRenderer:
         # v3.0: Run post-generation validation (skip volume checks for single-column)
         validation = self.validator.validate(tailored, job, tier=tier)
         if not validation.passed:
-            print(f"[Renderer] Validation FAILED for job: {job_id}, falling back to USE_TEMPLATE")
+            # 2026-04-17 revert: DO NOT fall back to _render_template_copy. Silent
+            # fallback to static PDF is what produced 0 interviews across 77 apps.
+            # Refuse to render and surface the errors — the job needs re-analysis.
+            print(f"[Renderer] Validation FAILED for job: {job_id}, refusing to render")
             for err in validation.errors:
                 print(f"  [ERROR] {err}")
-            return self._render_template_copy(job_id, analysis)
+            print(f"[Renderer] Re-run: python scripts/job_pipeline.py --analyze-job {job_id}")
+            return None
         if validation.warnings:
             print(f"[Renderer] Validation warnings for job: {job_id}")
             for warn in validation.warnings:

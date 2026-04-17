@@ -180,8 +180,10 @@ def test_render_adapt_template_unknown_template_returns_none():
 # tests/test_resume_renderer_full_customize_only.py::test_render_resume_rejects_zone_schema_tailored_json.
 
 
-def test_render_resume_legacy_null_tier_skips_job():
-    """Legacy records with resume_tier=NULL should be skipped (need re-analysis)."""
+def test_render_resume_legacy_null_tier_treated_as_full_customize():
+    """Post-2026-04-17 revert: legacy pre-v3.0 rows (resume_tier=None) with a full
+    tailored_resume payload should render as FULL_CUSTOMIZE. These rows are the
+    interview-winning baseline we're reverting to — they must not be skipped."""
     tmp_dir = _local_tmp_dir("renderer_legacy_null")
     renderer = _make_renderer(
         tmp_dir,
@@ -201,11 +203,15 @@ def test_render_resume_legacy_null_tier_skips_job():
         },
     )
     result = renderer.render_resume("job-1")
-    assert result is None, "Legacy jobs without resume_tier should be skipped"
+    assert result is not None
+    assert Path(result["pdf_path"]).exists()
 
 
-def test_render_resume_validator_failure_falls_back_to_template():
-    """ResumeValidator.validate() failure should fall back to USE_TEMPLATE."""
+def test_render_resume_validator_failure_refuses_to_render():
+    """Post-2026-04-17 revert: validation failure must REFUSE to render, not
+    silently fall back to the static template PDF. Silent fallback is what
+    caused 82% of post-upgrade apps to ship as byte-identical static PDFs
+    (0 interviews / 77 apps). Failed jobs surface errors and require re-analysis."""
     tmp_dir = _local_tmp_dir("renderer_validator_runs")
 
     class _FailingValidator:
@@ -235,9 +241,7 @@ def test_render_resume_validator_failure_falls_back_to_template():
     )
     renderer.validator = _FailingValidator()
     result = renderer.render_resume("job-1")
-    assert result is not None, "Validator failure should fall back to USE_TEMPLATE"
-    copied = Path(result["pdf_path"]).read_bytes()
-    assert copied == b"template-pdf-bytes"
+    assert result is None, "Validator failure must refuse to render (no silent static-PDF fallback)"
 
 
 def test_post_render_qa_blocking_prevents_save():
