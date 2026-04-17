@@ -93,6 +93,16 @@ def apply_tier1_safeguard(routing: Dict, code_decision: RoutingDecision) -> Dict
 
 
 def validate_tier2_output(output: Dict, schema: Dict) -> List[str]:
+    """DEPRECATED 2026-04-17: zone-tier output validation is retired.
+
+    After the tier revert, every resume is FULL_CUSTOMIZE and does not use
+    slot_overrides / entry_visibility / skills_override. An empty or missing
+    schema short-circuits this check. Delete after 2026-05-01 along with the
+    other zone render helpers.
+    """
+    if not schema:
+        return []
+
     errors: List[str] = []
     valid_slots = {"bio", "bio_1", "bio_2", "bio_3"}
     valid_entries = set()

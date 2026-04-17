@@ -689,6 +689,12 @@ class AIAnalyzer:
         return f"{language_guidance}\n\n{prompt_body}"
 
     def _build_tier2_prompt(self, job: Dict, analysis: Dict, c1_routing: Dict) -> str:
+        """DEPRECATED 2026-04-17: ADAPT_TEMPLATE zone prompt is retired.
+
+        Not reachable from tailor_resume() for new jobs — C1 prompt now always
+        emits tier=FULL_CUSTOMIZE. Retained only to avoid import breakage on
+        legacy code paths; delete after 2026-05-01.
+        """
         prompt_template = self.config.get('prompts', {}).get('tailor_adapt', '')
         if not prompt_template:
             raise ValueError("No tailor_adapt prompt template found in config")
@@ -700,7 +706,12 @@ class AIAnalyzer:
         if len(jd_full) > jd_max:
             print(f"    [INFO] JD truncated from {len(jd_full)} to {jd_max} chars")
         template_id = analysis.get('template_id_final')
-        schema = self.registry['templates'][template_id]['slot_schema']
+        schema = self.registry['templates'][template_id].get('slot_schema', {})
+        if not schema:
+            raise ValueError(
+                f"slot_schema missing for template {template_id}; ADAPT_TEMPLATE "
+                f"tier retired 2026-04-17. Re-run analyze-job to regenerate as FULL_CUSTOMIZE."
+            )
 
         return prompt_template.format(
             job_title=(job.get('title') or '').replace('{', '{{').replace('}', '}}'),
@@ -795,7 +806,8 @@ class AIAnalyzer:
             return None
 
         if tier == 'ADAPT_TEMPLATE':
-            errors = validate_tier2_output(parsed, self.registry['templates'][analysis['template_id_final']]['slot_schema'])
+            schema = self.registry['templates'][analysis['template_id_final']].get('slot_schema', {})
+            errors = validate_tier2_output(parsed, schema)
             if errors:
                 for error in errors:
                     print(f"    [TIER2 VALIDATION] {error}")
@@ -900,8 +912,12 @@ class AIAnalyzer:
         return "\n".join(lines)
 
     def run_c3_gate(self, analysis: AnalysisResult, c1_routing: Dict, job: Dict) -> Dict:
+        """DEPRECATED 2026-04-17: C3 gate applied only to ADAPT_TEMPLATE.
+        Retired along with the zone tier; delete after 2026-05-01."""
         template_id = analysis.template_id_final
-        schema = self.registry['templates'][template_id]['slot_schema']
+        schema = self.registry['templates'][template_id].get('slot_schema', {})
+        if not schema:
+            return {'decision': 'PASS', 'confidence': 1.0, 'reason': 'C3 gate retired 2026-04-17; auto-pass'}
         c2_output = json.loads(analysis.tailored_resume or '{}')
         reasoning_data = json.loads(analysis.reasoning or '{}')
         brief = reasoning_data.get('application_brief', {})

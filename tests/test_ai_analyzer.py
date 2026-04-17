@@ -464,28 +464,29 @@ class TestAnalyzeJobFlow:
         assert len(saved_results) == 1
 
 
-def test_build_tier2_prompt_preserves_template_schema_json():
+def test_build_tier2_prompt_raises_after_2026_04_17_revert():
+    """After 2026-04-17 revert: slot_schema is removed from the registry and
+    _build_tier2_prompt is dead code — it raises with a re-analyze hint. New
+    C1 routing always emits tier=FULL_CUSTOMIZE so this function is not called
+    in the normal path."""
+    import pytest
+
     from src.ai_analyzer import AIAnalyzer
     from src.template_registry import load_registry
 
     analyzer = AIAnalyzer.__new__(AIAnalyzer)
     analyzer.config = {
-        "prompts": {
-            "tailor_adapt": "SCHEMA:\n{template_schema}\nGAPS:{routing_gaps}\nINST:{adapt_instructions}"
-        },
+        "prompts": {"tailor_adapt": "SCHEMA:\n{template_schema}"},
         "prompt_settings": {"job_description_max_chars": 10000},
     }
     analyzer.registry = load_registry()
 
-    prompt = analyzer._build_tier2_prompt(
-        _make_job(title="Data Engineer"),
-        {"template_id_final": "DE"},
-        {"gaps": ["gap a"], "adapt_instructions": "Keep {named} slot stable"},
-    )
-
-    assert '"slot_id": "bio"' in prompt
-    assert '{{"slot_id"' not in prompt
-    assert 'Keep {{named}} slot stable' in prompt
+    with pytest.raises(ValueError, match="slot_schema missing"):
+        analyzer._build_tier2_prompt(
+            _make_job(title="Data Engineer"),
+            {"template_id_final": "DE"},
+            {"gaps": [], "adapt_instructions": ""},
+        )
 
 
 def test_analyze_batch_does_not_double_save_analysis():

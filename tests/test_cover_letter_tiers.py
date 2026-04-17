@@ -20,7 +20,11 @@ def test_get_resume_context_for_cl_use_template():
     assert "Application Brief: Data platform fit" in context
 
 
-def test_get_resume_context_for_cl_adapt_template_pass():
+def test_get_resume_context_for_cl_adapt_template_pass_falls_back_without_schema():
+    """After 2026-04-17 revert: slot_schema is gone from registry, so legacy
+    ADAPT_TEMPLATE rows with c3_decision=PASS no longer hydrate slot_overrides.
+    They fall through to the lightweight template context instead (same as
+    USE_TEMPLATE) — the row should really be re-analyzed as FULL_CUSTOMIZE."""
     registry = load_registry()
     row = {
         "resume_tier": "ADAPT_TEMPLATE",
@@ -28,9 +32,7 @@ def test_get_resume_context_for_cl_adapt_template_pass():
         "c3_decision": "PASS",
         "tailored_resume": json.dumps(
             {
-                "slot_overrides": {"bio": "Custom ML bio", "glp_1": "New GLP bullet"},
-                "skills_override": {"programming": "Python, SQL, Julia"},
-                "entry_visibility": {"expedia": False},
+                "slot_overrides": {"bio": "Custom ML bio"},
                 "change_summary": "Adapted for ML role",
             }
         ),
@@ -39,9 +41,10 @@ def test_get_resume_context_for_cl_adapt_template_pass():
 
     context = get_resume_context_for_cl(row, registry)
 
-    assert "Custom ML bio" in context
-    assert "New GLP bullet" in context
-    assert "Python, SQL, Julia" in context
+    # Slot overrides are NOT hydrated — schema is gone
+    assert "Custom ML bio" not in context
+    # Falls through to template positioning / strengths
+    assert "Template Positioning: ML Engineer / Data Scientist" in context
     assert "Application Brief: Applied ML depth" in context
 
 

@@ -13,29 +13,24 @@ from src.template_registry import (
 )
 
 
-def test_load_registry_has_required_templates_and_unique_slot_ids():
+def test_load_registry_has_required_templates_and_role_metadata():
+    """After 2026-04-17 revert: registry only keeps role-framing metadata
+    (target_roles, bio_positioning, key_strengths). slot_schema is retired."""
     registry = load_registry()
 
     assert set(registry["templates"]) >= {"DE", "ML", "Backend"}
 
     for template_id in ("DE", "ML", "Backend"):
         template = registry["templates"][template_id]
-        assert "slot_schema" in template
-        assert "bio" in template["slot_schema"]
-        assert "sections" in template["slot_schema"]
-
-        slot_ids = {"bio"}
-        for section in template["slot_schema"]["sections"]:
-            for entry in section.get("entries", []):
-                assert "entry_id" in entry
-                for bullet in entry.get("bullets", []):
-                    assert "slot_id" in bullet
-                    assert "default" in bullet
-                    assert bullet["slot_id"] not in slot_ids
-                    slot_ids.add(bullet["slot_id"])
-            for category in section.get("categories", []):
-                assert "cat_id" in category
-                assert "default" in category
+        assert "target_roles" in template
+        assert isinstance(template["target_roles"], list)
+        assert template["target_roles"], f"{template_id} target_roles must be non-empty"
+        assert "bio_positioning" in template
+        assert isinstance(template["bio_positioning"], str)
+        assert "key_strengths" in template
+        assert isinstance(template["key_strengths"], list)
+        # slot_schema must be gone
+        assert "slot_schema" not in template, f"{template_id} still has retired slot_schema"
 
 
 def test_load_registry_uses_repo_config_file():
@@ -169,10 +164,10 @@ def test_apply_tier1_safeguard_ignores_non_tier1_routing():
     assert "escalation_reason" not in guarded
 
 
-def test_validate_tier2_output_rejects_unknown_ids():
-    registry = load_registry()
-    schema = registry["templates"]["DE"]["slot_schema"]
-
+def test_validate_tier2_output_is_noop_without_schema():
+    """After 2026-04-17 revert: validate_tier2_output short-circuits when schema
+    is missing or empty. The zone-era behavior (rejecting unknown slot IDs) is
+    retired alongside slot_schema itself."""
     errors = validate_tier2_output(
         {
             "slot_overrides": {"unknown_slot": "bad"},
@@ -180,10 +175,6 @@ def test_validate_tier2_output_rejects_unknown_ids():
             "entry_visibility": {"unknown_entry": False},
             "change_summary": "",
         },
-        schema,
+        {},  # empty schema — post-revert default
     )
-
-    assert any("Unknown slot" in error for error in errors)
-    assert any("Unknown skill category" in error for error in errors)
-    assert any("Unknown entry" in error for error in errors)
-    assert any("Missing change_summary" in error for error in errors)
+    assert errors == []

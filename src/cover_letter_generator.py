@@ -63,8 +63,13 @@ def _build_template_context(template_id: str, registry: Dict, brief_text: str) -
 
 
 def _merge_slot_schema(template_id: str, registry: Dict, tailored_resume: str, brief_text: str) -> str:
+    """DEPRECATED 2026-04-17: zone slot-merge path is retired.
+    Returns the same lightweight template context as USE_TEMPLATE when schema is
+    absent, so legacy ADAPT_TEMPLATE rows don't crash. Delete after 2026-05-01."""
     template = registry["templates"][template_id]
-    schema = template["slot_schema"]
+    schema = template.get("slot_schema")
+    if not schema:
+        return _build_template_context(template_id, registry, brief_text)
     payload = json.loads(tailored_resume or "{}")
     slot_overrides = payload.get("slot_overrides", {})
     skills_override = payload.get("skills_override", {})

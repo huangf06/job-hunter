@@ -319,55 +319,9 @@ def test_render_full_customize_uses_build_output_paths():
     assert str(renderer.ready_dir) in saved.submit_dir
 
 
-def test_base_template_de_renders_with_standard_context():
-    """Zone-based base_template_DE.html should render with bio, skills, and per-entry skills."""
-    env = Environment(loader=FileSystemLoader(str(Path("templates").resolve())), autoescape=True)
-    template = env.get_template("base_template_DE.html")
-
-    html = template.render(
-        bio_1='Data Engineer with 6+ years of experience building data platforms across e-commerce and credit risk.',
-        bio_2='Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up.',
-        bio_3='M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on Spark and Delta Lake.',
-        glp_skills="Python, SQL, AWS, Redshift, Airflow, Docker",
-        bq_skills="Python, SQL, MATLAB, Data Quality",
-        ele_skills="Python, SQL, Hadoop, Hive, Tableau",
-        skills=[
-            {"category": "Programming", "skills_list": "Python, SQL, Bash"},
-            {"category": "Data Engineering", "skills_list": "PySpark, Spark, Delta Lake"},
-        ],
-    )
-    assert "Fei Huang" in html
-    assert "GLP Technology" in html
-    assert "Vrije Universiteit Amsterdam" in html
-    assert "Data Engineer with 6+ years" in html
-    assert "M.Sc. in Artificial Intelligence" in html
-    assert "Python, SQL, AWS" in html
-    assert "PySpark, Spark, Delta Lake" in html
-
-
-def test_base_template_ml_renders_with_standard_context():
-    """Zone-based base_template_ML.html should render with bio, skills, and per-entry skills."""
-    env = Environment(loader=FileSystemLoader(str(Path("templates").resolve())), autoescape=True)
-    template = env.get_template("base_template_ML.html")
-
-    html = template.render(
-        bio_1='Machine Learning Engineer with an M.Sc. in AI (GPA 8.2) and 6 years building prediction.',
-        bio_2='Strengths in feature engineering, model evaluation, and end-to-end ML pipelines.',
-        bio_3='From raw data through production deployment.',
-        glp_skills="Python, SQL, PySpark, Feature Engineering",
-        bq_skills="Python, SQL, NumPy, pandas, Statistical Modeling",
-        ele_skills="Python, SQL, Clustering, Anomaly Detection",
-        skills=[
-            {"category": "ML & Modeling", "skills_list": "PyTorch, scikit-learn"},
-            {"category": "Programming", "skills_list": "Python, SQL, Bash"},
-        ],
-    )
-    assert "Fei Huang" in html
-    assert "GLP Technology" in html
-    assert "Uncertainty Quantification" in html
-    assert "Machine Learning Engineer" in html
-    assert "Python, SQL, PySpark" in html
-    assert "PyTorch, scikit-learn" in html
+# Retired 2026-04-17: base_template_DE/ML/DS.html zone tests removed.
+# Zone HTML templates moved to templates/archive/zone_templates_2026-04-17/.
+# Active rendering coverage lives in test_resume_renderer_full_customize_only.py.
 
 
 def test_render_batch_mixed_tiers():
@@ -612,38 +566,5 @@ def test_schema_to_context_slot_override_bio_lines():
     assert context["bio_3"] == "Custom line three."
 
 
-def test_adapt_template_perline_bio_end_to_end():
-    """Full ADAPT_TEMPLATE render with per-line bio should produce HTML with all 3 bio lines."""
-    from jinja2 import Environment, FileSystemLoader
-
-    env = Environment(loader=FileSystemLoader(str(Path("templates").resolve())), autoescape=True)
-    template = env.get_template("base_template_DE.html")
-
-    bio_1 = "Data Engineer with 6+ years of experience building data platforms across e-commerce and credit risk."
-    bio_2 = "Built end-to-end ingestion, warehousing, data quality, and decisioning systems from the ground up."
-    bio_3 = "M.Sc. in Artificial Intelligence. Certified Data Engineer with hands-on Spark and Delta Lake."
-
-    assert len(bio_1) <= 105
-    assert len(bio_2) <= 105
-    assert len(bio_3) <= 105
-
-    html = template.render(
-        bio_1=bio_1, bio_2=bio_2, bio_3=bio_3,
-        glp_skills="Python, SQL, AWS, Redshift, Airflow, Docker",
-        bq_skills="Python, SQL, MATLAB, Data Quality",
-        ele_skills="Python, SQL, Hadoop, Hive, Tableau",
-        skills=[
-            {"category": "Programming", "skills_list": "Python, SQL, Bash"},
-            {"category": "Data Engineering", "skills_list": "PySpark, Spark, Delta Lake, Databricks, Airflow"},
-            {"category": "Infrastructure", "skills_list": "AWS, Docker, Git, CI/CD"},
-            {"category": "Analytics & ML", "skills_list": "Pandas, NumPy, scikit-learn, PyTorch"},
-        ],
-    )
-
-    assert bio_1 in html
-    assert bio_2 in html
-    assert bio_3 in html
-    assert '<span class="bio">' not in html
-    assert "Python, SQL, AWS" in html
-    assert "PySpark, Spark, Delta Lake" in html
-    assert "text-overflow:ellipsis" in html
+# Retired 2026-04-17: ADAPT_TEMPLATE per-line bio end-to-end test removed.
+# Zone template path is no longer reachable from render_resume().
