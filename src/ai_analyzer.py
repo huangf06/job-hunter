@@ -41,11 +41,12 @@ class QuotaExhaustedError(Exception):
 class AIAnalyzer:
     """AI 驱动的职位分析和简历定制"""
 
-    DEFAULT_EXPERIENCE_KEYS = ['glp_technology', 'baiquan_investment', 'eleme', 'henan_energy']
+    DEFAULT_EXPERIENCE_KEYS = ['glp_technology', 'independent_investor', 'baiquan_investment', 'eleme', 'henan_energy']
     DEFAULT_PROJECT_KEYS = [
-        'financial_data_lakehouse', 'thesis_uq_rl', 'nlp_projects',
-        'expedia_recommendation', 'ml4qs', 'deribit_options',
-        'graphsage_gnn', 'obama_tts', 'lifeos', 'job_hunter_automation',
+        'thesis_uq_rl', 'nlp_projects', 'expedia_recommendation', 'ml4qs',
+        'graphsage_gnn', 'evolutionary_robotics_research', 'sequence_analysis',
+        'deep_learning_fundamentals', 'financial_data_lakehouse',
+        'greenhouse_sensor_pipeline', 'deribit_options', 'lifeos', 'job_hunter_automation',
     ]
 
     def __init__(self, config_path: Path = None):
