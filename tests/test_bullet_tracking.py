@@ -115,3 +115,71 @@ class TestBulletConversionView:
         assert len(rows) == 1
         assert rows[0]["times_got_interview"] == 0
         assert rows[0]["interview_rate"] == 0.0
+
+
+class TestBulletUsageRecording:
+    def test_resolve_records_usage(self, db):
+        """When _resolve_bullet_ids runs with job_id, it records bullet_usage rows."""
+        import hashlib
+        from unittest.mock import MagicMock
+        from src.ai_analyzer import AIAnalyzer
+
+        # Insert a job so FK constraint is satisfied
+        db.execute(
+            "INSERT INTO jobs (id, source, url, title, company, scraped_at) VALUES (?, 'test', 'https://x.com/1', 'DE', 'Co', datetime('now'))",
+            ("job-001",),
+        )
+
+        bullet_content = "Designed and implemented PySpark ETL pipelines."
+        bullet_hash = hashlib.sha256(bullet_content.encode()).hexdigest()[:16]
+
+        mock_analyzer = MagicMock(spec=AIAnalyzer)
+        mock_analyzer.bullet_id_lookup = {"glp_pyspark": bullet_content}
+        mock_analyzer.bullet_id_hashes = {"glp_pyspark": bullet_hash}
+        mock_analyzer.valid_bullets = {bullet_content}
+        mock_analyzer.db = db
+        mock_analyzer._library_version.return_value = "v6.0"
+        mock_analyzer._record_bullet_usage = AIAnalyzer._record_bullet_usage.__get__(mock_analyzer, AIAnalyzer)
+        mock_analyzer._resolve_bullet_ids = AIAnalyzer._resolve_bullet_ids.__get__(mock_analyzer, AIAnalyzer)
+
+        tailored = {
+            "experiences": [{"company": "GLP", "bullets": ["glp_pyspark"]}],
+            "projects": [],
+        }
+
+        result, errors = mock_analyzer._resolve_bullet_ids(tailored, job_id="job-001")
+
+        # Verify bullet text resolved
+        assert result["experiences"][0]["bullets"] == [bullet_content]
+        assert len(errors) == 0
+
+        # Verify bullet_usage was recorded
+        rows = db.execute("SELECT * FROM bullet_usage WHERE job_id = 'job-001'")
+        assert len(rows) == 1
+        assert rows[0]["bullet_id"] == "glp_pyspark"
+        assert rows[0]["content_hash"] == bullet_hash
+        assert rows[0]["section"] == "experience"
+
+        # Verify bullet_versions was upserted
+        vers = db.execute("SELECT * FROM bullet_versions WHERE bullet_id = 'glp_pyspark'")
+        assert len(vers) == 1
+        assert vers[0]["library_version"] == "v6.0"
+
+    def test_resolve_without_job_id_no_recording(self, db):
+        """When job_id is None, no recording happens (backward compat)."""
+        from unittest.mock import MagicMock
+        from src.ai_analyzer import AIAnalyzer
+
+        mock_analyzer = MagicMock(spec=AIAnalyzer)
+        mock_analyzer.bullet_id_lookup = {"b1": "text"}
+        mock_analyzer.bullet_id_hashes = {"b1": "hash1"}
+        mock_analyzer.valid_bullets = {"text"}
+        mock_analyzer.db = db
+        mock_analyzer._resolve_bullet_ids = AIAnalyzer._resolve_bullet_ids.__get__(mock_analyzer, AIAnalyzer)
+
+        tailored = {"experiences": [{"company": "X", "bullets": ["b1"]}], "projects": []}
+        result, errors = mock_analyzer._resolve_bullet_ids(tailored)
+
+        # No recording
+        rows = db.execute("SELECT * FROM bullet_usage")
+        assert len(rows) == 0

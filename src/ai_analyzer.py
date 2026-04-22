@@ -55,6 +55,7 @@ class AIAnalyzer:
         self.bullet_library = self._load_bullet_library()
         self.valid_bullets = self._extract_valid_bullets()
         self.bullet_id_lookup = self._build_bullet_id_lookup()
+        self.bullet_id_hashes = self._build_bullet_id_hashes()
         self.validator = ResumeValidator()
         print(f"[AI Analyzer] Claude Code CLI mode")
         print(f"[AI Analyzer] Loaded {len(self.bullet_id_lookup)} bullet IDs")
@@ -239,6 +240,14 @@ class AIAnalyzer:
 
         return lookup
 
+    def _build_bullet_id_hashes(self) -> Dict[str, str]:
+        """Build mapping of bullet ID -> SHA-256 content hash (first 16 chars)."""
+        import hashlib
+        return {
+            bid: hashlib.sha256(content.encode()).hexdigest()[:16]
+            for bid, content in self.bullet_id_lookup.items()
+        }
+
     def _build_skill_context(self, job_description: str) -> str:
         """Build dynamic skill context for the AI prompt based on JD."""
         if not self._skill_tiers:
@@ -328,7 +337,7 @@ class AIAnalyzer:
 
         return '\n'.join(lines)
 
-    def _resolve_bullet_ids(self, tailored: Dict) -> tuple:
+    def _resolve_bullet_ids(self, tailored: Dict, job_id: str = None) -> tuple:
         """Resolve bullet IDs to verified text from library.
 
         Returns (tailored_with_text, errors). Unknown IDs are skipped (not
@@ -337,6 +346,7 @@ class AIAnalyzer:
         Also accepts exact text matches for backward compatibility.
         """
         errors = []
+        usage_log = []
 
         for exp in (tailored.get('experiences') or []):
             company = exp.get('company', 'Unknown')
@@ -354,6 +364,12 @@ class AIAnalyzer:
                     text = self.bullet_id_lookup[bullet]
                     if text not in resolved:
                         resolved.append(text)
+                        usage_log.append({
+                            'bullet_id': bullet,
+                            'content_hash': self.bullet_id_hashes.get(bullet, ''),
+                            'section': 'experience',
+                            'position': len(resolved) - 1,
+                        })
                 elif bullet in self.valid_bullets:
                     # Backward compat: AI returned exact text from library
                     if bullet not in resolved:
@@ -378,6 +394,12 @@ class AIAnalyzer:
                     text = self.bullet_id_lookup[bullet]
                     if text not in resolved:
                         resolved.append(text)
+                        usage_log.append({
+                            'bullet_id': bullet,
+                            'content_hash': self.bullet_id_hashes.get(bullet, ''),
+                            'section': 'project',
+                            'position': len(resolved) - 1,
+                        })
                 elif bullet in self.valid_bullets:
                     if bullet not in resolved:
                         resolved.append(bullet)
@@ -385,7 +407,45 @@ class AIAnalyzer:
                     errors.append(f"[{name}] Unknown bullet ID or text: '{bullet[:80]}'")
             proj['bullets'] = resolved
 
+        if job_id and usage_log:
+            self._record_bullet_usage(job_id, usage_log)
+
         return tailored, errors
+
+    def _record_bullet_usage(self, job_id: str, usage_log: list):
+        """Record which bullets were used for a job (append-only)."""
+        import uuid
+        for entry in usage_log:
+            bid = entry['bullet_id']
+            chash = entry['content_hash']
+            content = self.bullet_id_lookup.get(bid, '')
+            try:
+                self.db.execute(
+                    "INSERT OR IGNORE INTO bullet_versions (bullet_id, content_hash, content, library_version) VALUES (?, ?, ?, ?)",
+                    (bid, chash, content, self._library_version()),
+                )
+                self.db.execute(
+                    "INSERT OR IGNORE INTO bullet_usage (id, job_id, bullet_id, content_hash, section, position) VALUES (?, ?, ?, ?, ?, ?)",
+                    (str(uuid.uuid4())[:8], job_id, bid, chash, entry['section'], entry['position']),
+                )
+            except Exception as e:
+                print(f"    [TRACK WARN] Failed to record bullet usage: {e}")
+
+    def _library_version(self) -> str:
+        """Extract library version from YAML header comment."""
+        lib_path = PROJECT_ROOT / "assets" / "bullet_library.yaml"
+        try:
+            with open(lib_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if 'VERIFIED BULLET LIBRARY' in line and 'v' in line.lower():
+                        m = re.search(r'v(\d+\.\d+)', line)
+                        if m:
+                            return f"v{m.group(1)}"
+                    if not line.startswith('#'):
+                        break
+        except Exception:
+            pass
+        return "unknown"
 
     def _inject_technical_skills(self, tailored: Dict):
         """Inject per-experience technical_skills from bullet library (static data).
@@ -819,7 +879,7 @@ class AIAnalyzer:
             print(f"  [WARN] C2 no tailored_resume in response for {job_id}")
             return None
 
-        tailored, bullet_errors = self._resolve_bullet_ids(tailored)
+        tailored, bullet_errors = self._resolve_bullet_ids(tailored, job_id=job_id)
         self._inject_technical_skills(tailored)
         if bullet_errors:
             for err in bullet_errors:
@@ -1059,7 +1119,7 @@ class AIAnalyzer:
         tailored = parsed.get('tailored_resume') or {}
 
         # Resolve bullet IDs to verified text (skip unknown, keep valid)
-        tailored, bullet_errors = self._resolve_bullet_ids(tailored)
+        tailored, bullet_errors = self._resolve_bullet_ids(tailored, job_id=job_id)
         # Inject per-experience technical_skills from bullet library (static, not AI-generated)
         self._inject_technical_skills(tailored)
         rejection_reason = ''
