@@ -66,3 +66,52 @@ class TestBulletTrackingSchema:
         )
         rows = db.execute("SELECT * FROM bullet_versions WHERE bullet_id = ?", ("b1",))
         assert len(rows) == 1
+
+
+class TestBulletConversionView:
+    def test_view_exists(self, db):
+        rows = db.execute("SELECT name FROM sqlite_master WHERE type='view' AND name='v_bullet_conversion'")
+        assert len(rows) == 1
+
+    def test_view_computes_conversion(self, db):
+        # Setup: 2 jobs, 1 with interview
+        for jid, url in [("j1", "https://a.com/1"), ("j2", "https://a.com/2")]:
+            db.execute(
+                "INSERT INTO jobs (id, source, url, title, company, scraped_at) VALUES (?, 'test', ?, 'DE', 'Co', datetime('now'))",
+                (jid, url),
+            )
+        h = "abc123"
+        db.execute(
+            "INSERT INTO bullet_versions (bullet_id, content_hash, content, library_version) VALUES (?, ?, ?, ?)",
+            ("glp_pyspark", h, "text", "v6.0"),
+        )
+        db.execute("INSERT INTO bullet_usage (id, job_id, bullet_id, content_hash, section, position) VALUES (?, ?, ?, ?, ?, ?)",
+                   ("u1", "j1", "glp_pyspark", h, "experience", 0))
+        db.execute("INSERT INTO bullet_usage (id, job_id, bullet_id, content_hash, section, position) VALUES (?, ?, ?, ?, ?, ?)",
+                   ("u2", "j2", "glp_pyspark", h, "experience", 0))
+        # j1 got an interview
+        db.execute(
+            "INSERT INTO interview_rounds (id, job_id, round_number, round_type, status) VALUES (?, ?, ?, ?, ?)",
+            ("ir1", "j1", 1, "hr", "completed"),
+        )
+        rows = db.execute("SELECT * FROM v_bullet_conversion WHERE bullet_id = 'glp_pyspark'")
+        assert len(rows) == 1
+        assert rows[0]["times_used"] == 2
+        assert rows[0]["times_got_interview"] == 1
+        assert rows[0]["interview_rate"] == 50.0
+
+    def test_view_zero_interviews(self, db):
+        db.execute(
+            "INSERT INTO jobs (id, source, url, title, company, scraped_at) VALUES ('j3', 'test', 'https://b.com/1', 'DE', 'Co2', datetime('now'))",
+        )
+        h = "def456"
+        db.execute(
+            "INSERT INTO bullet_versions (bullet_id, content_hash, content, library_version) VALUES (?, ?, ?, ?)",
+            ("bq_pipeline", h, "text2", "v6.0"),
+        )
+        db.execute("INSERT INTO bullet_usage (id, job_id, bullet_id, content_hash, section, position) VALUES (?, ?, ?, ?, ?, ?)",
+                   ("u3", "j3", "bq_pipeline", h, "experience", 0))
+        rows = db.execute("SELECT * FROM v_bullet_conversion WHERE bullet_id = 'bq_pipeline'")
+        assert len(rows) == 1
+        assert rows[0]["times_got_interview"] == 0
+        assert rows[0]["interview_rate"] == 0.0

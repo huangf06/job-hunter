@@ -685,6 +685,29 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                 if statement:
                     conn.execute(statement)
 
+            # Bullet conversion analytics view
+            conn.execute("DROP VIEW IF EXISTS v_bullet_conversion")
+            conn.execute("""
+                CREATE VIEW v_bullet_conversion AS
+                SELECT
+                    bu.bullet_id,
+                    bv.library_version,
+                    bu.content_hash,
+                    COUNT(DISTINCT bu.job_id) as times_used,
+                    COUNT(DISTINCT ir.job_id) as times_got_interview,
+                    ROUND(
+                        COUNT(DISTINCT ir.job_id) * 100.0 / MAX(COUNT(DISTINCT bu.job_id), 1),
+                        1
+                    ) as interview_rate,
+                    bv.content
+                FROM bullet_usage bu
+                JOIN bullet_versions bv
+                    ON bu.bullet_id = bv.bullet_id AND bu.content_hash = bv.content_hash
+                LEFT JOIN interview_rounds ir ON bu.job_id = ir.job_id
+                GROUP BY bu.bullet_id, bu.content_hash
+                ORDER BY interview_rate DESC, times_used DESC
+            """)
+
     @staticmethod
     def _load_view_thresholds() -> Dict[str, float]:
         """Load thresholds from config files for DB views.
