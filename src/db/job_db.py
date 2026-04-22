@@ -494,6 +494,43 @@ class JobDatabase:
         PRIMARY KEY (profile, query)
     );
 
+    -- Interview rounds tracking
+    CREATE TABLE IF NOT EXISTS interview_rounds (
+        id              TEXT PRIMARY KEY,
+        job_id          TEXT NOT NULL REFERENCES jobs(id),
+        round_number    INTEGER NOT NULL,
+        round_type      TEXT NOT NULL,
+        scheduled_date  TEXT,
+        completed_date  TEXT,
+        status          TEXT NOT NULL,
+        notes           TEXT,
+        interviewer_name TEXT,
+        duration_minutes INTEGER,
+        created_at      TEXT DEFAULT (datetime('now')),
+        updated_at      TEXT DEFAULT (datetime('now'))
+    );
+
+    -- Bullet version tracking (append-only history)
+    CREATE TABLE IF NOT EXISTS bullet_versions (
+        bullet_id    TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        content      TEXT NOT NULL,
+        library_version TEXT,
+        first_seen   TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (bullet_id, content_hash)
+    );
+
+    -- Per-resume bullet usage log
+    CREATE TABLE IF NOT EXISTS bullet_usage (
+        id           TEXT PRIMARY KEY,
+        job_id       TEXT NOT NULL REFERENCES jobs(id),
+        bullet_id    TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        section      TEXT NOT NULL,
+        position     INTEGER,
+        created_at   TEXT DEFAULT (datetime('now'))
+    );
+
     -- 索引
     CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company);
     CREATE INDEX IF NOT EXISTS idx_jobs_source ON jobs(source);
@@ -504,6 +541,8 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
     CREATE INDEX IF NOT EXISTS idx_job_analysis_score ON job_analysis(ai_score);
     CREATE INDEX IF NOT EXISTS idx_job_analysis_recommendation ON job_analysis(recommendation);
     CREATE INDEX IF NOT EXISTS idx_cover_letters_job ON cover_letters(job_id);
+    CREATE INDEX IF NOT EXISTS idx_bullet_usage_job ON bullet_usage(job_id);
+    CREATE INDEX IF NOT EXISTS idx_bullet_usage_bullet ON bullet_usage(bullet_id);
     """
 
     # 视图定义 (template — thresholds filled from config at init time)
