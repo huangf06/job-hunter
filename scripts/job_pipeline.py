@@ -913,6 +913,8 @@ def main():
                         help='Update application status (rejected/interview/offer)')
     parser.add_argument('--tracker', action='store_true',
                         help='Show application tracker (status breakdown)')
+    parser.add_argument('--bullet-analytics', action='store_true',
+                        help='Show bullet library conversion analytics')
     parser.add_argument('--reprocess', action='store_true',
                         help='Clear old filter results and reprocess all jobs with new rules')
     parser.add_argument('--retry-failures', action='store_true',
@@ -1029,7 +1031,7 @@ def main():
     if args.process or args.import_only or args.filter or args.ready \
        or args.ai_analyze or args.ai_evaluate or args.ai_tailor or args.generate or args.analyze_job \
        or args.stats or args.template_stats or args.mark_applied or args.mark_all_applied \
-       or args.update_status or args.tracker \
+       or args.update_status or args.tracker or args.bullet_analytics \
        or args.cover_letter or args.cover_letters \
        or args.prepare or args.finalize or args.repair or args.archive \
        or args.schedule_interview or args.suggest_availability:
@@ -1184,6 +1186,27 @@ def main():
                     print(f"  [{j.get('score', 0):.1f}] {j['company']:25s} | {j['title'][:40]}  ({j['days_since']}d)")
                 if len(stale) > 15:
                     print(f"  ... and {len(stale) - 15} more")
+
+        elif args.bullet_analytics:
+            rows = pipeline.db.execute(
+                "SELECT * FROM v_bullet_conversion ORDER BY interview_rate DESC, times_used DESC"
+            )
+            if not rows:
+                print("No bullet usage data. Run scripts/backfill_bullet_usage.py first.")
+            else:
+                print("\n=== Bullet Conversion Analytics ===")
+                print(f"{'Bullet ID':<30} {'Ver':<6} {'Used':>5} {'Interviews':>11} {'Rate':>6}")
+                print("-" * 65)
+                for r in rows:
+                    print(
+                        f"{r['bullet_id']:<30} {r['library_version'] or '?':<6} "
+                        f"{r['times_used']:>5} {r['times_got_interview']:>11} "
+                        f"{r['interview_rate']:>5.1f}%"
+                    )
+                total_bullets = len(rows)
+                total_usage = sum(r["times_used"] for r in rows)
+                total_interviews = sum(r["times_got_interview"] for r in rows)
+                print(f"\n{total_bullets} unique bullet versions, {total_usage} total usages, {total_interviews} interview-linked")
 
         # Final sync: push all accumulated writes to Turso remote.
         # In "startup_only" mode this is the ONLY push; in "full" mode it's a
