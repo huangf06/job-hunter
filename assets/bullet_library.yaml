@@ -1,41 +1,20 @@
 # =============================================================================
-# VERIFIED BULLET LIBRARY v5.0 — Cleanup & Narrative Enforcement (2026-03-31)
+# VERIFIED BULLET LIBRARY v6.0 — Interview-Data Rewrite (2026-04-22)
 # =============================================================================
 # Single source of truth for resume content. Each bullet reflects real work.
 # System consumes: id + content per bullet. All other fields are structural.
 #
-# v3.0 CHANGES:
-#   - All bullets rewritten for maximum impact (strong verbs, quantification, business context)
-#   - Restored 2 GLP bullets from old library (payment_collections, generalist)
-#   - Added GitHub project bullets (Deribit, GraphSAGE, LifeOS, etc.)
-#   - Thesis bullets massively upgraded with actual experiment scale
-#   - Total: ~50 bullets
-#
-# v3.1 CHANGES (2026-03-09):
-#   - DELETED ObamaTTS (no usable outcomes, abandoned project)
-#   - UPDATED Expedia bullet (removed false "Top 5% Kaggle" claim, added team context)
-#   - VERIFIED NDCG@5 = 0.392 from official course report
-#
-# v3.2 CHANGES (2026-03-09):
-#   - ADDED 3 high-value projects from AIMaster series audit:
-#     * Evolutionary Robotics Research (586 files, research paper, videos)
-#     * Sequence Analysis Suite (2,330 LOC, HMM + alignment + BWT)
-#     * Deep Neural Networks from Scratch (10,448 LOC, pure NumPy)
-#   - UPDATED ML4QS with verified metrics (65% person, 94-99% sex, 576 features)
-#   - DEPRECATED old evolutionary_robotics (replaced with research version)
-#   - ENHANCED Independent Investor bullet with Stock project evidence (83K+ records, 3,600+ stocks) (up from 38)
-#
-# v4.0 CHANGES (2026-03-10) — Narrative Architecture:
-#   - REWRITTEN Henan Energy headlines (ingest/validate/consolidate + €32M framework)
-#   - REWRITTEN Ele.me headlines (drop EUR amount, use detection scale + cross-team unlocking)
-#   - UPDATED Baiquan pipeline ending + added 5-person team context
-#   - REWRITTEN Independent bullets (pure technical, removed defensive language)
-#   - REWRITTEN Expedia (removed self-deprecating "course project" labels)
-#   - DEPRECATED Deribit options (candidate cannot recall project)
-#   - DEPRECATED indie_market_analysis (too vague)
-#   - ADDED narrative_role: headline/optional tags to ALL bullets
-#   - CONVERTED currency amounts to EUR for European market
-#   - Default title for Henan Energy changed to "Business Analyst"
+# v6.0 CHANGES (2026-04-22) — Interview-Data Rewrite:
+#   - RESTORED v3.0 interview-proven GLP bullets (glp_founding_member, glp_pyspark, glp_data_quality, glp_portfolio_monitoring)
+#   - RESTORED glp_data_compliance (3x interview-proven, was deleted in v5.0)
+#   - RESTORED glp_payment_collections (was deleted in v5.0)
+#   - DEPRECATED glp_data_engineer (v5.0 rewrite, 0 interviews vs v3.0 original's 16x)
+#   - RESTORED bq_de_factor_engine (15x interview-proven, engineering focus)
+#   - RESTORED bq_data_quality (9x interview-proven, was deleted in v5.0)
+#   - RESTORED eleme_ab_testing (9x interview-proven combined bullet)
+#   - RESTORED deribit_options project (4x interview-proven, was deprecated in v4.0)
+#   - ADDED status (active/deprecated) and tags to all bullets
+#   - Tracking: bullet_versions + bullet_usage DB tables now track per-job usage
 #
 # CANONICAL TIMELINE REFERENCE: profiles/Profile2.0.pdf
 #
@@ -139,41 +118,65 @@ work_experience:
     technical_skills: "Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI"
 
     recommended_sequences:
-      data_engineer: ["glp_founding_member", "glp_decision_engine", "glp_data_engineer"]
+      data_engineer: ["glp_founding_member", "glp_pyspark", "glp_data_quality"]
       ml_engineer: ["glp_founding_member", "glp_decision_engine"]
       data_scientist: ["glp_founding_member", "glp_decision_engine", "glp_portfolio_monitoring"]
 
     verified_bullets:
 
-      # CONTEXT SETTER — establishes who you were and the scope
       - id: glp_founding_member
+        status: active
+        tags: [ml, leadership, founding, credit-risk]
         narrative_role: context_setter
-        content: "Joined a lending fintech as its first technical hire; designed and built the complete credit risk data platform from scratch — from raw data ingestion through automated decisioning to post-loan monitoring."
-        content_zh: "作为一家借贷金融科技公司的首位技术人员加入；从零设计并搭建了完整的信用风控数据平台——从原始数据采集，到自动化决策，再到贷后监控。"
+        content: "Spearheaded credit scoring infrastructure as the first data hire at a consumer lending startup — owned the full ML lifecycle from data ingestion through feature engineering, model deployment (logistic regression scorecards), and portfolio monitoring, enabling automated credit decisions."
 
-      # DEPTH — the crown jewel, interview hook
       - id: glp_decision_engine
+        status: active
+        tags: [ml, credit-risk, rules-engine, scoring]
         narrative_role: depth_prover
         content: "Engineered the core decision engine: 29 rejection rules across 4 risk dimensions, 36-segment borrower classification, and an early-delinquency scorecard combining 19 weighted features for first-payment default prediction."
-        content_zh: "设计并实现了核心决策引擎：29 条拒绝规则覆盖 4 个风险维度，36 类客群分类体系，以及结合 19 个加权特征的首逾评分卡模型。"
 
-      # FOUNDATION — the data layer powering everything above
+      - id: glp_pyspark
+        status: active
+        tags: [pyspark, etl, mentorship, credit-risk, de]
+        narrative_role: headline
+        content: "Designed and implemented PySpark ETL pipelines processing consumer credit data across the full loan lifecycle — from application ingestion through repayment tracking; provided technical mentorship to junior analyst on distributed data processing patterns."
+
+      - id: glp_data_quality
+        status: active
+        tags: [data-quality, schema-validation, credit-risk, de]
+        narrative_role: foundation
+        content: "Engineered automated data pipeline and quality framework for consumer lending operations, implementing schema validation and integrity checks across loan origination and repayment flows — ensuring clean inputs for credit scoring models."
+
       - id: glp_data_engineer
+        status: deprecated
+        tags: [etl, aws, de]
         narrative_role: foundation
         content: "Built the data foundation powering all risk systems: daily ETL of 30+ production tables into AWS Redshift, plus a credit bureau report parser transforming deeply nested JSON into 5 structured analytical tables."
-        content_zh: "搭建了支撑全部风控系统的数据底座：每日 ETL 采集 30+ 张生产表至 AWS Redshift，并构建征信报告解析器将深层嵌套 JSON 转换为 5 张结构化分析表。"
 
-      # EXTENSION — shows system evolution (ML template, optional)
       - id: glp_portfolio_monitoring
+        status: active
+        tags: [monitoring, risk, analytics, ds]
         narrative_role: extension
-        content: "Extended the platform into post-loan monitoring: delinquency tracking, repayment trend analysis, and third-party fraud detection API integration for first-repayment early warning."
-        content_zh: "将平台延伸至贷后监控：逾期率跟踪、还款趋势分析，以及集成第三方反欺诈 API 实现首次还款预警。"
+        content: "Built portfolio risk monitoring system tracking delinquency rates, repayment trends, and early warning indicators across the consumer loan book; insights directly informed collection strategy adjustments, reducing exposure to deteriorating segments."
 
-      # BREADTH — soft skills, rarely used backup
+      - id: glp_data_compliance
+        status: active
+        tags: [compliance, reporting, regulated-industry]
+        narrative_role: optional
+        content: "Established compliance reporting framework for consumer lending operations, automating regulatory submissions and audit trail generation for credit decisioning outputs."
+
+      - id: glp_payment_collections
+        status: active
+        tags: [api, operations, payments]
+        narrative_role: optional
+        content: "Integrated payment gateway APIs for automated repayment processing; designed tiered collection policies based on delinquency severity, bridging data insights with operational execution."
+
       - id: glp_generalist
+        status: active
+        tags: [soft-skills, cross-functional]
         narrative_role: breadth
         content: "Collaborated across risk, product, and operations teams; managed outsourced development partners and coordinated third-party vendor integrations."
-        content_zh: "跨风控、产品、运营团队协作；管理外包开发团队，协调第三方供应商对接。"
 
   # ---------------------------------------------------------------------------
   # INDEPENDENT QUANTITATIVE RESEARCHER (Sep 2019 - Aug 2023)
@@ -201,10 +204,14 @@ work_experience:
     verified_bullets:
 
       - id: indie_quant_research
+        status: active
+        tags: [quant, pipeline, mysql, api]
         narrative_role: headline
         content: "Built automated equity research pipeline processing 83K+ daily records across 3,600+ stocks via Tushare API and MySQL; implemented institutional flow tracking and momentum signal detection for systematic market analysis."
 
       - id: indie_skill_development
+        status: active
+        tags: [career-transition, self-directed]
         narrative_role: optional
         content: "Self-directed study in data science and machine learning, pivoting to AI after the emergence of large language models; admitted to M.Sc. AI program at VU Amsterdam in 2023."
 
@@ -228,28 +235,48 @@ work_experience:
 
     # Recommended bullet sequences by job template
     recommended_sequences:
-      data_engineer: ["bq_de_pipeline", "bq_de_backtest_infra", "bq_factor_research"]
-      ml_engineer: ["bq_futures_strategy", "bq_factor_research", "bq_de_backtest_infra"]
+      data_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_de_backtest_infra"]
+      ml_engineer: ["bq_futures_strategy", "bq_factor_research", "bq_de_factor_engine"]
       quant_researcher: ["bq_futures_strategy", "bq_factor_research", "bq_de_backtest_infra", "bq_de_pipeline"]
-      data_scientist: ["bq_factor_research", "bq_de_pipeline", "bq_futures_strategy"]
+      data_scientist: ["bq_factor_research", "bq_de_factor_engine", "bq_futures_strategy"]
 
     verified_bullets:
 
       - id: bq_de_pipeline
+        status: active
+        tags: [etl, market-data, de]
         narrative_role: headline
         content: "Built end-to-end market data ingestion pipeline processing 3,000+ A-share securities and 5+ years of tick-level futures data from multiple vendor feeds; implemented corporate action handling and deduplication logic ensuring data integrity for all downstream research and live trading."
 
+      - id: bq_de_factor_engine
+        status: active
+        tags: [numpy, pandas, quant, performance, de]
+        narrative_role: headline
+        content: "Engineered high-performance factor computation engine using vectorized NumPy/Pandas operations, computing technical and fundamental indicators across 3,000+ stocks daily — enabling rapid iteration cycles in alpha research."
+
       - id: bq_de_backtest_infra
+        status: active
+        tags: [backtesting, infrastructure, quant]
         narrative_role: optional
         content: "Architected event-driven backtesting framework (Python + MATLAB) supporting strategy simulation, walk-forward validation, and 15+ performance metrics — adopted as core research infrastructure by the investment team."
 
       - id: bq_factor_research
+        status: active
+        tags: [quant, statistics, alpha-research]
         narrative_role: headline
         content: "Built systematic alpha research pipeline applying Fama-MacBeth regression to validate 4 factor families (value, momentum, money flow, event-driven) across 3,000+ securities — validated factors integrated into the fund's live portfolio."
 
       - id: bq_futures_strategy
+        status: active
+        tags: [quant, trading, live-production]
         narrative_role: headline
         content: "Developed and deployed R-Breaker intraday trading strategy for CSI index futures from research through live production — achieved 14.6% annualized return with real capital."
+
+      - id: bq_data_quality
+        status: active
+        tags: [data-quality, market-data, validation]
+        narrative_role: optional
+        content: "Designed cross-source data validation framework detecting vendor data gaps and inconsistencies in market feeds; built automated alerting for missing trading days and stale prices, safeguarding research pipeline integrity."
 
 
   # ---------------------------------------------------------------------------
@@ -280,14 +307,20 @@ work_experience:
     verified_bullets:
 
       - id: he_data_automation
+        status: active
+        tags: [etl, automation, excel]
         narrative_role: headline
         content: "Built automated pipeline to ingest, validate, and consolidate non-standardized Excel reports from 20+ business units into unified operational reporting, reducing monthly processing from 2 days to under 2 hours."
 
       - id: he_supply_chain_analytics
+        status: active
+        tags: [analytics, supply-chain, business-impact]
         narrative_role: headline
         content: "Designed the group's supply chain analytics framework from scratch, tracking daily sales and inventory to guide procurement and sales timing; optimization guided by this framework contributed to €32M in documented profit improvements across business units over 3 years."
 
       - id: he_data_quality
+        status: active
+        tags: [data-quality, validation, anomaly-detection]
         narrative_role: optional
         content: "Established data quality framework and validation rules for multi-source data ingestion, implementing anomaly detection to catch errors, non-standard formats, and data fabrication — built feedback loops to production teams for continuous improvement."
 
@@ -319,22 +352,34 @@ work_experience:
 
     # Recommended bullet sequences by job template
     recommended_sequences:
-      data_engineer: ["eleme_sql_optimization", "eleme_fraud_detection", "eleme_user_segmentation"]
-      data_analyst: ["eleme_fraud_detection", "eleme_user_segmentation"]
-      data_scientist: ["eleme_fraud_detection", "eleme_user_segmentation", "eleme_sql_optimization"]
-      ml_engineer: ["eleme_fraud_detection", "eleme_user_segmentation"]
+      data_engineer: ["eleme_sql_optimization", "eleme_fraud_detection", "eleme_ab_testing"]
+      data_analyst: ["eleme_ab_testing", "eleme_fraud_detection", "eleme_user_segmentation"]
+      data_scientist: ["eleme_ab_testing", "eleme_fraud_detection", "eleme_sql_optimization"]
+      ml_engineer: ["eleme_fraud_detection", "eleme_ab_testing", "eleme_sql_optimization"]
 
     verified_bullets:
 
+      - id: eleme_ab_testing
+        status: active
+        tags: [ab-testing, segmentation, hadoop, ds]
+        narrative_role: headline
+        content: "Developed user segmentation model achieving 2x improvement in churned-user reactivation rate via A/B testing; optimized Hadoop/Hive SQL queries for cross-functional reporting, cutting turnaround time by 30% during the platform's hyper-growth phase."
+
       - id: eleme_fraud_detection
+        status: active
+        tags: [anti-fraud, algorithms, scale]
         narrative_role: headline
         content: "Built anti-fraud detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern algorithms (same-phone, high-frequency, repeat-order matching), preventing fraudulent subsidy claims during hyper-growth."
 
       - id: eleme_sql_optimization
+        status: active
+        tags: [sql, hadoop, hive, performance, de]
         narrative_role: headline
         content: "Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, cutting scan volume 5x (500GB → 100GB) and unlocking real-time analytics on 30+ warehouse tables for fraud detection, operations, and marketing teams."
 
       - id: eleme_user_segmentation
+        status: active
+        tags: [segmentation, sql, marketing]
         narrative_role: optional
         content: "Engineered SQL-based user segmentation pipeline analyzing 2.2M+ users across 4 behavioral cohorts (dual-screen, payment method, campaign engagement, geographic) — delivered actionable customer profiles adopted by marketing for targeted red packet campaigns."
 
@@ -357,14 +402,20 @@ projects:
     verified_bullets:
 
       - id: thesis_uq_framework
+        status: active
+        tags: [deep-rl, benchmarking, hpc, research]
         narrative_role: headline
         content: "Developed a benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN superiority with 31% lower CRPS (p < 0.001) over ensemble and dropout baselines."
 
       - id: thesis_noise_paradox
+        status: active
+        tags: [research, deep-rl, calibration]
         narrative_role: headline
         content: "Discovered a 'noise paradox' where moderate observation noise unexpectedly improves ensemble-based uncertainty estimates; designed 6-stage reproducible evaluation pipeline with automated calibration benchmarking across multiple RL environments."
 
       - id: thesis_calibration
+        status: active
+        tags: [bayesian, calibration, deep-rl]
         narrative_role: optional
         content: "Applied temperature scaling and Bayesian methods to calibrate agent confidence; evaluated post-hoc calibration impact across distributional, ensemble, and dropout-based UQ approaches with rigorous statistical testing."
 
@@ -379,10 +430,14 @@ projects:
     verified_bullets:
 
       - id: nlp_poem_generator
+        status: active
+        tags: [llm, nlp, huggingface, flask]
         narrative_role: optional
         content: "Developed LLM-powered text generation application leveraging GPT-2 and Hugging Face Transformers; implemented prompt engineering with controllable style parameters and deployed as interactive web application via Flask."
 
       - id: nlp_dependency_parsing
+        status: active
+        tags: [nlp, pytorch, parsing]
         narrative_role: optional
         content: "Implemented neural dependency parsing model using PyTorch; achieved 89.12% UAS through systematic hyperparameter tuning."
 
@@ -399,6 +454,8 @@ projects:
     verified_bullets:
 
       - id: expedia_ltr
+        status: active
+        tags: [ml, lightgbm, recommendation, kaggle]
         narrative_role: headline
         content: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered temporal, behavioral, and aggregation features (price normalization, competitor rates, estimated position); achieved NDCG@5 = 0.392 on Kaggle evaluation."
 
@@ -418,10 +475,14 @@ projects:
     verified_bullets:
 
       - id: ml4qs_pipeline
+        status: active
+        tags: [ml, sensor, time-series, lightgbm, lstm]
         narrative_role: optional
         content: "Built end-to-end ML pipeline for IMU sensor classification (4 subjects, 6 activities); implemented Kalman Filter on 12 sensor channels for noise reduction; engineered 576+ features using FFT (time + frequency domain) with 3 window sizes; achieved 65% person classification and 94-99% sex prediction accuracy using LightGBM and LSTM — team of 4, 856 LOC + 8 notebooks."
 
       - id: ml4qs_deep_learning
+        status: active
+        tags: [lstm, pytorch, time-series]
         narrative_role: optional
         content: "Implemented bidirectional LSTM neural network for time-series classification on sensor data; applied Optuna hyperparameter tuning and leave-one-subject-out validation; benchmarked deep learning against gradient boosting approaches."
 
@@ -436,6 +497,8 @@ projects:
     verified_bullets:
 
       - id: graphsage_ppi
+        status: active
+        tags: [gnn, pytorch-geometric, deep-learning]
         narrative_role: optional
         content: "Implemented and benchmarked GraphSAGE (LSTM aggregation) and Graph Attention Networks (8-head GAT) for multi-label node classification on the PPI biological network dataset using PyTorch Geometric; evaluated trade-offs between neighbor sampling and attention-based message passing."
 
@@ -451,10 +514,14 @@ projects:
     verified_bullets:
 
       - id: neuroevo_robotics
+        status: active
+        tags: [evolutionary, research, robotics]
         narrative_role: optional
         content: "Conducted evolutionary robotics research implementing CPPN-NEAT algorithm for co-evolving robot morphology and CPG neural controllers; validated sensor-driven evolution hypothesis through controlled experiments with fitness tracking over 50 generations — published research paper with video demonstrations (586 Python files, ~1,500 LOC)."
 
       - id: neuroevo_system
+        status: active
+        tags: [robotics, simulation, mujoco]
         narrative_role: optional
         content: "Built modular robot evolution system using Revolve2 framework and MultiNEAT library; integrated Mujoco physics simulator for realistic locomotion evaluation; implemented custom CPPN genotype for encoding both body structure and neural network parameters."
 
@@ -469,10 +536,14 @@ projects:
     verified_bullets:
 
       - id: bioinfo_hmm
+        status: active
+        tags: [algorithms, hmm, bioinformatics]
         narrative_role: optional
         content: "Implemented Hidden Markov Models from scratch including Viterbi algorithm (most likely state sequence), Forward-Backward algorithm (probability computation), and Baum-Welch training (parameter estimation) for gene prediction and protein structure analysis — 886 LOC with CLI interface."
 
       - id: bioinfo_alignment
+        status: active
+        tags: [algorithms, bioinformatics, bwt]
         narrative_role: optional
         content: "Built production-ready sequence alignment tools implementing Needleman-Wunsch (global), Smith-Waterman (local), and semi-global alignment with PAM250/BLOSUM62 substitution matrices and affine gap penalties; implemented Burrows-Wheeler Transform with O(n) suffix array construction for genome pattern matching — 2,330 total LOC with 200-page documentation."
 
@@ -487,10 +558,14 @@ projects:
     verified_bullets:
 
       - id: dnn_scratch
+        status: active
+        tags: [deep-learning, numpy, fundamentals]
         narrative_role: optional
         content: "Built 3-layer deep neural network from scratch using NumPy (no frameworks); implemented forward/backward propagation, gradient descent, and cost functions; achieved 99% training accuracy and 70% test accuracy on image classification — 10,448 LOC across 3 progressive assignments demonstrating ML fundamentals."
 
       - id: dnn_architecture
+        status: active
+        tags: [deep-learning, fundamentals]
         narrative_role: optional
         content: "Implemented neural network components from first principles: sigmoid/tanh/ReLU activations, L2 regularization, mini-batch gradient descent, and Xavier initialization; debugged gradient computation through numerical gradient checking."
 
@@ -505,18 +580,26 @@ projects:
     verified_bullets:
 
       - id: lakehouse_streaming
+        status: active
+        tags: [databricks, spark, streaming, de]
         narrative_role: optional
         content: "Architected end-to-end data lakehouse on Databricks processing real-time financial market feeds via Auto Loader and Structured Streaming; implemented schema evolution and checkpoint-based fault tolerance ensuring zero data loss during upstream changes."
 
       - id: lakehouse_quality
+        status: active
+        tags: [data-quality, medallion, de]
         narrative_role: optional
         content: "Engineered data quality framework with quarantine-and-replay pattern isolating malformed records across Bronze/Silver/Gold Medallion Architecture layers — achieving automated recovery without manual intervention."
 
       - id: lakehouse_optimization
+        status: active
+        tags: [delta-lake, optimization, de]
         narrative_role: optional
         content: "Optimized Delta Lake storage via Z-ordering and compaction, reducing query latency for downstream analysis."
 
       - id: lakehouse_orchestration
+        status: active
+        tags: [airflow, docker, devops]
         narrative_role: optional
         content: "Integrated Airflow for orchestration and Docker for consistent deployment across environments."
 
@@ -532,16 +615,44 @@ projects:
     verified_bullets:
 
       - id: greenhouse_etl_pipeline
+        status: active
+        tags: [pyspark, delta-lake, medallion, etl, de]
         narrative_role: headline
         content: "Built production-style ETL pipeline ingesting 3,842 JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing — 58 tests, CI via GitHub Actions."
 
       - id: greenhouse_data_quality
+        status: active
+        tags: [data-quality, de]
         narrative_role: optional
         content: "Engineered 6-check data quality framework (completeness, validity, range consistency, duplicates, IQR-based anomaly detection, station status) with severity-ranked quality flags; anomalies preserved through Gold layer aggregations for analyst traceability rather than silently dropped."
 
       - id: greenhouse_aggregations
+        status: active
+        tags: [time-series, aggregation, de]
         narrative_role: optional
         content: "Implemented multi-granularity time-series aggregations (15-minute, hourly, daily) with quality-aware filtering and 5 pre-built analytical queries; architected for production scale targeting 72M rows/day (1,000 greenhouses × 50 sensors at 1-minute resolution)."
+
+  # ---------------------------------------------------------------------------
+  # CRYPTO OPTIONS TRADING SYSTEM (Restored from v3.0 — 4x interview-proven)
+  # ---------------------------------------------------------------------------
+  deribit_options:
+    title: "Automated Crypto Options Trading System"
+    institution: "Personal Project"
+    period: "Oct. 2025 - Present"
+
+    verified_bullets:
+
+      - id: deribit_options_system
+        status: active
+        tags: [options, black-scholes, trading, quant, risk]
+        narrative_role: headline
+        content: "Architected automated options trading system featuring self-implemented Black-Scholes pricing engine (full Greeks, IV solver), edge-based market-making strategy, and multi-layered risk management (position limits, Greeks constraints, drawdown control); currently in paper-trading validation."
+
+      - id: deribit_risk_management
+        status: active
+        tags: [risk-management, quant, portfolio]
+        narrative_role: optional
+        content: "Designed risk management framework enforcing portfolio-level constraints (delta, gamma, vega limits), per-trade stop-loss, daily loss caps, and maximum drawdown controls; implemented Kelly-inspired position sizing adjusted for implied volatility."
 
   # ---------------------------------------------------------------------------
   # LIFEOS: Personal Productivity Platform
@@ -554,6 +665,8 @@ projects:
     verified_bullets:
 
       - id: lifeos_system
+        status: active
+        tags: [api, automation, github-actions]
         narrative_role: optional
         content: "Architected personal productivity platform orchestrating 5 external services (Todoist, Notion, Eudic, Telegram, Logseq) with automated daily workflows via GitHub Actions; built end-to-end vocabulary pipeline: dictionary sync, flashcard generation (genanki), and mobile delivery via Telegram Bot API."
 
@@ -568,10 +681,14 @@ projects:
     verified_bullets:
 
       - id: job_hunter_system
+        status: active
+        tags: [pipeline, sqlite, automation, de]
         narrative_role: optional
         content: "Built a stateful job search operations platform orchestrating incremental job ingestion, rule-based filtering, AI-assisted evaluation, and application tracking; backed by SQLite with Turso embedded-replica sync for durable state across local runs and CI automation."
 
       - id: job_hunter_operations
+        status: active
+        tags: [devops, github-actions, operations]
         narrative_role: optional
         content: "Designed operational controls for long-running workflow maintenance, including scrape watermarks, configurable YAML rules, checklist state management, rejection-history detection, and cold-data archival; deployed scheduled incremental runs on GitHub Actions to reduce redundant processing and keep the pipeline continuously updated."
 
