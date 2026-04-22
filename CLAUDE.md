@@ -95,6 +95,7 @@ python scripts/job_pipeline.py --ready         # 待申请职位 (旧版)
 python scripts/job_pipeline.py --generate      # 生成简历 (旧版)
 python scripts/job_pipeline.py --mark-applied JOB_ID  # 标记已申请
 python scripts/job_pipeline.py --tracker       # 申请状态看板
+python scripts/job_pipeline.py --bullet-analytics  # Bullet 转化率分析
 ```
 
 ### 6. 面试调度 (Google Calendar 集成)
@@ -221,7 +222,7 @@ job-hunter/
 │   └── resume_master.html      # 完整参考简历
 │
 ├── assets/
-│   ├── bullet_library.yaml     # 已验证的经历库 (50 bullets, 核心)
+│   ├── bullet_library.yaml     # 已验证的经历库 (51 bullets, v6.0 interview-data rewrite)
 │   ├── cover_letter_config.yaml    # Cover Letter 配置
 │   └── cl_knowledge_base.yaml      # CL 手写片段库
 │
@@ -255,6 +256,9 @@ SQLite 本地数据库 + Turso 云同步 (HTTP 模式，通过 `TursoHTTPClient`
 | `resumes` | 生成的简历记录 |
 | `cover_letters` | Cover Letter 记录 |
 | `applications` | 申请状态跟踪 |
+| `interview_rounds` | 面试轮次记录 |
+| `bullet_versions` | Bullet 内容版本追踪 (id + content_hash) |
+| `bullet_usage` | 每份简历使用了哪些 bullet |
 | `scrape_watermarks` | 爬虫水位线 (增量抓取) |
 
 **常用表列名 (ad-hoc 查询时直接用，不要猜):**
@@ -263,7 +267,7 @@ SQLite 本地数据库 + Turso 云同步 (HTTP 模式，通过 `TursoHTTPClient`
 - `applications`: id, job_id, status, applied_at, response_at, interview_at, outcome, notes, updated_at, rejection_reason, rejection_stage
 - `cover_letters`: id, job_id, spec_json, custom_requirements, standard_text, short_text, html_path, pdf_path, tokens_used, created_at
 
-常用视图: `v_funnel_stats`, `v_pending_jobs`, `v_high_score_jobs`, `v_ready_to_apply`
+常用视图: `v_funnel_stats`, `v_pending_jobs`, `v_high_score_jobs`, `v_ready_to_apply`, `v_bullet_conversion`
 
 查看统计:
 ```python
