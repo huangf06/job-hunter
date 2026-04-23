@@ -21,7 +21,7 @@ import sqlite3
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Generator
 
@@ -841,11 +841,25 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
             cursor = conn.execute("SELECT 1 FROM jobs WHERE id = ?", (job_id,))
             return cursor.fetchone() is not None
 
-    def find_existing_job_ids(self, urls: List[str]) -> set[str]:
-        """Batch-check which scraped URLs already exist in jobs."""
+    def find_existing_job_ids(self, urls: List[str], since_days: int = 0) -> set[str]:
+        """Batch-check which scraped URLs already exist in jobs.
+
+        Args:
+            urls: URLs to check.
+            since_days: When > 0, only consider jobs scraped within the last N days.
+                        Jobs older than the window are treated as non-existing so they
+                        get re-scraped.
+        """
         job_ids = [self.generate_job_id(url) for url in urls if url]
         if not job_ids:
             return set()
+
+        time_clause = ""
+        time_params: list = []
+        if since_days > 0:
+            cutoff = (datetime.now() - timedelta(days=since_days)).isoformat()
+            time_clause = " AND scraped_at >= ?"
+            time_params = [cutoff]
 
         existing_ids: set[str] = set()
         chunk_size = 900
@@ -854,8 +868,8 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                 chunk = job_ids[i:i + chunk_size]
                 placeholders = ",".join(["?"] * len(chunk))
                 cursor = conn.execute(
-                    f"SELECT id FROM jobs WHERE id IN ({placeholders})",
-                    chunk,
+                    f"SELECT id FROM jobs WHERE id IN ({placeholders}){time_clause}",
+                    chunk + time_params,
                 )
                 existing_ids.update(row[0] for row in cursor.fetchall())
         return existing_ids
@@ -896,16 +910,26 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         # 返回不在 complete_ids 中的 URL
         return [url for url, job_id in url_to_id.items() if job_id not in complete_ids]
 
-    def find_semantic_duplicate(self, title: str, company: str, exclude_id: str = None) -> Optional[str]:
-        """Find existing job with same company + normalized title. Returns job_id or None."""
+    def find_semantic_duplicate(self, title: str, company: str, exclude_id: str = None,
+                                since_days: int = 0) -> Optional[str]:
+        """Find existing job with same company + normalized title. Returns job_id or None.
+
+        Args:
+            since_days: When > 0, only consider jobs scraped within the last N days.
+        """
         norm_title = self._normalize_title(title)
         if not norm_title:
             return None
+
+        sql = "SELECT id, title FROM jobs WHERE LOWER(company) = ?"
+        params: list = [company.lower()]
+        if since_days > 0:
+            cutoff = (datetime.now() - timedelta(days=since_days)).isoformat()
+            sql += " AND scraped_at >= ?"
+            params.append(cutoff)
+
         with self._get_conn() as conn:
-            cursor = conn.execute(
-                "SELECT id, title FROM jobs WHERE LOWER(company) = ?",
-                (company.lower(),)
-            )
+            cursor = conn.execute(sql, params)
             for row in cursor.fetchall():
                 if exclude_id and row['id'] == exclude_id:
                     continue
@@ -913,8 +937,21 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                     return row['id']
         return None
 
-    def insert_job(self, job_data: Dict) -> tuple:
-        """插入新职位"""
+    def _reset_pipeline_for_job(self, job_id: str) -> None:
+        """Clear pipeline records so a resurfaced job re-enters processing."""
+        with self._get_conn(sync_before=False) as conn:
+            conn.execute("DELETE FROM filter_results WHERE job_id = ?", (job_id,))
+            conn.execute("DELETE FROM job_analysis WHERE job_id = ?", (job_id,))
+
+    def insert_job(self, job_data: Dict, dedup_window_days: int = 0) -> tuple:
+        """插入新职位
+
+        Args:
+            job_data: Job fields dict.
+            dedup_window_days: When > 0, semantic dedup only looks at jobs scraped
+                within the last N days.  A resurfaced job (outside the window) gets
+                its pipeline records cleared so it re-enters processing.
+        """
         url = job_data.get("url", "")
         job_id = self.generate_job_id(url)
 
@@ -925,7 +962,9 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
             return job_id, False
 
         # Semantic dedup: same company + normalized title = same job from different source
-        existing_id = self.find_semantic_duplicate(title, company, exclude_id=job_id)
+        existing_id = self.find_semantic_duplicate(
+            title, company, exclude_id=job_id, since_days=dedup_window_days
+        )
         if existing_id:
             # Update description if the new one is longer
             desc = job_data.get("description", "")
@@ -959,16 +998,18 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                  posted_date, scraped_at, search_profile, search_query, raw_data)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
-                    description = CASE
-                        WHEN excluded.description != ''
-                             AND length(excluded.description) > length(COALESCE(jobs.description, ''))
-                        THEN excluded.description
-                        ELSE jobs.description
-                    END
+                    description = excluded.description,
+                    scraped_at = excluded.scraped_at,
+                    search_profile = excluded.search_profile,
+                    search_query = excluded.search_query,
+                    posted_date = excluded.posted_date
             """, (job.id, job.source, job.url, job.title, job.company,
                   job.location, job.description, job.posted_date, job.scraped_at,
                   job.search_profile, job.search_query, job.raw_data))
             was_inserted = cursor.rowcount > 0
+
+        if dedup_window_days > 0:
+            self._reset_pipeline_for_job(job_id)
 
         return job_id, was_inserted
 
