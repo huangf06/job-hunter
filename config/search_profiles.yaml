@@ -14,7 +14,6 @@ defaults:
   sort_by: "DD"              # DD=Date, R=Relevance
   language: "en"             # M1: f_JC=en filters English-language postings (Dutch detection remains as fallback)
   max_jobs: 999
-  daemon_interval_minutes: 360   # Default: P2 = every 6 hours
 
 # Search profiles
 profiles:
@@ -25,12 +24,11 @@ profiles:
     name: "Data Engineering Core"
     enabled: true
     priority: 0
-    daemon_interval_minutes: 60
     queries:
       - keywords: '"Data Engineer" OR "Analytics Engineer" OR "Data Platform Engineer" OR "ETL Engineer"'
         description: "Data pipeline & platform roles"
-      - keywords: '"Data Infrastructure Engineer" OR "MLOps Engineer" OR "ML Platform Engineer" OR "Pipeline Engineer"'
-        description: "Data infrastructure & ML platform roles"
+      - keywords: '"Data Infrastructure Engineer" OR "MLOps Engineer" OR "ML Platform Engineer" OR "Pipeline Engineer" OR "Python Developer" OR "Python Engineer"'
+        description: "Data infrastructure, ML platform & Python roles"
 
     iamexpat:
       queries:
@@ -41,6 +39,8 @@ profiles:
         - keywords: "ml platform engineer"
         - keywords: "data infrastructure engineer"
         - keywords: "pipeline engineer"
+        - keywords: "python developer"
+        - keywords: "python engineer"
 
   # ============================================================
   # Group 2: ML Engineering (DIFFERENTIATION)
@@ -49,16 +49,17 @@ profiles:
     name: "ML Engineering"
     enabled: true
     priority: 0
-    daemon_interval_minutes: 60
     queries:
-      - keywords: '"Machine Learning Engineer" OR "ML Engineer" OR "AI Engineer" OR "AI Software Engineer"'
-        description: "ML systems & AI software roles"
+      - keywords: '"Machine Learning Engineer" OR "ML Engineer" OR "AI Engineer" OR "AI Software Engineer" OR "GenAI Engineer" OR "Generative AI Engineer"'
+        description: "ML systems, AI software & GenAI roles"
 
     iamexpat:
       queries:
         - keywords: "machine learning engineer"
         - keywords: "ml engineer"
         - keywords: "mlops engineer"
+        - keywords: "genai engineer"
+        - keywords: "generative ai engineer"
 
   # ============================================================
   # Group 3: Backend Engineering (FALLBACK)
@@ -67,7 +68,6 @@ profiles:
     name: "Backend Engineering"
     enabled: false   # M2: 0% interview rate (0/1205 scraped), Backend template not enabled
     priority: 2
-    daemon_interval_minutes: 360
     queries:
       - keywords: '"Backend Engineer" OR "Python Developer" OR "Software Engineer"'
         description: "General backend & Python roles"
@@ -85,7 +85,6 @@ profiles:
     name: "Data Science"
     enabled: true
     priority: 2
-    daemon_interval_minutes: 360
     queries:
       - keywords: '"Data Scientist"'
         description: "Data science roles"
@@ -101,7 +100,7 @@ profiles:
   # ============================================================
   quant:
     name: "Quantitative & Trading"
-    enabled: false   # M2: Optiver + Flow Traders already in target_companies.yaml (Greenhouse)
+    enabled: true    # Re-enabled: 36.4% hit rate (highest), 2 interviews. Greenhouse only covers Optiver+Flow Traders, misses IMC/Jump/Barak etc.
     priority: 3
     queries:
       - keywords: '"Quantitative Researcher" OR "Quantitative Developer" OR "Quantitative Analyst" OR "Quant Trader"'
@@ -118,12 +117,11 @@ profiles:
     name: "ML Research & Applied Science"
     enabled: true
     priority: 1
-    daemon_interval_minutes: 120
     queries:
-      - keywords: '"Machine Learning Researcher" OR "Research Engineer" OR "Applied Scientist" OR "Research Scientist"'
+      - keywords: '"Machine Learning Researcher" OR "Research Engineer" OR "Research Software Engineer" OR "Applied Scientist" OR "Research Scientist"'
         description: "ML research & applied science roles"
-      - keywords: '"Deep Learning" OR "Computer Vision" OR "NLP" OR "LLM"'
-        description: "Specialized ML research areas"
+      - keywords: '"Deep Learning" OR "Computer Vision" OR "NLP" OR "LLM" OR "Agentic AI"'
+        description: "Specialized ML research areas & emerging AI"
 
     iamexpat:
       queries:
@@ -131,6 +129,7 @@ profiles:
         - keywords: "research scientist"
         - keywords: "applied scientist"
         - keywords: "research engineer"
+        - keywords: "research software engineer"
 
   # ============================================================
   # Group 7: Backend + AI/Data Context (INTERVIEW-PROVEN)

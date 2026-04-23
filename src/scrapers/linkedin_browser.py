@@ -181,6 +181,7 @@ class LinkedInBrowser:
 
         await self._goto(f"https://www.linkedin.com/jobs/search?{urlencode(params)}", timeout=45000)
         await self._wait_for_cards()
+        await self._scroll_to_reveal_all_cards()
         cards = await self._extract_cards()
         self.diagnostics["cards_found"] = len(cards)
         return cards[:max_jobs] if max_jobs > 0 else cards
@@ -317,6 +318,20 @@ class LinkedInBrowser:
 
     def _is_auth_url(self, url: str) -> bool:
         return any(marker in url for marker in AUTH_MARKERS)
+
+    async def _scroll_to_reveal_all_cards(self) -> None:
+        """Scroll each card into viewport to trigger LinkedIn's occludable DOM lazy-loading."""
+        for selector in SEARCH_CARD_SELECTORS:
+            cards = await self.page.query_selector_all(selector)
+            if not cards:
+                continue
+            for card in cards:
+                try:
+                    await card.scroll_into_view_if_needed(timeout=2000)
+                    await self.page.wait_for_timeout(150)
+                except Exception:
+                    pass
+            break
 
     async def _wait_for_cards(self) -> None:
         for selector in SEARCH_CARD_SELECTORS:
