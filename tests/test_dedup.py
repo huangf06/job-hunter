@@ -2,6 +2,7 @@
 import os
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 
 from src.db.job_db import JobDatabase
 
@@ -140,3 +141,213 @@ class TestSemanticDedup:
         # then ON CONFLICT upserts the longer description
         job = db.get_job(id1)
         assert job['description'] == "longer description here"
+
+
+def _make_test_db_with_pipeline_tables() -> JobDatabase:
+    """Create an in-memory JobDatabase with jobs + filter_results + job_analysis tables."""
+    db = _make_test_db()
+    db._conn.executescript("""
+        CREATE TABLE filter_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL,
+            passed INTEGER DEFAULT 0,
+            rule_results TEXT DEFAULT '',
+            filtered_at TEXT DEFAULT ''
+        );
+        CREATE TABLE job_analysis (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL,
+            ai_score REAL DEFAULT 0,
+            reasoning TEXT DEFAULT '',
+            analyzed_at TEXT DEFAULT ''
+        );
+    """)
+    return db
+
+
+def _insert_job_with_scraped_at(db: JobDatabase, url: str, title: str, company: str,
+                                 scraped_at: str, description: str = "desc") -> str:
+    """Insert a job directly with a specific scraped_at timestamp. Returns job_id."""
+    job_id = db.generate_job_id(url)
+    db._conn.execute(
+        "INSERT INTO jobs (id, source, url, title, company, description, scraped_at) "
+        "VALUES (?, 'test', ?, ?, ?, ?, ?)",
+        (job_id, url, title, company, description, scraped_at),
+    )
+    return job_id
+
+
+class TestDedupWindow:
+    """Tests for find_existing_job_ids with since_days time window."""
+
+    def test_recent_job_found_within_window(self):
+        """A job scraped 5 days ago should be found when window is 30 days."""
+        db = _make_test_db()
+        recent = (datetime.now() - timedelta(days=5)).isoformat()
+        url = "http://a.com/recent"
+        _insert_job_with_scraped_at(db, url, "Dev", "Co", recent)
+
+        found = db.find_existing_job_ids([url], since_days=30)
+        assert db.generate_job_id(url) in found
+
+    def test_stale_job_not_found_within_window(self):
+        """A job scraped 60 days ago should NOT be found when window is 30 days."""
+        db = _make_test_db()
+        old = (datetime.now() - timedelta(days=60)).isoformat()
+        url = "http://a.com/old"
+        _insert_job_with_scraped_at(db, url, "Dev", "Co", old)
+
+        found = db.find_existing_job_ids([url], since_days=30)
+        assert db.generate_job_id(url) not in found
+
+    def test_zero_since_days_returns_all(self):
+        """since_days=0 should return all existing jobs (backward compat)."""
+        db = _make_test_db()
+        old = (datetime.now() - timedelta(days=365)).isoformat()
+        url = "http://a.com/ancient"
+        _insert_job_with_scraped_at(db, url, "Dev", "Co", old)
+
+        found = db.find_existing_job_ids([url], since_days=0)
+        assert db.generate_job_id(url) in found
+
+    def test_mixed_recent_and_stale(self):
+        """With two jobs, only the recent one should be found within the window."""
+        db = _make_test_db()
+        recent = (datetime.now() - timedelta(days=5)).isoformat()
+        old = (datetime.now() - timedelta(days=60)).isoformat()
+        url_new = "http://a.com/new"
+        url_old = "http://a.com/old"
+        _insert_job_with_scraped_at(db, url_new, "Dev", "Co", recent)
+        _insert_job_with_scraped_at(db, url_old, "Dev2", "Co", old)
+
+        found = db.find_existing_job_ids([url_new, url_old], since_days=30)
+        assert db.generate_job_id(url_new) in found
+        assert db.generate_job_id(url_old) not in found
+
+
+class TestSemanticDedupWindow:
+    """Tests for find_semantic_duplicate with since_days time window."""
+
+    def test_recent_duplicate_found(self):
+        """A semantic duplicate scraped recently should be detected."""
+        db = _make_test_db()
+        recent = (datetime.now() - timedelta(days=5)).isoformat()
+        _insert_job_with_scraped_at(db, "http://a.com/1", "Data Engineer", "Acme", recent)
+
+        dup_id = db.find_semantic_duplicate("Data Engineer", "Acme", since_days=30)
+        assert dup_id is not None
+
+    def test_stale_duplicate_not_found(self):
+        """A semantic duplicate scraped 60 days ago should NOT be detected with 30-day window."""
+        db = _make_test_db()
+        old = (datetime.now() - timedelta(days=60)).isoformat()
+        _insert_job_with_scraped_at(db, "http://a.com/1", "Data Engineer", "Acme", old)
+
+        dup_id = db.find_semantic_duplicate("Data Engineer", "Acme", since_days=30)
+        assert dup_id is None
+
+    def test_zero_since_days_finds_all(self):
+        """since_days=0 should find duplicates regardless of age."""
+        db = _make_test_db()
+        old = (datetime.now() - timedelta(days=365)).isoformat()
+        _insert_job_with_scraped_at(db, "http://a.com/1", "Data Engineer", "Acme", old)
+
+        dup_id = db.find_semantic_duplicate("Data Engineer", "Acme", since_days=0)
+        assert dup_id is not None
+
+
+class TestResurfaceJob:
+    """Tests for insert_job resurface: updates fields + clears pipeline records."""
+
+    def test_resurface_updates_scraped_at_and_description(self):
+        """A resurfaced job (outside dedup window) should update scraped_at and description."""
+        db = _make_test_db_with_pipeline_tables()
+        old = (datetime.now() - timedelta(days=60)).isoformat()
+        url = "http://a.com/resurface"
+        job_id = _insert_job_with_scraped_at(db, url, "Dev", "Co", old, description="old desc")
+
+        new_scraped = datetime.now().isoformat()
+        job_data = {
+            "url": url, "title": "Dev", "company": "Co",
+            "source": "test", "description": "new description",
+            "scraped_at": new_scraped, "search_profile": "de",
+            "search_query": "data engineer",
+        }
+        returned_id, was_inserted = db.insert_job(job_data, dedup_window_days=30)
+
+        assert returned_id == job_id
+        job = db.get_job(job_id)
+        assert job['description'] == "new description"
+        assert job['scraped_at'] == new_scraped
+        assert job['search_profile'] == "de"
+
+    def test_resurface_clears_filter_results(self):
+        """A resurfaced job should have its filter_results cleared."""
+        db = _make_test_db_with_pipeline_tables()
+        old = (datetime.now() - timedelta(days=60)).isoformat()
+        url = "http://a.com/resurface"
+        job_id = _insert_job_with_scraped_at(db, url, "Dev", "Co", old)
+
+        # Add pipeline records
+        db._conn.execute(
+            "INSERT INTO filter_results (job_id, passed) VALUES (?, 1)", (job_id,)
+        )
+        db._conn.execute(
+            "INSERT INTO job_analysis (job_id, ai_score) VALUES (?, 7.5)", (job_id,)
+        )
+
+        job_data = {
+            "url": url, "title": "Dev", "company": "Co",
+            "source": "test", "description": "desc",
+        }
+        db.insert_job(job_data, dedup_window_days=30)
+
+        # Pipeline records should be cleared
+        row = db._conn.execute(
+            "SELECT COUNT(*) as c FROM filter_results WHERE job_id = ?", (job_id,)
+        ).fetchone()
+        assert row[0] == 0
+
+    def test_resurface_clears_job_analysis(self):
+        """A resurfaced job should have its job_analysis cleared."""
+        db = _make_test_db_with_pipeline_tables()
+        old = (datetime.now() - timedelta(days=60)).isoformat()
+        url = "http://a.com/resurface"
+        job_id = _insert_job_with_scraped_at(db, url, "Dev", "Co", old)
+
+        db._conn.execute(
+            "INSERT INTO job_analysis (job_id, ai_score) VALUES (?, 6.0)", (job_id,)
+        )
+
+        job_data = {
+            "url": url, "title": "Dev", "company": "Co",
+            "source": "test", "description": "desc",
+        }
+        db.insert_job(job_data, dedup_window_days=30)
+
+        row = db._conn.execute(
+            "SELECT COUNT(*) as c FROM job_analysis WHERE job_id = ?", (job_id,)
+        ).fetchone()
+        assert row[0] == 0
+
+    def test_no_pipeline_reset_without_dedup_window(self):
+        """With dedup_window_days=0, pipeline records should NOT be cleared."""
+        db = _make_test_db_with_pipeline_tables()
+        url = "http://a.com/normal"
+        job_id = _insert_job_with_scraped_at(
+            db, url, "Dev", "Co", datetime.now().isoformat()
+        )
+        db._conn.execute(
+            "INSERT INTO filter_results (job_id, passed) VALUES (?, 1)", (job_id,)
+        )
+
+        job_data = {
+            "url": url, "title": "Dev", "company": "Co",
+            "source": "test", "description": "updated desc",
+        }
+        db.insert_job(job_data, dedup_window_days=0)
+
+        row = db._conn.execute(
+            "SELECT COUNT(*) as c FROM filter_results WHERE job_id = ?", (job_id,)
+        ).fetchone()
+        assert row[0] == 1  # NOT cleared
