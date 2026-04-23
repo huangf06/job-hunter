@@ -341,6 +341,9 @@ with db._get_conn() as conn:
 - `thresholds.ai_score_generate_resume`: 生成简历的最低 AI 分 (默认 5.0)
 - `budget.daily_limit`: 每日 token 预算
 
+### 去重窗口 (`config/search_profiles.yaml`)
+- `defaults.dedup_window_days`: 去重时间窗口（天）。默认 30 = 只对最近 30 天内抓取过的职位去重。超过 30 天的旧职位会被重新抓取并走完整 pipeline（重新硬规则筛选 + AI 评分 + 简历定制）。设为 0 = 全历史去重（旧行为）。
+
 ### 硬规则筛选 (`config/base/filters.yaml`)
 - 6 条硬拒绝规则 (whitelist-only: 荷兰语检测、白名单角色、标题技术栈等)
 - 通过 Hard Filter 的职位进入 C1 评分，score >= 5.0 进入 C2 简历定制
