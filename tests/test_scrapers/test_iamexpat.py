@@ -55,7 +55,7 @@ def test_scrape_query_joins_listing_cards_with_detail_content(mock_db_cls, mock_
         "_scrape_detail_page",
         AsyncMock(return_value="Build pipelines and ML systems."),
     ):
-        jobs = asyncio.run(scraper._scrape_query(context, page, {"keywords": "data engineer"}))
+        jobs = asyncio.run(scraper._scrape_query(context, page, {"keywords": "data engineer"}, set()))
 
     assert len(jobs) == 1
     assert jobs[0]["description"] == "Build pipelines and ML systems."
@@ -167,10 +167,9 @@ def test_scrape_query_skips_detail_fetch_for_known_duplicates(mock_db_cls, mock_
         "_scrape_detail_page",
         AsyncMock(return_value="should not be used"),
     ) as mock_detail:
-        jobs = asyncio.run(scraper._scrape_query(context, page, {"keywords": "data engineer"}))
+        jobs = asyncio.run(scraper._scrape_query(context, page, {"keywords": "data engineer"}, set()))
 
-    assert len(jobs) == 1
-    assert jobs[0]["description"] == ""
+    assert len(jobs) == 0
     db.find_existing_job_ids.assert_called_once_with(
         ["https://www.iamexpat.nl/career/jobs-netherlands/it/data-engineer/abc123"]
     )

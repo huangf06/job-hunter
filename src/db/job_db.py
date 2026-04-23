@@ -802,10 +802,10 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
 
     @contextmanager
     def batch_mode(self):
-        """Context for batch processing. Currently no-op — no transaction grouping.
-
-        TODO: implement job-level locking to prevent concurrent processing
-        of the same jobs by multiple pipeline instances.
+        """Context for batch inserts. No-op: each insert_job opens its own
+        connection via _get_conn (WAL mode, autocommit). At current volumes
+        (~50 jobs/run) this is fast enough; true transaction batching would
+        require threading a shared connection through insert_job.
         """
         yield
 

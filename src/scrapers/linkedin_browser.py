@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import random
 import re
 from pathlib import Path
 from urllib.parse import urlencode
@@ -125,7 +127,7 @@ class LinkedInBrowser:
             raw_cookies = json.load(f)
 
         valid_cookies = []
-        for cookie in raw_cookies if isinstance(raw_cookies, list) else []:
+        for cookie in (raw_cookies if isinstance(raw_cookies, list) else []):
             if not isinstance(cookie, dict):
                 continue
             if all(cookie.get(key) for key in ("name", "value", "domain")):
@@ -207,6 +209,11 @@ class LinkedInBrowser:
 
             if new_on_page == 0 or len(all_cards) >= max_jobs:
                 break
+
+            if page < max_pages - 1:
+                delay = 1.5 + random.random() * 2.0
+                logger.debug("[LinkedIn] Sleeping %.1fs before next search page", delay)
+                await asyncio.sleep(delay)
 
         self.diagnostics["cards_found"] = len(all_cards)
         return all_cards[:max_jobs] if max_jobs > 0 else all_cards
@@ -400,19 +407,6 @@ class LinkedInBrowser:
                 }
             )
         return normalized
-
-    async def _extract_json_ld_description(self) -> str:
-        try:
-            script = await self.page.query_selector('script[type="application/ld+json"]')
-            if not script:
-                return ""
-            data = json.loads(await script.inner_text())
-            if isinstance(data, dict):
-                return str(data.get("description", "") or "")
-        except Exception:
-            return ""
-        return ""
-
 
 class LinkedInBrowserStub:
     """Async browser double for orchestration tests."""

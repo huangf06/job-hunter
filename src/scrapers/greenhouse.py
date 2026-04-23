@@ -1,30 +1,17 @@
-import json
 import logging
-import re
+import random
+import time
 from datetime import datetime
 from typing import List, Dict, Optional
 
 import requests
 
 from src.scrapers.base import BaseScraper
+from src.scrapers.utils import strip_html
 
 logger = logging.getLogger(__name__)
 
 API_BASE = "https://boards-api.greenhouse.io/v1/boards"
-
-
-def _html_to_text(html: str) -> str:
-    """Strip HTML tags, decode entities, collapse whitespace."""
-    text = re.sub(r"<br\s*/?>", "\n", html)
-    text = re.sub(r"<li>", "\n- ", text)
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"&amp;", "&", text)
-    text = re.sub(r"&lt;", "<", text)
-    text = re.sub(r"&gt;", ">", text)
-    text = re.sub(r"&nbsp;", " ", text)
-    text = re.sub(r"&#\d+;", "", text)
-    text = re.sub(r" {2,}", " ", text)
-    return text.strip()
 
 
 class GreenhouseScraper(BaseScraper):
@@ -40,16 +27,20 @@ class GreenhouseScraper(BaseScraper):
         for attempt in range(3):
             try:
                 resp = requests.get(url, timeout=30)
+                if 400 <= resp.status_code < 500:
+                    raise requests.HTTPError(
+                        f"HTTP {resp.status_code} for {url}", response=resp
+                    )
                 resp.raise_for_status()
-                try:
-                    data = resp.json()
-                except (ValueError, json.JSONDecodeError):
-                    logger.warning("[Greenhouse] Invalid JSON response from %s", url)
-                    return []
+                data = resp.json()
                 return data.get("jobs", [])
-            except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            except (requests.ConnectionError, requests.Timeout) as e:
                 if attempt < 2:
-                    import time
+                    time.sleep(2 ** (attempt + 1))
+                else:
+                    raise
+            except requests.HTTPError:
+                if resp.status_code >= 500 and attempt < 2:
                     time.sleep(2 ** (attempt + 1))
                 else:
                     raise
@@ -66,7 +57,7 @@ class GreenhouseScraper(BaseScraper):
             "company": company_name,
             "location": raw.get("location", {}).get("name", ""),
             "url": raw.get("absolute_url", ""),
-            "description": _html_to_text(raw.get("content", "")),
+            "description": strip_html(raw.get("content", "")),
             "source": "Greenhouse",
             "scraped_at": datetime.now().isoformat(),
             "posted_date": raw.get("updated_at", ""),
@@ -97,4 +88,7 @@ class GreenhouseScraper(BaseScraper):
             except Exception as e:
                 self.record_target_failure(name, e)
                 logger.error("[Greenhouse] %s failed: %s", name, e)
+
+            time.sleep(0.5 + random.random() * 0.5)
+
         return all_jobs

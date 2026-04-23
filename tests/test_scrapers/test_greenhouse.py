@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.scrapers.greenhouse import GreenhouseScraper, _html_to_text
+from src.scrapers.greenhouse import GreenhouseScraper
+from src.scrapers.utils import strip_html
 
 MOCK_RESPONSE = {
     "jobs": [
@@ -30,6 +31,7 @@ MOCK_RESPONSE = {
 @patch("src.scrapers.greenhouse.requests.get")
 def test_scrape_with_location_filter(mock_get, mock_bl, mock_db):
     mock_resp = MagicMock()
+    mock_resp.status_code = 200
     mock_resp.json.return_value = MOCK_RESPONSE
     mock_resp.raise_for_status = MagicMock()
     mock_get.return_value = mock_resp
@@ -50,6 +52,7 @@ def test_scrape_with_location_filter(mock_get, mock_bl, mock_db):
 @patch("src.scrapers.greenhouse.requests.get")
 def test_scrape_no_location_filter(mock_get, mock_bl, mock_db):
     mock_resp = MagicMock()
+    mock_resp.status_code = 200
     mock_resp.json.return_value = MOCK_RESPONSE
     mock_resp.raise_for_status = MagicMock()
     mock_get.return_value = mock_resp
@@ -156,6 +159,7 @@ def test_run_deduplicates_and_persists_new_jobs(mock_get, mock_db_cls, mock_bl):
         "meta": {"total": 2},
     }
     mock_resp = MagicMock()
+    mock_resp.status_code = 200
     mock_resp.json.return_value = duplicate_response
     mock_resp.raise_for_status = MagicMock()
     mock_get.return_value = mock_resp
@@ -171,8 +175,8 @@ def test_run_deduplicates_and_persists_new_jobs(mock_get, mock_db_cls, mock_bl):
 
 
 def test_html_to_text():
-    html = "<p>Hello &amp; <b>world</b></p><br/><li>item one</li>"
-    text = _html_to_text(html)
+    raw = "<p>Hello &amp; <b>world</b></p><br/><li>item one</li>"
+    text = strip_html(raw)
     assert "Hello & world" in text
     assert "- item one" in text
     assert "<" not in text

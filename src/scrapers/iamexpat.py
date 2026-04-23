@@ -8,6 +8,7 @@ from typing import List, Dict
 from playwright.async_api import async_playwright
 
 from src.scrapers.base import BaseScraper
+from src.scrapers.utils import run_async
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +41,13 @@ class IamExpatScraper(BaseScraper):
             "search_query": query,
         }
 
-    async def _scrape_listing_page(self, page, url: str) -> List[Dict]:
-        """Extract job cards from a listing page."""
-        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+    async def _scrape_listing_page(self, page, url: str) -> List[Dict] | None:
+        """Extract job cards from a listing page. Returns None on navigation failure, [] on no results."""
+        try:
+            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        except Exception as exc:
+            logger.warning("[IamExpat] Navigation failed for %s: %s", url[:80], exc)
+            return None
         await page.wait_for_timeout(1000)  # Let Next.js hydrate
         try:
             await page.wait_for_selector("a[href*='/career/jobs-netherlands/']", timeout=4000)
@@ -111,18 +116,19 @@ class IamExpatScraper(BaseScraper):
             query=query,
         )
 
-    async def _scrape_query(self, context, page, query_cfg: Dict) -> List[Dict]:
+    async def _scrape_query(self, context, page, query_cfg: Dict, seen_urls: set[str]) -> List[Dict]:
         kw = query_cfg["keywords"]
         category = query_cfg.get("category", CATEGORY_PATH)
         logger.info("[IamExpat] Searching: %s (category: %s)", kw, category)
 
         jobs: List[Dict] = []
-        seen_urls: set[str] = set()
         semaphore = asyncio.Semaphore(self.detail_concurrency)
         for page_num in range(1, self.max_pages + 1):
             base = f"{BASE_URL}/{category}" if category else BASE_URL
             url = f"{base}?search={kw.replace(' ', '+')}&page={page_num}"
             cards = await self._scrape_listing_page(page, url)
+            if cards is None:
+                continue
             if not cards:
                 break
 
@@ -134,16 +140,6 @@ class IamExpatScraper(BaseScraper):
                     continue
                 seen_urls.add(card["url"])
                 if self.db.generate_job_id(card["url"]) in existing_job_ids:
-                    jobs.append(
-                        self._to_job_dict(
-                            title=card["title"],
-                            company=card["company"],
-                            location=card["location"],
-                            url=card["url"],
-                            description="",
-                            query=kw,
-                        )
-                    )
                     continue
                 detail_tasks.append(
                     self._fetch_detail_for_card(
@@ -168,6 +164,7 @@ class IamExpatScraper(BaseScraper):
 
     async def _scrape_async(self) -> List[Dict]:
         all_jobs = []
+        seen_urls: set[str] = set()
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=self.headless)
             context = await browser.new_context(
@@ -178,7 +175,7 @@ class IamExpatScraper(BaseScraper):
             for query_cfg in self.queries:
                 kw = query_cfg["keywords"]
                 try:
-                    query_jobs = await self._scrape_query(context, page, query_cfg)
+                    query_jobs = await self._scrape_query(context, page, query_cfg, seen_urls)
                     all_jobs.extend(query_jobs)
                     self.record_target_success(kw)
                 except Exception as e:
@@ -189,14 +186,4 @@ class IamExpatScraper(BaseScraper):
         return all_jobs
 
     def scrape(self) -> List[Dict]:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-        if loop and loop.is_running():
-            # Already in an async context — create a new thread to avoid
-            # "asyncio.run() cannot be called from a running event loop"
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, self._scrape_async()).result()
-        return asyncio.run(self._scrape_async())
+        return run_async(self._scrape_async())

@@ -89,7 +89,7 @@ def test_orchestrator_uses_active_profile_queries_and_maps_query_failure_to_targ
     config_path = write_search_profiles(Path(__file__).resolve().parent)
     try:
         db = MagicMock()
-        db.job_exists.return_value = False
+        db.find_existing_job_ids.return_value = set()
         mock_db_cls.return_value = db
 
         browser = FakeLinkedInBrowser(
@@ -158,7 +158,7 @@ def test_orchestrator_fetches_descriptions_and_uses_browser_lifecycle(mock_db_cl
     config_path = write_search_profiles(Path(__file__).resolve().parent)
     try:
         db = MagicMock()
-        db.job_exists.return_value = False
+        db.find_existing_job_ids.return_value = set()
         mock_db_cls.return_value = db
 
         browser = FakeLinkedInBrowser(

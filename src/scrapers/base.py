@@ -128,6 +128,7 @@ class BaseScraper(ABC):
         counts = self._target_counts.copy()
         if counts["attempted"] == 0:
             if jobs and not self._run_errors:
+                logger.warning("[%s] No targets tracked; auto-marking as success (found %d jobs)", self.source_name, len(jobs))
                 counts["attempted"] = 1
                 counts["succeeded"] = 1
         return ScrapeReport(
@@ -172,7 +173,6 @@ class BaseScraper(ABC):
 
             if not job.get("url", ""):
                 self.record_error("Skipping job without URL")
-                report.errors = list(self._run_errors)
                 continue
 
             if self._is_known_duplicate(job, seen_job_ids, existing_job_ids):
@@ -183,6 +183,8 @@ class BaseScraper(ABC):
             if dry_run:
                 continue
             jobs_to_insert.append(job)
+
+        report.errors = list(self._run_errors)
 
         if dry_run:
             report.new = report.would_insert

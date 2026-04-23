@@ -345,6 +345,16 @@ with db._get_conn() as conn:
 - 6 条硬拒绝规则 (whitelist-only: 荷兰语检测、白名单角色、标题技术栈等)
 - 通过 Hard Filter 的职位进入 C1 评分，score >= 5.0 进入 C2 简历定制
 
+## 不可违反的工程约束
+
+### LinkedIn 爬虫: scroll-to-reveal 是必需的
+
+LinkedIn 搜索结果使用 occludable DOM — 只有滚动进 viewport 的 card 才会加载实际内容 (title/company/url)，未滚动到的 card 是空壳。**任何对 `linkedin_browser.py` 的重构都必须保留 `_scroll_to_reveal_all_cards()` 逻辑** (在 `_extract_cards()` 之前调用)，否则每个 query 只能抓到 ~7 条而非全部 25+ 条。
+
+历史教训: 2026-03-27 重构删掉了旧的 `scroll_into_view_if_needed()` 逻辑，导致近一个月丢失 ~70% 的搜索结果，2026-04-23 才发现并修复。
+
+验证方法: 跑 `scrape.py --dry-run`，检查 diagnostics 中 `cards_found` 是否接近手动搜索数量 (通常 20-30)。如果只有个位数 (~7)，说明滚动逻辑丢失。
+
 ## 注意事项
 
 - LinkedIn cookies 在 `config/linkedin_cookies.json`

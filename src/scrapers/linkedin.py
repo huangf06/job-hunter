@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import logging
 import random
 from datetime import datetime
@@ -17,6 +16,7 @@ from src.scrapers.linkedin_browser import (
     LinkedInSessionError,
 )
 from src.scrapers.linkedin_parser import extract_job_description, parse_search_cards
+from src.scrapers.utils import run_async
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class LinkedInScraper(BaseScraper):
         jobs: list[dict] = []
         query_diagnostics: list[dict] = []
         profile_scope = [name for name, _ in self._iter_active_profiles()]
-        seen_urls: set[str] = set()
+        seen_ids: set[str] = set()
 
         async with self.browser as browser:
             try:
@@ -89,7 +89,10 @@ class LinkedInScraper(BaseScraper):
                 )
                 return []
 
+            session_lost = False
             for profile_name, profile in self._iter_active_profiles():
+                if session_lost:
+                    break
                 for query in profile.get("queries", []):
                     keywords = query.get("keywords", "")
                     if not keywords:
@@ -115,16 +118,12 @@ class LinkedInScraper(BaseScraper):
 
                         for job in parsed_jobs:
                             url = job.get("url", "")
-                            if url in seen_urls:
+                            job_id = JobDatabase.generate_job_id(url) if url else ""
+                            if not url or job_id in seen_ids:
                                 continue
-                            seen_urls.add(url)
+                            seen_ids.add(job_id)
 
-                            job_id = JobDatabase.generate_job_id(url)
                             if job_id in known_ids:
-                                job["scraped_at"] = datetime.now().isoformat()
-                                job["search_profile"] = profile_name
-                                job["search_query"] = keywords
-                                jobs.append(job)
                                 continue
 
                             try:
@@ -133,8 +132,14 @@ class LinkedInScraper(BaseScraper):
                                 if description:
                                     job["description"] = description
                                     jobs_enriched += 1
+                            except (LinkedInSessionError, LinkedInCaptchaError):
+                                raise
                             except Exception as exc:
                                 logger.warning("[LinkedIn] JD fetch failed for %s: %s", url, exc)
+
+                            if not job.get("description"):
+                                logger.debug("[LinkedIn] Skipping new job without description: %s", url[:80])
+                                continue
 
                             job["scraped_at"] = datetime.now().isoformat()
                             job["search_profile"] = profile_name
@@ -143,7 +148,7 @@ class LinkedInScraper(BaseScraper):
 
                             await asyncio.sleep(2.0 + random.random() * 2.0)
 
-                        browser_diag = copy.deepcopy(getattr(browser, "diagnostics", {}))
+                        browser_diag = dict(getattr(browser, "diagnostics", {}))
                         query_diagnostics.append(
                             {
                                 "profile": profile_name,
@@ -157,8 +162,26 @@ class LinkedInScraper(BaseScraper):
                             }
                         )
                         self.record_target_success(keywords)
+                    except (LinkedInSessionError, LinkedInCaptchaError) as exc:
+                        browser_diag = dict(getattr(browser, "diagnostics", {}))
+                        query_diagnostics.append(
+                            {
+                                "profile": profile_name,
+                                "query": keywords,
+                                "status": "error",
+                                "cards_found": cards_found,
+                                "jobs_enriched": jobs_enriched,
+                                "last_stage": browser_diag.get("last_stage", ""),
+                                "last_url": browser_diag.get("last_url", ""),
+                                "error": str(exc),
+                            }
+                        )
+                        self.record_target_failure(keywords, exc)
+                        logger.warning("[LinkedIn] Session lost at query '%s', aborting remaining queries", keywords)
+                        session_lost = True
+                        break
                     except Exception as exc:
-                        browser_diag = copy.deepcopy(getattr(browser, "diagnostics", {}))
+                        browser_diag = dict(getattr(browser, "diagnostics", {}))
                         query_diagnostics.append(
                             {
                                 "profile": profile_name,
@@ -184,17 +207,7 @@ class LinkedInScraper(BaseScraper):
         return jobs
 
     def scrape(self) -> list[dict]:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            import concurrent.futures
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, self._scrape_async()).result()
-        return asyncio.run(self._scrape_async())
+        return run_async(self._scrape_async())
 
 
 __all__ = [

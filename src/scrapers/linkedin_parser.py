@@ -1,17 +1,6 @@
 import re
 
-
-def _strip_html(text: str) -> str:
-    text = re.sub(r"<br\s*/?>", "\n", text)
-    text = re.sub(r"<li>", "\n- ", text)
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"&amp;", "&", text)
-    text = re.sub(r"&lt;", "<", text)
-    text = re.sub(r"&gt;", ">", text)
-    text = re.sub(r"&nbsp;", " ", text)
-    text = re.sub(r"&#\d+;", "", text)
-    text = re.sub(r" {2,}", " ", text)
-    return text.strip()
+from src.scrapers.utils import strip_html
 
 
 def clean_title(title: str) -> str:
@@ -34,7 +23,8 @@ def clean_title(title: str) -> str:
             if first == second:
                 title = first
                 break
-            if len(second) >= 5 and first.startswith(second):
+            # Truncated repeat: "Data EngineerData Eng" → keep "Data Engineer"
+            if len(second) >= 5 and len(second) >= len(first) // 2 and first.startswith(second):
                 title = first
                 break
 
@@ -68,4 +58,4 @@ def extract_job_description(payload: dict) -> str:
         or payload.get("detail_text")
         or ""
     )
-    return _strip_html(description)
+    return strip_html(description)

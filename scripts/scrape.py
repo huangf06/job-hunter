@@ -57,13 +57,14 @@ def validate_profile_name(value: str) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Unified job scraper")
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "--platform",
         choices=["linkedin", "greenhouse", "iamexpat", "ats", "all"],
         default=None,
         help="Platform or alias to scrape",
     )
-    parser.add_argument("--all", action="store_true", help="Run all scraper platforms")
+    group.add_argument("--all", action="store_true", help="Run all scraper platforms")
     parser.add_argument("--profile", type=validate_profile_name, default=None, help="Active profile name")
     parser.add_argument("--save-to-db", action="store_true", help="Persist new jobs to the database")
     parser.add_argument("--dry-run", action="store_true", help="Report insert candidates without writing to DB")
@@ -182,13 +183,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     metrics = emit_metrics(platform_reports)
     print(json.dumps(metrics, indent=2))
+    severity = metrics["total"].get("severity", "info")
     logger.info(
-        "Scrape summary: platforms=%s new=%d found=%d",
+        "Scrape summary: platforms=%s new=%d found=%d severity=%s",
         ",".join(platforms),
         metrics["total"]["new"],
         metrics["total"]["found"],
+        severity,
     )
-    return 0
+    return 1 if severity == "error" else 0
 
 
 if __name__ == "__main__":
