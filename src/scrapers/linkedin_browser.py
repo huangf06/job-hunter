@@ -164,6 +164,7 @@ class LinkedInBrowser:
         job_type: str | None = None,
         workplace_type: str | None = None,
         language: str | None = None,
+        max_pages: int = 4,
     ) -> list[dict]:
         self.diagnostics["last_stage"] = "search"
         params = {
@@ -179,33 +180,56 @@ class LinkedInBrowser:
         if language:
             params["f_JC"] = language
 
-        await self._goto(f"https://www.linkedin.com/jobs/search?{urlencode(params)}", timeout=45000)
-        await self._wait_for_cards()
-        await self._scroll_to_reveal_all_cards()
-        cards = await self._extract_cards()
-        self.diagnostics["cards_found"] = len(cards)
-        return cards[:max_jobs] if max_jobs > 0 else cards
+        all_cards: list[dict] = []
+        seen_urls: set[str] = set()
+
+        for page in range(max_pages):
+            page_params = dict(params)
+            if page > 0:
+                page_params["start"] = page * 25
+            await self._goto(
+                f"https://www.linkedin.com/jobs/search?{urlencode(page_params)}",
+                timeout=45000,
+            )
+            await self._wait_for_cards()
+            await self._scroll_to_reveal_all_cards()
+            cards = await self._extract_cards()
+
+            new_on_page = 0
+            for card in cards:
+                url = card.get("url", "")
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    all_cards.append(card)
+                    new_on_page += 1
+
+            logger.info("[LinkedIn] Page %d: %d cards, %d new (total: %d)", page + 1, len(cards), new_on_page, len(all_cards))
+
+            if new_on_page == 0 or len(all_cards) >= max_jobs:
+                break
+
+        self.diagnostics["cards_found"] = len(all_cards)
+        return all_cards[:max_jobs] if max_jobs > 0 else all_cards
 
     async def fetch_job_description(self, url: str) -> dict:
         self.diagnostics["last_stage"] = "detail_fetch"
+        guest_payload = await self._fetch_guest_description(url)
+        if guest_payload.get("detail_text") or guest_payload.get("detail_html"):
+            return guest_payload
+
+        logger.debug("[LinkedIn] Guest API missed, trying logged-in view for %s", url)
         await self._goto(url, timeout=30000)
 
-        # Wait for SPA to render JD content (LinkedIn loads async in logged-in view)
-        for selector in DETAIL_SELECTORS[:5]:
+        for selector in DETAIL_SELECTORS[:3]:
             try:
                 await self.page.wait_for_selector(selector, timeout=2000)
                 break
             except Exception:
                 continue
-        else:
-            # No selector appeared after waits — give a final grace period
-            await self.page.wait_for_timeout(3000)
 
-        # Try expanding truncated JD via "Show more" button
         for btn_selector in (
             "button[aria-label*='Show more']",
             "button[aria-label*='See more']",
-            ".jobs-description__footer-button",
             "button.show-more-less-html__button",
         ):
             try:
@@ -217,12 +241,7 @@ class LinkedInBrowser:
             except Exception:
                 continue
 
-        payload = {
-            "json_ld_description": await self._extract_json_ld_description(),
-            "detail_text": "",
-            "detail_html": "",
-        }
-
+        payload = {"json_ld_description": "", "detail_text": "", "detail_html": ""}
         for selector in DETAIL_SELECTORS:
             try:
                 element = await self.page.query_selector(selector)
@@ -235,31 +254,25 @@ class LinkedInBrowser:
             except Exception:
                 continue
 
-        # Logged-in selectors failed — try guest API fallback
-        guest_payload = await self._fetch_guest_description(url)
-        if guest_payload.get("detail_text") or guest_payload.get("detail_html"):
-            logger.info("[LinkedIn] Guest API fallback succeeded for %s", url)
-            return guest_payload
-
         self.diagnostics["detail_fetch_failures"] += 1
-        logger.warning("[LinkedIn] All selectors failed for %s", url)
+        logger.warning("[LinkedIn] All methods failed for %s", url)
         return payload
 
     async def _fetch_guest_description(self, url: str) -> dict:
-        """Fallback: fetch JD from LinkedIn's public guest API (no auth needed)."""
+        """Fetch JD from LinkedIn's public guest API on a separate page (no auth needed)."""
         payload = {"json_ld_description": "", "detail_text": "", "detail_html": ""}
-        # Extract job ID from URL like /jobs/view/4398351834/
         match = re.search(r"/jobs/view/(\d+)", url)
         if not match:
             return payload
         job_id = match.group(1)
         guest_url = f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}"
+        guest_page = await self.context.new_page()
         try:
-            resp = await self.page.goto(guest_url, wait_until="domcontentloaded", timeout=15000)
+            resp = await guest_page.goto(guest_url, wait_until="domcontentloaded", timeout=15000)
             if not resp or resp.status != 200:
                 return payload
             for selector in GUEST_DETAIL_SELECTORS:
-                element = await self.page.query_selector(selector)
+                element = await guest_page.query_selector(selector)
                 if not element:
                     continue
                 payload["detail_text"] = (await element.inner_text()).strip()
@@ -267,7 +280,9 @@ class LinkedInBrowser:
                 if payload["detail_text"] or payload["detail_html"]:
                     return payload
         except Exception as exc:
-            logger.debug("[LinkedIn] Guest API fallback error: %s", exc)
+            logger.debug("[LinkedIn] Guest API error: %s", exc)
+        finally:
+            await guest_page.close()
         return payload
 
     async def _goto(self, url: str, *, timeout: int) -> None:

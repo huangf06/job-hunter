@@ -1,10 +1,13 @@
 import asyncio
 import copy
+import logging
+import random
 from datetime import datetime
 from pathlib import Path
 
 import yaml
 
+from src.db.job_db import JobDatabase
 from src.scrapers.base import BaseScraper
 from src.scrapers.linkedin_browser import (
     LinkedInBrowser,
@@ -14,6 +17,8 @@ from src.scrapers.linkedin_browser import (
     LinkedInSessionError,
 )
 from src.scrapers.linkedin_parser import extract_job_description, parse_search_cards
+
+logger = logging.getLogger(__name__)
 
 
 class LinkedInScraper(BaseScraper):
@@ -61,6 +66,7 @@ class LinkedInScraper(BaseScraper):
         jobs: list[dict] = []
         query_diagnostics: list[dict] = []
         profile_scope = [name for name, _ in self._iter_active_profiles()]
+        seen_urls: set[str] = set()
 
         async with self.browser as browser:
             try:
@@ -88,11 +94,13 @@ class LinkedInScraper(BaseScraper):
                     keywords = query.get("keywords", "")
                     if not keywords:
                         continue
+                    jobs_enriched = 0
+                    cards_found = 0
                     try:
                         cards = await browser.search_jobs(
                             keywords,
                             location=defaults.get("location", "Netherlands"),
-                            max_jobs=int(defaults.get("max_jobs", 25)),
+                            max_jobs=int(defaults.get("max_jobs", 100)),
                             date_posted=defaults.get("date_posted", "r86400"),
                             sort_by=defaults.get("sort_by", "DD"),
                             job_type=defaults.get("job_type"),
@@ -100,24 +108,48 @@ class LinkedInScraper(BaseScraper):
                             language=defaults.get("language"),
                         )
                         parsed_jobs = parse_search_cards(cards)
-                        jobs_enriched = 0
+                        cards_found = len(cards)
+
+                        card_urls = [j.get("url", "") for j in parsed_jobs]
+                        known_ids = self.db.find_existing_job_ids(card_urls)
+
                         for job in parsed_jobs:
-                            payload = await browser.fetch_job_description(job["url"])
-                            description = extract_job_description(payload)
-                            if description:
-                                job["description"] = description
-                                jobs_enriched += 1
+                            url = job.get("url", "")
+                            if url in seen_urls:
+                                continue
+                            seen_urls.add(url)
+
+                            job_id = JobDatabase.generate_job_id(url)
+                            if job_id in known_ids:
+                                job["scraped_at"] = datetime.now().isoformat()
+                                job["search_profile"] = profile_name
+                                job["search_query"] = keywords
+                                jobs.append(job)
+                                continue
+
+                            try:
+                                payload = await browser.fetch_job_description(url)
+                                description = extract_job_description(payload)
+                                if description:
+                                    job["description"] = description
+                                    jobs_enriched += 1
+                            except Exception as exc:
+                                logger.warning("[LinkedIn] JD fetch failed for %s: %s", url, exc)
+
                             job["scraped_at"] = datetime.now().isoformat()
                             job["search_profile"] = profile_name
                             job["search_query"] = keywords
-                        jobs.extend(parsed_jobs)
+                            jobs.append(job)
+
+                            await asyncio.sleep(2.0 + random.random() * 2.0)
+
                         browser_diag = copy.deepcopy(getattr(browser, "diagnostics", {}))
                         query_diagnostics.append(
                             {
                                 "profile": profile_name,
                                 "query": keywords,
                                 "status": "ok",
-                                "cards_found": len(cards),
+                                "cards_found": cards_found,
                                 "jobs_enriched": jobs_enriched,
                                 "last_stage": browser_diag.get("last_stage", ""),
                                 "last_url": browser_diag.get("last_url", ""),
@@ -132,8 +164,8 @@ class LinkedInScraper(BaseScraper):
                                 "profile": profile_name,
                                 "query": keywords,
                                 "status": "error",
-                                "cards_found": browser_diag.get("cards_found", 0),
-                                "jobs_enriched": 0,
+                                "cards_found": cards_found,
+                                "jobs_enriched": jobs_enriched,
                                 "last_stage": browser_diag.get("last_stage", ""),
                                 "last_url": browser_diag.get("last_url", ""),
                                 "error": str(exc),
