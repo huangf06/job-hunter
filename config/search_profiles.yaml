@@ -8,6 +8,7 @@
 defaults:
   location: "Netherlands"
   date_posted: "r86400"      # Past 24 hours (daily mode). Use r604800 for weekly catch-up
+  dedup_window_days: 30       # Only dedup against jobs scraped in the last N days; older jobs get re-scraped
   job_type: "F"              # F=Full-time (LinkedIn 2026 update: only Full-time for visa sponsorship)
   # workplace_type removed: LinkedIn 2026 update - new UI only has "Remote" toggle, no Hybrid/On-site split
   # Leaving unset to capture all workplace types (Remote, Hybrid, On-site)
