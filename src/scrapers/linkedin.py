@@ -114,7 +114,7 @@ class LinkedInScraper(BaseScraper):
                         cards_found = len(cards)
 
                         card_urls = [j.get("url", "") for j in parsed_jobs]
-                        known_ids = self.db.find_existing_job_ids(card_urls)
+                        known_ids = self.db.find_existing_job_ids(card_urls, since_days=self.dedup_window_days)
 
                         for job in parsed_jobs:
                             url = job.get("url", "")

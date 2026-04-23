@@ -86,6 +86,15 @@ class BaseScraper(ABC):
         self._run_errors: List[str] = []
         self._target_counts = {"attempted": 0, "succeeded": 0, "failed": 0}
         self._diagnostics: Dict = {}
+        self.dedup_window_days = self._load_dedup_window()
+
+    def _load_dedup_window(self) -> int:
+        try:
+            with open(PROFILES_FILE, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+            return int(config.get("defaults", {}).get("dedup_window_days", 0))
+        except (FileNotFoundError, ValueError):
+            return 0
 
     @abstractmethod
     def scrape(self) -> List[Dict]:
@@ -163,7 +172,10 @@ class BaseScraper(ABC):
 
         report = self._build_report(jobs)
         seen_job_ids: set[str] = set()
-        existing_job_ids = self.db.find_existing_job_ids([job.get("url", "") for job in jobs])
+        existing_job_ids = self.db.find_existing_job_ids(
+            [job.get("url", "") for job in jobs],
+            since_days=self.dedup_window_days,
+        )
         jobs_to_insert: List[Dict] = []
 
         for job in jobs:
@@ -193,7 +205,7 @@ class BaseScraper(ABC):
         if jobs_to_insert:
             with self.db.batch_mode():
                 for job in jobs_to_insert:
-                    self.db.insert_job(job)
+                    self.db.insert_job(job, dedup_window_days=self.dedup_window_days)
             report.new = len(jobs_to_insert)
 
         logger.info(

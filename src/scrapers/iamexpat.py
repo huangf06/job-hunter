@@ -132,7 +132,10 @@ class IamExpatScraper(BaseScraper):
             if not cards:
                 break
 
-            existing_job_ids = self.db.find_existing_job_ids([card["url"] for card in cards])
+            existing_job_ids = self.db.find_existing_job_ids(
+                [card["url"] for card in cards],
+                since_days=self.dedup_window_days,
+            )
 
             detail_tasks = []
             for card in cards:

@@ -171,7 +171,8 @@ def test_scrape_query_skips_detail_fetch_for_known_duplicates(mock_db_cls, mock_
 
     assert len(jobs) == 0
     db.find_existing_job_ids.assert_called_once_with(
-        ["https://www.iamexpat.nl/career/jobs-netherlands/it/data-engineer/abc123"]
+        ["https://www.iamexpat.nl/career/jobs-netherlands/it/data-engineer/abc123"],
+        since_days=scraper.dedup_window_days,
     )
     db.job_exists.assert_not_called()
     mock_detail.assert_not_awaited()

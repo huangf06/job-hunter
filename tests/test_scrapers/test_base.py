@@ -124,5 +124,7 @@ def test_run_prefetches_existing_job_ids_for_duplicate_checks(mock_db_cls, mock_
     assert report.skipped_duplicates == 1
     assert report.would_insert == 1
     assert report.new == 1
-    db.find_existing_job_ids.assert_called_once_with([url_existing, url_new])
+    db.find_existing_job_ids.assert_called_once_with(
+        [url_existing, url_new], since_days=scraper.dedup_window_days,
+    )
     db.job_exists.assert_not_called()
