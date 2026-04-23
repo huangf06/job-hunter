@@ -110,11 +110,6 @@ companies:
     board_token: samsara
     location_filter: "Netherlands"
 
-  - name: Lightspeed
-    ats: greenhouse
-    board_token: lightspeedhq
-    location_filter: "Netherlands"
-
   - name: dbt Labs
     ats: greenhouse
     board_token: dbtlabsinc
