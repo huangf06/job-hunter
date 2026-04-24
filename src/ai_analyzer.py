@@ -130,6 +130,8 @@ class AIAnalyzer:
 
                 for bullet in exp_data.get('verified_bullets', []):
                     if isinstance(bullet, dict) and 'content' in bullet:
+                        if bullet.get('status') == 'deprecated':
+                            continue
                         bid = bullet.get('id', '')
                         prefix = f"[{bid}] " if bid else ""
                         role = bullet.get('narrative_role', '')
@@ -152,6 +154,8 @@ class AIAnalyzer:
 
                 for bullet in proj_data.get('verified_bullets', []):
                     if isinstance(bullet, dict) and 'content' in bullet:
+                        if bullet.get('status') == 'deprecated':
+                            continue
                         bid = bullet.get('id', '')
                         prefix = f"[{bid}] " if bid else ""
                         role = bullet.get('narrative_role', '')

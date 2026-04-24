@@ -98,12 +98,24 @@ body {
     font-style: italic;
 }
 
+.edu-subheader {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
 .edu-degree {
     font-style: italic;
     font-size: 10pt;
     color: var(--primary-color);
 }
 .edu-gpa { font-weight: normal; font-style: normal; }
+
+.edu-location {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    font-style: italic;
+}
 
 .edu-body {
     font-size: 9.5pt;
@@ -144,6 +156,12 @@ body {
 }
 
 .exp-date {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.exp-location {
     font-size: 9.5pt;
     color: var(--text-muted);
     font-style: italic;
@@ -239,6 +257,7 @@ body {
     font-weight: bold;
     color: var(--primary-color);
     min-width: 95pt;
+    padding-right: 4pt;
     flex-shrink: 0;
 }
 
@@ -252,11 +271,13 @@ body {
 }
 .cert-label { font-weight: bold; }
 
-/* ── Languages ── */
-.lang-text {
+/* ── Additional ── */
+.additional-row {
     font-size: 9.5pt;
     color: var(--primary-color);
+    line-height: 1.5;
 }
+.additional-label { font-weight: bold; }
 
 @media print {
     body { padding: 0; max-width: none; }
@@ -278,9 +299,11 @@ body {
             <a href="mailto:{{ email }}">{{ email }}</a>
         </div>
         <div class="contact-row">
-            <a href="{{ linkedin }}">LinkedIn</a>
+            <a href="{{ linkedin }}">{{ linkedin_display }}</a>
             <span class="contact-divider">|</span>
-            <a href="{{ github }}">GitHub</a>
+            <a href="{{ github }}">{{ github_display }}</a>
+            <span class="contact-divider">|</span>
+            <a href="{{ blog_url }}">{{ blog_display }}</a>
         </div>
     </header>
 
@@ -288,33 +311,6 @@ body {
     {% if bio and bio.strip() %}
     <div class="bio">{{ bio }}</div>
     {% endif %}
-
-    <!-- EXPERIENCE -->
-    <section class="section">
-        <h2 class="section-title">Professional Experience</h2>
-        {% for exp in experiences %}
-        <div class="exp-item">
-            <div class="exp-header">
-                <span class="exp-org">{{ exp.company }}{% if exp.company_note %} <span class="exp-note">({{ exp.company_note }})</span>{% endif %}</span>
-                <span class="exp-date">{{ exp.date }}</span>
-            </div>
-            <div class="exp-subheader">
-                <span class="exp-role">{{ exp.title }}</span>
-            </div>
-            <ul class="exp-bullets">
-                {% for bullet in exp.bullets %}
-                <li>{{ bullet }}</li>
-                {% endfor %}
-            </ul>
-            {% if exp.technical_skills %}
-            <div class="exp-skills"><span class="label">Skills:</span> {{ exp.technical_skills }}</div>
-            {% endif %}
-        </div>
-        {% endfor %}
-        {% if career_note %}
-        <div class="career-note">{{ career_note }}</div>
-        {% endif %}
-    </section>
 
     <!-- EDUCATION -->
     <section class="section">
@@ -324,7 +320,10 @@ body {
                 <span class="edu-school">{{ edu_master_school }}</span>
                 <span class="edu-date">{{ edu_master_date }}</span>
             </div>
-            <div class="edu-degree">{{ edu_master_degree }}{% if edu_master_gpa %} <span class="edu-gpa">(GPA: {{ edu_master_gpa }})</span>{% endif %}</div>
+            <div class="edu-subheader">
+                <span class="edu-degree">{{ edu_master_degree }}{% if edu_master_gpa %} <span class="edu-gpa">(GPA: {{ edu_master_gpa }})</span>{% endif %}</span>
+                {% if edu_master_location %}<span class="edu-location">{{ edu_master_location }}</span>{% endif %}
+            </div>
             {% if edu_master_thesis %}
             <div class="edu-body">Thesis: {{ edu_master_thesis }}</div>
             {% endif %}
@@ -337,7 +336,10 @@ body {
                 <span class="edu-school">{{ edu_bachelor_school }}{% if edu_bachelor_school_note %} <span class="edu-note">({{ edu_bachelor_school_note }})</span>{% endif %}</span>
                 <span class="edu-date">{{ edu_bachelor_date }}</span>
             </div>
-            <div class="edu-degree">{{ edu_bachelor_degree }}</div>
+            <div class="edu-subheader">
+                <span class="edu-degree">{{ edu_bachelor_degree }}</span>
+                {% if edu_bachelor_location %}<span class="edu-location">{{ edu_bachelor_location }}</span>{% endif %}
+            </div>
             {% if edu_bachelor_thesis %}
             <div class="edu-body">Thesis: {{ edu_bachelor_thesis }}</div>
             {% endif %}
@@ -372,6 +374,34 @@ body {
     </section>
     {% endif %}
 
+    <!-- EXPERIENCE -->
+    <section class="section">
+        <h2 class="section-title">Professional Experience</h2>
+        {% for exp in experiences %}
+        <div class="exp-item">
+            <div class="exp-header">
+                <span class="exp-org">{{ exp.company }}{% if exp.company_note %} <span class="exp-note">({{ exp.company_note }})</span>{% endif %}</span>
+                <span class="exp-date">{{ exp.date }}</span>
+            </div>
+            <div class="exp-subheader">
+                <span class="exp-role">{{ exp.title }}</span>
+                {% if exp.location %}<span class="exp-location">{{ exp.location }}</span>{% endif %}
+            </div>
+            <ul class="exp-bullets">
+                {% for bullet in exp.bullets %}
+                <li>{{ bullet }}</li>
+                {% endfor %}
+            </ul>
+            {% if exp.technical_skills %}
+            <div class="exp-skills"><span class="label">Skills:</span> {{ exp.technical_skills }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% if career_note %}
+        <div class="career-note">{{ career_note }}</div>
+        {% endif %}
+    </section>
+
     <!-- TECHNICAL SKILLS -->
     <section class="section">
         <h2 class="section-title">Technical Skills</h2>
@@ -385,10 +415,16 @@ body {
         </div>
     </section>
 
-    <!-- LANGUAGES -->
+    <!-- ADDITIONAL -->
     <section class="section">
-        <h2 class="section-title">Languages</h2>
-        <div class="lang-text">{{ languages | default('English - Fluent | Mandarin - Native') }}</div>
+        <h2 class="section-title">Additional</h2>
+        <div class="additional-row"><span class="additional-label">Languages:</span>  {{ languages | default('English (Fluent), Mandarin (Native)') }}</div>
+        {% if interests %}
+        <div class="additional-row"><span class="additional-label">Interests:</span>  {{ interests }}</div>
+        {% endif %}
+        {% if blog_display %}
+        <div class="additional-row"><span class="additional-label">Blog:</span>  <a href="{{ blog_url }}">{{ blog_display }}</a></div>
+        {% endif %}
     </section>
 </body>
 </html>

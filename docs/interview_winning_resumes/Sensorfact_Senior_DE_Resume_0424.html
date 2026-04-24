@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fei Huang - Resume</title>
+    <style>
+:root {
+    --primary-color: #1a1a1a;
+    --text-muted: #555555;
+    --link-color: #2c5282;
+    --border-color: #1a1a1a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@page { size: A4; margin: 0.55in; }
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    color: var(--primary-color);
+    font-variant-ligatures: none;
+    max-width: 8.27in;
+    margin: 0 auto;
+    padding: 0.55in;
+    background: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* ── Header: centered ── */
+.header {
+    text-align: center;
+    margin-bottom: 12pt;
+    padding-bottom: 10pt;
+    border-bottom: 2pt solid var(--border-color);
+}
+
+.name {
+    font-size: 24pt;
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 1pt;
+    margin-bottom: 5pt;
+}
+
+.contact-row {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+.contact-row a { color: var(--link-color); text-decoration: none; }
+.contact-divider { color: var(--text-muted); margin: 0 5pt; }
+
+/* ── Bio ── */
+.bio {
+    font-size: 10pt;
+    line-height: 1.4;
+    color: var(--primary-color);
+    margin-bottom: 12pt;
+}
+
+/* ── Section ── */
+.section { margin-bottom: 12pt; }
+
+.section-title {
+    font-size: 11pt;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    margin-bottom: 8pt;
+    padding-bottom: 2pt;
+    border-bottom: 1.5pt solid var(--border-color);
+}
+
+/* ── Education ── */
+.edu-item { margin-bottom: 8pt; }
+
+.edu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1pt;
+}
+
+.edu-school {
+    font-weight: bold;
+    font-size: 10.5pt;
+    color: var(--primary-color);
+}
+
+.edu-date {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.edu-degree {
+    font-style: italic;
+    font-size: 10pt;
+    color: var(--primary-color);
+}
+.edu-gpa { font-weight: normal; font-style: normal; }
+
+.edu-body {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    margin-top: 1pt;
+    font-style: italic;
+}
+
+/* ── Experience ── */
+.exp-item { margin-bottom: 10pt; }
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1pt;
+}
+
+.exp-org {
+    font-weight: bold;
+    font-size: 10.5pt;
+    color: var(--primary-color);
+}
+.exp-note { font-weight: normal; }
+.edu-note { font-weight: normal; }
+
+.exp-subheader {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4pt;
+}
+
+.exp-role {
+    font-style: italic;
+    font-size: 10pt;
+    color: var(--primary-color);
+}
+
+.exp-date {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.exp-bullets {
+    list-style: disc;
+    padding-left: 14pt;
+    margin: 0;
+}
+
+.exp-bullets li {
+    font-size: 9.5pt;
+    line-height: 1.35;
+    color: var(--primary-color);
+    margin-bottom: 2pt;
+}
+
+.exp-skills {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    margin-top: 3pt;
+    padding-left: 14pt;
+}
+.exp-skills .label { font-weight: bold; }
+
+.career-note {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 4pt;
+    padding-left: 14pt;
+}
+
+/* ── Projects ── */
+.proj-item { margin-bottom: 8pt; }
+
+.proj-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2pt;
+}
+
+.proj-name {
+    font-weight: bold;
+    font-size: 10.5pt;
+    color: var(--primary-color);
+}
+
+.proj-date {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.proj-bullets {
+    list-style: disc;
+    padding-left: 14pt;
+    margin: 0;
+}
+
+.proj-bullets li {
+    font-size: 9.5pt;
+    line-height: 1.35;
+    color: var(--primary-color);
+    margin-bottom: 2pt;
+}
+
+.proj-skills {
+    font-size: 9.5pt;
+    color: var(--text-muted);
+    margin-top: 3pt;
+    padding-left: 14pt;
+}
+.proj-skills .label { font-weight: bold; }
+
+/* ── Technical Skills ── */
+.skills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4pt;
+    font-size: 9.5pt;
+}
+
+.skill-row {
+    display: flex;
+    align-items: baseline;
+    line-height: 1.4;
+}
+
+.skill-cat {
+    font-weight: bold;
+    color: var(--primary-color);
+    min-width: 95pt;
+    flex-shrink: 0;
+}
+
+.skill-items { color: var(--primary-color); flex: 1; }
+
+/* ── Certifications ── */
+.cert-text {
+    font-size: 10pt;
+    font-weight: normal;
+    color: var(--primary-color);
+}
+.cert-label { font-weight: bold; }
+
+/* ── Languages ── */
+.lang-text {
+    font-size: 9.5pt;
+    color: var(--primary-color);
+}
+
+@media print {
+    body { padding: 0; max-width: none; }
+    .exp-item, .edu-item, .proj-item { break-inside: avoid; }
+    a { text-decoration: none; color: var(--primary-color); }
+    a[href]:after { content: ""; }
+}
+</style>
+</head>
+<body>
+    <!-- HEADER: centered -->
+    <header class="header">
+        <h1 class="name">Fei Huang</h1>
+        <div class="contact-row">
+            Amsterdam, Netherlands
+            <span class="contact-divider">|</span>
+            <a href="tel:+31 645 038 614">+31 645 038 614</a>
+            <span class="contact-divider">|</span>
+            <a href="mailto:huangf06@gmail.com">huangf06@gmail.com</a>
+        </div>
+        <div class="contact-row">
+            <a href="https://www.linkedin.com/in/huangf06/">LinkedIn</a>
+            <span class="contact-divider">|</span>
+            <a href="https://github.com/huangf06">GitHub</a>
+        </div>
+    </header>
+
+    <!-- BIO -->
+    
+    <div class="bio">Data Engineer with 6 years of experience in scalable data pipelines and ETL systems and anomaly detection and monitoring systems. M.Sc. in Artificial Intelligence from Vrije Universiteit Amsterdam (Aug. 2025, GPA 8.2/10). Databricks Certified Data Engineer Professional. Eager to bring these skills to Sensorfact.</div>
+    
+
+    <!-- EXPERIENCE -->
+    <section class="section">
+        <h2 class="section-title">Professional Experience</h2>
+        
+        <div class="exp-item">
+            <div class="exp-header">
+                <span class="exp-org">GLP Technology</span>
+                <span class="exp-date">Jul. 2017 -- Aug. 2019</span>
+            </div>
+            <div class="exp-subheader">
+                <span class="exp-role">Senior Data Engineer</span>
+            </div>
+            <ul class="exp-bullets">
+                
+                <li>Designed and implemented PySpark ETL pipelines processing consumer credit data across the full loan lifecycle — from application ingestion through repayment tracking; provided technical mentorship to junior analyst on distributed data processing patterns.</li>
+                
+                <li>Engineered automated data pipeline and quality framework for consumer lending operations, implementing schema validation and integrity checks across loan origination and repayment flows — ensuring clean inputs for credit scoring models.</li>
+                
+                <li>Built the data foundation powering all risk systems: daily ETL of 30+ production tables into AWS Redshift, plus a credit bureau report parser transforming deeply nested JSON into 5 structured analytical tables.</li>
+                
+            </ul>
+            
+            <div class="exp-skills"><span class="label">Skills:</span> Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI</div>
+            
+        </div>
+        
+        <div class="exp-item">
+            <div class="exp-header">
+                <span class="exp-org">Baiquan Investment</span>
+                <span class="exp-date">Jul. 2015 -- Jun. 2017</span>
+            </div>
+            <div class="exp-subheader">
+                <span class="exp-role">Quantitative Developer</span>
+            </div>
+            <ul class="exp-bullets">
+                
+                <li>Built end-to-end market data ingestion pipeline processing 3,000+ A-share securities and 5+ years of tick-level futures data from multiple vendor feeds; implemented corporate action handling and deduplication logic ensuring data integrity for all downstream research and live trading.</li>
+                
+                <li>Engineered high-performance factor computation engine using vectorized NumPy/Pandas operations, computing technical and fundamental indicators across 3,000+ stocks daily — enabling rapid iteration cycles in alpha research.</li>
+                
+                <li>Architected event-driven backtesting framework supporting strategy simulation, walk-forward validation, and performance attribution — adopted as core research infrastructure by the investment team.</li>
+                
+            </ul>
+            
+        </div>
+        
+        <div class="exp-item">
+            <div class="exp-header">
+                <span class="exp-org">Ele.me <span class="exp-note">((acquired by Alibaba))</span></span>
+                <span class="exp-date">Sep. 2013 -- Jul. 2015</span>
+            </div>
+            <div class="exp-subheader">
+                <span class="exp-role">Data Analyst</span>
+            </div>
+            <ul class="exp-bullets">
+                
+                <li>Built anti-fraud detection system identifying 51,000+ suspicious order clusters across 2.2M+ users using 3 pattern algorithms (same-phone, high-frequency, repeat-order matching), preventing fraudulent subsidy claims during hyper-growth.</li>
+                
+                <li>Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, cutting scan volume 5x (500GB → 100GB) and unlocking real-time analytics on 30+ warehouse tables for fraud detection, operations, and marketing teams.</li>
+                
+            </ul>
+            
+            <div class="exp-skills"><span class="label">Skills:</span> SQL, Hadoop, Hive, Python, pandas, NumPy, A/B Testing</div>
+            
+        </div>
+        
+        
+        <div class="career-note">Career transition (2019–2023): Relocated to the Netherlands and began M.Sc. in Artificial Intelligence at VU Amsterdam.</div>
+        
+    </section>
+
+    <!-- EDUCATION -->
+    <section class="section">
+        <h2 class="section-title">Education</h2>
+        <div class="edu-item">
+            <div class="edu-header">
+                <span class="edu-school">Vrije Universiteit Amsterdam</span>
+                <span class="edu-date">Sep. 2023 -- Aug. 2025</span>
+            </div>
+            <div class="edu-degree">M.Sc. in Artificial Intelligence <span class="edu-gpa">(GPA: 8.2/10)</span></div>
+            
+            <div class="edu-body">Thesis: Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments</div>
+            
+            
+            <div class="edu-body">Relevant Coursework: Deep Learning (9.5), Multi-Agent Systems (9.5), ML4QS (9.5), Data Mining (9.0), NLP (9.0)</div>
+            
+        </div>
+        <div class="edu-item">
+            <div class="edu-header">
+                <span class="edu-school">Tsinghua University <span class="edu-note">(#1 in China)</span></span>
+                <span class="edu-date">Sep. 2006 -- Jul. 2010</span>
+            </div>
+            <div class="edu-degree">B.Eng. in Industrial Engineering</div>
+            
+        </div>
+        
+        <div class="edu-item">
+            <div class="cert-text"><span class="cert-label">Certification:</span> Databricks Certified Data Engineer Professional (2026)</div>
+        </div>
+        
+    </section>
+
+    <!-- PROJECTS -->
+    
+    <section class="section">
+        <h2 class="section-title">Projects</h2>
+        
+        <div class="proj-item">
+            <div class="proj-header">
+                <span class="proj-name">Financial Data Lakehouse (Databricks/Spark/AWS)</span>
+                <span class="proj-date">Oct. 2025 -- Present</span>
+            </div>
+            <ul class="proj-bullets">
+                
+                <li>Architected end-to-end data lakehouse on Databricks processing real-time financial market feeds via Auto Loader and Structured Streaming; implemented schema evolution and checkpoint-based fault tolerance ensuring zero data loss during upstream changes.</li>
+                
+                <li>Engineered data quality framework with quarantine-and-replay pattern isolating malformed records across Bronze/Silver/Gold Medallion Architecture layers — achieving automated recovery without manual intervention.</li>
+                
+                <li>Integrated Airflow for orchestration and Docker for consistent deployment across environments.</li>
+                
+            </ul>
+            
+        </div>
+        
+        <div class="proj-item">
+            <div class="proj-header">
+                <span class="proj-name">Greenhouse Sensor Data Pipeline (PySpark + Delta Lake)</span>
+                <span class="proj-date">2025</span>
+            </div>
+            <ul class="proj-bullets">
+                
+                <li>Built production-style ETL pipeline ingesting 3,842 JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing — 58 tests, CI via GitHub Actions.</li>
+                
+                <li>Engineered 6-check data quality framework (completeness, validity, range consistency, duplicates, IQR-based anomaly detection, station status) with severity-ranked quality flags; anomalies preserved through Gold layer aggregations for analyst traceability rather than silently dropped.</li>
+                
+            </ul>
+            
+        </div>
+        
+    </section>
+    
+
+    <!-- TECHNICAL SKILLS -->
+    <section class="section">
+        <h2 class="section-title">Technical Skills</h2>
+        <div class="skills-list">
+            
+            <div class="skill-row">
+                <span class="skill-cat">Languages &amp; Core:</span>
+                <span class="skill-items">Python (Expert), SQL (Expert), Scala, Bash</span>
+            </div>
+            
+            <div class="skill-row">
+                <span class="skill-cat">Data Engineering:</span>
+                <span class="skill-items">PySpark, Spark, Delta Lake, Kafka, Structured Streaming, ETL/ELT, Schema Evolution, Medallion Architecture</span>
+            </div>
+            
+            <div class="skill-row">
+                <span class="skill-cat">Cloud &amp; DevOps:</span>
+                <span class="skill-items">AWS (Lambda, S3, EMR), Docker, Kubernetes, Airflow, CI/CD, Git</span>
+            </div>
+            
+            <div class="skill-row">
+                <span class="skill-cat">Databases:</span>
+                <span class="skill-items">PostgreSQL, MySQL, Hadoop, Hive</span>
+            </div>
+            
+            <div class="skill-row">
+                <span class="skill-cat">ML/AI Frameworks:</span>
+                <span class="skill-items">PyTorch, XGBoost, LightGBM, scikit-learn, Statistics</span>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- LANGUAGES -->
+    <section class="section">
+        <h2 class="section-title">Languages</h2>
+        <div class="lang-text">English (Fluent), Mandarin (Native)</div>
+    </section>
+</body>
+</html>

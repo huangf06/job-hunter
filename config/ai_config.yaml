@@ -93,10 +93,13 @@ resume:
     print_background: true
 
   # Career gap explanation (rendered below experience section)
-  career_note: "Career transition (2019–2023): Relocated to the Netherlands and began M.Sc. in Artificial Intelligence at VU Amsterdam."
+  career_note: "Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation."
 
-  # Interests line (rendered at bottom of resume)
-  interests: "Philosophy, strategy games, distance running, analytical writing"
+  # Interests line (rendered in Additional section)
+  interests: "Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing"
+
+  # Human languages (rendered in Additional section)
+  languages: "English (Fluent), Mandarin (Native), Dutch (Conversational)"
 
   # Candidate contact info (used by resume renderer)
   candidate:
@@ -117,7 +120,7 @@ resume:
       school: "Vrije Universiteit Amsterdam"
       location: "Amsterdam, Netherlands"
       degree: "M.Sc. in Artificial Intelligence"
-      date: "Sep. 2023 -- Aug. 2025"
+      date: "Sep. 2023 - Aug. 2025"
       gpa: "8.2/10"
       coursework: "Deep Learning (9.5), Multi-Agent Systems (9.5), ML4QS (9.5), Data Mining (9.0), NLP (9.0)"
       thesis: "Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments"
@@ -125,9 +128,9 @@ resume:
       school: "Tsinghua University"
       location: "Beijing, China"
       degree: "B.Eng. in Industrial Engineering"
-      date: "Sep. 2006 -- Jul. 2010"
-      school_note: "#1 in China"
-      thesis: ""
+      date: "Sep. 2006 - Jul. 2010"
+      school_note: "Ranked #1 in China, top 20 globally"
+      thesis: "Design and Implementation of Web-based Collaborative Office System (Java/MVC/SQL Server)"
     certification: "Databricks Certified Data Engineer Professional (2026)"
 
 # =============================================================================
@@ -285,7 +288,7 @@ prompts:
             "company_note": null,
             "location": "Shanghai, China",
             "title": "Data Scientist & Team Lead",
-            "date": "Jul. 2017 -- Aug. 2019",
+            "date": "Jul. 2017 - Aug. 2019",
             "bullets": ["glp_founding_member", "glp_decision_engine", "glp_data_engineer"]
           }},
           {{
@@ -293,22 +296,22 @@ prompts:
             "company_note": null,
             "location": "Beijing, China",
             "title": "Quantitative Researcher",
-            "date": "Jul. 2015 -- Jun. 2017",
+            "date": "Jul. 2015 - Jun. 2017",
             "bullets": ["bq_factor_research", "bq_de_factor_engine"]
           }},
           {{
             "company": "Ele.me",
-            "company_note": "(acquired by Alibaba)",
+            "company_note": "acquired by Alibaba",
             "location": "Shanghai, China",
             "title": "Data Analyst",
-            "date": "Sep. 2013 -- Jul. 2015",
+            "date": "Sep. 2013 - Jul. 2015",
             "bullets": ["eleme_ab_testing"]
           }}
         ],
         "projects": [
           {{
             "name": "Financial Data Lakehouse (Databricks/Spark/AWS)",
-            "date": "Oct. 2025 -- Present",
+            "date": "Oct. 2025 - Present",
             "bullets": ["lakehouse_streaming", "lakehouse_quality"]
           }},
           {{
@@ -331,9 +334,9 @@ prompts:
 
     ### CONTENT SELECTION PRINCIPLE
     Include ALL content that is relevant to the JD. Exclude content that doesn't strengthen the application.
-    The resume can be 1-2 pages — do NOT artificially cut content to fit 1 page.
-    Sections order: Education → Projects → Experience → Skills → Interests.
-    Education and Interests are static. You control: bio (optional), experiences, projects, skills.
+    The resume MUST be exactly 2 pages — not 1, not 3. If content would exceed 2 pages, drop the lowest-priority bullets first (check BULLET PRIORITY section). Typical total: 8-12 bullets across all experiences.
+    Sections order: Education → Projects → Experience → Skills → Additional.
+    Education and Additional are static. You control: bio (optional), experiences, projects, skills.
 
     ### BIO RULES (STRUCTURED FORMAT)
     - Bio is a STRUCTURED OBJECT, not free text. The system assembles the final text.
@@ -353,8 +356,23 @@ prompts:
     {title_context}
 
     ### COMPANY_NOTE
-    - Ele.me: ALWAYS set company_note to "(acquired by Alibaba)"
+    - Ele.me: ALWAYS set company_note to "acquired by Alibaba"
     - Other companies: set to null
+
+    ### BULLET PRIORITY (BASED ON 17 INTERVIEW-WINNING RESUMES)
+    Core bullets (appeared in 10+ of 17 interview resumes) — include in EVERY relevant resume:
+    - glp_founding_member (17/17), glp_pyspark (17/17), bq_de_factor_engine (17/17)
+    - glp_data_quality (14/17), glp_portfolio_monitoring (13/17), bq_de_pipeline (13/17), bq_de_backtest_infra (10/17)
+
+    Frequent bullets (5-9 interviews):
+    - bq_data_quality (9/17), eleme_ab_testing (8/17), eleme_kmeans (8/17)
+    - bq_factor_research (7/17), eleme_sql_simple (6/17)
+
+    Occasional bullets (1-4 interviews):
+    - bq_futures_strategy (4/17), glp_data_compliance (3/17)
+
+    Never used in interview resumes (deprioritize):
+    - glp_decision_engine (0/17) — do NOT include unless the JD specifically requires rule engines
 
     ### BULLET DISTRIBUTION (GUIDANCE, NOT HARD LIMITS)
     Include bullets based on JD relevance. Typical ranges:

@@ -118,9 +118,10 @@ work_experience:
     technical_skills: "Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI"
 
     recommended_sequences:
-      data_engineer: ["glp_founding_member", "glp_pyspark", "glp_data_quality"]
-      ml_engineer: ["glp_founding_member", "glp_decision_engine"]
-      data_scientist: ["glp_founding_member", "glp_decision_engine", "glp_portfolio_monitoring"]
+      data_engineer: ["glp_pyspark", "glp_data_quality", "glp_portfolio_monitoring", "glp_founding_member"]
+      ml_engineer: ["glp_founding_member", "glp_pyspark", "glp_portfolio_monitoring"]
+      data_scientist: ["glp_founding_member", "glp_pyspark", "glp_data_quality"]
+      quant: ["glp_founding_member", "glp_portfolio_monitoring", "glp_pyspark"]
 
     verified_bullets:
 
@@ -220,7 +221,7 @@ work_experience:
   # BAIQUAN INVESTMENT (Jul 2015 - Jun 2017)
   # ---------------------------------------------------------------------------
   baiquan_investment:
-    company: "BQ Investment"
+    company: "Baiquan Investment"
     company_type: "Quantitative hedge fund, 5-person team"
     location: "Beijing, China"
     period: "Jul. 2015 - Jun. 2017"
@@ -235,9 +236,9 @@ work_experience:
 
     # Recommended bullet sequences by job template
     recommended_sequences:
-      data_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_de_backtest_infra"]
-      ml_engineer: ["bq_futures_strategy", "bq_factor_research", "bq_de_factor_engine"]
-      quant_researcher: ["bq_futures_strategy", "bq_factor_research", "bq_de_backtest_infra", "bq_de_pipeline"]
+      data_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_data_quality"]
+      quant: ["bq_factor_research", "bq_de_factor_engine", "bq_de_backtest_infra", "bq_futures_strategy"]
+      ml_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_de_backtest_infra"]
       data_scientist: ["bq_factor_research", "bq_de_factor_engine", "bq_futures_strategy"]
 
     verified_bullets:
@@ -341,7 +342,7 @@ work_experience:
   # ---------------------------------------------------------------------------
   eleme:
     company: "Ele.me"
-    company_note: "(acquired by Alibaba)"
+    company_note: "acquired by Alibaba"
     location: "Shanghai, China"
     period: "Sep. 2013 - Jul. 2015"
 
@@ -352,10 +353,11 @@ work_experience:
 
     # Recommended bullet sequences by job template
     recommended_sequences:
-      data_engineer: ["eleme_sql_optimization", "eleme_fraud_detection", "eleme_ab_testing"]
-      data_analyst: ["eleme_ab_testing", "eleme_fraud_detection", "eleme_user_segmentation"]
-      data_scientist: ["eleme_ab_testing", "eleme_fraud_detection", "eleme_sql_optimization"]
-      ml_engineer: ["eleme_fraud_detection", "eleme_ab_testing", "eleme_sql_optimization"]
+      data_engineer: ["eleme_kmeans", "eleme_sql_simple"]
+      ml_engineer: ["eleme_ab_testing"]
+      data_scientist: ["eleme_ab_testing", "eleme_kmeans"]
+      quant: ["eleme_ab_testing"]
+      data_analyst: ["eleme_ab_testing", "eleme_kmeans", "eleme_user_segmentation"]
 
     verified_bullets:
 
@@ -383,9 +385,17 @@ work_experience:
         narrative_role: optional
         content: "Engineered SQL-based user segmentation pipeline analyzing 2.2M+ users across 4 behavioral cohorts (dual-screen, payment method, campaign engagement, geographic) — delivered actionable customer profiles adopted by marketing for targeted red packet campaigns."
 
-      - id: eleme_sql_reporting
+      - id: eleme_kmeans
         status: active
-        tags: [sql, hadoop, hive, reporting]
+        interview_count: 8
+        tags: [ml, clustering, hadoop, hive, user-segmentation]
+        narrative_role: headline
+        content: "Engineered K-means clustering pipeline on Hadoop/Hive to segment millions of users by behavioral patterns; delivered actionable customer profiles adopted by product and marketing teams for personalized campaign targeting."
+
+      - id: eleme_sql_simple
+        status: active
+        interview_count: 6
+        tags: [sql, hadoop, hive, performance]
         narrative_role: optional
         content: "Optimized complex SQL queries on Hadoop/Hive for cross-functional stakeholders, cutting reporting turnaround time by 30%."
 
