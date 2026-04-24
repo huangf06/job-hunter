@@ -258,7 +258,7 @@ work_experience:
         status: active
         tags: [backtesting, infrastructure, quant]
         narrative_role: optional
-        content: "Architected event-driven backtesting framework (Python + MATLAB) supporting strategy simulation, walk-forward validation, and 15+ performance metrics — adopted as core research infrastructure by the investment team."
+        content: "Architected event-driven backtesting framework supporting strategy simulation, walk-forward validation, and performance attribution — adopted as core research infrastructure by the investment team."
 
       - id: bq_factor_research
         status: active
@@ -383,6 +383,12 @@ work_experience:
         narrative_role: optional
         content: "Engineered SQL-based user segmentation pipeline analyzing 2.2M+ users across 4 behavioral cohorts (dual-screen, payment method, campaign engagement, geographic) — delivered actionable customer profiles adopted by marketing for targeted red packet campaigns."
 
+      - id: eleme_sql_reporting
+        status: active
+        tags: [sql, hadoop, hive, reporting]
+        narrative_role: optional
+        content: "Optimized complex SQL queries on Hadoop/Hive for cross-functional stakeholders, cutting reporting turnaround time by 30%."
+
 
 
 # =============================================================================
@@ -457,10 +463,7 @@ projects:
         status: active
         tags: [ml, lightgbm, recommendation, kaggle]
         narrative_role: headline
-        content: "Built hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered temporal, behavioral, and aggregation features (price normalization, competitor rates, estimated position); achieved NDCG@5 = 0.392 on Kaggle evaluation."
-
-        # Alternative version with more technical detail (for ML-heavy roles)
-        # content: "Developed learning-to-rank hotel recommendation system using LightGBM LambdaRank on 4.96M Expedia search records; engineered 50+ features (temporal, price normalization by search_id, competitor rates, estimated position) and optimized label gains [0,1,5] for click/booking prediction; achieved NDCG@5 = 0.392 on Kaggle test set, outperforming XGBoost+SVD ensemble (0.374)."
+        content: "Developed hotel recommendation system using learning-to-rank models (LightGBM, XGBoost+SVD) on 4.9M search records; engineered temporal, behavioral, and user-preference features for ranking optimization; achieved NDCG@5 = 0.392, placing top 5% in Kaggle competition."
 
   # ---------------------------------------------------------------------------
   # ML4QS: IMU SENSOR CLASSIFICATION
@@ -655,6 +658,22 @@ projects:
         content: "Designed risk management framework enforcing portfolio-level constraints (delta, gamma, vega limits), per-trade stop-loss, daily loss caps, and maximum drawdown controls; implemented Kelly-inspired position sizing adjusted for implied volatility."
 
   # ---------------------------------------------------------------------------
+  # VOICE CLONING SYSTEM (XTTS v2)
+  # ---------------------------------------------------------------------------
+  obama_tts:
+    title: "Voice Cloning System (XTTS v2)"
+    institution: "Personal Project"
+    period: "2025"
+
+    verified_bullets:
+
+      - id: obama_tts_voice_cloning
+        status: active
+        tags: [llm, voice-cloning, hpc, deployment]
+        narrative_role: optional
+        content: "Fine-tuned Coqui XTTS v2 voice cloning model with hybrid deployment architecture: GPU training on Snellius HPC cluster via SLURM job arrays, CPU inference served through FastAPI REST API and Gradio web UI; implemented 5 configurable speaking styles for text-to-speech generation."
+
+  # ---------------------------------------------------------------------------
   # LIFEOS: Personal Productivity Platform
   # ---------------------------------------------------------------------------
   lifeos:
@@ -684,7 +703,7 @@ projects:
         status: active
         tags: [pipeline, sqlite, automation, de]
         narrative_role: optional
-        content: "Built a stateful job search operations platform orchestrating incremental job ingestion, rule-based filtering, AI-assisted evaluation, and application tracking; backed by SQLite with Turso embedded-replica sync for durable state across local runs and CI automation."
+        content: "Built end-to-end job application pipeline leveraging LLM APIs (Claude) for resume personalization; designed multi-stage processing (web scraping via Playwright, rule-based filtering, AI scoring, Jinja2 template rendering to PDF) with SQLite backend, YAML-driven configuration, and configurable quality gates."
 
       - id: job_hunter_operations
         status: active
