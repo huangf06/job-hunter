@@ -37,6 +37,8 @@ def generate_checklist(jobs: list[dict], ready_dir: Path) -> Path:
             "status": "pending",
             "repost_applied_at": job.get("repost_applied_at", ""),
             "rejection_rejected_at": job.get("rejection_rejected_at", ""),
+            "prev_app_status": job.get("prev_app_status", ""),
+            "prev_app_date": job.get("prev_app_date", ""),
             "resume_tier": job.get("resume_tier", ""),
             "template_id_final": job.get("template_id_final", ""),
             "template_version": job.get("template_version", ""),
@@ -77,6 +79,13 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
         repost_badge = f' <span style="color:#dc2626;font-weight:bold" title="Applied {_esc(repost)}">REPOST</span>' if repost else ''
         rejected = info.get("rejection_rejected_at", "")
         rejected_badge = f' <span style="color:#ea580c;font-weight:bold" title="Rejected {_esc(rejected)}">REJECTED</span>' if rejected else ''
+        prev_status = info.get("prev_app_status", "")
+        prev_date = info.get("prev_app_date", "")
+        prev_badge = ""
+        if prev_status and not repost_badge:
+            label = prev_status.upper()
+            color = "#9333ea" if prev_status == "skipped" else "#ea580c" if prev_status == "rejected" else "#2563eb"
+            prev_badge = f' <span style="color:{color};font-weight:bold" title="Previously {label} on {_esc(prev_date)}">PREV:{label}</span>'
 
         # Resume generation pathway badge
         resume_tier = info.get("resume_tier", "")
@@ -97,7 +106,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
           </td>
           <td><span style="color:{score_color};font-weight:bold">{score:.1f}</span></td>
           <td><code class="job-id" onclick="copyJobId(this)" title="Click to copy">{_esc(job_id[:12])}</code></td>
-          <td>{_esc(info['company'])}{repost_badge}{rejected_badge}</td>
+          <td>{_esc(info['company'])}{repost_badge}{rejected_badge}{prev_badge}</td>
           <td>{_esc(info['title'])}</td>
           <td>{resume_badge}</td>
           <td>

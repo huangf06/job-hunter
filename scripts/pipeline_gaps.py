@@ -82,7 +82,7 @@ def main():
                   a.resume_tier = 'USE_TEMPLATE'
                   OR a.tailored_resume != ?
               )
-              AND app.job_id IS NULL
+              AND (app.job_id IS NULL OR app.status IN ('skipped', 'rejected'))
             ORDER BY a.ai_score DESC
         """, (EMPTY_RESUME,)).fetchall()
 
@@ -112,7 +112,7 @@ def main():
             JOIN resumes r ON j.id = r.job_id
                 AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
             LEFT JOIN applications app ON j.id = app.job_id
-            WHERE app.job_id IS NULL
+            WHERE app.job_id IS NULL OR app.status IN ('skipped', 'rejected')
             ORDER BY a.ai_score DESC
         """).fetchall()
 

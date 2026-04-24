@@ -27,7 +27,9 @@ def _make_test_db() -> JobDatabase:
             scraped_at TEXT DEFAULT '',
             search_profile TEXT DEFAULT '',
             search_query TEXT DEFAULT '',
-            raw_data TEXT DEFAULT ''
+            raw_data TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            manual_source TEXT DEFAULT ''
         );
     """)
 
@@ -351,3 +353,140 @@ class TestResurfaceJob:
             "SELECT COUNT(*) as c FROM filter_results WHERE job_id = ?", (job_id,)
         ).fetchone()
         assert row[0] == 1  # NOT cleared
+
+
+def _make_test_db_full() -> JobDatabase:
+    """Create an in-memory JobDatabase with full pipeline tables including applications."""
+    db = _make_test_db_with_pipeline_tables()
+    db._conn.executescript("""
+        CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            applied_at TEXT DEFAULT '',
+            updated_at TEXT DEFAULT '',
+            notes TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS resumes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL,
+            pdf_path TEXT DEFAULT '',
+            template_version TEXT DEFAULT '',
+            submit_dir TEXT DEFAULT ''
+        );
+    """)
+    # Add missing columns to filter_results/job_analysis that views/queries need
+    for col, table, default in [
+        ("filter_version", "filter_results", "''"),
+        ("reject_reason", "filter_results", "''"),
+        ("matched_rules", "filter_results", "''"),
+        ("processed_at", "filter_results", "''"),
+        ("recommendation", "job_analysis", "''"),
+        ("tailored_resume", "job_analysis", "''"),
+        ("resume_tier", "job_analysis", "NULL"),
+        ("template_id_final", "job_analysis", "NULL"),
+    ]:
+        try:
+            db._conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} TEXT DEFAULT {default}")
+        except sqlite3.OperationalError:
+            pass
+    return db
+
+
+def _setup_job_through_pipeline(db, url, title, company, ai_score=6.0,
+                                 app_status=None, description="desc"):
+    """Insert a job and push it through filter + AI analysis + optional application."""
+    job_id = _insert_job_with_scraped_at(
+        db, url, title, company, datetime.now().isoformat(), description=description,
+    )
+    db._conn.execute(
+        "INSERT INTO filter_results (job_id, passed) VALUES (?, 1)", (job_id,)
+    )
+    if ai_score is not None:
+        db._conn.execute(
+            "INSERT INTO job_analysis (job_id, ai_score, recommendation, resume_tier, tailored_resume) "
+            "VALUES (?, ?, 'APPLY', 'USE_TEMPLATE', '{}')",
+            (job_id, ai_score),
+        )
+    if app_status:
+        db._conn.execute(
+            "INSERT INTO applications (job_id, status, applied_at, updated_at) VALUES (?, ?, ?, ?)",
+            (job_id, app_status, datetime.now().isoformat(), datetime.now().isoformat()),
+        )
+    return job_id
+
+
+class TestResurfacedJobPipeline:
+    """Tests that resurfaced jobs (skipped/rejected) flow through the full pipeline."""
+
+    def test_skipped_job_included_in_needing_analysis(self):
+        """A job with 'skipped' app status but no AI analysis should be picked up."""
+        db = _make_test_db_full()
+        job_id = _setup_job_through_pipeline(
+            db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="skipped",
+        )
+        jobs = db.get_jobs_needing_analysis()
+        assert any(j["id"] == job_id for j in jobs)
+
+    def test_rejected_job_included_in_needing_analysis(self):
+        """A job with 'rejected' app status but no AI analysis should be picked up."""
+        db = _make_test_db_full()
+        job_id = _setup_job_through_pipeline(
+            db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="rejected",
+        )
+        jobs = db.get_jobs_needing_analysis()
+        assert any(j["id"] == job_id for j in jobs)
+
+    def test_applied_job_excluded_from_needing_analysis(self):
+        """A job with 'applied' app status should NOT be picked up for analysis."""
+        db = _make_test_db_full()
+        job_id = _setup_job_through_pipeline(
+            db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="applied",
+        )
+        jobs = db.get_jobs_needing_analysis()
+        assert not any(j["id"] == job_id for j in jobs)
+
+    def test_interview_job_excluded_from_needing_analysis(self):
+        """A job with 'interview' app status should NOT be picked up."""
+        db = _make_test_db_full()
+        job_id = _setup_job_through_pipeline(
+            db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="interview",
+        )
+        jobs = db.get_jobs_needing_analysis()
+        assert not any(j["id"] == job_id for j in jobs)
+
+    def test_no_app_record_included_in_needing_analysis(self):
+        """A job with no application record should be picked up (baseline)."""
+        db = _make_test_db_full()
+        job_id = _setup_job_through_pipeline(
+            db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status=None,
+        )
+        jobs = db.get_jobs_needing_analysis()
+        assert any(j["id"] == job_id for j in jobs)
+
+    def test_skipped_job_included_in_needing_tailor(self):
+        """A skipped job with AI score but no tailored resume should be picked up for C2."""
+        db = _make_test_db_full()
+        job_id = _setup_job_through_pipeline(
+            db, "http://a.com/1", "Dev", "Co", ai_score=6.0, app_status="skipped",
+        )
+        # Clear tailored_resume to make it eligible for tailoring
+        db._conn.execute(
+            "UPDATE job_analysis SET tailored_resume = NULL, resume_tier = 'ADAPT_TEMPLATE' WHERE job_id = ?",
+            (job_id,),
+        )
+        jobs = db.get_jobs_needing_tailor(min_score=5.0)
+        assert any(j["id"] == job_id for j in jobs)
+
+    def test_applied_job_excluded_from_needing_tailor(self):
+        """An applied job should NOT be picked up for C2 tailoring."""
+        db = _make_test_db_full()
+        job_id = _setup_job_through_pipeline(
+            db, "http://a.com/1", "Dev", "Co", ai_score=6.0, app_status="applied",
+        )
+        db._conn.execute(
+            "UPDATE job_analysis SET tailored_resume = NULL, resume_tier = 'ADAPT_TEMPLATE' WHERE job_id = ?",
+            (job_id,),
+        )
+        jobs = db.get_jobs_needing_tailor(min_score=5.0)
+        assert not any(j["id"] == job_id for j in jobs)

@@ -493,6 +493,17 @@ class JobPipeline:
                 job['rejection_rejected_at'] = (rejected[0].get('rejected_at') or '')[:10]
                 rejection_count += 1
 
+        # Enrich with own previous application history (for resurfaced jobs)
+        prev_app_count = 0
+        for job in all_ready:
+            app = self.db.get_application(job['id'])
+            if app and app.get('status') in ('skipped', 'rejected', 'applied'):
+                job['prev_app_status'] = app['status']
+                job['prev_app_date'] = (app.get('applied_at') or app.get('updated_at') or '')[:10]
+                prev_app_count += 1
+        if prev_app_count:
+            print(f"  {prev_app_count} resurfaced jobs with previous application history.")
+
         if not all_ready:
             print("\nNo jobs ready to apply. All caught up!")
             return
