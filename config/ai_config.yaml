@@ -40,6 +40,7 @@ prompt_settings:
   # Work experience sections to include in AI prompt (keys in bullet_library.yaml)
   experience_keys:
     - glp_technology
+    - independent_investor
     - baiquan_investment
     - eleme
     - henan_energy
@@ -47,11 +48,13 @@ prompt_settings:
   # Project sections to include in AI prompt (keys in bullet_library.yaml)
   project_keys:
     - financial_data_lakehouse
+    - deribit_options
     - thesis_uq_rl
     - nlp_projects
     - expedia_recommendation
     - ml4qs
     - graphsage_gnn
+    - obama_tts
     - lifeos
     - job_hunter_automation
     - greenhouse_sensor_pipeline
@@ -327,9 +330,9 @@ prompts:
     ## Important Rules
 
     ### CONTENT SELECTION PRINCIPLE
-    Select content that builds the strongest possible narrative for THIS specific job.
-    Quality over quantity — 3 well-chosen bullets that tell a coherent story beat 5 relevant-but-disconnected bullets.
-    The resume can be 1-2 pages. Sections order: Education → Projects → Experience → Skills → Interests.
+    Include ALL content that is relevant to the JD. Exclude content that doesn't strengthen the application.
+    The resume can be 1-2 pages — do NOT artificially cut content to fit 1 page.
+    Sections order: Education → Projects → Experience → Skills → Interests.
     Education and Interests are static. You control: bio (optional), experiences, projects, skills.
 
     ### BIO RULES (STRUCTURED FORMAT)
@@ -353,56 +356,17 @@ prompts:
     - Ele.me: ALWAYS set company_note to "(acquired by Alibaba)"
     - Other companies: set to null
 
-    ### PAGE BALANCE (CRITICAL)
-    The resume uses a two-column layout: Experience on the left, Education/Projects/Skills on the right.
-    Both columns MUST be roughly balanced in height. The right column tends to overflow because it
-    contains multiple sections (Education, Certification, Projects, Skills, Languages).
-    Be CONSERVATIVE with right-column content (projects, skill categories).
-
     ### BULLET DISTRIBUTION (GUIDANCE, NOT HARD LIMITS)
     Include bullets based on JD relevance. Typical ranges:
     - Most relevant experience: 2-4 bullets
     - Second experience: 2-3 bullets
     - Third experience (if included): 1-2 bullets
-    - Main project: 2-3 bullets
+    - Main project: 2-4 bullets (include all that are relevant)
     - Second project: 1-2 bullets
-    - Total project bullets across ALL projects: max 5
-
-    ### NARRATIVE COMPOSITION (CRITICAL FOR RESUME QUALITY)
-
-    A hiring manager reads each experience section for 10-15 seconds. They ask:
-    1. "Who was this person at this company?" → answered by the FIRST bullet
-    2. "What's the most impressive thing they did?" → answered by the SECOND bullet
-    3. "What else supports this?" → answered by remaining bullets
-
-    Your bullet selection and ordering must answer these questions IN THIS ORDER.
-
-    #### Narrative Roles
-    Each bullet has a narrative_role tag shown in parentheses. Use these to compose sections:
-
-    | Role | What it does | Where to place |
-    |------|-------------|----------------|
-    | context_setter | Establishes scope, seniority, why this matters | FIRST in section |
-    | depth_prover | Technical crown jewel, interview hook | SECOND (or first if no context_setter) |
-    | foundation | Engineering infrastructure powering the above | After depth_prover |
-    | extension | System evolution, broader reach | Late in section |
-    | breadth | Cross-functional, leadership | Last, only if space allows |
-
-    Composition rules:
-    1. Each section with 2+ bullets MUST lead with a context_setter or depth_prover — NEVER start with foundation or breadth
-    2. NEVER select 2 bullets with the same narrative_role in one section
-    3. If a RECOMMENDED SEQUENCE exists for this role type, you MUST use exactly those bullets in that order. Do not cherry-pick, reorder, or substitute. You may OMIT the last bullet(s) if space is tight, but the remaining bullets must stay in sequence order. If no sequence matches the target role, fall back to narrative_role ordering
-    4. Vary sentence openings across bullets within a section — if one starts with "Built", the next MUST use a different verb pattern (not "Built/Developed/Engineered/Designed")
-
-    #### Cross-Section Strategy
-    Each experience section should contribute something UNIQUE to the overall resume:
-    - The most JD-relevant experience gets 3-4 bullets and carries the narrative weight
-    - Less relevant experiences get 1-2 bullets showing a different strength
-    - Do NOT demonstrate the same skill/achievement across multiple sections
-    - Together, all sections should cover: technical depth + engineering capability + business awareness
+    - Third project (if relevant): 1 bullet
 
     ### SKILLS FORMAT
-    - Provide 4-5 categories from this ALLOWED list ONLY:
+    - Provide 4-6 categories from this ALLOWED list ONLY:
       {allowed_skill_categories_list}
     - Do NOT invent category names outside this list
     - Include proficiency levels for Languages (e.g., "Python (Expert)")
@@ -419,10 +383,11 @@ prompts:
     If the JD requires a skill the candidate lacks, simply omit it — do not fake it.
 
     ### PROJECT SELECTION
-    - Select 1-2 projects based on JD relevance (max 2 to maintain page balance)
+    - Select 1-3 projects based on JD relevance
     - For Data Engineer roles: prioritize Financial Data Lakehouse
     - For ML/DS roles: prioritize Thesis or Expedia
     - For NLP/AI roles: prioritize NLP Projects or Thesis
+    - Include a third project only if it adds clearly different skills
     - THESIS RULE: When including thesis_uq_rl, ALWAYS include thesis_noise_paradox (the original discovery) — do NOT only include thesis_uq_framework (measurement-only looks weak)
 
     ### BULLET SELECTION RULE (ABSOLUTE)
@@ -441,8 +406,8 @@ prompts:
     ### OTHER RULES
     1. Use ONLY bullet IDs from the provided bullet library - do not fabricate
     2. MUST include 2-3 different work experiences from different companies
-    3. Select bullets that best match the JD requirements AND form a coherent narrative per section
-    4. Prefer narrative composition over exhaustive coverage — omit a relevant bullet if it breaks the narrative flow
+    3. Select bullets that best match the JD requirements
+    4. Include ALL relevant bullets for a position — do not cut for space
 
   tailor_adapt: |
     # Template Adaptation
