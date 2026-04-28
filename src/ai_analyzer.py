@@ -73,7 +73,6 @@ class AIAnalyzer:
         if not lib_path.exists():
             self._parsed_bullets = {}
             self._skill_tiers = {}
-            self._title_options = {}
             self._bio_constraints = {}
             self._bio_builder = {}
             self._allowed_categories = []
@@ -162,7 +161,6 @@ class AIAnalyzer:
 
             # Extract v3.0 config blocks for dynamic prompt construction
             self._skill_tiers = self._parsed_bullets.get('skill_tiers', {})
-            self._title_options = self._parsed_bullets.get('title_options', {})
             self._bio_constraints = self._parsed_bullets.get('bio_constraints', {})
             self._bio_builder = self._parsed_bullets.get('bio_builder', {})
             self._allowed_categories = self._parsed_bullets.get('allowed_skill_categories', [])
@@ -300,20 +298,26 @@ class AIAnalyzer:
         return '\n'.join(lines)
 
     def _build_title_context(self) -> str:
-        """Build dynamic title options context for the AI prompt."""
-        if not self._title_options:
-            return "Choose the most relevant title for each experience."
+        """Build dynamic title options context from work_experience[].titles."""
+        active = self._parsed_bullets.get('active_sections', {})
+        exp_keys = active.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS)
+        work_exp = self._parsed_bullets.get('work_experience', {})
 
         lines = ["Choose the title for each experience that BEST matches the JD:"]
-        for company_key, titles in self._title_options.items():
-            if not isinstance(titles, dict):
-                print(f"    [WARN] title_options['{company_key}'] is not a dict — skipping")
+        found_any = False
+        for key in exp_keys:
+            data = work_exp.get(key, {})
+            titles = data.get('titles', {})
+            if not isinstance(titles, dict) or not titles:
                 continue
-            company_name = company_key.replace('_', ' ').title()
-            unique_titles = list(dict.fromkeys(titles.values()))  # deduplicate preserving order
+            company_name = data.get('company', key.replace('_', ' ').title())
+            unique_titles = list(dict.fromkeys(titles.values()))
             title_list = [f'"{t}"' for t in unique_titles]
             lines.append(f"  - {company_name}: {', '.join(title_list)}")
+            found_any = True
 
+        if not found_any:
+            return "Choose the most relevant title for each experience."
         return '\n'.join(lines)
 
     def _build_bio_constraints(self) -> str:

@@ -80,7 +80,7 @@ class ResumeValidator:
         self._load_config(lib_path)
 
     def _load_config(self, lib_path: Path):
-        """Load skill_tiers, title_options, bio_constraints, allowed categories from bullet_library.yaml."""
+        """Load skill_tiers, title options, bio_constraints, allowed categories from bullet_library.yaml."""
         if not lib_path.exists():
             print(f"[CRITICAL] bullet_library.yaml not found at {lib_path} — ALL resumes will be REJECTED!")
             print(f"[CRITICAL] Restore bullet_library.yaml to enable resume validation and generation.")
@@ -95,10 +95,15 @@ class ResumeValidator:
             data = yaml.safe_load(f) or {}
 
         self._skill_tiers = data.get('skill_tiers', {})
-        self._title_options = data.get('title_options', {})
         self._bio_constraints = data.get('bio_constraints', {})
         self._allowed_categories = data.get('allowed_skill_categories', [])
         self._library_loaded = True
+
+        # Build title_options from work_experience[].titles (single source of truth)
+        self._title_options = {}
+        for key, exp_data in data.get('work_experience', {}).items():
+            if isinstance(exp_data, dict) and 'titles' in exp_data:
+                self._title_options[key] = exp_data['titles']
 
     # Required company_note values for Chinese employers (credibility signals).
     # A Dutch hiring manager cannot google these companies; the note provides

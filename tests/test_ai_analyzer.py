@@ -48,7 +48,7 @@ def _valid_c1_response():
     })
 
 
-def _valid_c1_routing_response(*, tier="USE_TEMPLATE", template_id="DE", override=False, override_reason=None):
+def _valid_c1_routing_response(*, tier="FULL_CUSTOMIZE", template_id="DE", override=False, override_reason=None):
     return json.dumps({
         "scoring": {
             "overall_score": 7.5,
@@ -70,7 +70,7 @@ def _valid_c1_routing_response(*, tier="USE_TEMPLATE", template_id="DE", overrid
             "override": override,
             "override_reason": override_reason,
             "gaps": ["gap a"],
-            "adapt_instructions": "Adjust positioning" if tier == "ADAPT_TEMPLATE" else None
+            "adapt_instructions": None
         }
     })
 
@@ -127,9 +127,7 @@ class TestEvaluateResponseParsing:
     """Test C1 evaluate response parsing (no AI calls)."""
 
     def test_valid_response_parses_scoring(self):
-        """Full scoring + brief JSON parses correctly."""
         from src.ai_analyzer import AIAnalyzer
-        # We test _parse_response directly since it's used by evaluate_job
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         parsed = analyzer_cls._parse_response(_valid_c1_response())
         assert parsed is not None
@@ -138,7 +136,6 @@ class TestEvaluateResponseParsing:
         assert parsed["application_brief"]["hook"] is not None
 
     def test_missing_recommendation_defaults(self):
-        """Missing recommendation in scoring → parsed dict has no 'recommendation' key."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         response = json.dumps({
@@ -147,11 +144,9 @@ class TestEvaluateResponseParsing:
         })
         parsed = analyzer_cls._parse_response(response)
         assert parsed is not None
-        # recommendation is absent — caller handles default
         assert "recommendation" not in parsed["scoring"]
 
     def test_score_boundary_39(self):
-        """ai_score 3.9 → below C2 threshold."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         response = json.dumps({
@@ -162,7 +157,6 @@ class TestEvaluateResponseParsing:
         assert parsed["scoring"]["overall_score"] == 3.9
 
     def test_score_boundary_40(self):
-        """ai_score 4.0 → eligible for C2."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         response = json.dumps({
@@ -173,14 +167,12 @@ class TestEvaluateResponseParsing:
         assert parsed["scoring"]["overall_score"] == 4.0
 
     def test_malformed_json_returns_none(self):
-        """Unparseable response → None."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         parsed = analyzer_cls._parse_response("This is not JSON at all")
         assert parsed is None
 
     def test_json_in_code_block_extracted(self):
-        """JSON wrapped in markdown code block → still parsed."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         response = '```json\n{"scoring": {"overall_score": 6.0}}\n```'
@@ -189,7 +181,6 @@ class TestEvaluateResponseParsing:
         assert parsed["scoring"]["overall_score"] == 6.0
 
     def test_application_brief_preserved(self):
-        """application_brief fields are accessible in parsed output."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         parsed = analyzer_cls._parse_response(_valid_c1_response())
@@ -225,8 +216,6 @@ class TestEvaluateResponseParsing:
 
         result = analyzer.evaluate_job(_make_job(title="Data Engineer"))
 
-        # Post-2026-04-17 revert: resume_tier is forced to FULL_CUSTOMIZE regardless
-        # of what the AI emits. Template override (ML) is still honored.
         assert result.resume_tier == "FULL_CUSTOMIZE"
         assert result.template_id_initial == "DE"
         assert result.template_id_final == "ML"
@@ -261,43 +250,10 @@ class TestEvaluateResponseParsing:
 
         result = analyzer.evaluate_job(_make_job(title="Data Engineer"))
 
-        # Post-2026-04-17 revert: retired USE_TEMPLATE emission is coerced to FULL_CUSTOMIZE.
         assert result.resume_tier == "FULL_CUSTOMIZE"
         assert result.template_id_initial == "DE"
         assert result.template_id_final == "DE"
         assert result.routing_override_reason is None
-
-    def test_evaluate_job_applies_low_confidence_tier1_safeguard(self):
-        from src.ai_analyzer import AIAnalyzer
-
-        analyzer = AIAnalyzer.__new__(AIAnalyzer)
-        analyzer.config = {
-            "prompts": {
-                "evaluator": (
-                    "Title: {job_title}\nCompany: {job_company}\n"
-                    "Templates:\n{available_templates}\n"
-                    "Preselected: {preselected_template_id} {preselected_confidence} {ambiguous_warning}\n"
-                    "{job_description}"
-                )
-            },
-            "ai_recommendation_thresholds": {"apply_now": 7, "apply": 5, "maybe": 3},
-            "prompt_settings": {"job_description_max_chars": 10000},
-        }
-        from src.template_registry import load_registry
-        analyzer.registry = load_registry()
-        analyzer._call_claude = lambda prompt: _valid_c1_routing_response(
-            tier="USE_TEMPLATE",
-            template_id="ML",
-            override=False,
-        )
-
-        # Post-2026-04-17: safeguard is a no-op, but resolve_routing forces FULL_CUSTOMIZE.
-        result = analyzer.evaluate_job(_make_job(title="ML Platform Engineer"))
-
-        assert result.template_id_initial == "ML"
-        assert result.routing_confidence == 0.5
-        assert result.resume_tier == "FULL_CUSTOMIZE"
-        assert result.escalation_reason is None
 
 
 # =============================================================================
@@ -308,7 +264,6 @@ class TestTailorResponseParsing:
     """Test C2 tailor response parsing (no AI calls)."""
 
     def test_valid_response_has_tailored_resume(self):
-        """C2 response contains tailored_resume."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         parsed = analyzer_cls._parse_response(_valid_c2_response())
@@ -317,7 +272,6 @@ class TestTailorResponseParsing:
         assert len(parsed["tailored_resume"]["experiences"]) >= 2
 
     def test_empty_tailored_resume(self):
-        """Empty tailored_resume dict → parsed but empty."""
         from src.ai_analyzer import AIAnalyzer
         analyzer_cls = AIAnalyzer.__new__(AIAnalyzer)
         response = json.dumps({"tailored_resume": {}})
@@ -327,12 +281,7 @@ class TestTailorResponseParsing:
 
 
 class TestBioAssemblyCompanyHook:
-    """Lock down interview-winning signal #1: bio last sentence names the target company.
-
-    All 8 pre-upgrade interview-winning resumes had a company-named closer
-    ("Eager to bring these skills to Source.ag.", etc.). This test ensures the
-    structured bio assembly preserves that behavior under the FULL_CUSTOMIZE flow.
-    """
+    """Lock down interview-winning signal #1: bio last sentence names the target company."""
 
     def _make_analyzer(self):
         from src.ai_analyzer import AIAnalyzer
@@ -349,12 +298,10 @@ class TestBioAssemblyCompanyHook:
             },
         }
         analyzer._bio_constraints = {"max_years_claim": 6, "min_years_claim": 4}
-        analyzer.config = {
-            "resume": {
-                "education": {
-                    "master": {"degree": "M.Sc. in AI", "school": "VU Amsterdam", "date": "-- Aug. 2025", "gpa": "8.2/10"},
-                    "certification": "Databricks Certified Data Engineer Professional (2026)",
-                }
+        analyzer._parsed_bullets = {
+            "education": {
+                "master": {"degree": "M.Sc. in AI", "school": "VU Amsterdam", "date": "-- Aug. 2025", "gpa": "8.2/10"},
+                "certification": "Databricks Certified Data Engineer Professional (2026)",
             }
         }
         return analyzer
@@ -409,33 +356,49 @@ class TestBioAssemblyCompanyHook:
 
 
 class TestTitleContextPerSection:
-    """Lock down interview-winning signal #2: role titles rotate per experience.
+    """Title context reads from work_experience[key].titles (single source of truth)."""
 
-    Pre-upgrade interview resumes used different titles per company (e.g., "Data
-    Engineer & Team Lead" at GLP for DE roles, "ML Engineer and Team Lead" at GLP
-    for ML roles). The title_context feeds the AI a per-company list so it can pick.
-    """
-
-    def test_title_context_lists_each_company_with_its_options(self):
+    def test_title_context_reads_from_work_experience(self):
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer.__new__(AIAnalyzer)
-        analyzer._title_options = {
-            "glp_technology": {"de": "Data Engineer & Team Lead", "ml": "ML Engineer and Team Lead"},
-            "baiquan_investment": {"de": "Quantitative Developer", "ml": "Quantitative Researcher"},
+        analyzer._parsed_bullets = {
+            'active_sections': {
+                'experience_keys': ['glp_technology', 'baiquan_investment'],
+            },
+            'work_experience': {
+                'glp_technology': {
+                    'company': 'GLP Technology',
+                    'titles': {
+                        'default': 'Senior Data Engineer',
+                        'data_scientist': 'Senior Data Scientist',
+                        'ml_engineer': 'Senior Data Scientist',
+                    },
+                },
+                'baiquan_investment': {
+                    'company': 'BQ Investment',
+                    'titles': {
+                        'default': 'Quantitative Researcher',
+                        'data_engineer': 'Quantitative Developer',
+                    },
+                },
+            },
         }
 
         context = analyzer._build_title_context()
 
-        assert "Glp Technology" in context
-        assert "Data Engineer & Team Lead" in context
-        assert "ML Engineer and Team Lead" in context
-        assert "Baiquan Investment" in context
+        assert "GLP Technology" in context
+        assert "Senior Data Engineer" in context
+        assert "Senior Data Scientist" in context
+        assert "BQ Investment" in context
         assert "Quantitative Developer" in context
 
-    def test_title_context_empty_when_no_options(self):
+    def test_title_context_empty_when_no_titles(self):
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer.__new__(AIAnalyzer)
-        analyzer._title_options = {}
+        analyzer._parsed_bullets = {
+            'active_sections': {'experience_keys': []},
+            'work_experience': {},
+        }
 
         context = analyzer._build_title_context()
 
@@ -443,106 +406,7 @@ class TestTitleContextPerSection:
 
 
 class TestAnalyzeJobFlow:
-    def test_analyze_job_use_template_skips_c2_and_creates_resume_record(self):
-        from src.ai_analyzer import AIAnalyzer
-
-        analyzer = AIAnalyzer.__new__(AIAnalyzer)
-        analyzer.registry = {
-            "templates": {
-                "DE": {"pdf": "templates/pdf/Fei_Huang_DE.pdf"},
-            }
-        }
-        analyzer.config = {"thresholds": {"ai_score_generate_resume": 4.0}}
-
-        saved_results = []
-        saved_resumes = []
-
-        class DBStub:
-            def save_analysis(self, result):
-                saved_results.append(result)
-
-            def save_resume(self, resume):
-                saved_resumes.append(resume)
-
-        analyzer.db = DBStub()
-        analyzer.evaluate_job = lambda job: AnalysisResult(
-            job_id=job["id"],
-            ai_score=7.0,
-            recommendation="APPLY",
-            reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
-            tailored_resume="{}",
-            model="claude_code",
-            resume_tier="USE_TEMPLATE",
-            template_id_initial="DE",
-            template_id_final="DE",
-            routing_confidence=0.9,
-            routing_payload=json.dumps({"tier": "USE_TEMPLATE"}),
-        )
-        analyzer.tailor_resume = lambda *args, **kwargs: pytest.fail("Tier 1 should not call C2")
-        analyzer.run_c3_gate = lambda *args, **kwargs: pytest.fail("Tier 1 should not call C3")
-
-        result = analyzer.analyze_job(_make_job())
-
-        assert result.resume_tier == "USE_TEMPLATE"
-        assert len(saved_results) == 1
-        assert len(saved_resumes) == 1
-        assert saved_resumes[0].pdf_path == "templates/pdf/Fei_Huang_DE.pdf"
-
-    def test_analyze_job_adapt_template_runs_c2_and_c3(self):
-        from src.ai_analyzer import AIAnalyzer
-
-        analyzer = AIAnalyzer.__new__(AIAnalyzer)
-        analyzer.registry = {"templates": {"ML": {"pdf": "templates/pdf/Fei_Huang_ML.pdf"}}}
-        analyzer.config = {"thresholds": {"ai_score_generate_resume": 4.0}}
-
-        saved_results = []
-
-        class DBStub:
-            def save_analysis(self, result):
-                saved_results.append(result)
-
-            def save_resume(self, resume):
-                pytest.fail("Tier 2 should not create template resume record here")
-
-        analyzer.db = DBStub()
-        analyzer.evaluate_job = lambda job: AnalysisResult(
-            job_id=job["id"],
-            ai_score=7.5,
-            recommendation="APPLY",
-            reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
-            tailored_resume="{}",
-            model="claude_code",
-            resume_tier="ADAPT_TEMPLATE",
-            template_id_initial="ML",
-            template_id_final="ML",
-            routing_confidence=0.5,
-            routing_payload=json.dumps(
-                {"tier": "ADAPT_TEMPLATE", "gaps": ["gap"], "adapt_instructions": "adapt"}
-            ),
-        )
-        analyzer.tailor_resume = lambda job, analysis, c1_routing=None: json.dumps(
-            {
-                "slot_overrides": {"bio": "Adapted bio"},
-                "skills_override": {},
-                "entry_visibility": {},
-                "change_summary": "Changed bio",
-            }
-        )
-        analyzer.run_c3_gate = lambda analysis, c1_routing, job: {
-            "decision": "PASS",
-            "confidence": 0.88,
-            "reason": "Worth adapting",
-        }
-
-        result = analyzer.analyze_job(_make_job(title="ML Engineer"))
-
-        assert result.resume_tier == "ADAPT_TEMPLATE"
-        assert result.c3_decision == "PASS"
-        assert result.c3_confidence == 0.88
-        assert json.loads(result.tailored_resume)["slot_overrides"]["bio"] == "Adapted bio"
-        assert len(saved_results) == 1
-
-    def test_analyze_job_full_customize_skips_c3(self):
+    def test_analyze_job_full_customize_runs_c2(self):
         from src.ai_analyzer import AIAnalyzer
 
         analyzer = AIAnalyzer.__new__(AIAnalyzer)
@@ -554,9 +418,6 @@ class TestAnalyzeJobFlow:
         class DBStub:
             def save_analysis(self, result):
                 saved_results.append(result)
-
-            def save_resume(self, resume):
-                pytest.fail("Tier 3 should not create template resume record")
 
         analyzer.db = DBStub()
         analyzer.evaluate_job = lambda job: AnalysisResult(
@@ -573,39 +434,12 @@ class TestAnalyzeJobFlow:
             routing_payload=json.dumps({"tier": "FULL_CUSTOMIZE"}),
         )
         analyzer.tailor_resume = lambda job, analysis, c1_routing=None: json.dumps({"bio": "Full custom bio"})
-        analyzer.run_c3_gate = lambda *args, **kwargs: pytest.fail("Tier 3 should not call C3")
 
         result = analyzer.analyze_job(_make_job(title="Research Engineer"))
 
         assert result.resume_tier == "FULL_CUSTOMIZE"
         assert json.loads(result.tailored_resume)["bio"] == "Full custom bio"
-        assert result.c3_decision is None
         assert len(saved_results) == 1
-
-
-def test_build_tier2_prompt_raises_after_2026_04_17_revert():
-    """After 2026-04-17 revert: slot_schema is removed from the registry and
-    _build_tier2_prompt is dead code — it raises with a re-analyze hint. New
-    C1 routing always emits tier=FULL_CUSTOMIZE so this function is not called
-    in the normal path."""
-    import pytest
-
-    from src.ai_analyzer import AIAnalyzer
-    from src.template_registry import load_registry
-
-    analyzer = AIAnalyzer.__new__(AIAnalyzer)
-    analyzer.config = {
-        "prompts": {"tailor_adapt": "SCHEMA:\n{template_schema}"},
-        "prompt_settings": {"job_description_max_chars": 10000},
-    }
-    analyzer.registry = load_registry()
-
-    with pytest.raises(ValueError, match="slot_schema missing"):
-        analyzer._build_tier2_prompt(
-            _make_job(title="Data Engineer"),
-            {"template_id_final": "DE"},
-            {"gaps": [], "adapt_instructions": ""},
-        )
 
 
 def test_analyze_batch_does_not_double_save_analysis():
@@ -633,7 +467,7 @@ def test_analyze_batch_does_not_double_save_analysis():
         reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
         tailored_resume="{}",
         model="claude_code",
-        resume_tier="USE_TEMPLATE",
+        resume_tier="FULL_CUSTOMIZE",
     )
 
     analyzed = analyzer.analyze_batch()
@@ -662,7 +496,7 @@ def test_analyze_single_does_not_double_save_analysis():
         reasoning=json.dumps({"reasoning": "ok", "application_brief": {}}),
         tailored_resume="{}",
         model="claude_code",
-        resume_tier="USE_TEMPLATE",
+        resume_tier="FULL_CUSTOMIZE",
         template_id_final="DE",
     )
 
@@ -683,7 +517,6 @@ class TestJobAnalysisDB:
     def db(self):
         """Create a test database."""
         from src.db.job_db import JobDatabase
-        # Use in-memory SQLite
         test_db = JobDatabase.__new__(JobDatabase)
         import sqlite3
         test_db._local_db_path = ":memory:"
@@ -691,7 +524,6 @@ class TestJobAnalysisDB:
         test_db._turso_token = None
         test_db._conn = sqlite3.connect(":memory:")
         test_db._conn.row_factory = sqlite3.Row
-        # Create tables
         test_db._conn.executescript("""
             CREATE TABLE IF NOT EXISTS jobs (
                 id TEXT PRIMARY KEY,
@@ -742,14 +574,12 @@ class TestJobAnalysisDB:
                 applied_at TEXT
             );
         """)
-        # Patch _get_conn to return this connection as context manager
         from contextlib import contextmanager
         @contextmanager
         def _get_conn(sync_before=True):
             yield test_db._conn
         test_db._get_conn = _get_conn
 
-        # Patch batch_mode
         @contextmanager
         def batch_mode():
             yield
@@ -757,8 +587,6 @@ class TestJobAnalysisDB:
         return test_db
 
     def test_save_then_update_resume(self, db):
-        """C1 save_analysis + C2 update_analysis_resume preserves scoring."""
-        # C1: save analysis with empty tailored_resume
         c1_result = AnalysisResult(
             job_id="test-001",
             ai_score=7.5,
@@ -773,48 +601,39 @@ class TestJobAnalysisDB:
         )
         db.save_analysis(c1_result)
 
-        # Verify C1 saved
         analysis = db.get_analysis("test-001")
         assert analysis is not None
         assert analysis["ai_score"] == 7.5
         assert analysis["tailored_resume"] == "{}"
 
-        # C2: update with tailored resume
         resume_json = json.dumps({"bio": "Test bio", "experiences": []})
         db.update_analysis_resume("test-001", resume_json)
 
-        # Verify scoring preserved, resume updated
         analysis = db.get_analysis("test-001")
-        assert analysis["ai_score"] == 7.5  # scoring preserved
+        assert analysis["ai_score"] == 7.5
         assert analysis["recommendation"] == "APPLY"
         assert json.loads(analysis["tailored_resume"])["bio"] == "Test bio"
 
     def test_get_jobs_needing_tailor(self, db):
-        """Returns jobs with score >= threshold and empty tailored_resume."""
-        # Insert a job
         db._conn.execute(
             "INSERT INTO jobs (id, title, company, description, location) VALUES (?, ?, ?, ?, ?)",
             ("job-1", "Data Engineer", "TestCorp", "Description here", "Amsterdam")
         )
-        # Insert C1 analysis with empty resume
         db._conn.execute(
             """INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, model, tokens_used, analyzed_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             ("job-1", 6.0, "APPLY", "Good match", "{}", "claude_code", 0, "2026-03-28")
         )
 
-        # Should find the job
         jobs = db.get_jobs_needing_tailor(min_score=4.0)
         assert len(jobs) == 1
         assert jobs[0]["id"] == "job-1"
         assert jobs[0]["ai_score"] == 6.0
 
-        # Should not find with higher threshold
         jobs = db.get_jobs_needing_tailor(min_score=7.0)
         assert len(jobs) == 0
 
     def test_get_jobs_needing_tailor_excludes_tailored(self, db):
-        """Jobs with non-empty tailored_resume are excluded."""
         db._conn.execute(
             "INSERT INTO jobs (id, title, company, description, location) VALUES (?, ?, ?, ?, ?)",
             ("job-2", "ML Engineer", "AICorp", "ML job desc", "Amsterdam")
@@ -830,7 +649,6 @@ class TestJobAnalysisDB:
         assert len(jobs) == 0
 
     def test_get_jobs_needing_tailor_excludes_applied(self, db):
-        """Jobs already applied to are excluded."""
         db._conn.execute(
             "INSERT INTO jobs (id, title, company, description, location) VALUES (?, ?, ?, ?, ?)",
             ("job-3", "Data Scientist", "SciCorp", "DS job", "Amsterdam")
