@@ -112,23 +112,11 @@ prompts:
     Job Description:
     {job_description}
 
-    ## Resume Routing Decision
-    After the 2026-04-17 revert, every job is rendered through a per-job customized
-    2-page flow-layout resume. Static PDF copies (USE_TEMPLATE) and zone-compressed
-    single-page variants (ADAPT_TEMPLATE) have been retired because they produced 0
-    interview invitations across 74 applications (2026-04-02 to 2026-04-17).
-
-    Available templates:
-    {available_templates}
-
-    Pre-selected template: {preselected_template_id} (confidence: {preselected_confidence})
+    ## Resume Routing
+    Template hint: {preselected_template_id} (confidence: {preselected_confidence})
     {ambiguous_warning}
-
-    Routing rules:
-    - FULL_CUSTOMIZE: ALWAYS use this tier. Bullets are selected from the bullet library
-      per-job by the C2 tailoring prompt; template_id (DE / ML / DS) controls which bullet
-      sequences and skill categories C2 prioritizes.
-    - USE_TEMPLATE, ADAPT_TEMPLATE: RETIRED. Do not emit these values.
+    Template determines C2 role framing (DE/ML/DS) for bio, titles, project ordering.
+    If the pre-selected template is wrong for this role, set override to true.
 
     ## Output (JSON only, no markdown)
     {{
@@ -147,12 +135,9 @@ prompts:
         "company_connection": "Personal connection to company mission, or null if none"
       }},
       "resume_routing": {{
-        "tier": "FULL_CUSTOMIZE",
         "template_id": "{preselected_template_id}",
         "override": false,
-        "override_reason": null,
-        "gaps": ["specific gap 1"],
-        "adapt_instructions": null
+        "override_reason": null
       }}
     }}
 

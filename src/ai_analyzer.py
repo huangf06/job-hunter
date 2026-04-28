@@ -25,11 +25,9 @@ from src.db.job_db import JobDatabase, AnalysisResult, Resume
 from src.language_guidance import format_language_guidance_for_prompt
 from src.resume_validator import ResumeValidator
 from src.template_registry import (
-    apply_tier1_safeguard,
     load_registry,
     resolve_routing,
     select_template,
-    validate_tier2_output,
 )
 
 
@@ -85,9 +83,9 @@ class AIAnalyzer:
             with open(lib_path, 'r', encoding='utf-8') as f:
                 self._parsed_bullets = yaml.safe_load(f) or {}
 
-            prompt_settings = self.config.get('prompt_settings', {})
-            experience_keys = prompt_settings.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS)
-            project_keys = prompt_settings.get('project_keys', self.DEFAULT_PROJECT_KEYS)
+            active = self._parsed_bullets.get('active_sections', {})
+            experience_keys = active.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS)
+            project_keys = active.get('project_keys', self.DEFAULT_PROJECT_KEYS)
 
             sections = []
             work_exp = self._parsed_bullets.get('work_experience', {})
@@ -182,9 +180,9 @@ class AIAnalyzer:
         if not hasattr(self, '_parsed_bullets') or not self._parsed_bullets:
             return set()
 
-        prompt_settings = self.config.get('prompt_settings', {})
-        exp_keys = set(prompt_settings.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS))
-        proj_keys = set(prompt_settings.get('project_keys', self.DEFAULT_PROJECT_KEYS))
+        active = self._parsed_bullets.get('active_sections', {})
+        exp_keys = set(active.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS))
+        proj_keys = set(active.get('project_keys', self.DEFAULT_PROJECT_KEYS))
 
         bullets = set()
 
@@ -219,9 +217,9 @@ class AIAnalyzer:
             return lookup
 
         # Restrict to configured keys only
-        prompt_settings = self.config.get('prompt_settings', {})
-        exp_keys = set(prompt_settings.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS))
-        proj_keys = set(prompt_settings.get('project_keys', self.DEFAULT_PROJECT_KEYS))
+        active = self._parsed_bullets.get('active_sections', {})
+        exp_keys = set(active.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS))
+        proj_keys = set(active.get('project_keys', self.DEFAULT_PROJECT_KEYS))
 
         for key, value in self._parsed_bullets.get('work_experience', {}).items():
             if key not in exp_keys:
@@ -574,7 +572,7 @@ class AIAnalyzer:
         if isinstance(include_edu, str):
             include_edu = include_edu.lower() not in ('false', '0', 'no', 'none')
         if include_edu:
-            edu = self.config.get('resume', {}).get('education', {}).get('master', {})
+            edu = self._parsed_bullets.get('education', {}).get('master', {})
             edu_text = f"{edu.get('degree', 'M.Sc. in Artificial Intelligence')} from {edu.get('school', 'VU Amsterdam')} ({edu.get('date', '2025').split('--')[-1].strip()}, GPA {edu.get('gpa', '8.2/10')})."
             parts.append(edu_text)
 
@@ -583,7 +581,7 @@ class AIAnalyzer:
         if isinstance(include_cert, str):
             include_cert = include_cert.lower() not in ('false', '0', 'no', 'none')
         if include_cert:
-            cert = self.config.get('resume', {}).get('education', {}).get('certification', 'Databricks Certified Data Engineer Professional (2026)')
+            cert = self._parsed_bullets.get('education', {}).get('certification', 'Databricks Certified Data Engineer Professional (2026)')
             # Strip year suffix if present for cleaner bio
             cert_clean = re.sub(r'\s*\(\d{4}\)\s*$', '', cert)
             parts.append(f"{cert_clean}.")
@@ -595,8 +593,6 @@ class AIAnalyzer:
             parts.append(closer_text)
 
         return ' '.join(parts), []
-
-    # NOTE: legacy _build_prompt() removed — C1/C2 now use _build_evaluate_prompt / _build_tailor_prompt
 
     def _build_scoring_guidelines(self) -> str:
         """Build scoring guidelines text for C1 evaluator prompt."""
@@ -679,7 +675,6 @@ class AIAnalyzer:
         prompt_template = self.config.get('prompts', {}).get('tailor', '')
         if not prompt_template:
             raise ValueError("No tailor prompt template found in config")
-        language_guidance = format_language_guidance_for_prompt("experience_bullet")
 
         prompt_settings = self.config.get('prompt_settings', {})
         jd_max = prompt_settings.get('job_description_max_chars', 10000)
@@ -751,41 +746,7 @@ class AIAnalyzer:
             bio_domain_claims_list=domain_claims_str,
             allowed_skill_categories_list=cat_str,
         )
-        return f"{language_guidance}\n\n{prompt_body}"
-
-    def _build_tier2_prompt(self, job: Dict, analysis: Dict, c1_routing: Dict) -> str:
-        """DEPRECATED 2026-04-17: ADAPT_TEMPLATE zone prompt is retired.
-
-        Not reachable from tailor_resume() for new jobs — C1 prompt now always
-        emits tier=FULL_CUSTOMIZE. Retained only to avoid import breakage on
-        legacy code paths; delete after 2026-05-01.
-        """
-        prompt_template = self.config.get('prompts', {}).get('tailor_adapt', '')
-        if not prompt_template:
-            raise ValueError("No tailor_adapt prompt template found in config")
-
-        prompt_settings = self.config.get('prompt_settings', {})
-        jd_max = prompt_settings.get('job_description_max_chars', 10000)
-        jd_full = job.get('description') or ''
-        jd_text = jd_full[:jd_max]
-        if len(jd_full) > jd_max:
-            print(f"    [INFO] JD truncated from {len(jd_full)} to {jd_max} chars")
-        template_id = analysis.get('template_id_final')
-        schema = self.registry['templates'][template_id].get('slot_schema', {})
-        if not schema:
-            raise ValueError(
-                f"slot_schema missing for template {template_id}; ADAPT_TEMPLATE "
-                f"tier retired 2026-04-17. Re-run analyze-job to regenerate as FULL_CUSTOMIZE."
-            )
-
-        return prompt_template.format(
-            job_title=(job.get('title') or '').replace('{', '{{').replace('}', '}}'),
-            job_company=(job.get('company') or '').replace('{', '{{').replace('}', '}}'),
-            job_description=jd_text.replace('{', '{{').replace('}', '}}'),
-            routing_gaps=json.dumps(c1_routing.get('gaps', []), ensure_ascii=False).replace('{', '{{').replace('}', '}}'),
-            adapt_instructions=(c1_routing.get('adapt_instructions') or '').replace('{', '{{').replace('}', '}}'),
-            template_schema=json.dumps(schema, ensure_ascii=False, indent=2),
-        )
+        return prompt_body
 
     def evaluate_job(self, job: Dict) -> Optional[AnalysisResult]:
         """C1: Score + application brief. Short prompt, fast."""
@@ -821,7 +782,6 @@ class AIAnalyzer:
             'adapt_instructions': None,
         }
         routing = resolve_routing(code_decision, c1_routing)
-        routing = apply_tier1_safeguard(routing, code_decision)
 
         def _safe_float(val, default=0.0):
             try:
@@ -854,11 +814,7 @@ class AIAnalyzer:
         """C2: Resume tailoring. Long prompt, only for high-scoring jobs.
         Returns tailored_resume JSON string, or None on failure."""
         job_id = job['id']
-        tier = analysis.get('resume_tier')
-        if tier == 'ADAPT_TEMPLATE':
-            prompt = self._build_tier2_prompt(job, analysis, c1_routing or {})
-        else:
-            prompt = self._build_tailor_prompt(job, analysis)
+        prompt = self._build_tailor_prompt(job, analysis)
 
         text = self._call_claude(prompt)
         if not text:
@@ -869,15 +825,6 @@ class AIAnalyzer:
         if not parsed:
             print(f"  [WARN] C2 parse failed for {job_id}")
             return None
-
-        if tier == 'ADAPT_TEMPLATE':
-            schema = self.registry['templates'][analysis['template_id_final']].get('slot_schema', {})
-            errors = validate_tier2_output(parsed, schema)
-            if errors:
-                for error in errors:
-                    print(f"    [TIER2 VALIDATION] {error}")
-                return None
-            return json.dumps(parsed, ensure_ascii=False)
 
         tailored = parsed.get('tailored_resume', {})
         if not tailored:
@@ -890,7 +837,6 @@ class AIAnalyzer:
             for err in bullet_errors:
                 print(f"    [BULLET WARN] {err}")
 
-        # Bio assembly
         bio_spec = tailored.get('bio')
         assembled_bio, bio_errors = self._assemble_bio(bio_spec, job)
         if bio_errors:
@@ -899,7 +845,6 @@ class AIAnalyzer:
             return None
         tailored['bio'] = assembled_bio
 
-        # Validation
         validation = self.validator.validate(tailored, job)
         if not validation.passed:
             for err in validation.errors:
@@ -910,96 +855,6 @@ class AIAnalyzer:
                 print(f"    [VALID WARN] {warn}")
 
         return json.dumps(tailored, ensure_ascii=False)
-
-    def build_c3_input(self, template_schema: Dict, c2_output: Dict, c1_routing: Dict, jd_summary: str) -> str:
-        lines = []
-        lines.append(f"## Job Summary\n{jd_summary}\n")
-        lines.append(f"## Identified Gaps\n{', '.join(c1_routing.get('gaps', []))}\n")
-        lines.append("## Changes Made (before -> after)\n")
-
-        change_count = 0
-        total_changeable = 1
-
-        # Per-line bio (bio_1/bio_2/bio_3) or legacy single bio
-        slot_overrides = c2_output.get('slot_overrides', {})
-        bio_schema = template_schema.get('bio', {})
-        bio_changed = False
-        for line_key in ('bio_1', 'bio_2', 'bio_3'):
-            if slot_overrides.get(line_key):
-                line_default = (bio_schema.get(line_key) or {}).get('default', '')
-                lines.append(f"**{line_key}:**")
-                lines.append(f"  BEFORE: {line_default}")
-                lines.append(f"  AFTER:  {slot_overrides[line_key]}\n")
-                bio_changed = True
-        if not bio_changed and slot_overrides.get('bio'):
-            bio_default = bio_schema.get('default', bio_schema.get('bio_1', {}).get('default', ''))
-            lines.append("**Bio:**")
-            lines.append(f"  BEFORE: {bio_default}")
-            lines.append(f"  AFTER:  {slot_overrides['bio']}\n")
-            bio_changed = True
-        if bio_changed:
-            change_count += 1
-
-        for section in template_schema.get('sections', []):
-            for entry in section.get('entries', []):
-                for bullet in entry.get('bullets', []):
-                    total_changeable += 1
-                    override = c2_output.get('slot_overrides', {}).get(bullet['slot_id'])
-                    if override:
-                        lines.append(f"**{bullet['slot_id']}:**")
-                        lines.append(f"  BEFORE: {bullet['default']}")
-                        lines.append(f"  AFTER:  {override}\n")
-                        change_count += 1
-            for category in section.get('categories', []):
-                total_changeable += 1
-                override = c2_output.get('skills_override', {}).get(category['cat_id'])
-                if override:
-                    lines.append(f"**skills.{category['cat_id']}:**")
-                    lines.append(f"  BEFORE: {category['default']}")
-                    lines.append(f"  AFTER:  {override}\n")
-                    change_count += 1
-
-        all_entries = set()
-        for section in template_schema.get('sections', []):
-            for entry in section.get('entries', []):
-                all_entries.add(entry['entry_id'])
-        total_changeable += len(all_entries)
-
-        hidden = [entry_id for entry_id, visible in c2_output.get('entry_visibility', {}).items() if not visible]
-        if hidden:
-            lines.append(f"**Hidden entries:** {', '.join(hidden)}")
-            change_count += len(hidden)
-
-        density = change_count / max(total_changeable, 1) * 100
-        lines.append(
-            f"\n**Change density:** {change_count} of {total_changeable} changeable items modified ({density:.0f}%)"
-        )
-        return "\n".join(lines)
-
-    def run_c3_gate(self, analysis: AnalysisResult, c1_routing: Dict, job: Dict) -> Dict:
-        """DEPRECATED 2026-04-17: C3 gate applied only to ADAPT_TEMPLATE.
-        Retired along with the zone tier; delete after 2026-05-01."""
-        template_id = analysis.template_id_final
-        schema = self.registry['templates'][template_id].get('slot_schema', {})
-        if not schema:
-            return {'decision': 'PASS', 'confidence': 1.0, 'reason': 'C3 gate retired 2026-04-17; auto-pass'}
-        c2_output = json.loads(analysis.tailored_resume or '{}')
-        reasoning_data = json.loads(analysis.reasoning or '{}')
-        brief = reasoning_data.get('application_brief', {})
-        jd_summary = brief.get('key_angle') or brief.get('hook') or job.get('title', '')
-        structured_diff = self.build_c3_input(schema, c2_output, c1_routing, jd_summary)
-        prompt = self.config.get('prompts', {}).get('c3_gate', '').format(
-            structured_diff=structured_diff
-        )
-        text = self._call_claude(prompt)
-        parsed = self._parse_response(text or '')
-        if not parsed:
-            return {'decision': 'FAIL', 'confidence': 0.0, 'reason': 'C3 parse failed'}
-        return {
-            'decision': parsed.get('decision', 'FAIL'),
-            'confidence': float(parsed.get('confidence', 0.0) or 0.0),
-            'reason': parsed.get('reason', ''),
-        }
 
     def evaluate_batch(self, limit: int = None) -> tuple:
         """C1: Evaluate all jobs needing analysis.
@@ -1080,27 +935,7 @@ class AIAnalyzer:
                     c1_routing = json.loads(analysis.get('routing_payload') or '{}')
                     resume_json = self.tailor_resume(job, analysis, c1_routing=c1_routing)
                     if resume_json:
-                        c3_decision = None
-                        c3_confidence = None
-                        c3_reason = None
-                        if analysis.get('resume_tier') == 'ADAPT_TEMPLATE':
-                            temp_result = AnalysisResult(
-                                job_id=job['id'],
-                                reasoning=analysis.get('reasoning', ''),
-                                tailored_resume=resume_json,
-                                template_id_final=analysis.get('template_id_final'),
-                            )
-                            c3 = self.run_c3_gate(temp_result, c1_routing, job)
-                            c3_decision = c3['decision']
-                            c3_confidence = c3['confidence']
-                            c3_reason = c3['reason']
-                        self.db.update_analysis_resume(
-                            job['id'],
-                            resume_json,
-                            c3_decision=c3_decision,
-                            c3_confidence=c3_confidence,
-                            c3_reason=c3_reason,
-                        )
+                        self.db.update_analysis_resume(job['id'], resume_json)
                         count += 1
                         print("-> TAILORED")
                     else:
@@ -1235,42 +1070,25 @@ class AIAnalyzer:
             return None
 
     def analyze_job(self, job: Dict) -> Optional[AnalysisResult]:
-        """分析单个职位: C1 evaluate + route + conditional C2/C3."""
+        """分析单个职位: C1 evaluate + C2 tailor."""
         c1_result = self.evaluate_job(job)
         if not c1_result:
             return None
 
         c1_routing = json.loads(c1_result.routing_payload) if c1_result.routing_payload else {}
-        if c1_result.resume_tier == 'USE_TEMPLATE':
-            pass
-        elif c1_result.resume_tier in ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'):
-            analysis = {
-                'ai_score': c1_result.ai_score,
-                'recommendation': c1_result.recommendation,
-                'reasoning': c1_result.reasoning,
-                'tailored_resume': c1_result.tailored_resume,
-                'resume_tier': c1_result.resume_tier,
-                'template_id_final': c1_result.template_id_final,
-            }
-            resume_json = self.tailor_resume(job, analysis, c1_routing=c1_routing)
-            if resume_json:
-                c1_result.tailored_resume = resume_json
-                if c1_result.resume_tier == 'ADAPT_TEMPLATE':
-                    c3 = self.run_c3_gate(c1_result, c1_routing, job)
-                    c1_result.c3_decision = c3['decision']
-                    c1_result.c3_confidence = c3['confidence']
-                    c1_result.c3_reason = c3['reason']
+        analysis = {
+            'ai_score': c1_result.ai_score,
+            'recommendation': c1_result.recommendation,
+            'reasoning': c1_result.reasoning,
+            'tailored_resume': c1_result.tailored_resume,
+            'resume_tier': c1_result.resume_tier,
+            'template_id_final': c1_result.template_id_final,
+        }
+        resume_json = self.tailor_resume(job, analysis, c1_routing=c1_routing)
+        if resume_json:
+            c1_result.tailored_resume = resume_json
 
         self.db.save_analysis(c1_result)
-        if c1_result.resume_tier == 'USE_TEMPLATE' and c1_result.template_id_final:
-            template_pdf = self.registry['templates'][c1_result.template_id_final]['pdf']
-            self.db.save_resume(Resume(
-                job_id=job['id'],
-                role_type=c1_result.template_id_final,
-                template_version="template_v1",
-                pdf_path=template_pdf,
-            ))
-
         return c1_result
 
     def _parse_response(self, text: str) -> Optional[Dict]:
@@ -1368,17 +1186,8 @@ class AIAnalyzer:
         result = self.analyze_job(job)
         if result:
             print(f"  Score: {result.ai_score:.1f} | {result.recommendation}")
-            tier = result.resume_tier or ""
             tailored = json.loads(result.tailored_resume) if result.tailored_resume else {}
-            if tier == "USE_TEMPLATE":
-                print(f"  Resume: template {result.template_id_final} (no adaptation)")
-            elif tier == "ADAPT_TEMPLATE":
-                slot_count = len((tailored or {}).get("slot_overrides", {}))
-                if result.c3_decision == "FAIL":
-                    print(f"  Resume: adapted {result.template_id_final} rejected by C3, using template")
-                else:
-                    print(f"  Resume: adapted {result.template_id_final} ({slot_count} slots overridden)")
-            elif tailored and tailored != {}:
+            if tailored and tailored != {}:
                 print(f"  Resume: tailored ({len(tailored.get('experiences', []))} experiences)")
             else:
                 print(f"  Resume: not tailored (score below threshold or C2 failed)")
