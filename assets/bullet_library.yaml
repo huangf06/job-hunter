@@ -1,8 +1,25 @@
 # =============================================================================
-# VERIFIED BULLET LIBRARY v7.1 — Narrative Calibration (2026-04-27)
+# VERIFIED BULLET LIBRARY v7.3 — Hook Amplification (2026-04-28)
 # =============================================================================
 # Single source of truth for resume content. Each bullet reflects real work.
 # System consumes: id + content per bullet. All other fields are structural.
+#
+# v7.3 CHANGES (2026-04-28) — Hook Amplification:
+#   - REFRAMED 7 bullets: front-loaded hooks (results/findings/scale first, method second)
+#     glp_founding_member: "founding data engineer...from scratch" identity claim
+#     eleme_sql_optimization: "Cut 5x" leads instead of "Optimized...cutting 5x"
+#     eleme_ab_testing: "Doubled" leads instead of "achieving 2x improvement"
+#     greenhouse_aggregations: "72M rows/day" leads instead of buried at end
+#     docbridge_pipeline: "94.8% F1" moved to first clause
+#     thesis_uq_framework: "Established...as strongest" leads instead of "Designed framework"
+#     bq_futures_strategy: "Delivered 14.6%" leads instead of "achieved" in second clause
+#   - RECOMPOSED 8 recommended sequences:
+#     GLP DE: founding_member moved from last to first
+#     BQ DE/MLE: futures_strategy (A-hook) added, replacing C-level bullets
+#     BQ Quant: futures_strategy moved from 4th to 2nd position
+#     Ele.me DE: fraud_detection + sql_optimization replace broken deprecated sequence
+#     Ele.me MLE/DS/DA: fraud_detection added as first bullet
+#   - Design: docs/plans/2026-04-28-bullet-library-hook-amplification-design.md
 #
 # v7.1 CHANGES (2026-04-27) — Narrative Calibration:
 #   - REFRAMED eleme_fraud_detection (broader recognizability, less niche framing)
@@ -143,7 +160,7 @@ work_experience:
     technical_skills: "Python, SQL, PySpark, AWS (Redshift, S3, EC2), Airflow, pandas, NumPy, Power BI"
 
     recommended_sequences:
-      data_engineer: ["glp_pyspark", "glp_data_quality", "glp_portfolio_monitoring", "glp_founding_member"]
+      data_engineer: ["glp_founding_member", "glp_pyspark", "glp_data_quality", "glp_portfolio_monitoring"]
       ml_engineer: ["glp_founding_member", "glp_pyspark", "glp_portfolio_monitoring"]
       data_scientist: ["glp_founding_member", "glp_pyspark", "glp_data_quality"]
       quant: ["glp_founding_member", "glp_portfolio_monitoring", "glp_pyspark"]
@@ -154,7 +171,7 @@ work_experience:
         status: active
         tags: [ml, leadership, founding, credit-risk]
         narrative_role: context_setter
-        content: "Spearheaded credit scoring infrastructure as the first data hire at a fintech startup; owned the full ML lifecycle from data ingestion through feature engineering, model deployment, and portfolio monitoring."
+        content: "Joined as the founding data engineer at a fintech startup; built the credit scoring infrastructure from scratch, owning the full ML lifecycle from data ingestion through feature engineering, model deployment, and portfolio monitoring."
 
       - id: glp_decision_engine
         status: active
@@ -261,9 +278,9 @@ work_experience:
 
     # Recommended bullet sequences by job template
     recommended_sequences:
-      data_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_data_quality"]
-      quant: ["bq_factor_research", "bq_de_factor_engine", "bq_de_backtest_infra", "bq_futures_strategy"]
-      ml_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_de_backtest_infra"]
+      data_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_futures_strategy"]
+      quant: ["bq_factor_research", "bq_futures_strategy", "bq_de_factor_engine", "bq_de_backtest_infra"]
+      ml_engineer: ["bq_de_pipeline", "bq_de_factor_engine", "bq_futures_strategy"]
       data_scientist: ["bq_factor_research", "bq_de_factor_engine", "bq_futures_strategy"]
 
     verified_bullets:
@@ -296,7 +313,7 @@ work_experience:
         status: active
         tags: [quant, trading, live-production]
         narrative_role: headline
-        content: "Developed and deployed R-Breaker intraday trading strategy for CSI index futures from research through live production; achieved 14.6% annualized return with real capital."
+        content: "Delivered 14.6% annualized return with real capital on CSI index futures; developed and deployed R-Breaker intraday trading strategy from research through live production."
 
       - id: bq_data_quality
         status: active
@@ -379,11 +396,11 @@ work_experience:
 
     # Recommended bullet sequences by job template
     recommended_sequences:
-      data_engineer: ["eleme_kmeans", "eleme_sql_simple"]
-      ml_engineer: ["eleme_ab_testing"]
-      data_scientist: ["eleme_ab_testing", "eleme_kmeans"]
+      data_engineer: ["eleme_fraud_detection", "eleme_sql_optimization"]
+      ml_engineer: ["eleme_fraud_detection", "eleme_ab_testing"]
+      data_scientist: ["eleme_fraud_detection", "eleme_ab_testing", "eleme_kmeans"]
       quant: ["eleme_ab_testing"]
-      data_analyst: ["eleme_ab_testing", "eleme_kmeans", "eleme_user_segmentation"]
+      data_analyst: ["eleme_fraud_detection", "eleme_ab_testing", "eleme_kmeans", "eleme_user_segmentation"]
 
     verified_bullets:
 
@@ -391,7 +408,7 @@ work_experience:
         status: active
         tags: [ab-testing, segmentation, hadoop, ds]
         narrative_role: headline
-        content: "Developed user segmentation model achieving 2x improvement in churned-user reactivation rate via A/B testing; optimized Hadoop/Hive SQL queries for cross-functional reporting, cutting turnaround time by 30%."
+        content: "Doubled churned-user reactivation rate through A/B-tested segmentation model; optimized Hadoop/Hive SQL queries for cross-functional reporting, cutting turnaround time by 30%."
 
       - id: eleme_fraud_detection
         status: active
@@ -403,7 +420,7 @@ work_experience:
         status: active
         tags: [sql, hadoop, hive, performance, de]
         narrative_role: headline
-        content: "Optimized 90+ Hadoop/Hive queries through partition pruning and subquery pushdown, cutting scan volume 5x (from 500GB to 100GB) and unlocking real-time analytics on 30+ warehouse tables for fraud detection, operations, and marketing teams."
+        content: "Cut Hadoop/Hive scan volume 5x (500GB to 100GB) by rewriting 90+ queries with partition pruning and subquery pushdown; unlocked real-time analytics across 30+ warehouse tables serving fraud detection, operations, and marketing teams."
 
       - id: eleme_user_segmentation
         status: active
@@ -447,7 +464,7 @@ projects:
         status: active
         tags: [deep-rl, benchmarking, hpc, research]
         narrative_role: headline
-        content: "Designed and implemented a standardized benchmarking framework for uncertainty quantification in Deep RL, orchestrating 150 independent training runs on SLURM-managed HPC under a full-factorial experimental protocol; unified CRPS, ACE, WIS, and coverage evaluation with statistical testing, establishing distributional learning as the strongest UQ approach across all four metrics."
+        content: "Established distributional learning as the strongest uncertainty quantification approach for Deep RL across four metrics (CRPS, ACE, WIS, coverage) through a full-factorial benchmark of 150 training runs on SLURM-managed HPC; designed standardized evaluation framework with unified statistical testing."
 
       - id: thesis_noise_paradox
         status: active
@@ -670,7 +687,7 @@ projects:
         status: active
         tags: [time-series, aggregation, de]
         narrative_role: optional
-        content: "Implemented multi-granularity time-series aggregations (15-minute, hourly, daily) with quality-aware filtering that propagates upstream anomaly flags into aggregated results; processing 72M rows/day across 1,000 sensor sources at 1-minute ingestion resolution."
+        content: "Processed 72M rows/day across 1,000 sensor sources at 1-minute ingestion resolution; implemented multi-granularity time-series aggregations (15-minute, hourly, daily) with quality-aware filtering that propagates upstream anomaly flags into aggregated results."
 
   # ---------------------------------------------------------------------------
   # CRYPTO OPTIONS TRADING SYSTEM (Restored from v3.0 — 4x interview-proven)
@@ -768,7 +785,7 @@ projects:
         status: active
         tags: [ml, document-ai, ocr, layout, fastapi, end-to-end]
         narrative_role: headline
-        content: "Built end-to-end document AI platform for CN-EU trade documents: PaddleOCR text extraction, LiLT layout-aware token classification, spatial post-processing for key-value pairing, and FastAPI REST API with PostgreSQL persistence; achieved 94.8% F1 on receipt extraction and 75.5% F1 on form understanding."
+        content: "Built end-to-end document AI platform for CN-EU trade documents, achieving 94.8% F1 on receipt extraction and 75.5% F1 on form understanding; integrated PaddleOCR text extraction, LiLT layout-aware token classification, spatial post-processing for key-value pairing, and FastAPI REST API with PostgreSQL persistence."
 
       - id: docbridge_training
         status: active
