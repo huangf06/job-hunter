@@ -108,12 +108,27 @@ class ResumeRenderer:
             'edu_bachelor_school_note': bachelor.get('school_note', ''),
             'edu_bachelor_thesis': bachelor.get('thesis', ''),
 
-            'certification': edu.get('certification', ''),
+            **self._extract_certification(edu),
 
             # Additional section (from bullet library)
             'career_note': self.bullet_library.get('additional', {}).get('career_note', ''),
             'interests': self.bullet_library.get('additional', {}).get('interests', ''),
             'languages': self.bullet_library.get('additional', {}).get('languages', ''),
+        }
+
+    @staticmethod
+    def _extract_certification(edu: dict) -> dict:
+        cert = edu.get('certification', '')
+        if isinstance(cert, dict):
+            return {
+                'certification_name': cert.get('name', ''),
+                'certification_date': cert.get('date', ''),
+                'certification_url': cert.get('url', ''),
+            }
+        return {
+            'certification_name': cert,
+            'certification_date': '',
+            'certification_url': '',
         }
 
     @staticmethod

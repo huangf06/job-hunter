@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-AI Job Analyzer — Claude Code CLI
-==================================
+AI Job Analyzer
+================
 
-Evaluates jobs and tailors resumes via Claude Code CLI (`claude -p`).
-No Anthropic SDK dependency — flat subscription model.
+Evaluates jobs and tailors resumes via configurable LLM provider.
+Supports: DeepSeek API (OpenAI-compatible), Claude Code CLI (flat subscription).
 """
 
 import json
@@ -19,6 +19,12 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_ROOT / ".env", override=True)
+except ImportError:
+    pass
 
 from src import TRANSFERABLE_SKIP_WORDS
 from src.db.job_db import JobDatabase, AnalysisResult, Resume
@@ -48,6 +54,7 @@ class AIAnalyzer:
 
     def __init__(self, config_path: Path = None):
         self.config = self._load_config(config_path)
+        self._load_prompts_from_files()
         self.db = JobDatabase()
         self.registry = load_registry()
         self.bullet_library = self._load_bullet_library()
@@ -55,16 +62,31 @@ class AIAnalyzer:
         self.bullet_id_lookup = self._build_bullet_id_lookup()
         self.bullet_id_hashes = self._build_bullet_id_hashes()
         self.validator = ResumeValidator()
-        print(f"[AI Analyzer] Claude Code CLI mode")
+        self.active_provider = self.config.get('active_provider', 'claude_code')
+        models_cfg = self.config.get('models', {}).get(self.active_provider, {})
+        self.model_name = models_cfg.get('model', self.active_provider)
+        print(f"[AI Analyzer] Provider: {self.active_provider} ({self.model_name})")
         print(f"[AI Analyzer] Loaded {len(self.bullet_id_lookup)} bullet IDs")
 
     def _load_config(self, config_path: Path = None) -> dict:
-        """加载 AI 配置"""
         path = config_path or PROJECT_ROOT / "config" / "ai_config.yaml"
         if path.exists():
             with open(path, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f) or {}
         return {}
+
+    def _load_prompts_from_files(self):
+        """Load prompt templates from external files if configured as file paths."""
+        prompts = self.config.get('prompts', {})
+        for key in ('evaluator', 'tailor'):
+            value = prompts.get(key, '')
+            if isinstance(value, str) and value.endswith('.md'):
+                path = PROJECT_ROOT / value
+                if path.exists():
+                    prompts[key] = path.read_text(encoding='utf-8')
+                else:
+                    raise FileNotFoundError(f"Prompt file not found: {path}")
+        self.config['prompts'] = prompts
 
     def _load_bullet_library(self) -> str:
         """加载 bullet library，通过 YAML 解析提取结构化信息供 AI 参考"""
@@ -358,7 +380,11 @@ class AIAnalyzer:
         """Generate candidate summary from bullet_library data (replaces hardcoded profile)."""
         edu = self._parsed_bullets.get('education', {})
         master = edu.get('master', {})
-        cert = edu.get('certification', '')
+        cert_raw = edu.get('certification', '')
+        if isinstance(cert_raw, dict):
+            cert = f"{cert_raw.get('name', '')} ({cert_raw.get('date', '')})"
+        else:
+            cert = cert_raw
 
         lines = ["## Candidate Profile"]
         lines.append(f"Education: {master.get('degree', 'M.Sc.')} from {master.get('school', 'VU Amsterdam')}")
@@ -632,9 +658,11 @@ class AIAnalyzer:
         if isinstance(include_cert, str):
             include_cert = include_cert.lower() not in ('false', '0', 'no', 'none')
         if include_cert:
-            cert = self._parsed_bullets.get('education', {}).get('certification', 'Databricks Certified Data Engineer Professional (2026)')
-            # Strip year suffix if present for cleaner bio
-            cert_clean = re.sub(r'\s*\(\d{4}\)\s*$', '', cert)
+            cert_raw = self._parsed_bullets.get('education', {}).get('certification', '')
+            if isinstance(cert_raw, dict):
+                cert_clean = cert_raw.get('name', 'Databricks Certified Data Engineer Professional')
+            else:
+                cert_clean = re.sub(r'\s*\([A-Za-z.]*\s*\d{4}\)\s*$', '', cert_raw) if cert_raw else 'Databricks Certified Data Engineer Professional'
             parts.append(f"{cert_clean}.")
 
         # Closer
@@ -817,9 +845,9 @@ class AIAnalyzer:
         code_decision = select_template(job.get('title', ''), self.registry)
         prompt = self._build_evaluate_prompt(job, code_decision)
 
-        text = self._call_claude(prompt)
+        text = self._call_model(prompt)
         if not text:
-            print(f"  [WARN] _call_claude returned None for {job_id}, skipping (will retry later)")
+            print(f"  [WARN] _call_model returned None for {job_id}, skipping (will retry later)")
             return None
 
         parsed = self._parse_response(text)
@@ -831,7 +859,7 @@ class AIAnalyzer:
                 recommendation='REJECTED',
                 reasoning=f'[PARSE_FAIL] {preview[:200]}',
                 tailored_resume='{}',
-                model='claude_code', tokens_used=0,
+                model=self.model_name, tokens_used=0,
             )
 
         scoring = parsed.get('scoring', {})
@@ -859,7 +887,7 @@ class AIAnalyzer:
             reasoning=json.dumps({"reasoning": scoring.get('reasoning', ''),
                                    "application_brief": brief}, ensure_ascii=False),
             tailored_resume='{}',
-            model='claude_code',
+            model=self.model_name,
             tokens_used=0,
             resume_tier=routing.get('resume_tier'),
             template_id_initial=routing.get('template_id_initial'),
@@ -876,7 +904,7 @@ class AIAnalyzer:
         job_id = job['id']
         prompt = self._build_tailor_prompt(job, analysis)
 
-        text = self._call_claude(prompt)
+        text = self._call_model(prompt)
         if not text:
             print(f"  [WARN] C2 empty response for {job_id}")
             return None
@@ -1078,19 +1106,59 @@ class AIAnalyzer:
             recommendation=recommendation,
             reasoning=reasoning,
             tailored_resume=json.dumps(tailored, ensure_ascii=False),
-            model='claude_code',
+            model=self.model_name,
             tokens_used=tokens_used
         )
 
-    def _call_claude(self, prompt: str) -> Optional[str]:
-        """Call Claude Code CLI to analyze a job.
+    def _call_model(self, prompt: str) -> Optional[str]:
+        """Route to the active provider and return raw text (expected JSON)."""
+        if self.active_provider == 'claude_code':
+            return self._call_claude_code(prompt)
+        return self._call_deepseek(prompt)
 
-        Pipes the prompt via stdin to `claude -p` and returns the raw text
-        output (expected to be JSON).
-        """
+    def _call_deepseek(self, prompt: str) -> Optional[str]:
+        """Call DeepSeek API via OpenAI-compatible SDK."""
+        from openai import OpenAI, APIError, APITimeoutError
+
+        api_key = os.environ.get('DEEPSEEK_API_KEY')
+        if not api_key:
+            print("    [DEEPSEEK] DEEPSEEK_API_KEY not set in environment")
+            return None
+
+        model_config = self.config.get('models', {}).get('deepseek', {})
+        api_base = model_config.get('api_base', 'https://api.deepseek.com')
+        model = model_config.get('model', 'deepseek-v4-pro')
+        max_tokens = model_config.get('max_tokens', 8192)
+        temperature = model_config.get('temperature', 0.1)
+        timeout = model_config.get('timeout', 180)
+
+        thinking = model_config.get('thinking', False)
+        client = OpenAI(api_key=api_key, base_url=api_base, timeout=timeout)
+        try:
+            extra = {} if thinking else {"extra_body": {"thinking": {"type": "disabled"}}}
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+                **extra,
+            )
+            text = response.choices[0].message.content
+            return text.strip() if text else None
+        except APITimeoutError:
+            print(f"    [DEEPSEEK] API timed out after {timeout}s")
+            return None
+        except APIError as e:
+            msg = str(e).lower()
+            print(f"    [DEEPSEEK] API error: {e}")
+            if "rate limit" in msg or "quota" in msg or "insufficient" in msg:
+                raise QuotaExhaustedError(f"DeepSeek quota/rate limit: {e}")
+            return None
+
+    def _call_claude_code(self, prompt: str) -> Optional[str]:
+        """Call Claude Code CLI (flat subscription, no API key needed)."""
         import shutil
         import subprocess
-        import tempfile
 
         claude_bin = shutil.which('claude')
         if not claude_bin:
@@ -1099,8 +1167,6 @@ class AIAnalyzer:
 
         try:
             cmd = [claude_bin, '-p', '--output-format', 'text', '--max-turns', '2']
-            # Strip ANTHROPIC_BASE_URL/API_KEY if present — they override
-            # Claude Code's native OAuth auth (CLAUDE_CODE_OAUTH_TOKEN).
             clean_env = os.environ.copy()
             clean_env.pop('ANTHROPIC_BASE_URL', None)
             clean_env.pop('ANTHROPIC_API_KEY', None)

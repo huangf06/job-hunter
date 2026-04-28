@@ -48,7 +48,10 @@ education:
     date: "Sep. 2006 - Jul. 2010"
     school_note: "Ranked #1 in China, top 20 globally"
     thesis: "Design and Implementation of Web-based Collaborative Office System (Java/MVC/SQL Server)"
-  certification: "Databricks Certified Data Engineer Professional (2026)"
+  certification:
+    name: "Databricks Certified Data Engineer Professional"
+    date: "Apr. 2026"
+    url: "https://credentials.databricks.com/bac509e4-83a6-4985-8b61-90786d2013f6"
 
 additional:
   career_note: "Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation."
@@ -487,7 +490,7 @@ skill_tiers:
                 "Fine-Tuning", "Model Evaluation", "Text Generation",
                 "Document AI", "Token Classification", "OCR"]
     analytics_bi: ["Power BI", "Tableau"]
-    certifications: ["Databricks Certified Data Engineer Professional (2026)"]
+    certifications: ["Databricks Certified Data Engineer Professional (Apr. 2026)"]
   transferable:
     - skill: "Azure (Data Factory, ADLS)"
       basis: "AWS experience transferable"

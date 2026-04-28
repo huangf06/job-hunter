@@ -270,6 +270,7 @@ body {
     color: var(--primary-color);
 }
 .cert-label { font-weight: bold; }
+.cert-verify { color: var(--primary-color); text-decoration: none; }
 
 /* ── Additional ── */
 .additional-row {
@@ -344,9 +345,9 @@ body {
             <div class="edu-body">Thesis: {{ edu_bachelor_thesis }}</div>
             {% endif %}
         </div>
-        {% if certification %}
+        {% if certification_name %}
         <div class="edu-item">
-            <div class="cert-text"><span class="cert-label">Certification:</span> {{ certification }}</div>
+            <div class="cert-text"><span class="cert-label">Certification:</span> {{ certification_name }}{% if certification_date %} ({{ certification_date }}){% endif %}{% if certification_url %} &mdash; <a class="cert-verify" href="{{ certification_url }}">Verify</a>{% endif %}</div>
         </div>
         {% endif %}
     </section>

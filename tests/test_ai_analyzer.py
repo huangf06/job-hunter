@@ -205,9 +205,10 @@ class TestEvaluateResponseParsing:
             "ai_recommendation_thresholds": {"apply_now": 7, "apply": 5, "maybe": 3},
             "prompt_settings": {"job_description_max_chars": 10000},
         }
+        analyzer.model_name = "test"
         from src.template_registry import load_registry
         analyzer.registry = load_registry()
-        analyzer._call_claude = lambda prompt: _valid_c1_routing_response(
+        analyzer._call_model = lambda prompt: _valid_c1_routing_response(
             tier="ADAPT_TEMPLATE",
             template_id="ML",
             override=True,
@@ -240,9 +241,10 @@ class TestEvaluateResponseParsing:
             "ai_recommendation_thresholds": {"apply_now": 7, "apply": 5, "maybe": 3},
             "prompt_settings": {"job_description_max_chars": 10000},
         }
+        analyzer.model_name = "test"
         from src.template_registry import load_registry
         analyzer.registry = load_registry()
-        analyzer._call_claude = lambda prompt: _valid_c1_routing_response(
+        analyzer._call_model = lambda prompt: _valid_c1_routing_response(
             tier="USE_TEMPLATE",
             template_id="ML",
             override=False,
@@ -301,7 +303,11 @@ class TestBioAssemblyCompanyHook:
         analyzer._parsed_bullets = {
             "education": {
                 "master": {"degree": "M.Sc. in AI", "school": "VU Amsterdam", "date": "-- Aug. 2025", "gpa": "8.2/10"},
-                "certification": "Databricks Certified Data Engineer Professional (2026)",
+                "certification": {
+                    "name": "Databricks Certified Data Engineer Professional",
+                    "date": "Apr. 2026",
+                    "url": "https://credentials.databricks.com/bac509e4-83a6-4985-8b61-90786d2013f6",
+                },
             }
         }
         return analyzer
@@ -418,7 +424,11 @@ class TestCandidateSummary:
                     'school': 'VU Amsterdam',
                     'thesis': 'Uncertainty Quantification in Deep RL',
                 },
-                'certification': 'Databricks Certified Data Engineer Professional (2026)',
+                'certification': {
+                    'name': 'Databricks Certified Data Engineer Professional',
+                    'date': 'Apr. 2026',
+                    'url': 'https://credentials.databricks.com/bac509e4-83a6-4985-8b61-90786d2013f6',
+                },
             },
             'active_sections': {
                 'experience_keys': ['glp_technology'],
