@@ -1,4 +1,4 @@
-"""Template registry helpers for three-tier resume routing."""
+"""Template registry helpers for resume routing."""
 
 from __future__ import annotations
 
@@ -11,8 +11,6 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).parent.parent
 REGISTRY_PATH = PROJECT_ROOT / "config" / "template_registry.yaml"
-TIER1_CONFIDENCE_THRESHOLD = 0.7
-
 
 @dataclass
 class RoutingDecision:
@@ -69,9 +67,7 @@ def select_template(title: str, registry: Dict) -> RoutingDecision:
 
 
 def resolve_routing(code_decision: RoutingDecision, c1_routing: Dict) -> Dict:
-    # 2026-04-17 revert: force FULL_CUSTOMIZE. USE_TEMPLATE / ADAPT_TEMPLATE retired
-    # after 82% of post-upgrade applications shipped as byte-identical static PDFs
-    # (0 interviews across 77 applications).
+    # 2026-04-17: USE_TEMPLATE / ADAPT_TEMPLATE retired; always FULL_CUSTOMIZE.
     final_template = code_decision.template_id
     override_reason = None
 
@@ -89,49 +85,3 @@ def resolve_routing(code_decision: RoutingDecision, c1_routing: Dict) -> Dict:
     }
 
 
-def apply_tier1_safeguard(routing: Dict, code_decision: RoutingDecision) -> Dict:
-    # 2026-04-17 revert: USE_TEMPLATE and ADAPT_TEMPLATE retired; every job is
-    # FULL_CUSTOMIZE. Kept as a no-op pass-through for backward compatibility.
-    return routing
-
-
-def validate_tier2_output(output: Dict, schema: Dict) -> List[str]:
-    """DEPRECATED 2026-04-17: zone-tier output validation is retired.
-
-    After the tier revert, every resume is FULL_CUSTOMIZE and does not use
-    slot_overrides / entry_visibility / skills_override. An empty or missing
-    schema short-circuits this check. Delete after 2026-05-01 along with the
-    other zone render helpers.
-    """
-    if not schema:
-        return []
-
-    errors: List[str] = []
-    valid_slots = {"bio", "bio_1", "bio_2", "bio_3"}
-    valid_entries = set()
-    valid_categories = set()
-
-    for section in schema.get("sections", []):
-        for entry in section.get("entries", []):
-            valid_entries.add(entry["entry_id"])
-            for bullet in entry.get("bullets", []):
-                valid_slots.add(bullet["slot_id"])
-        for category in section.get("categories", []):
-            valid_categories.add(category["cat_id"])
-
-    for slot_id in output.get("slot_overrides", {}):
-        if slot_id not in valid_slots:
-            errors.append(f"Unknown slot '{slot_id}' in slot_overrides")
-
-    for cat_id in output.get("skills_override", {}):
-        if cat_id not in valid_categories:
-            errors.append(f"Unknown skill category '{cat_id}'")
-
-    for entry_id in output.get("entry_visibility", {}):
-        if entry_id not in valid_entries:
-            errors.append(f"Unknown entry '{entry_id}' in entry_visibility")
-
-    if not output.get("change_summary"):
-        errors.append("Missing change_summary")
-
-    return errors

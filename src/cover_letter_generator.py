@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""
-Cover Letter Generator — AI 驱动的求职信生成 (v2.0)
-====================================================
-
-基于已有的 job_analysis 结果，调用 Claude 生成结构化的 cover letter spec。
-AI 输出 JSON spec（包含 prose + evidence_ids），验证后存入 cover_letters 表。
-
-v2.0 CHANGES (2026-02-24):
-  - Voice examples: loads assets/voice_examples/*.txt as style reference
-  - Knowledge base: loads assets/cl_knowledge_base.yaml for human-originated fragments
-  - Anti-detection rules: structural rules to avoid AI writing patterns
-  - Selective depth: focus on 2-3 JD requirements, not all
-  - Visa context: Netherlands background naturally embedded
-  - Prompt completely rewritten for authenticity
-
-不改动 ai_analyzer.py — 独立模块，复用分析结果。
-"""
+"""Cover Letter Generator — AI-driven cover letter spec generation."""
 
 import json
 import os
@@ -50,71 +34,12 @@ def _extract_application_brief_text(analysis: Dict) -> str:
     return brief.get("key_angle") or brief.get("hook") or ""
 
 
-def _build_template_context(template_id: str, registry: Dict, brief_text: str) -> str:
-    template = registry["templates"][template_id]
-    strengths = ", ".join(template.get("key_strengths", []))
-    parts = [
-        f"Template Positioning: {template.get('bio_positioning', template_id)}",
-        f"Key Strengths: {strengths}",
-    ]
-    if brief_text:
-        parts.append(f"Application Brief: {brief_text}")
-    return "\n".join(parts)
-
-
-def _merge_slot_schema(template_id: str, registry: Dict, tailored_resume: str, brief_text: str) -> str:
-    """DEPRECATED 2026-04-17: zone slot-merge path is retired.
-    Returns the same lightweight template context as USE_TEMPLATE when schema is
-    absent, so legacy ADAPT_TEMPLATE rows don't crash. Delete after 2026-05-01."""
-    template = registry["templates"][template_id]
-    schema = template.get("slot_schema")
-    if not schema:
-        return _build_template_context(template_id, registry, brief_text)
-    payload = json.loads(tailored_resume or "{}")
-    slot_overrides = payload.get("slot_overrides", {})
-    skills_override = payload.get("skills_override", {})
-    entry_visibility = payload.get("entry_visibility", {})
-
-    lines = [slot_overrides.get("bio") or schema["bio"]["default"]]
-
-    for section in schema.get("sections", []):
-        for entry in section.get("entries", []):
-            if entry_visibility.get(entry["entry_id"], True) is False:
-                continue
-            for bullet in entry.get("bullets", []):
-                lines.append(slot_overrides.get(bullet["slot_id"]) or bullet["default"])
-        for category in section.get("categories", []):
-            lines.append(skills_override.get(category["cat_id"]) or category["default"])
-
-    if brief_text:
-        lines.append(f"Application Brief: {brief_text}")
-    return "\n".join(lines)
-
-
 def get_resume_context_for_cl(job_analysis_row: Dict, registry: Dict) -> str:
-    tier = job_analysis_row.get("resume_tier")
     brief_text = _extract_application_brief_text(job_analysis_row)
-
-    if tier == "USE_TEMPLATE":
-        return _build_template_context(job_analysis_row["template_id_final"], registry, brief_text)
-
-    if tier == "ADAPT_TEMPLATE":
-        if job_analysis_row.get("c3_decision") == "PASS":
-            return _merge_slot_schema(
-                job_analysis_row["template_id_final"],
-                registry,
-                job_analysis_row.get("tailored_resume", "{}"),
-                brief_text,
-            )
-        return _build_template_context(job_analysis_row["template_id_final"], registry, brief_text)
-
-    if tier == "FULL_CUSTOMIZE":
-        context = job_analysis_row.get("tailored_resume", "{}")
-        if brief_text:
-            context = f"{context}\nApplication Brief: {brief_text}"
-        return context
-
-    return job_analysis_row.get("tailored_resume", "{}")
+    context = job_analysis_row.get("tailored_resume", "{}")
+    if brief_text:
+        context = f"{context}\nApplication Brief: {brief_text}"
+    return context
 
 
 class CoverLetterGenerator:
@@ -154,9 +79,9 @@ class CoverLetterGenerator:
         if not self.bullet_library:
             return lookup
 
-        prompt_settings = self.config.get('prompt_settings', {})
-        exp_keys = prompt_settings.get('experience_keys', [])
-        proj_keys = prompt_settings.get('project_keys', [])
+        active = self.bullet_library.get('active_sections', {})
+        exp_keys = active.get('experience_keys', [])
+        proj_keys = active.get('project_keys', [])
 
         for key in exp_keys:
             section = self.bullet_library.get('work_experience', {}).get(key, {})

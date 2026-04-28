@@ -34,6 +34,7 @@ class CoverLetterRenderer:
 
     def __init__(self, config_path: Path = None):
         self.config = self._load_config(config_path)
+        self.bullet_library = self._load_bullet_library()
         self.db = JobDatabase()
         self.template_dir = PROJECT_ROOT / "templates"
         self.output_dir = PROJECT_ROOT / self.config.get('resume', {}).get('output_dir', 'output')
@@ -46,12 +47,19 @@ class CoverLetterRenderer:
             autoescape=True
         )
 
-        self.candidate = self.config.get('resume', {}).get('candidate', {})
+        self.candidate = self.bullet_library.get('personal_info', {})
 
     def _load_config(self, config_path: Path = None) -> dict:
         path = config_path or PROJECT_ROOT / "config" / "ai_config.yaml"
         if path.exists():
             with open(path, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f) or {}
+        return {}
+
+    def _load_bullet_library(self) -> dict:
+        lib_path = PROJECT_ROOT / "assets" / "bullet_library.yaml"
+        if lib_path.exists():
+            with open(lib_path, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f) or {}
         return {}
 

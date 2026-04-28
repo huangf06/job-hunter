@@ -3,19 +3,14 @@ from pathlib import Path
 import pytest
 
 from src.template_registry import (
-    TIER1_CONFIDENCE_THRESHOLD,
     RoutingDecision,
-    apply_tier1_safeguard,
     load_registry,
     resolve_routing,
     select_template,
-    validate_tier2_output,
 )
 
 
 def test_load_registry_has_required_templates_and_role_metadata():
-    """After 2026-04-17 revert: registry only keeps role-framing metadata
-    (target_roles, bio_positioning, key_strengths). slot_schema is retired."""
     registry = load_registry()
 
     assert set(registry["templates"]) >= {"DE", "ML", "Backend"}
@@ -29,7 +24,6 @@ def test_load_registry_has_required_templates_and_role_metadata():
         assert isinstance(template["bio_positioning"], str)
         assert "key_strengths" in template
         assert isinstance(template["key_strengths"], list)
-        # slot_schema must be gone
         assert "slot_schema" not in template, f"{template_id} still has retired slot_schema"
 
 
@@ -61,19 +55,15 @@ def test_select_template_behaviors(title, expected_template, expected_confidence
 
 
 def test_select_template_skips_disabled_templates():
-    """When a template is disabled, its target_roles are ignored."""
     registry = load_registry()
-    # Temporarily disable Backend to verify skip behavior
     registry["templates"]["Backend"]["enabled"] = False
     decision = select_template("Backend Platform Engineer", registry)
 
-    # With Backend disabled, no template matches → falls through to DE default
     assert decision.template_id == "DE"
     assert decision.confidence == 0.3
 
 
 def test_backend_template_disabled_falls_through():
-    """Backend template is disabled, so backend titles fall through to DE default."""
     registry = load_registry()
     decision = select_template("Backend Platform Engineer", registry)
 
@@ -82,15 +72,9 @@ def test_backend_template_disabled_falls_through():
 
 
 def test_resolve_routing_forces_full_customize_even_when_ai_emits_adapt_template():
-    """Post-2026-04-17 revert: resolve_routing MUST force resume_tier to FULL_CUSTOMIZE
-    regardless of what the AI emits. This is the defensive guard that prevents the
-    USE_TEMPLATE/ADAPT_TEMPLATE regression (82% of post-upgrade apps shipped as
-    byte-identical static PDFs, producing 0 interviews in 77 applications).
-
-    Template override with reason is still honored for template_id selection."""
     code_decision = RoutingDecision("DE", 0.9, ["data engineer"], False)
     c1_routing = {
-        "tier": "ADAPT_TEMPLATE",  # AI emits retired tier
+        "tier": "ADAPT_TEMPLATE",
         "template_id": "ML",
         "override": True,
         "override_reason": "JD is model-heavy",
@@ -100,7 +84,7 @@ def test_resolve_routing_forces_full_customize_even_when_ai_emits_adapt_template
 
     resolved = resolve_routing(code_decision, c1_routing)
 
-    assert resolved["resume_tier"] == "FULL_CUSTOMIZE"  # forced
+    assert resolved["resume_tier"] == "FULL_CUSTOMIZE"
     assert resolved["template_id_initial"] == "DE"
     assert resolved["template_id_final"] == "ML"
     assert resolved["routing_confidence"] == 0.9
@@ -111,7 +95,7 @@ def test_resolve_routing_forces_full_customize_even_when_ai_emits_adapt_template
 def test_resolve_routing_forces_full_customize_when_ai_emits_use_template():
     code_decision = RoutingDecision("DE", 0.9, ["data engineer"], False)
     c1_routing = {
-        "tier": "USE_TEMPLATE",  # retired tier from cached AI response
+        "tier": "USE_TEMPLATE",
         "template_id": "ML",
         "override": True,
         "override_reason": None,
@@ -122,7 +106,7 @@ def test_resolve_routing_forces_full_customize_when_ai_emits_use_template():
     resolved = resolve_routing(code_decision, c1_routing)
 
     assert resolved["resume_tier"] == "FULL_CUSTOMIZE"
-    assert resolved["template_id_final"] == "DE"  # no valid override reason → keep code choice
+    assert resolved["template_id_final"] == "DE"
     assert resolved["routing_override_reason"] is None
 
 
@@ -139,64 +123,3 @@ def test_resolve_routing_forces_full_customize_when_tier_missing():
     resolved = resolve_routing(code_decision, c1_routing)
 
     assert resolved["resume_tier"] == "FULL_CUSTOMIZE"
-
-
-def test_apply_tier1_safeguard_keeps_high_confidence_template():
-    routing = {"resume_tier": "USE_TEMPLATE"}
-    guarded = apply_tier1_safeguard(
-        routing,
-        RoutingDecision("DE", 0.9, ["data engineer"], False),
-    )
-
-    assert guarded["resume_tier"] == "USE_TEMPLATE"
-    assert "escalation_reason" not in guarded
-
-
-def test_apply_tier1_safeguard_is_noop_after_2026_04_17_revert():
-    # Post-2026-04-17: USE_TEMPLATE and ADAPT_TEMPLATE are retired; safeguard is pass-through.
-    routing = {"resume_tier": "USE_TEMPLATE"}
-    guarded = apply_tier1_safeguard(
-        routing,
-        RoutingDecision("ML", 0.5, ["ml engineer"], True),
-    )
-
-    assert guarded["resume_tier"] == "USE_TEMPLATE"
-    assert "escalation_reason" not in guarded
-
-
-def test_apply_tier1_safeguard_noop_on_low_confidence_no_match():
-    routing = {"resume_tier": "USE_TEMPLATE"}
-    guarded = apply_tier1_safeguard(
-        routing,
-        RoutingDecision("DE", 0.3, [], False),
-    )
-
-    assert guarded["resume_tier"] == "USE_TEMPLATE"
-    assert "escalation_reason" not in guarded
-
-
-def test_apply_tier1_safeguard_ignores_non_tier1_routing():
-    routing = {"resume_tier": "ADAPT_TEMPLATE"}
-    guarded = apply_tier1_safeguard(
-        routing,
-        RoutingDecision("ML", 0.9, ["data scientist"], False),
-    )
-
-    assert guarded["resume_tier"] == "ADAPT_TEMPLATE"
-    assert "escalation_reason" not in guarded
-
-
-def test_validate_tier2_output_is_noop_without_schema():
-    """After 2026-04-17 revert: validate_tier2_output short-circuits when schema
-    is missing or empty. The zone-era behavior (rejecting unknown slot IDs) is
-    retired alongside slot_schema itself."""
-    errors = validate_tier2_output(
-        {
-            "slot_overrides": {"unknown_slot": "bad"},
-            "skills_override": {"unknown_cat": "bad"},
-            "entry_visibility": {"unknown_entry": False},
-            "change_summary": "",
-        },
-        {},  # empty schema — post-revert default
-    )
-    assert errors == []
