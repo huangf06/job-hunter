@@ -365,13 +365,13 @@ class JobPipeline:
         renderer.render_batch(min_ai_score=min_ai_score, limit=limit)
 
     def cmd_repair(self):
-        """Clear orphan resume/CL records whose files are missing from disk."""
+        """Clear resume/CL records that cannot be used for application prep."""
         cleared = self.db.clear_orphan_resumes()
         if cleared:
-            print(f"[Repair] Cleared {cleared} orphan resume/CL records (PDF files missing)")
+            print(f"[Repair] Cleared {cleared} unusable resume/CL records (missing PDF or submit_dir)")
             print(f"[Repair] Run --prepare to regenerate them")
         else:
-            print("[Repair] No orphan records found — all resume PDFs exist on disk")
+            print("[Repair] No unusable resume records found — PDFs and submit dirs are usable")
 
     def cmd_prepare(self, min_ai_score: float = None, limit: int = None):
         """One-command: generate all materials + launch checklist server."""

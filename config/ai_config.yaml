@@ -287,15 +287,15 @@ prompts:
         "experiences": [
           {{
             "company": "GLP Technology",
-            "company_note": "consumer lending fintech",
+            "company_note": "fintech startup",
             "location": "Shanghai, China",
             "title": "Senior Data Engineer",
             "date": "Jul. 2017 - Aug. 2019",
             "bullets": ["glp_founding_member", "glp_pyspark", "glp_data_quality"]
           }},
           {{
-            "company": "Baiquan Investment",
-            "company_note": "quantitative hedge fund",
+            "company": "BQ Investment",
+            "company_note": "quant hedge fund",
             "location": "Beijing, China",
             "title": "Quantitative Researcher",
             "date": "Jul. 2015 - Jun. 2017",
@@ -359,8 +359,8 @@ prompts:
 
     ### COMPANY_NOTE
     Company notes appear after the company name on the resume and establish credibility for non-Dutch companies:
-    - GLP Technology: ALWAYS set company_note to "consumer lending fintech"
-    - Baiquan Investment: ALWAYS set company_note to "quantitative hedge fund"
+    - GLP Technology: ALWAYS set company_note to "fintech startup"
+    - BQ Investment: ALWAYS set company_note to "quant hedge fund"
     - Ele.me: ALWAYS set company_note to "acquired by Alibaba"
     - Henan Energy: set company_note to "Fortune Global 500" (only when Henan Energy is included)
     - Other companies/projects: set to null

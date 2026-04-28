@@ -1,6 +1,7 @@
 # Personal Brand Optimization: LinkedIn + GitHub + Blog
 
 Generated: 2026-04-02 | Aligned with career-strategy-2026-04.md
+Last updated: 2026-04-27 — folded in: Astro/feithink.org migration, Databricks DEP cert issued, greenhouse-sensor-pipeline shipped, DocBridge ML portfolio, removed never-built "Financial Data Lakehouse" project.
 
 **Strategic framing**: ML/AI Engineer primary, MLOps hedge, DE fallback.
 All brand copy leads with ML/AI identity. DE experience is positioned as differentiator ("I can build the whole pipeline, not just the model"), not as primary identity.
@@ -20,13 +21,15 @@ Most ML engineers come from either a research background or a software engineeri
 
 My thesis investigated uncertainty quantification in deep reinforcement learning -- when models know what they don't know. Before that: credit scoring engines at a fintech startup, systematic alpha research at a quant fund, fraud detection at a hyper-growth food delivery platform. Each role was a step closer to the intersection of data systems and intelligent decision-making.
 
-I also write about philosophy and literature at [FeiThink](https://huangf06.github.io/FeiThink/en/) -- mostly Kant, Dostoevsky, and the question of how to live well.
+I also write about philosophy and literature at [FeiThink](https://feithink.org) -- mostly Kant, Dostoevsky, and the question of how to live well.
 
 ## Selected Projects
 
 **[job-hunter](https://github.com/huangf06/job-hunter)** -- AI-powered job search pipeline. LLM-based evaluation (Claude API), automated resume generation, rule-based filtering, and application tracking. Python, SQLite/Turso, Playwright, GitHub Actions.
 
-**Financial Data Lakehouse** -- ML feature engineering infrastructure on Databricks. Auto Loader + Structured Streaming for real-time market data ingestion, Medallion Architecture, schema evolution, data quality framework with quarantine-and-replay pattern.
+**[greenhouse-sensor-pipeline](https://github.com/huangf06/greenhouse-sensor-pipeline)** -- Public DE portfolio. PySpark + Delta Lake Medallion ETL on greenhouse sensor data. 6-check data quality framework (anomalies flagged, never dropped), 58 pytest cases, ruff + GitHub Actions CI, MIT license.
+
+**DocBridge** -- CN-EU trade document AI (in deployment). Image -> PaddleOCR (Chinese) -> LiLT/LayoutLMv3 with BIO token classification -> JSON via FastAPI. PyTorch fine-tuning on Snellius HPC (SLURM), Docker, deployment on Hetzner with Caddy HTTPS.
 
 **M.Sc. Thesis: Uncertainty Quantification in Deep RL** -- Benchmarked 5 UQ methods across 150+ HPC training runs. Demonstrated QR-DQN superiority (31% lower CRPS, p < 0.001). Discovered a "noise paradox" where moderate observation noise improves ensemble uncertainty estimates.
 
@@ -35,8 +38,8 @@ I also write about philosophy and literature at [FeiThink](https://huangf06.gith
 ## Links
 
 - [LinkedIn](https://linkedin.com/in/huangf06)
-- [Blog (English)](https://huangf06.github.io/FeiThink/en/)
-- [Substack](https://feithink.substack.com)
+- [Blog](https://feithink.org)
+- [Substack](https://feithink.substack.com) (first-publish channel)
 ```
 
 ---
@@ -144,10 +147,11 @@ Selected courses (all 9.0+): Deep Learning (9.5), Multi-Agent Systems (9.5), ML 
 
 Pin in this order:
 1. **M.Sc. Thesis** -- link to paper/repo if available. Strongest ML signal.
-2. **Databricks Certified Data Engineer Professional** -- credential link
-3. **GitHub: job-hunter** -- "AI-powered job search pipeline (Claude API, Python, GitHub Actions)"
-4. **Blog post: "What My M.Sc. Thesis Taught Me About Uncertainty"** -- write this first (see Blog Strategy)
-5. **Blog post: "Skin in the Game"** -- analytical thinking, Taleb resonates with technical audiences
+2. **Databricks Certified Data Engineer Professional** -- live public credential at credentials.databricks.com (issued 2026-04-26). Use the directory entry, not a screenshot.
+3. **GitHub: docbridge** -- if/when the repo is public. Currently in deployment; the strongest evidence of fine-tuning + production ML serving you have.
+4. **GitHub: job-hunter** -- "AI-powered job search pipeline (Claude API, Python, GitHub Actions)"
+5. **Blog post: "What My M.Sc. Thesis Taught Me About Uncertainty"** -- write this first (see Blog Strategy)
+6. **Blog post: "Skin in the Game"** -- analytical thinking, Taleb resonates with technical audiences
 
 Avoid featuring: political commentary posts (Li Wenliang, Hong Kong, White Paper Protests). Keep published, don't promote on LinkedIn.
 
@@ -201,12 +205,17 @@ Why: Viral potential + demonstrates LLM integration in production systems.
 Outline: Architecture, the filtering pipeline, LLM-based evaluation (prompt engineering for structured output), resume generation, lessons learned. Honest about what Claude is good/bad at.
 Target: Broad developer audience.
 
-**4. "Building a Real-Time Data Lakehouse on Databricks"**
-Why: Databricks cert credibility + demonstrates current skills. Also relevant if you pivot to MLOps (feature store infrastructure).
-Outline: Medallion Architecture, Auto Loader vs batch, schema evolution, quarantine pattern. Include architecture diagrams.
+**4. "Fine-Tuning LayoutLMv3 for Bilingual Trade Documents" (DocBridge)**
+Why: Strongest current ML signal. Real fine-tuning on a real dataset, not toy notebooks. Pairs with the thesis post (#1) for ML Engineer credibility.
+Outline: Why LayoutLMv3 (vs LayoutLMv1/v2 / Donut / LiLT trade-offs). FUNSD pretraining transferred to bilingual CN-EU customs documents. BIO token tagging schema for invoice fields. PaddleOCR upstream — its 2-3 GB memory profile shaped the deployment story (Hetzner CX22 + Caddy, not Fly.io). FastAPI + Docker for serving.
+Target: ML engineers working on document AI / OCR. Hiring managers who want evidence of production fine-tuning, not just leaderboards.
+
+**5. "Lessons from Shipping a Medallion Pipeline" (greenhouse-sensor-pipeline)**
+Why: Databricks cert credibility, anchored in a real public artifact. Don't write about a "Financial Data Lakehouse" you haven't built — write about the Medallion pipeline you actually shipped.
+Outline: Bronze/Silver/Gold layout for sensor data. Delta Lake schema evolution in practice. The 6-check data quality framework — and the design call to flag anomalies, never drop them. What 58 pytest cases caught that ad-hoc validation wouldn't. Honest tradeoffs of running PySpark + Delta locally rather than on a managed Databricks cluster.
 Target: Data/ML engineers, Databricks community.
 
-**5. "Credit Scoring from Scratch: Building an ML Decision System at a Startup"**
+**6. "Credit Scoring from Scratch: Building an ML Decision System at a Startup"**
 Why: Reframes GLP as ML experience (aligned with resume repackaging in strategy doc).
 Outline: First technical hire story. The 29-rule engine. Scorecard methodology as ML. Feature engineering from credit bureau data. What "production ML" looked like before MLOps was a word.
 Target: Fintech engineers, ML engineers who think "real ML" only means neural nets.
@@ -215,11 +224,16 @@ Target: Fintech engineers, ML engineers who think "real ML" only means neural ne
 
 Same as previous version: don't separate, use tags (`technical`, `ml`, `philosophy`, `career`). Add a "Technical Writing" menu item once 3+ posts exist.
 
-### Hugo Config Improvements
+### Site Config (Astro / feithink.org)
 
-Same as previous version, plus:
+**Migration note (2026-04-18):** the blog moved from Hugo + PaperMod (`huangf06.github.io/FeiThink`) to Astro on the apex domain `feithink.org`. Cloudflare Pages, theme `astro-theme-retypeset` (vendored), MDX/KaTeX/Mermaid/RSS, Vitest. Tagline: "Plain living, high thinking" (Wordsworth). The old Hugo URL is no longer canonical — purge it from resumes, cover letters, and link-in-bio profiles.
+
+Config changes to make in the Astro repo (`huangf06/FeiThink`):
 - Update site description to include ML/AI: "Fei Huang writes about machine learning, data systems, philosophy, and moral thought"
 - Update keywords to lead with ML terms: "machine learning, ML engineering, uncertainty quantification, deep reinforcement learning, data infrastructure, philosophy, Kant"
+- Confirm RSS / sitemap point at `feithink.org`, not the GitHub Pages URL.
+
+**Substack relationship:** `feithink.substack.com` is the first-publish channel; selected essays migrate to `feithink.org`. Always link `feithink.org` as canonical from LinkedIn, GitHub, and resumes — Substack is secondary.
 
 ---
 
@@ -235,7 +249,9 @@ Same as previous version, plus:
 | Thesis prominence | Projects section, top | Education section, detailed | Selected Projects, with metrics | Post #1 (highest priority) |
 | GLP framing | "ML-powered decision system" | "credit risk ML platform" | Not detailed | Post #5 |
 | Gap framing | Career note | "Deliberate career transition" | Not mentioned | Not needed |
-| Lakehouse framing | "feature engineering infrastructure" | Not in About (too detailed) | "ML feature engineering infrastructure" | Post #4 |
+| DE portfolio | greenhouse-sensor-pipeline bullet | Not in About (too detailed) | Selected Projects with link + tech stack | Post #5 |
+| ML portfolio | docbridge bullet (when public) | Not in About yet | Selected Projects (no link until repo public) | Post #4 |
+| Blog URL | feithink.org | feithink.org (after refresh) | feithink.org | self-referential |
 
 ### Key Changes from Previous Version
 
@@ -247,6 +263,16 @@ Same as previous version, plus:
 6. **About section hook**: Rewritten to frame DE as ML differentiator, not primary identity
 7. **Featured section**: Thesis moved to #1 (was not present before)
 8. **Blog priorities**: Thesis post is now #1 (was #2), career narrative post reframed from "quant to DE" to "data pipelines to production ML"
+
+### Changes in 2026-04-27 Update
+
+1. **Blog URL**: every reference to `huangf06.github.io/FeiThink/en/` replaced with `feithink.org`. Old Hugo + GitHub Pages stack retired 2026-04-18.
+2. **Removed "Financial Data Lakehouse"** from GitHub Selected Projects — that project was never built. Replaced with two real artifacts: `greenhouse-sensor-pipeline` (public DE portfolio, frozen 2026-04-17) and `DocBridge` (CN-EU document AI, in deployment).
+3. **Databricks DEP cert**: now real and live at `credentials.databricks.com` (issued 2026-04-26). Headline statement is no longer aspirational.
+4. **Featured section reordering**: DocBridge repo added at #3 once public; thesis stays #1, DEP cert #2.
+5. **Blog post lineup**: dropped the "Real-Time Data Lakehouse on Databricks" idea (no underlying project). Added DocBridge LayoutLMv3 post as #4 (strongest current ML signal). greenhouse-sensor-pipeline becomes #5 (real Medallion artifact, replaces the fictional one). GLP credit-scoring post moved to #6.
+6. **Hugo Config Improvements section** renamed to **Site Config (Astro / feithink.org)** with migration note and Substack-vs-canonical guidance.
+7. **Substack relationship clarified**: first-publish channel, not canonical link.
 
 ### Contradictions to Resolve
 
@@ -262,15 +288,18 @@ Same as previous version, plus:
 
 | Priority | Action | Where |
 |----------|--------|-------|
-| P0 | Update LinkedIn headline, About, Experience per this doc | LinkedIn (manual) |
+| P0 | Update LinkedIn headline, About, Experience per this doc | LinkedIn (manual, in flight 2026-04-27) |
 | P0 | Update resume bio_builder default to ML-first framing | bullet_library.yaml |
 | P0 | Add "ML & Data Engineering Lead" to GLP title_options | bullet_library.yaml |
-| P1 | Write thesis blog post (#1 above) | FeiThink |
+| P0 | Purge any remaining `huangf06.github.io/FeiThink` URLs from resume templates, CL templates, and bullet library | job-hunter codebase |
+| P1 | Write thesis blog post (#1 above) | feithink.org (Astro) |
 | P1 | Create/update GitHub profile README | huangf06/huangf06 repo |
-| P1 | Write career narrative post (#2 above) | FeiThink |
-| P2 | Write job-hunter post (#3) | FeiThink |
-| P2 | Update Hugo config keywords/description | FeiThink config |
-| P2 | Update blog About page to connect to professional identity | FeiThink |
+| P1 | Write career narrative post (#2 above) | feithink.org |
+| P1 | Write DocBridge LayoutLMv3 post (#4 above) — pairs with thesis for ML signal | feithink.org |
+| P2 | Write job-hunter post (#3) | feithink.org |
+| P2 | Write greenhouse-sensor-pipeline post (#5) | feithink.org |
+| P2 | Update Astro site description / keywords to lead with ML terms | huangf06/FeiThink config |
+| P2 | Update blog About page to connect to professional identity | feithink.org |
 
 ### Unified "About Me" Boilerplate (ML-first)
 

@@ -2,7 +2,8 @@
 
 import hashlib
 import os
-import tempfile
+import shutil
+import uuid
 from pathlib import Path
 
 import pytest
@@ -12,8 +13,12 @@ from src.db.job_db import JobDatabase
 @pytest.fixture
 def db():
     os.environ["NO_TURSO"] = "1"
-    tmpdir = tempfile.mkdtemp()
-    return JobDatabase(db_path=Path(tmpdir) / "test.db")
+    tmpdir = Path("_tmp_test_artifacts") / f"bullet_tracking_{uuid.uuid4().hex[:8]}"
+    tmpdir.mkdir(parents=True, exist_ok=True)
+    try:
+        yield JobDatabase(db_path=tmpdir / "test.db")
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 class TestBulletTrackingSchema:

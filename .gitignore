@@ -49,6 +49,7 @@ nul
 # Temp files
 _tmp_*
 _tmp_pytest/
+.tmp/
 renderer_test_workspace_*/
 pytest-cache-files-*/
 tmp*/

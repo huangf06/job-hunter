@@ -1093,16 +1093,24 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
             return dict(row) if row else None
 
     def clear_orphan_resumes(self) -> int:
-        """Delete resume (+ cover letter) records whose PDF files no longer exist on disk."""
+        """Delete resume (+ cover letter) records that cannot be used for application prep."""
         from pathlib import Path
         with self._get_conn() as conn:
-            rows = conn.execute(
-                "SELECT job_id, pdf_path FROM resumes WHERE pdf_path IS NOT NULL AND pdf_path != ''"
-            ).fetchall()
+            resume_columns = {row[1] for row in conn.execute("PRAGMA table_info(resumes)").fetchall()}
+            if "submit_dir" in resume_columns:
+                rows = conn.execute(
+                    "SELECT job_id, pdf_path, submit_dir FROM resumes WHERE pdf_path IS NOT NULL AND pdf_path != ''"
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT job_id, pdf_path FROM resumes WHERE pdf_path IS NOT NULL AND pdf_path != ''"
+                ).fetchall()
 
             orphan_ids = []
             for row in rows:
-                if not Path(row['pdf_path']).exists():
+                pdf_missing = not Path(row['pdf_path']).exists()
+                submit_dir_missing = "submit_dir" in resume_columns and not (row["submit_dir"] or "").strip()
+                if pdf_missing or submit_dir_missing:
                     orphan_ids.append(row['job_id'])
 
             if not orphan_ids:
@@ -1214,7 +1222,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
             return [dict(row) for row in cursor.fetchall()]
 
     def get_analyzed_jobs_for_resume(self, min_ai_score: float = 5.0, limit: int = None) -> List[Dict]:
-        """获取 v3.0 管道评分达标但未生成简历的职位 (排除已投递和旧管道数据)"""
+        """获取评分达标但未生成简历的职位，兼容 legacy full-customize 分析记录。"""
         with self._get_conn() as conn:
             query = """
                 SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
@@ -1224,11 +1232,11 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                 LEFT JOIN resumes r ON j.id = r.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE (r.id IS NULL OR (r.pdf_path IS NULL OR r.pdf_path = ''))
-                  AND a.resume_tier IS NOT NULL
                   AND (
                       a.resume_tier = 'USE_TEMPLATE'
                       OR (a.resume_tier = 'ADAPT_TEMPLATE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
+                      OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                   )
                   AND (app.job_id IS NULL OR app.status IN ('skipped', 'rejected'))
                 ORDER BY a.ai_score DESC

@@ -35,6 +35,7 @@ def generate_checklist(jobs: list[dict], ready_dir: Path) -> Path:
             "submit_dir": job.get("submit_dir", ""),
             "url": job.get("url", ""),
             "status": "pending",
+            "effort": None,
             "repost_applied_at": job.get("repost_applied_at", ""),
             "rejection_rejected_at": job.get("rejection_rejected_at", ""),
             "prev_app_status": job.get("prev_app_status", ""),
@@ -96,8 +97,12 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
         esc_id = _esc(job_id)
 
         status = info.get("status", "pending")
+        effort = info.get("effort") or ""
         rows.append(f"""
-        <tr data-job-id="{esc_id}" data-status="{_esc(status)}">
+        <tr data-job-id="{esc_id}" data-status="{_esc(status)}" data-effort="{_esc(effort)}">
+          <td class="effort-cell">
+            <button class="ef-btn{' active' if effort == 'focused' else ''}" onclick="toggleEffort(this)">精投</button>
+          </td>
           <td class="status-cell">
             <div class="status-toggle">
               <button class="st-btn st-applied{' active' if status == 'applied' else ''}" onclick="setStatus(this, 'applied')">Applied</button>
@@ -150,6 +155,11 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
   .badge-adapt {{ background: #dbeafe; color: #1d4ed8; }}
   .badge-copy {{ background: #f3f4f6; color: #6b7280; }}
   .badge-full {{ background: #dcfce7; color: #15803d; }}
+  .ef-btn {{ padding: 3px 8px; border: 1px solid #cbd5e1; border-radius: 4px; background: white; cursor: pointer; font-size: 0.75rem; font-weight: 500; color: #64748b; }}
+  .ef-btn:hover {{ opacity: 0.85; }}
+  .ef-btn.active {{ background: #2563eb; color: white; border-color: #2563eb; }}
+  tr[data-effort="focused"] {{ border-left: 4px solid #2563eb; }}
+  tr[data-effort="focused"] td:first-child {{ padding-left: 12px; }}
   .summary {{ margin-top: 1rem; color: #475569; }}
 </style>
 </head>
@@ -158,7 +168,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 <p class="meta">Generated: {generated} | Total: {len(jobs_sorted)} jobs</p>
 <table>
   <thead>
-    <tr><th></th><th>Score</th><th>ID</th><th>Company</th><th>Title</th><th>Resume</th><th>Actions</th><th>Link</th></tr>
+    <tr><th></th><th></th><th>Score</th><th>ID</th><th>Company</th><th>Title</th><th>Resume</th><th>Actions</th><th>Link</th></tr>
   </thead>
   <tbody>
     {''.join(rows)}
@@ -181,9 +191,10 @@ function updateSummary() {{
   const jobs = Object.values(state.jobs);
   const applied = jobs.filter(j => j.status === 'applied').length;
   const deferred = jobs.filter(j => j.status === 'deferred').length;
+  const focused = jobs.filter(j => j.effort === 'focused').length;
   const skip = jobs.length - applied - deferred;
   document.getElementById('summary').textContent =
-    applied + ' applied, ' + deferred + ' deferred, ' + skip + ' skip  (total: ' + jobs.length + ')';
+    focused + ' focused, ' + applied + ' applied, ' + deferred + ' deferred, ' + skip + ' skip  (total: ' + jobs.length + ')';
 }}
 
 function saveState() {{
@@ -192,6 +203,33 @@ function saveState() {{
     headers: {{'Content-Type': 'application/json'}},
     body: JSON.stringify(state)
   }});
+}}
+
+function toggleEffort(btn) {{
+  const tr = btn.closest('tr');
+  const jobId = tr.dataset.jobId;
+  const current = state.jobs[jobId].effort;
+  const newEffort = (current === 'focused') ? null : 'focused';
+  state.jobs[jobId].effort = newEffort;
+  tr.dataset.effort = newEffort || '';
+  btn.classList.toggle('active', newEffort === 'focused');
+  saveState();
+  updateSummary();
+  sortTable();
+}}
+
+function sortTable() {{
+  const tbody = document.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort((a, b) => {{
+    const ae = a.dataset.effort === 'focused' ? 0 : 1;
+    const be = b.dataset.effort === 'focused' ? 0 : 1;
+    if (ae !== be) return ae - be;
+    const as = parseFloat(a.querySelector('td:nth-child(3)').textContent) || 0;
+    const bs = parseFloat(b.querySelector('td:nth-child(3)').textContent) || 0;
+    return bs - as;
+  }});
+  rows.forEach(r => tbody.appendChild(r));
 }}
 
 function setStatus(btn, status) {{
@@ -250,11 +288,15 @@ fetch('/state.json').then(r => r.json()).then(saved => {{
     const jobId = tr.dataset.jobId;
     if (!state.jobs[jobId]) return;
     const s = state.jobs[jobId].status;
+    const e = state.jobs[jobId].effort;
     tr.dataset.status = s;
+    tr.dataset.effort = e || '';
     tr.querySelector('.st-applied').classList.toggle('active', s === 'applied');
     tr.querySelector('.st-defer').classList.toggle('active', s === 'deferred');
+    tr.querySelector('.ef-btn').classList.toggle('active', e === 'focused');
   }});
   updateSummary();
+  sortTable();
 }}).catch(() => {{}});
 </script>
 </body>

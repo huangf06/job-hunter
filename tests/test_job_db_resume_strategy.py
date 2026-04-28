@@ -115,6 +115,18 @@ def _make_in_memory_db() -> JobDatabase:
             tokens_used INTEGER,
             created_at TEXT
         );
+
+        CREATE TABLE applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'pending',
+            applied_at TEXT,
+            response_at TEXT,
+            interview_at TEXT,
+            outcome TEXT,
+            notes TEXT,
+            updated_at TEXT
+        );
         """
     )
 
@@ -316,6 +328,45 @@ def test_get_jobs_needing_cover_letter_includes_tier_aware_cases():
     assert "job-full" in job_ids
     assert "job-legacy" in job_ids
     assert "job-adapt-pass" in job_ids
+
+
+def test_get_analyzed_jobs_for_resume_includes_legacy_tailored_rows():
+    db = _make_in_memory_db()
+    db._migrate(db._conn)
+    _insert_job(db, "job-legacy-ready")
+    _insert_job(db, "job-legacy-empty")
+
+    db.execute(
+        "INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, resume_tier, model, tokens_used, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        ("job-legacy-ready", 6.0, "APPLY", "legacy full customize", '{"bio":"Legacy bio","experiences":[]}', None, "claude_code", 0),
+    )
+    db.execute(
+        "INSERT INTO job_analysis (job_id, ai_score, recommendation, reasoning, tailored_resume, resume_tier, model, tokens_used, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        ("job-legacy-empty", 6.0, "APPLY", "legacy empty", "{}", None, "claude_code", 0),
+    )
+
+    jobs = db.get_analyzed_jobs_for_resume(min_ai_score=5.0)
+    job_ids = {job["id"] for job in jobs}
+
+    assert "job-legacy-ready" in job_ids
+    assert "job-legacy-empty" not in job_ids
+
+
+def test_clear_orphan_resumes_removes_records_without_submit_dir():
+    db = _make_in_memory_db()
+    db._migrate(db._conn)
+    _insert_job(db, "job-no-submit-dir")
+
+    db.execute(
+        "INSERT INTO resumes (job_id, role_type, template_version, html_path, pdf_path, submit_dir, generated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
+        ("job-no-submit-dir", "DE", "v1", "", __file__, ""),
+    )
+
+    cleared = db.clear_orphan_resumes()
+
+    assert cleared == 1
+    rows = db.execute("SELECT * FROM resumes WHERE job_id = ?", ("job-no-submit-dir",))
+    assert len(rows) == 0
 
 
 def test_build_views_sql_contains_required_tier_counters():

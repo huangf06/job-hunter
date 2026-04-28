@@ -80,10 +80,8 @@ class ResumeRenderer:
             'github': self.candidate.get('github', 'https://github.com/huangf06'),
             'linkedin_display': self.candidate.get('linkedin_display', 'linkedin.com/in/huangf06'),
             'github_display': self.candidate.get('github_display', 'github.com/huangf06'),
-            'blog_url': self.candidate.get('blog_url', 'https://feithink.substack.com/'),
-            'blog_display': self.candidate.get('blog_display', 'feithink.substack.com'),
-            'additional_blog_url': self.candidate.get('additional_blog_url', 'https://huangf06.github.io/FeiThink/en/'),
-            'additional_blog_display': self.candidate.get('additional_blog_display', 'huangf06.github.io/FeiThink'),
+            'blog_url': self.candidate.get('blog_url', 'https://feithink.org'),
+            'blog_display': self.candidate.get('blog_display', 'feithink.org'),
 
             # Education - Master
             'edu_master_school': master.get('school', 'Vrije Universiteit Amsterdam'),

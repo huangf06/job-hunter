@@ -1,9 +1,10 @@
 """Tests for --repair: clearing orphan resume records."""
 import os
 import sqlite3
-import tempfile
 import shutil
+import uuid
 from contextlib import contextmanager
+from pathlib import Path
 
 from src.db.job_db import JobDatabase
 
@@ -64,7 +65,8 @@ class TestClearOrphanResumes:
     """Tests for JobDatabase.clear_orphan_resumes()."""
 
     def setup_method(self):
-        self.tmp_dir = tempfile.mkdtemp()
+        self.tmp_dir = Path("_tmp_test_artifacts") / f"repair_{uuid.uuid4().hex[:8]}"
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
     def teardown_method(self):
         shutil.rmtree(self.tmp_dir, ignore_errors=True)

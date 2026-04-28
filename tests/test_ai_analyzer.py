@@ -97,8 +97,8 @@ def _valid_c2_response():
                     "bullets": ["glp_founding_member", "glp_decision_engine"]
                 },
                 {
-                    "company": "Baiquan Investment",
-                    "company_note": None,
+                    "company": "BQ Investment",
+                    "company_note": "quant hedge fund",
                     "location": "Beijing, China",
                     "title": "Quantitative Researcher",
                     "date": "Jul. 2015 -- Jun. 2017",

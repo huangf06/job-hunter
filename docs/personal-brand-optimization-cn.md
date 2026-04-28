@@ -20,7 +20,7 @@
 
 我的硕士论文研究深度强化学习中的不确定性量化——模型如何知道自己"不知道什么"。之前的经历：金融科技创业公司的信用评分引擎、量化基金的系统性 alpha 研究、超高速增长外卖平台的反欺诈检测。每一步都在逼近数据系统与智能决策的交叉点。
 
-我也在 [FeiThink](https://huangf06.github.io/FeiThink/en/) 写哲学和文学——主要是康德、陀思妥耶夫斯基，以及"如何好好活着"这个问题。
+我也在 [FeiThink](https://feithink.org) 写哲学和文学——主要是康德、陀思妥耶夫斯基，以及"如何好好活着"这个问题。
 
 ## 精选项目
 
@@ -35,8 +35,8 @@
 ## 链接
 
 - [LinkedIn](https://linkedin.com/in/huangf06)
-- [Blog (English)](https://huangf06.github.io/FeiThink/en/)
-- [Substack](https://feithink.substack.com)
+- [Blog](https://feithink.org)
+- [Substack](https://feithink.substack.com)（首发渠道）
 ```
 
 ---

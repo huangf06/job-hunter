@@ -100,6 +100,17 @@ class ResumeValidator:
         self._allowed_categories = data.get('allowed_skill_categories', [])
         self._library_loaded = True
 
+    # Required company_note values for Chinese employers (credibility signals).
+    # A Dutch hiring manager cannot google these companies; the note provides
+    # instant context. AI tailor is instructed to set these but often omits them.
+    REQUIRED_COMPANY_NOTES = {
+        'glptechnology': 'fintech startup',
+        'bqinvestment': 'quant hedge fund',
+        'baiquaninvestment': 'quant hedge fund',
+        'eleme': 'acquired by Alibaba',
+        'henanenergy': 'Fortune Global 500',
+    }
+
     def validate(self, tailored: dict, job: dict, tier: str = None) -> ValidationResult:
         """Run all validations on tailored resume JSON.
 
@@ -161,6 +172,12 @@ class ResumeValidator:
             volume_errors, volume_warnings = self._validate_content_volume(tailored)
             errors.extend(volume_errors)
             warnings.extend(volume_warnings)
+
+        # 7. Company note validation (BLOCKING — auto-fix when possible)
+        note_errors, note_fixes = self._validate_company_notes(tailored.get('experiences') or [])
+        errors.extend(note_errors)
+        if note_fixes:
+            fixes['company_notes'] = note_fixes
 
         passed = len(errors) == 0
         return ValidationResult(
@@ -413,6 +430,32 @@ class ResumeValidator:
                 errors.append(f"Project '{proj.get('name', i)}' has no bullets")
 
         return errors
+
+    def _validate_company_notes(self, experiences: list) -> Tuple[List[str], dict]:
+        """Enforce company_note for Chinese employers. Auto-fixes missing notes.
+
+        Returns (errors, fixes_applied). Errors are only raised if the company
+        name itself cannot be matched (should not happen in practice).
+        """
+        errors = []
+        fixes_applied = {}
+
+        for exp in experiences:
+            company = exp.get('company', '')
+            if not company:
+                continue
+            company_key = re.sub(r'[^a-z0-9]', '', company.lower())
+            expected_note = self.REQUIRED_COMPANY_NOTES.get(company_key)
+            if expected_note is None:
+                continue
+            current_note = exp.get('company_note', '') or ''
+            if current_note.lower().strip() == expected_note.lower():
+                continue
+            # Auto-fix: inject the correct note
+            exp['company_note'] = expected_note
+            fixes_applied[company] = expected_note
+
+        return errors, fixes_applied
 
     def _validate_content_volume(self, tailored: dict) -> tuple:
         """Validate content volume for page balance (right column overflow prevention).
