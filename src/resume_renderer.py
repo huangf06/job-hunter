@@ -117,10 +117,12 @@ class ResumeRenderer:
         }
 
     @staticmethod
-    def _format_coursework(master: dict) -> str:
+    def _format_coursework(master: dict, selected_courses: list = None) -> str:
         courses = master.get('courses', [])
         if not courses:
             return master.get('coursework', '')
+        if selected_courses is not None:
+            courses = [c for c in courses if isinstance(c, dict) and c.get('id') in selected_courses]
         return ', '.join(f"{c['name']} ({c['grade']})" for c in courses if isinstance(c, dict) and 'name' in c and 'grade' in c)
 
     def render_resume(self, job_id: str) -> Optional[Dict[str, str]]:
@@ -339,6 +341,18 @@ class ResumeRenderer:
         if len(skills) < 3:
             print(f"  [WARN] Only {len(skills)} skill categories after dedup (min 3)")
         context['skills'] = skills
+
+        # AI-controlled education/additional fields
+        selected_courses = tailored.get('selected_courses')
+        if selected_courses is not None:
+            master = self.bullet_library.get('education', {}).get('master', {})
+            context['edu_master_coursework'] = self._format_coursework(master, selected_courses=selected_courses)
+
+        if tailored.get('show_bachelor_thesis') is False:
+            context['edu_bachelor_thesis'] = ''
+
+        if tailored.get('show_career_note') is False:
+            context['career_note'] = ''
 
         return context
 

@@ -159,6 +159,17 @@ class AIAnalyzer:
                         role_tag = f"({role}) " if role else ""
                         sections.append(f"  - {prefix}{role_tag}{bullet['content']}")
 
+            # Coursework
+            edu = self._parsed_bullets.get('education', {})
+            master_courses = edu.get('master', {}).get('courses', [])
+            if master_courses:
+                sections.append("\n## COURSEWORK (select courses most relevant to the JD)")
+                sections.append("Master's courses (all graded 9.0+):")
+                for c in master_courses:
+                    if isinstance(c, dict) and 'id' in c:
+                        relevance = ', '.join(c.get('relevance', []))
+                        sections.append(f"  - [{c['id']}] {c.get('name', '')} ({c.get('grade', '')}) — relevance: {relevance}")
+
             # Extract v3.0 config blocks for dynamic prompt construction
             self._skill_tiers = self._parsed_bullets.get('skill_tiers', {})
             self._bio_constraints = self._parsed_bullets.get('bio_constraints', {})

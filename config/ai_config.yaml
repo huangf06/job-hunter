@@ -234,7 +234,10 @@ prompts:
           {{"category": "Cloud & DevOps", "skills_list": "AWS (EMR, Glue, S3, Lambda), Docker, CI/CD, Airflow"}},
           {{"category": "Databases", "skills_list": "PostgreSQL, MySQL, Hadoop, Hive"}},
           {{"category": "ML/AI Frameworks", "skills_list": "XGBoost, LightGBM, PyTorch, Statistics, A/B Testing"}}
-        ]
+        ],
+        "selected_courses": ["deep_learning", "data_mining", "nlp"],
+        "show_bachelor_thesis": false,
+        "show_career_note": false
       }}
     }}
 
@@ -320,6 +323,15 @@ prompts:
     - For ML Engineer / AI Engineer / Document AI roles: prioritize DocBridge (94.8% F1, 3 fine-tuned models on A100 GPUs)
     - Include a third project only if it adds clearly different skills
     - THESIS RULE: When including thesis_uq_rl, ALWAYS include thesis_noise_paradox (the original discovery) — do NOT only include thesis_uq_framework (measurement-only looks weak)
+
+    ### COURSEWORK SELECTION
+    - Select master's courses most relevant to the JD (by ID from COURSEWORK section)
+    - If all courses are relevant, include all
+    - show_bachelor_thesis: set true only if JD specifically relates to web systems or Java
+
+    ### CAREER NOTE
+    - show_career_note: set false if Independent Quantitative Researcher is included as an experience (the 2019-2023 period is covered)
+    - set true only if there is a visible chronological gap not covered by any included experience
 
     ### BULLET SELECTION RULE (ABSOLUTE)
     Select bullets BY THEIR ID — the string shown in [square brackets] in the library above.
