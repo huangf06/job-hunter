@@ -710,18 +710,25 @@ class AIAnalyzer:
         cat_list = self._allowed_categories if self._allowed_categories else []
         cat_str = ', '.join(f'"{c}"' for c in cat_list) if cat_list else '"Languages & Core"'
 
-        # Extract C1 context
+        # Extract C1 context — parse brief fields individually for structured prompt injection
         c1_score = analysis.get('ai_score', 0)
         c1_recommendation = analysis.get('recommendation', 'UNKNOWN')
         c1_reasoning_raw = analysis.get('reasoning', '')
-        # Parse reasoning JSON if it contains application_brief
+
+        c1_hook = 'N/A'
+        c1_key_angle = 'N/A'
+        c1_gap_mitigation = 'None identified'
+        c1_company_connection = 'None'
         try:
             reasoning_data = json.loads(c1_reasoning_raw)
-            c1_reasoning = reasoning_data.get('reasoning', c1_reasoning_raw)
-            c1_brief = json.dumps(reasoning_data.get('application_brief', {}), ensure_ascii=False)
+            brief = reasoning_data.get('application_brief', {})
+            if isinstance(brief, dict):
+                c1_hook = brief.get('hook') or 'N/A'
+                c1_key_angle = brief.get('key_angle') or 'N/A'
+                c1_gap_mitigation = brief.get('gap_mitigation') or 'None identified'
+                c1_company_connection = brief.get('company_connection') or 'None'
         except (json.JSONDecodeError, TypeError):
-            c1_reasoning = c1_reasoning_raw
-            c1_brief = '{}'
+            pass
 
         # Escape braces
         jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
@@ -731,8 +738,6 @@ class AIAnalyzer:
         skill_ctx_safe = skill_context.replace('{', '{{').replace('}', '}}')
         title_ctx_safe = title_context.replace('{', '{{').replace('}', '}}')
         bio_cstr_safe = bio_constraints.replace('{', '{{').replace('}', '}}')
-        c1_reasoning_safe = c1_reasoning.replace('{', '{{').replace('}', '}}')
-        c1_brief_safe = c1_brief.replace('{', '{{').replace('}', '}}')
 
         prompt_body = prompt_template.format(
             bullet_library=bullet_lib_safe,
@@ -741,8 +746,10 @@ class AIAnalyzer:
             job_description=jd_safe,
             c1_score=c1_score,
             c1_recommendation=c1_recommendation,
-            c1_reasoning=c1_reasoning_safe,
-            c1_brief=c1_brief_safe,
+            c1_hook=c1_hook.replace('{', '{{').replace('}', '}}'),
+            c1_key_angle=c1_key_angle.replace('{', '{{').replace('}', '}}'),
+            c1_gap_mitigation=c1_gap_mitigation.replace('{', '{{').replace('}', '}}'),
+            c1_company_connection=c1_company_connection.replace('{', '{{').replace('}', '}}'),
             skill_context=skill_ctx_safe,
             title_context=title_ctx_safe,
             bio_constraints=bio_cstr_safe,

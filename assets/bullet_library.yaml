@@ -581,14 +581,11 @@ bio_builder:
       text: "credit scoring and risk analytics"
       basis: "GLP Technology — credit scoring infrastructure"
     data_pipelines:
-      text: "scalable data pipelines and ETL systems"
+      text: "scalable data pipelines and data platform engineering"
       basis: "GLP PySpark pipelines + Financial Data Lakehouse"
     quant_research:
       text: "quantitative research and factor modeling"
       basis: "BQ Investment — Fama-MacBeth, alpha research"
-    anomaly_detection:
-      text: "anomaly detection and monitoring systems"
-      basis: "GLP — portfolio risk monitoring, early warning indicators"
     ml_deployment:
       text: "ML model development and deployment"
       basis: "GLP — end-to-end credit scoring models"
@@ -607,12 +604,6 @@ bio_builder:
     document_ai:
       text: "document AI and intelligent document processing"
       basis: "DocBridge — LiLT layout-aware extraction, PaddleOCR, 3 fine-tuned models across EN/ZH/receipt domains"
-    streaming_data:
-      text: "real-time data processing and streaming systems"
-      basis: "Lakehouse — Auto Loader, Structured Streaming, schema evolution, checkpoint-based fault tolerance"
-    data_governance:
-      text: "data quality and governance frameworks"
-      basis: "GLP — data compliance reporting, Baiquan — cross-source data validation"
   closer_options:
     eager_company:
       text: "Eager to bring these skills to {company}."

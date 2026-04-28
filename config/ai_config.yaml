@@ -173,20 +173,20 @@ prompts:
     Job Description:
     {job_description}
 
-    ## C1 Analysis Context
-    This job was evaluated and scored {c1_score}/10 ({c1_recommendation}).
-    C1 Reasoning: {c1_reasoning}
-    Application Brief: {c1_brief}
-
     ## Your Task
-    **Tailor the resume** by selecting the most relevant content:
-    - Bio: write 2-3 sentences if it adds value, or set to null
+    **Strategic angle (from C1 evaluation, score {c1_score}/10 — {c1_recommendation}):**
+    - Hook: {c1_hook}
+    - Key angle: {c1_key_angle}
+    - Gap to mitigate: {c1_gap_mitigation}
+    - Company connection: {c1_company_connection}
+    If no brief is available, infer the strongest angle from the JD and score.
+
+    **Tailor the resume** to execute this angle:
     - MUST select 2-3 different work experiences from different companies
     - Select 1-3 projects based on JD relevance
     - Select bullets BY THEIR ID (shown in [square brackets] in the library above)
     - Provide 4-6 skill categories from the allowed list
-    - Focus on RELEVANCE — include all bullets that match the JD, no artificial limits
-    - Use the application brief's key_angle and hook to guide your narrative choices
+    - Focus on RELEVANCE — use the brief's key_angle and hook to guide narrative choices
 
     ## Output Format (JSON)
 
