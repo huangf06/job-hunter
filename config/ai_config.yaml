@@ -37,32 +37,6 @@ prompt_settings:
   # Max chars to include from job description (actual max ~8k chars)
   job_description_max_chars: 10000
 
-  # Work experience sections to include in AI prompt (keys in bullet_library.yaml)
-  experience_keys:
-    - glp_technology
-    - independent_investor
-    - baiquan_investment
-    - eleme
-    - henan_energy
-
-  # Project sections to include in AI prompt (keys in bullet_library.yaml)
-  project_keys:
-    - financial_data_lakehouse
-    - deribit_options
-    - thesis_uq_rl
-    - nlp_projects
-    - expedia_recommendation
-    - ml4qs
-    - graphsage_gnn
-    - obama_tts
-    - lifeos
-    - job_hunter_automation
-    - greenhouse_sensor_pipeline
-    - docbridge
-    - evolutionary_robotics_research
-    - sequence_analysis
-    - deep_learning_fundamentals
-
 # =============================================================================
 # AI Recommendation Thresholds (used in AI prompt)
 # =============================================================================
@@ -92,47 +66,6 @@ resume:
       bottom: "0.5in"
       left: "0.583in"
     print_background: true
-
-  # Career gap explanation (rendered below experience section)
-  career_note: "Career Note: 2019-2023 included independent investing, language learning (English, German), and graduate preparation."
-
-  # Interests line (rendered in Additional section)
-  interests: "Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing"
-
-  # Human languages (rendered in Additional section)
-  languages: "English (Fluent), Mandarin (Native), Dutch (Conversational)"
-
-  # Candidate contact info (used by resume renderer)
-  candidate:
-    name: "Fei Huang"
-    email: "huangf06@gmail.com"
-    phone: "+31 645 038 614"
-    location: "Amsterdam, Netherlands"
-    linkedin: "https://www.linkedin.com/in/huangf06/"
-    github: "https://github.com/huangf06"
-    linkedin_display: "linkedin.com/in/huangf06"
-    github_display: "github.com/huangf06"
-    blog_url: "https://feithink.org"
-    blog_display: "feithink.org"
-
-  # Education details (rendered in template)
-  education:
-    master:
-      school: "Vrije Universiteit Amsterdam"
-      location: "Amsterdam, Netherlands"
-      degree: "M.Sc. in Artificial Intelligence"
-      date: "Sep. 2023 - Aug. 2025"
-      gpa: "8.2/10"
-      coursework: "Deep Learning (9.5), Multi-Agent Systems (9.5), ML4QS (9.5), Data Mining (9.0), NLP (9.0)"
-      thesis: "Uncertainty Quantification in Deep Reinforcement Learning under Noisy Environments"
-    bachelor:
-      school: "Tsinghua University"
-      location: "Beijing, China"
-      degree: "B.Eng. in Industrial Engineering"
-      date: "Sep. 2006 - Jul. 2010"
-      school_note: "Ranked #1 in China, top 20 globally"
-      thesis: "Design and Implementation of Web-based Collaborative Office System (Java/MVC/SQL Server)"
-    certification: "Databricks Certified Data Engineer Professional (2026)"
 
 # =============================================================================
 # AI Analysis Prompt Template
@@ -335,10 +268,12 @@ prompts:
     ## Important Rules
 
     ### CONTENT SELECTION PRINCIPLE
-    Include ALL content that is relevant to the JD. Exclude content that doesn't strengthen the application.
-    The resume MUST be exactly 2 pages — not 1, not 3. If content would exceed 2 pages, drop the lowest-priority bullets first (check BULLET PRIORITY section). Typical total: 8-12 bullets across all experiences.
+    Include every bullet that strengthens the application for THIS specific role.
+    Exclude content that doesn't add signal. Quality and relevance over quantity.
     Sections order: Education → Projects → Experience → Skills → Additional.
-    Education and Additional are static. You control: bio (optional), experiences, projects, skills.
+    Education is mostly static (you control selected_courses and show_bachelor_thesis).
+    Additional is mostly static (you control show_career_note).
+    You fully control: bio (optional), experiences, projects, skills.
 
     ### BIO RULES (STRUCTURED FORMAT)
     - Bio is a STRUCTURED OBJECT, not free text. The system assembles the final text.
@@ -387,15 +322,6 @@ prompts:
     Deprioritize:
     - glp_decision_engine — only if JD specifically requires credit risk rule engines
 
-    ### BULLET DISTRIBUTION (GUIDANCE, NOT HARD LIMITS)
-    Include bullets based on JD relevance. Typical ranges:
-    - Most relevant experience: 2-4 bullets
-    - Second experience: 2-3 bullets
-    - Third experience (if included): 1-2 bullets
-    - Main project: 2-4 bullets (include all that are relevant)
-    - Second project: 1-2 bullets
-    - Third project (if relevant): 1 bullet
-
     ### SKILLS FORMAT
     - Provide 4-6 categories from this ALLOWED list ONLY:
       {allowed_skill_categories_list}
@@ -440,80 +366,6 @@ prompts:
     2. MUST include 2-3 different work experiences from different companies
     3. Select bullets that best match the JD requirements
     4. Include ALL relevant bullets for a position — do not cut for space
-
-  tailor_adapt: |
-    # Template Adaptation
-
-    You are adapting a polished resume template for a specific job. Do not rewrite the full resume.
-
-    ## Target Job
-    Title: {job_title}
-    Company: {job_company}
-
-    Job Description:
-    {job_description}
-
-    ## Routing Context
-    Gaps: {routing_gaps}
-    Adapt instructions: {adapt_instructions}
-
-    ## Template Schema
-    {template_schema}
-
-    ## CONSTRAINTS (HARD LIMITS — violating any will reject the resume)
-    - bio_1, bio_2, bio_3: each line MUST be <= 105 characters. Count carefully.
-    - skills_override values: each MUST be <= 80 characters.
-    - Max 5 skill categories total.
-
-    ## Output JSON
-    {{
-      "slot_overrides": {{
-        "bio_1": "First line of bio (max 105 chars)",
-        "bio_2": "Second line of bio (max 105 chars)",
-        "bio_3": "Third line of bio (max 105 chars)"
-      }},
-      "skills_override": {{
-        "programming": "Optional replacement skill line (max 80 chars)"
-      }},
-      "entry_visibility": {{
-        "glp": true
-      }},
-      "change_summary": "One sentence summary of the changes"
-    }}
-
-    ## Bio Writing Rules
-    - The bio is exactly 3 lines. Each line is rendered independently (no word wrapping).
-    - Line 1: Role + years + domain scope (most important — the hook).
-    - Line 2: Key accomplishment or strength summary.
-    - Line 3: Education credentials + certifications.
-    - Each line must be a complete, readable phrase (no mid-word breaks).
-    - If you don't need to change the bio, omit bio_1/bio_2/bio_3 from slot_overrides entirely.
-
-  c3_gate: |
-    You are reviewing whether adapting a polished resume template improves job fit enough
-    to justify using the adapted version over the original.
-
-    The original template has been professionally designed through 9+ iterations for
-    narrative coherence, visual design, and cross-section resonance.
-
-    {structured_diff}
-
-    ## Decision criteria
-    - Does each change demonstrably improve fit for THIS specific job?
-    - Are the new bullet texts of comparable quality to the originals?
-    - Is the change density proportionate? (>60% modified = essentially a rewrite -> FAIL)
-    - Would a hiring manager notice the gaps if we used the unmodified template?
-
-    Output JSON:
-    {{
-      "decision": "PASS",
-      "confidence": 0.8,
-      "reason": "one sentence"
-    }}
-
-# =============================================================================
-# Metadata
-# =============================================================================
 
 # =============================================================================
 # Interview Scheduler

@@ -27,7 +27,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.db.job_db import JobDatabase, Resume
 from src.resume_validator import ResumeValidator
-from src.template_registry import load_registry, validate_tier2_output
+from src.template_registry import load_registry
 
 
 class ResumeRenderer:
@@ -35,6 +35,7 @@ class ResumeRenderer:
 
     def __init__(self, config_path: Path = None):
         self.config = self._load_config(config_path)
+        self.bullet_library = self._load_bullet_library()
         self.db = JobDatabase()
         self.template_dir = PROJECT_ROOT / "templates"
         self.output_dir = PROJECT_ROOT / self.config.get('resume', {}).get('output_dir', 'output')
@@ -49,8 +50,8 @@ class ResumeRenderer:
             autoescape=True
         )
 
-        # Load candidate info
-        self.candidate = self.config.get('resume', {}).get('candidate', {})
+        # Load candidate info from bullet library
+        self.candidate = self.bullet_library.get('personal_info', {})
         self.base_context = self._build_base_context()
 
         # Initialize validator (v3.0)
@@ -64,9 +65,16 @@ class ResumeRenderer:
                 return yaml.safe_load(f)
         return {}
 
+    def _load_bullet_library(self) -> dict:
+        lib_path = PROJECT_ROOT / "assets" / "bullet_library.yaml"
+        if lib_path.exists():
+            with open(lib_path, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f) or {}
+        return {}
+
     def _build_base_context(self) -> dict:
         """构建基础模板上下文 (不变的部分)"""
-        edu = self.config.get('resume', {}).get('education', {})
+        edu = self.bullet_library.get('education', {})
         master = edu.get('master', {})
         bachelor = edu.get('bachelor', {})
 
@@ -89,7 +97,7 @@ class ResumeRenderer:
             'edu_master_degree': master.get('degree', 'M.Sc. in Artificial Intelligence'),
             'edu_master_date': master.get('date', 'Sep. 2023 - Aug. 2025'),
             'edu_master_gpa': master.get('gpa', ''),
-            'edu_master_coursework': master.get('coursework', ''),
+            'edu_master_coursework': self._format_coursework(master),
             'edu_master_thesis': master.get('thesis', ''),
 
             # Education - Bachelor
@@ -102,18 +110,18 @@ class ResumeRenderer:
 
             'certification': edu.get('certification', ''),
 
-            # Career note (for gap explanation)
-            'career_note': self.config.get('resume', {}).get('career_note',
-                'Career transition (2019–2023): Relocated to the Netherlands and completed M.Sc. in Artificial Intelligence at VU Amsterdam (GPA 8.2/10).'),
-
-            # Interests
-            'interests': self.config.get('resume', {}).get('interests',
-                'Philosophy, strategy games, distance running, analytical writing'),
-
-            # Languages (human languages, separate from technical skills)
-            'languages': self.config.get('resume', {}).get('languages',
-                'English (Fluent), Mandarin (Native)'),
+            # Additional section (from bullet library)
+            'career_note': self.bullet_library.get('additional', {}).get('career_note', ''),
+            'interests': self.bullet_library.get('additional', {}).get('interests', ''),
+            'languages': self.bullet_library.get('additional', {}).get('languages', ''),
         }
+
+    @staticmethod
+    def _format_coursework(master: dict) -> str:
+        courses = master.get('courses', [])
+        if not courses:
+            return master.get('coursework', '')
+        return ', '.join(f"{c['name']} ({c['grade']})" for c in courses if isinstance(c, dict) and 'name' in c and 'grade' in c)
 
     def render_resume(self, job_id: str) -> Optional[Dict[str, str]]:
         """渲染单个职位的简历"""
@@ -300,195 +308,6 @@ class ResumeRenderer:
             'submit_pdf_path': submit_dir / f"{submit_name}.pdf",
         }
 
-    def _render_template_copy(self, job_id: str, analysis: Dict) -> Optional[Dict[str, str]]:
-        """DEPRECATED 2026-04-17: static PDF copy path is retired.
-
-        Kept for reference only; not reachable from render_resume() after the
-        tier revert. Delete after 2 weeks of stable FULL_CUSTOMIZE operation
-        (target: 2026-05-01).
-        """
-        job = self.db.get_job(job_id)
-        template_id = analysis.get('template_id_final')
-        if not job or not template_id:
-            return None
-        template_meta = self.registry.get('templates', {}).get(template_id)
-        if not template_meta or 'pdf' not in template_meta:
-            print(f"[Renderer] Unknown template or missing PDF config: {template_id}")
-            return None
-        source_pdf = PROJECT_ROOT / template_meta['pdf']
-        if not source_pdf.exists():
-            print(f"[Renderer] Template PDF missing: {source_pdf}")
-            return None
-
-        paths = self._build_output_paths(job)
-        import shutil
-        shutil.copy2(source_pdf, paths['pdf_path'])
-        shutil.copy2(source_pdf, paths['submit_pdf_path'])
-
-        self.db.save_resume(Resume(
-            job_id=job_id,
-            role_type=template_id,
-            template_version="template_v1",
-            pdf_path=str(paths['pdf_path']),
-            submit_dir=str(paths['submit_dir']),
-        ))
-        return {'html_path': None, 'pdf_path': str(paths['pdf_path'])}
-
-    def _schema_to_context(self, schema: Dict, tailored: Dict, analysis: Dict) -> Dict:
-        """DEPRECATED 2026-04-17: zone-based render path is retired.
-
-        Kept for reference only; not reachable from render_resume() after the
-        tier revert. Delete after 2 weeks of stable FULL_CUSTOMIZE operation
-        (target: 2026-05-01).
-
-        Convert slot_schema + tier-2 overrides into a zone-based template context.
-        Zone-based templates hardcode most content. This method outputs:
-        - bio: string (from slot_overrides or schema default)
-        - {entry_id}_skills: per-experience skills line string
-        - skills: list of {category, skills_list} for the Technical Skills zone
-        """
-        slot_overrides = tailored.get('slot_overrides', {})
-        skills_override = tailored.get('skills_override', {})
-
-        context = {}
-
-        # Bio: per-line (bio_1, bio_2, bio_3)
-        seniority = analysis.get('seniority', 'mid')
-        bio_schema = schema.get('bio', {})
-        for line_key in ('bio_1', 'bio_2', 'bio_3'):
-            line_schema = bio_schema.get(line_key, {})
-            if line_key in slot_overrides:
-                context[line_key] = slot_overrides[line_key]
-            elif seniority == 'senior' and line_schema.get('senior'):
-                context[line_key] = line_schema['senior']
-            else:
-                context[line_key] = line_schema.get('default', '')
-
-        # Per-entry skills lines
-        for section in schema.get('sections', []):
-            if section.get('section_id') != 'experience':
-                continue
-            for entry in section.get('entries', []):
-                entry_id = entry['entry_id']
-                context[f'{entry_id}_skills'] = entry.get('technical_skills', '')
-
-        # Build skills from schema categories + overrides
-        skills = []
-        for section in schema.get('sections', []):
-            if section.get('section_id') != 'skills':
-                continue
-            for cat in section.get('categories', []):
-                cat_id = cat['cat_id']
-                skills_list = skills_override.get(cat_id, cat.get('default', ''))
-                display_name = cat_id.replace('_', ' ').title()
-                CAT_DISPLAY = {
-                    'programming': 'Programming',
-                    'data_engineering': 'Data Engineering',
-                    'infrastructure': 'Infrastructure',
-                    'analytics_ml': 'Analytics & ML',
-                    'ml_modeling': 'ML & Modeling',
-                    'data_infrastructure': 'Data & Infrastructure',
-                    'domains': 'Domains',
-                    'backend_systems': 'Backend Systems',
-                    'data_systems': 'Data Systems',
-                }
-                display_name = CAT_DISPLAY.get(cat_id, display_name)
-                skills.append({
-                    'category': display_name,
-                    'skills_list': skills_list,
-                })
-
-        skills = self._dedup_skills(skills)
-        context['skills'] = skills
-
-        return context
-
-    def _render_adapt_template(self, job_id: str, analysis: Dict) -> Optional[Dict[str, str]]:
-        """DEPRECATED 2026-04-17: zone-based ADAPT_TEMPLATE path is retired.
-
-        Kept for reference only; not reachable from render_resume() after the
-        tier revert. Delete after 2 weeks of stable FULL_CUSTOMIZE operation
-        (target: 2026-05-01).
-        """
-        job = self.db.get_job(job_id)
-        if not job:
-            return None
-        template_id = analysis.get('template_id_final')
-        template_meta = self.registry.get('templates', {}).get(template_id)
-        if not template_meta:
-            print(f"[Renderer] Unknown template: {template_id}")
-            return None
-        if 'slot_schema' not in template_meta:
-            print(f"[Renderer] Template {template_id} missing slot_schema")
-            return None
-        try:
-            tailored = json.loads(analysis.get('tailored_resume') or '{}')
-        except json.JSONDecodeError as e:
-            print(f"[Renderer] Invalid tier-2 JSON for {job_id}: {e}")
-            return None
-        schema = template_meta['slot_schema']
-        errors = validate_tier2_output(tailored, schema)
-        if errors:
-            for error in errors:
-                print(f"[Renderer] Tier 2 validation error: {error}")
-            return None
-
-        # Select per-template HTML based on template_id
-        template_map = {
-            'DE': 'base_template_DE.html',
-            'ML': 'base_template_ML.html',
-            'DS': 'base_template_DS.html',
-        }
-        template_name = template_map.get(template_id)
-        if not template_name:
-            print(f"[Renderer] No ADAPT template for template_id={template_id}, falling back")
-            return None
-
-        # Convert slot_schema + overrides into standard Jinja2 context
-        context = self._schema_to_context(schema, tailored, analysis)
-
-        from jinja2 import TemplateNotFound
-        try:
-            template = self.jinja_env.get_template(template_name)
-        except TemplateNotFound:
-            print(f"[Renderer] ADAPT template not found: {template_name}")
-            return None
-
-        # Validate zone overflow (BLOCKING)
-        zone_result = self.validator.validate_adapt_zones(context)
-        if zone_result.warnings:
-            for w in zone_result.warnings:
-                print(f"  [ZONE WARN] {w}")
-        if not zone_result.passed:
-            for e in zone_result.errors:
-                print(f"  [ZONE BLOCK] {e}")
-            print(f"[Renderer] Zone validation failed for {job_id}, falling back to USE_TEMPLATE")
-            return None
-
-        html_content = template.render(**context)
-
-        paths = self._build_output_paths(job)
-        with open(paths['html_path'], 'w', encoding='utf-8') as handle:
-            handle.write(html_content)
-
-        # ADAPT templates have CSS body padding baked in — use zero Playwright margins
-        zero_margin = {'top': '0', 'right': '0', 'bottom': '0', 'left': '0'}
-        pdf_success = self._html_to_pdf(paths['html_path'], paths['pdf_path'], margin_override=zero_margin)
-        if not pdf_success:
-            return None
-
-        import shutil
-        shutil.copy2(paths['pdf_path'], paths['submit_pdf_path'])
-        self.db.save_resume(Resume(
-            job_id=job_id,
-            role_type=template_id,
-            template_version="adapt_v2",
-            html_path=str(paths['html_path']),
-            pdf_path=str(paths['pdf_path']),
-            submit_dir=str(paths['submit_dir']),
-        ))
-        return {'html_path': str(paths['html_path']), 'pdf_path': str(paths['pdf_path'])}
-
     def _build_context(self, tailored: Dict, job: Dict) -> Dict:
         """构建完整的模板上下文"""
         context = dict(self.base_context)
@@ -575,7 +394,7 @@ class ResumeRenderer:
         if est_pages < 0.8:
             issues.append((f"Resume may be too short (~{est_pages:.1f} pages)", False))
         elif est_pages > 2.5:
-            issues.append((f"Resume may be too long (~{est_pages:.1f} pages)", True))
+            issues.append((f"Resume may be too long (~{est_pages:.1f} pages)", False))
 
         # Check for empty bullets
         empty_bullets = re.findall(r'<li>\s*</li>', html_content)
@@ -600,13 +419,7 @@ class ResumeRenderer:
         return safe or 'unknown'
 
     def _html_to_pdf(self, html_path: Path, pdf_path: Path, margin_override: Dict = None) -> bool:
-        """使用 Playwright 将 HTML 转换为 PDF.
-
-        Args:
-            margin_override: If provided, use these margins instead of config defaults.
-                Pass {'top': '0', 'right': '0', 'bottom': '0', 'left': '0'} for
-                templates that embed their own padding (e.g. ADAPT_TEMPLATE DE/ML).
-        """
+        """使用 Playwright 将 HTML 转换为 PDF."""
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
