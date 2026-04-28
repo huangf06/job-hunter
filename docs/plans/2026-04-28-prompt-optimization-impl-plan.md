@@ -12,10 +12,11 @@
 
 ---
 
-### Task 1: C2 prompt — Remove artificial content limits and bullet distribution guidance
+### Task 1: C2 prompt — Remove artificial content limits + fix renderer overflow blocking
 
 **Files:**
 - Modify: `config/ai_config.yaml:271-330`
+- Modify: `src/resume_renderer.py:396-397`
 
 **Step 1: Edit the CONTENT SELECTION PRINCIPLE section**
 
@@ -26,7 +27,9 @@ In `config/ai_config.yaml`, replace the `### CONTENT SELECTION PRINCIPLE` block 
     Include every bullet that strengthens the application for THIS specific role.
     Exclude content that doesn't add signal. Quality and relevance over quantity.
     Sections order: Education → Projects → Experience → Skills → Additional.
-    Education and Additional are static. You control: bio (optional), experiences, projects, skills.
+    Education is mostly static (you control selected_courses and show_bachelor_thesis).
+    Additional is mostly static (you control show_career_note).
+    You fully control: bio (optional), experiences, projects, skills.
 ```
 
 Remove the 2-page constraint and "8-12 bullets" guidance entirely.
@@ -42,16 +45,32 @@ Delete the entire `### BULLET DISTRIBUTION (GUIDANCE, NOT HARD LIMITS)` block (l
     ...
 ```
 
-**Step 3: Run tests**
+**Step 3: Downgrade renderer page overflow from blocking to warning**
+
+In `src/resume_renderer.py`, `_post_render_qa()`, change line 397:
+
+```python
+# Before:
+elif est_pages > 2.5:
+    issues.append((f"Resume may be too long (~{est_pages:.1f} pages)", True))
+
+# After:
+elif est_pages > 2.5:
+    issues.append((f"Resume may be too long (~{est_pages:.1f} pages)", False))
+```
+
+This aligns with the user's explicit preference ("一页、两页、三页都可以，不要硬性限制"). The AI naturally produces ~2 pages because the bullet library has finite content.
+
+**Step 4: Run tests**
 
 Run: `pytest tests/ -x -q`
-Expected: All pass (prompt text only, no code change)
+Expected: All pass
 
-**Step 4: Commit**
+**Step 5: Commit**
 
 ```bash
-git add config/ai_config.yaml
-git commit -m "C2 prompt: remove artificial page/bullet limits, trust AI judgment"
+git add config/ai_config.yaml src/resume_renderer.py
+git commit -m "C2 prompt: remove artificial page/bullet limits, downgrade overflow to warning"
 ```
 
 ---
@@ -123,10 +142,29 @@ git commit -m "remove language guidance from C2, simplify C1 routing output"
 ### Task 3: Consolidate title_options into work_experience
 
 **Files:**
-- Modify: `assets/bullet_library.yaml:543-564` (delete title_options block)
+- Modify: `assets/bullet_library.yaml` (work_experience.*.titles + delete title_options block)
 - Modify: `src/ai_analyzer.py:302-317` (`_build_title_context`)
-- Modify: `src/resume_validator.py:228-268` (`_validate_titles`)
+- Modify: `src/resume_validator.py:82-101` (`_load_config`)
 - Modify: `tests/test_ai_analyzer.py:358-384` (TestTitleContextPerSection)
+
+**Step 0: Merge missing titles into work_experience BEFORE deleting title_options**
+
+The top-level `title_options` has entries that `work_experience[].titles` lacks. Merge them first:
+
+In `assets/bullet_library.yaml`, add the missing title entries:
+
+For `glp_technology.titles` (line ~89), add:
+```yaml
+      data_engineer_lead: "Data Engineer & Team Lead"
+      risk_analyst: "Credit Risk Analyst"
+```
+
+For `baiquan_investment.titles` (line ~154), add:
+```yaml
+      data_engineer: "Quantitative Developer"
+```
+
+(`henan_energy` and `eleme` are already complete — henan_energy even has MORE titles in work_experience than title_options.)
 
 **Step 1: Write the failing test**
 
@@ -215,11 +253,9 @@ def _build_title_context(self) -> str:
     return '\n'.join(lines)
 ```
 
-**Step 3: Update `ResumeValidator._validate_titles()`**
+**Step 3: Update `ResumeValidator._load_config()` to read titles from work_experience**
 
-In `src/resume_validator.py`, the validator reads `self._title_options` at line 231. After removing `title_options` from YAML, this returns `{}` and validation is skipped. We need to rebuild it from work_experience.
-
-Replace `_load_config()` (lines 82-101) to also extract titles from work_experience:
+In `src/resume_validator.py`, replace `_load_config()` (lines 82-101):
 
 ```python
 def _load_config(self, lib_path: Path):
@@ -251,7 +287,7 @@ def _load_config(self, lib_path: Path):
 
 **Step 4: Delete `title_options` from bullet_library.yaml**
 
-Remove lines 543-564 (the entire `title_options:` top-level block).
+Remove the entire `title_options:` top-level block (lines 543-564).
 
 **Step 5: Run tests**
 
@@ -376,7 +412,7 @@ git commit -m "trim 3 overlapping domain_claims, elevate C1 brief in C2 prompt"
 **Files:**
 - Modify: `src/ai_analyzer.py` (new method `_build_candidate_summary`)
 - Modify: `config/ai_config.yaml` (prompts.tailor — replace hardcoded profile)
-- Create test: `tests/test_ai_analyzer.py` (new test class)
+- Modify: `tests/test_ai_analyzer.py` (new test class)
 
 **Step 1: Write the failing test**
 
@@ -386,7 +422,7 @@ In `tests/test_ai_analyzer.py`, add:
 class TestCandidateSummary:
     """C2 candidate summary is generated from bullet_library, not hardcoded."""
 
-    def test_summary_includes_education_and_certification(self):
+    def test_summary_includes_education_and_core_skills(self):
         from src.ai_analyzer import AIAnalyzer
         analyzer = AIAnalyzer.__new__(AIAnalyzer)
         analyzer._parsed_bullets = {
@@ -413,6 +449,9 @@ class TestCandidateSummary:
             'skill_tiers': {
                 'verified': {
                     'languages': ['Python (Expert)', 'SQL (Expert)', 'Bash'],
+                    'data_engineering': ['PySpark', 'Spark', 'Delta Lake', 'Databricks'],
+                    'cloud': ['AWS (Redshift, S3, EC2)', 'Docker', 'Airflow'],
+                    'ml': ['PyTorch', 'XGBoost', 'scikit-learn'],
                 },
             },
         }
@@ -424,7 +463,10 @@ class TestCandidateSummary:
         assert 'Databricks Certified' in summary
         assert 'GLP Technology' in summary
         assert 'Senior Data Engineer' in summary
+        # Core skills from multiple categories, not just languages
         assert 'Python' in summary
+        assert 'PySpark' in summary
+        assert 'PyTorch' in summary
 ```
 
 Run: `pytest tests/test_ai_analyzer.py::TestCandidateSummary -v`
@@ -464,14 +506,18 @@ def _build_candidate_summary(self) -> str:
     if exp_lines:
         lines.append(f"Experience: {'; '.join(exp_lines)}")
 
-    # Core skills
+    # Core skills — curated from top verified categories for AI priming
     verified = self._parsed_bullets.get('skill_tiers', {}).get('verified', {})
-    lang_skills = verified.get('languages', [])
-    if lang_skills:
-        lines.append(f"Key Skills: {', '.join(lang_skills)}")
+    core_skills = []
+    for category in ['languages', 'data_engineering', 'cloud', 'ml']:
+        core_skills.extend(verified.get(category, [])[:3])
+    if core_skills:
+        lines.append(f"Key Skills: {', '.join(core_skills[:12])}")
 
     return '\n'.join(lines)
 ```
+
+Note: pulls top 3 skills from `languages`, `data_engineering`, `cloud`, and `ml` — giving ~12 core skills that cover all major dimensions (vs the old hardcoded 8). This preserves priming signals like PyTorch, PySpark, Delta Lake, AWS that Codex correctly flagged as important.
 
 **Step 3: Update C2 prompt template**
 
@@ -506,15 +552,15 @@ git commit -m "generate C2 candidate summary dynamically from bullet_library"
 
 ---
 
-### Task 6: Add course selection to C2 output + renderer
+### Task 6: Add course selection + career_note + bachelor thesis control to C2 + renderer
 
 **Files:**
 - Modify: `src/ai_analyzer.py:70-170` (`_load_bullet_library` — add courses section)
 - Modify: `config/ai_config.yaml` (prompts.tailor — add courses to output schema + instructions)
-- Modify: `src/resume_renderer.py:75-124` (`_build_base_context`, `_format_coursework`)
-- Add tests in `tests/test_ai_analyzer.py` and `tests/test_resume_renderer_full_customize_only.py`
+- Modify: `src/resume_renderer.py:119-124,311-343` (`_format_coursework`, `_build_context`)
+- Add tests in `tests/test_resume_renderer_full_customize_only.py`
 
-**Step 1: Write the failing test for coursework filtering**
+**Step 1: Write the failing tests**
 
 In `tests/test_resume_renderer_full_customize_only.py`, add:
 
@@ -550,10 +596,91 @@ def test_format_coursework_all_when_no_selection():
 
     assert 'Deep Learning (9.5)' in result
     assert 'NLP (9.0)' in result
+
+
+def test_build_context_applies_selected_courses():
+    """Integration: _build_context respects selected_courses from tailored JSON."""
+    from src.resume_renderer import ResumeRenderer
+    renderer = ResumeRenderer.__new__(ResumeRenderer)
+    renderer.bullet_library = {
+        'education': {
+            'master': {
+                'courses': [
+                    {'id': 'deep_learning', 'name': 'Deep Learning', 'grade': '9.5'},
+                    {'id': 'nlp', 'name': 'NLP', 'grade': '9.0'},
+                    {'id': 'data_mining', 'name': 'Data Mining', 'grade': '9.0'},
+                ],
+            },
+        },
+    }
+    renderer.base_context = {
+        'edu_master_coursework': 'Deep Learning (9.5), NLP (9.0), Data Mining (9.0)',
+        'edu_bachelor_thesis': 'Some thesis',
+        'career_note': 'Career Note: 2019-2023 gap explanation.',
+    }
+    renderer.validator = type('V', (), {'validate': lambda self, t, j, tier=None: type('R', (), {'passed': True, 'errors': [], 'warnings': [], 'fixes': {}})()})()
+
+    tailored = {
+        'bio': 'Test bio',
+        'experiences': [
+            {'company': 'A', 'bullets': ['b1'], 'title': 'T', 'date': 'D'},
+            {'company': 'B', 'bullets': ['b2'], 'title': 'T', 'date': 'D'},
+        ],
+        'projects': [{'name': 'P', 'bullets': ['p1']}],
+        'skills': [
+            {'category': 'Languages & Core', 'skills_list': 'Python'},
+            {'category': 'Data Engineering', 'skills_list': 'Spark'},
+            {'category': 'Cloud & DevOps', 'skills_list': 'Docker'},
+        ],
+        'selected_courses': ['deep_learning', 'nlp'],
+        'show_bachelor_thesis': False,
+        'show_career_note': False,
+    }
+
+    context = renderer._build_context(tailored, {'company': 'TestCorp'})
+
+    assert 'Deep Learning (9.5)' in context['edu_master_coursework']
+    assert 'Data Mining' not in context['edu_master_coursework']
+    assert context['edu_bachelor_thesis'] == ''
+    assert context['career_note'] == ''
+
+
+def test_build_context_preserves_defaults_without_ai_control():
+    """Integration: without AI control fields, defaults are preserved."""
+    from src.resume_renderer import ResumeRenderer
+    renderer = ResumeRenderer.__new__(ResumeRenderer)
+    renderer.bullet_library = {}
+    renderer.base_context = {
+        'edu_master_coursework': 'All courses here',
+        'edu_bachelor_thesis': 'Some thesis',
+        'career_note': 'Career Note text',
+    }
+    renderer.validator = type('V', (), {'validate': lambda self, t, j, tier=None: type('R', (), {'passed': True, 'errors': [], 'warnings': [], 'fixes': {}})()})()
+
+    tailored = {
+        'bio': 'Test bio',
+        'experiences': [
+            {'company': 'A', 'bullets': ['b1'], 'title': 'T', 'date': 'D'},
+            {'company': 'B', 'bullets': ['b2'], 'title': 'T', 'date': 'D'},
+        ],
+        'projects': [{'name': 'P', 'bullets': ['p1']}],
+        'skills': [
+            {'category': 'Languages & Core', 'skills_list': 'Python'},
+            {'category': 'Data Engineering', 'skills_list': 'Spark'},
+            {'category': 'Cloud & DevOps', 'skills_list': 'Docker'},
+        ],
+        # No selected_courses, show_bachelor_thesis, or show_career_note
+    }
+
+    context = renderer._build_context(tailored, {'company': 'TestCorp'})
+
+    assert context['edu_master_coursework'] == 'All courses here'
+    assert context['edu_bachelor_thesis'] == 'Some thesis'
+    assert context['career_note'] == 'Career Note text'
 ```
 
 Run: `pytest tests/test_resume_renderer_full_customize_only.py -v`
-Expected: FAIL (signature doesn't accept `selected_courses`)
+Expected: FAIL (signature/logic doesn't exist yet)
 
 **Step 2: Update `_format_coursework()`**
 
@@ -570,20 +697,22 @@ def _format_coursework(master: dict, selected_courses: list = None) -> str:
     return ', '.join(f"{c['name']} ({c['grade']})" for c in courses if isinstance(c, dict) and 'name' in c and 'grade' in c)
 ```
 
-**Step 3: Update `_build_context()` to pass selected_courses through**
+**Step 3: Update `_build_context()` to consume AI-controlled fields**
 
-In `src/resume_renderer.py`, in `_build_context()` (line 311), add after projects:
+In `src/resume_renderer.py`, in `_build_context()`, add AFTER the skills block (~line 341, before `return context`):
 
 ```python
-# Coursework selection (AI-controlled)
+# AI-controlled education/additional fields
 selected_courses = tailored.get('selected_courses')
 if selected_courses is not None:
     master = self.bullet_library.get('education', {}).get('master', {})
     context['edu_master_coursework'] = self._format_coursework(master, selected_courses=selected_courses)
 
-# Bachelor thesis visibility (AI-controlled)
 if tailored.get('show_bachelor_thesis') is False:
     context['edu_bachelor_thesis'] = ''
+
+if tailored.get('show_career_note') is False:
+    context['career_note'] = ''
 ```
 
 **Step 4: Add courses to bullet library prompt format**
@@ -635,12 +764,12 @@ Expected: All pass
 
 ```bash
 git add src/ai_analyzer.py src/resume_renderer.py config/ai_config.yaml tests/test_resume_renderer_full_customize_only.py
-git commit -m "add course selection + career_note AI control to C2 pipeline"
+git commit -m "add course selection + career_note + bachelor thesis AI control to C2 pipeline"
 ```
 
 ---
 
-### Task 7: Final validation — full test suite + manual prompt review
+### Task 7: Final validation — full test suite + prompt consistency review
 
 **Files:**
 - All modified files from Tasks 1-6
@@ -679,10 +808,11 @@ Read through both prompt templates in `config/ai_config.yaml` end-to-end and ver
 - No references to removed fields (adapt_instructions, c1_reasoning, c1_brief)
 - No references to removed domain_claims (anomaly_detection, streaming_data, data_governance)
 - Output schema matches what code expects to parse
+- "Education and Additional are mostly static" wording is consistent with Task 6 additions
 
 **Step 4: Commit any fixups**
 
 ```bash
-git add -A
+git add config/ai_config.yaml src/ai_analyzer.py src/resume_renderer.py
 git commit -m "final cleanup: fix any orphan references from prompt optimization"
 ```
