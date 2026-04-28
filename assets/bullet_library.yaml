@@ -219,7 +219,7 @@ work_experience:
         status: active
         tags: [quant, pipeline, mysql, api]
         narrative_role: headline
-        content: "Built automated equity research pipeline processing 83K+ daily records across 3,600+ stocks via Tushare API and MySQL; implemented institutional flow tracking and momentum signal detection for systematic market analysis."
+        content: "Built end-to-end proprietary trading system covering 3,600+ equities; engineered predictive features using statistical and machine learning methods for momentum signal detection, with custom Python backtesting framework and live execution hedged with index futures."
 
       - id: indie_skill_development
         status: deprecated
@@ -328,13 +328,14 @@ work_experience:
         status: active
         tags: [analytics, supply-chain, business-impact]
         narrative_role: headline
-        content: "Designed the group's supply chain analytics framework from scratch, tracking daily sales and inventory to guide procurement and sales timing; optimization guided by this framework contributed to €32M in documented profit improvements across business units over 3 years."
+        content: "Designed supply chain analytics framework from scratch for a multi-billion-euro energy group, tracking daily sales and inventory across 20+ business units to coordinate procurement timing and benchmark unit performance at the group level."
 
       - id: he_data_quality
-        status: active
+        status: deprecated
         tags: [data-quality, validation, anomaly-detection]
         narrative_role: optional
-        content: "Established data quality framework and validation rules for multi-source data ingestion, implementing anomaly detection to catch errors, non-standard formats, and data fabrication — built feedback loops to production teams for continuous improvement."
+        deprecation_reason: "Weak standalone; unique angle (data fabrication detection) better as interview talking point than resume bullet. he_data_automation + he_supply_chain_analytics cover Henan Energy sufficiently."
+        content: "Established data quality framework and validation rules for multi-source data ingestion, implementing anomaly detection to catch errors, non-standard formats, and data fabrication; built feedback loops to production teams for continuous improvement."
 
 
 
@@ -432,19 +433,20 @@ projects:
         status: active
         tags: [deep-rl, benchmarking, hpc, research]
         narrative_role: headline
-        content: "Developed a benchmarking framework evaluating 5 uncertainty quantification methods for Deep RL across 150+ training runs on HPC (SLURM); demonstrated QR-DQN superiority with 31% lower CRPS (p < 0.001) over ensemble and dropout baselines."
+        content: "Designed and implemented a standardized benchmarking framework for uncertainty quantification in Deep RL, orchestrating 150 independent training runs on SLURM-managed HPC under a full-factorial experimental protocol; unified CRPS, ACE, WIS, and coverage evaluation with statistical testing, establishing distributional learning as the strongest UQ approach across all four metrics."
 
       - id: thesis_noise_paradox
         status: active
         tags: [research, deep-rl, calibration]
         narrative_role: headline
-        content: "Discovered a 'noise paradox' where moderate observation noise unexpectedly improves ensemble-based uncertainty estimates; designed 6-stage reproducible evaluation pipeline with automated calibration benchmarking across multiple RL environments."
+        content: "Discovered a 'noise paradox' where moderate observation noise unexpectedly improves Bootstrapped DQN's uncertainty estimates by enhancing ensemble diversity; designed 6-stage reproducible evaluation pipeline with automated calibration benchmarking."
 
       - id: thesis_calibration
-        status: active
+        status: deprecated
         tags: [bayesian, calibration, deep-rl]
         narrative_role: optional
-        content: "Applied temperature scaling and Bayesian methods to calibrate agent confidence; evaluated post-hoc calibration impact across distributional, ensemble, and dropout-based UQ approaches with rigorous statistical testing."
+        deprecation_reason: "Finding too nuanced for resume bullet ('calibration sometimes helps, sometimes hurts'); better as interview talking point. Two thesis bullets (uq_framework + noise_paradox) at 9/17 interviews already cover research narrative."
+        content: "Proved that post-hoc calibration is not universally beneficial: standard calibration techniques improved Bootstrapped DQN (CRPS −11.2%) and MC Dropout (CRPS −12.9%) but degraded the already well-calibrated QR-DQN (CRPS +2.9%); established that calibration strategies must be method-specific rather than applied uniformly."
 
   # ---------------------------------------------------------------------------
   # NLP COURSE PROJECTS
@@ -460,7 +462,7 @@ projects:
         status: active
         tags: [llm, nlp, huggingface, flask, deployment]
         narrative_role: optional
-        content: "Built end-to-end LLM application using Hugging Face Transformers (GPT-2): implemented prompt engineering with controllable generation parameters and deployed as production-ready web service via Flask REST API."
+        content: "Built end-to-end LLM application using Hugging Face Transformers (GPT-2): implemented prompt engineering with controllable generation parameters and deployed as web service via Flask REST API."
 
       - id: nlp_dependency_parsing
         status: active
@@ -502,7 +504,7 @@ projects:
         status: active
         tags: [ml, sensor, time-series, lightgbm, lstm]
         narrative_role: optional
-        content: "Built end-to-end ML pipeline for IMU sensor classification (4 subjects, 6 activities); implemented Kalman Filter on 12 sensor channels for noise reduction; engineered 576+ features using FFT (time + frequency domain) with 3 window sizes; achieved 65% person classification and 94-99% sex prediction accuracy using LightGBM and LSTM — team of 4, 856 LOC + 8 notebooks."
+        content: "Built end-to-end ML pipeline for IMU sensor classification: implemented Kalman Filter for noise reduction across 12 sensor channels, engineered 576+ time-frequency features via FFT, and benchmarked LightGBM against bidirectional LSTM for activity and subject recognition."
 
       - id: ml4qs_deep_learning
         status: active
@@ -563,13 +565,13 @@ projects:
         status: active
         tags: [algorithms, hmm, bioinformatics]
         narrative_role: optional
-        content: "Implemented Hidden Markov Models from scratch including Viterbi algorithm (most likely state sequence), Forward-Backward algorithm (probability computation), and Baum-Welch training (parameter estimation) for gene prediction and protein structure analysis — 886 LOC with CLI interface."
+        content: "Implemented Hidden Markov Models from scratch including Viterbi, Forward-Backward, and Baum-Welch algorithms for gene prediction and protein structure analysis."
 
       - id: bioinfo_alignment
         status: active
         tags: [algorithms, bioinformatics, bwt]
         narrative_role: optional
-        content: "Built production-ready sequence alignment tools implementing Needleman-Wunsch (global), Smith-Waterman (local), and semi-global alignment with PAM250/BLOSUM62 substitution matrices and affine gap penalties; implemented Burrows-Wheeler Transform with O(n) suffix array construction for genome pattern matching — 2,330 total LOC with 200-page documentation."
+        content: "Built sequence alignment tools implementing Needleman-Wunsch (global), Smith-Waterman (local), and semi-global alignment with PAM250/BLOSUM62 substitution matrices and affine gap penalties; implemented Burrows-Wheeler Transform with O(n) suffix array construction for genome pattern matching."
 
   # ---------------------------------------------------------------------------
   # DEEP NEURAL NETWORKS FROM SCRATCH
@@ -613,19 +615,19 @@ projects:
         status: active
         tags: [data-quality, medallion, de]
         narrative_role: optional
-        content: "Engineered data quality framework with quarantine-and-replay pattern isolating malformed records across Bronze/Silver/Gold Medallion Architecture layers — achieving automated recovery without manual intervention."
+        content: "Engineered data quality framework with quarantine-and-replay pattern isolating malformed records across Bronze/Silver/Gold Medallion Architecture layers; achieved automated recovery without manual intervention."
 
       - id: lakehouse_optimization
         status: active
         tags: [delta-lake, optimization, de]
         narrative_role: optional
-        content: "Optimized Delta Lake storage via Z-ordering and compaction, reducing query latency for downstream analysis."
+        content: "Optimized Delta Lake performance through Z-ordering on high-cardinality columns and automated compaction resolving small-file fragmentation from streaming ingestion; designed partition strategy aligned with time-series access patterns to minimize scan volume for downstream analytical queries."
 
       - id: lakehouse_orchestration
         status: active
         tags: [airflow, docker, devops]
         narrative_role: optional
-        content: "Integrated Airflow for orchestration and Docker for consistent deployment across environments."
+        content: "Integrated Airflow for pipeline orchestration with dependency-aware scheduling and failure alerting; containerized all services via Docker for reproducible deployment across development and production environments."
 
   # ---------------------------------------------------------------------------
   # GREENHOUSE SENSOR PIPELINE (Portfolio Project)
@@ -642,19 +644,19 @@ projects:
         status: active
         tags: [pyspark, delta-lake, medallion, etl, de]
         narrative_role: headline
-        content: "Built production-style ETL pipeline ingesting 3,842 JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing — 58 tests, CI via GitHub Actions."
+        content: "Built ETL pipeline ingesting JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing; 58 tests, CI via GitHub Actions."
 
       - id: greenhouse_data_quality
         status: active
         tags: [data-quality, de]
         narrative_role: optional
-        content: "Engineered 6-check data quality framework (completeness, validity, range consistency, duplicates, IQR-based anomaly detection, station status) with severity-ranked quality flags; anomalies preserved through Gold layer aggregations for analyst traceability rather than silently dropped."
+        content: "Engineered 6-check data quality framework with severity-ranked quality flags, including IQR-based anomaly detection and range consistency validation; anomalies preserved through Gold layer aggregations for analyst traceability rather than silently dropped."
 
       - id: greenhouse_aggregations
         status: active
         tags: [time-series, aggregation, de]
         narrative_role: optional
-        content: "Implemented multi-granularity time-series aggregations (15-minute, hourly, daily) with quality-aware filtering and 5 pre-built analytical queries; architected for production scale targeting 72M rows/day (1,000 greenhouses × 50 sensors at 1-minute resolution)."
+        content: "Implemented multi-granularity time-series aggregations (15-minute, hourly, daily) with quality-aware filtering that propagates upstream anomaly flags into aggregated results; processing 72M rows/day across 1,000 sensor sources at 1-minute ingestion resolution."
 
   # ---------------------------------------------------------------------------
   # CRYPTO OPTIONS TRADING SYSTEM (Restored from v3.0 — 4x interview-proven)
@@ -670,7 +672,7 @@ projects:
         status: active
         tags: [options, black-scholes, trading, quant, risk]
         narrative_role: headline
-        content: "Architected automated options trading system featuring self-implemented Black-Scholes pricing engine (full Greeks, IV solver), edge-based market-making strategy, and multi-layered risk management (position limits, Greeks constraints, drawdown control); currently in paper-trading validation."
+        content: "Architected automated options trading system featuring self-implemented Black-Scholes pricing engine (full Greeks, IV solver), edge-based market-making strategy, and multi-layered risk management (position limits, Greeks constraints, drawdown control)."
 
       - id: deribit_risk_management
         status: active
@@ -724,13 +726,53 @@ projects:
         status: active
         tags: [pipeline, sqlite, automation, de]
         narrative_role: optional
-        content: "Built end-to-end job application pipeline leveraging LLM APIs (Claude) for resume personalization; designed multi-stage processing (web scraping via Playwright, rule-based filtering, AI scoring, Jinja2 template rendering to PDF) with SQLite backend, YAML-driven configuration, and configurable quality gates."
+        content: "Built end-to-end job application pipeline using LLM APIs (Claude) for resume personalization; designed multi-stage processing (web scraping via Playwright, rule-based filtering, AI scoring, Jinja2 template rendering to PDF) with SQLite backend, YAML-driven configuration, and configurable quality gates."
 
       - id: job_hunter_operations
         status: deprecated
         tags: [devops, github-actions, operations]
         narrative_role: optional
         content: "Designed operational controls for long-running workflow maintenance, including scrape watermarks, configurable YAML rules, checklist state management, rejection-history detection, and cold-data archival; deployed scheduled incremental runs on GitHub Actions to reduce redundant processing and keep the pipeline continuously updated."
+
+  # ---------------------------------------------------------------------------
+  # DOCBRIDGE: Document AI Processing Platform
+  # ---------------------------------------------------------------------------
+  docbridge:
+    title: "DocBridge: Document AI Processing Platform"
+    institution: "Personal Portfolio Project"
+    period: "2026"
+
+    recommended_sequences:
+      ml_engineer: ["docbridge_pipeline", "docbridge_training"]
+      ai_engineer: ["docbridge_pipeline", "docbridge_training", "docbridge_ocr"]
+      data_engineer: ["docbridge_pipeline", "docbridge_infra"]
+      data_scientist: ["docbridge_training", "docbridge_pipeline"]
+
+    verified_bullets:
+
+      - id: docbridge_pipeline
+        status: active
+        tags: [ml, document-ai, ocr, layout, fastapi, end-to-end]
+        narrative_role: headline
+        content: "Built end-to-end document AI platform for CN-EU trade documents: PaddleOCR text extraction, LiLT layout-aware token classification, spatial post-processing for key-value pairing, and FastAPI REST API with PostgreSQL persistence; achieved 94.8% F1 on receipt extraction and 75.5% F1 on form understanding."
+
+      - id: docbridge_training
+        status: active
+        tags: [ml, fine-tuning, hpc, lilt, multi-dataset]
+        narrative_role: depth_prover
+        content: "Fine-tuned 3 LiLT token classification models on Snellius HPC (A100 GPUs, SLURM): English forms (FUNSD, 0.755 F1), Chinese forms (XFUND-zh, 0.697 F1), and receipts (CORD, 0.948 F1 across 30 entity types); built dataset adapters with automated BIO label expansion and seqeval evaluation."
+
+      - id: docbridge_infra
+        status: active
+        tags: [docker, postgresql, ci-cd, prometheus, deployment]
+        narrative_role: foundation
+        content: "Engineered production deployment stack with Docker Compose, PostgreSQL for extraction audit trails, Alembic migrations, Prometheus latency metrics, and GitHub Actions CI/CD enforcing 75% test coverage across 85 unit tests."
+
+      - id: docbridge_ocr
+        status: active
+        tags: [ocr, paddleocr, cjk, nlp, architecture]
+        narrative_role: extension
+        content: "Selected LiLT over LayoutLMv3 for language-independent layout understanding, enabling a single architecture across English, Chinese, and domain-specific documents; integrated PaddleOCR 3.5 for CJK text recognition, outperforming Tesseract on Chinese trade documents."
 
 # =============================================================================
 # WORK AUTHORIZATION & VISA STATUS
@@ -765,10 +807,11 @@ skill_tiers:
     data_engineering: ["PySpark", "Spark", "Delta Lake", "Databricks", "ETL/ELT",
                        "Auto Loader", "Structured Streaming", "Schema Evolution",
                        "Medallion Architecture"]
-    cloud: ["AWS", "Docker", "Airflow", "CI/CD", "Git"]
+    cloud: ["AWS", "Docker", "Airflow", "CI/CD", "Git", "FastAPI"]
     databases: ["PostgreSQL", "MySQL", "Hadoop", "Hive"]
     ml: ["Pandas", "NumPy", "PyTorch", "PyTorch Geometric", "XGBoost", "LightGBM",
-         "scikit-learn", "Statistics", "A/B Testing", "Time-Series Analysis"]
+         "scikit-learn", "Statistics", "A/B Testing", "Time-Series Analysis",
+         "LiLT", "PaddleOCR"]
     research: ["Experiment Design", "Experimental Design", "Statistical Testing",
                "Benchmarking", "Hyperparameter Tuning", "Bayesian Methods",
                "Calibration Analysis", "Uncertainty Quantification", "Technical Writing"]
@@ -779,7 +822,8 @@ skill_tiers:
                      "IV Solver", "Portfolio Risk Monitoring", "Position Sizing",
                      "Drawdown Control", "Risk Limits"]
     nlp_genai: ["Hugging Face Transformers", "GPT-2", "LLM APIs", "LLM APIs (Claude)",
-                "Prompt Engineering", "Fine-Tuning", "Text Generation"]
+                "Prompt Engineering", "Fine-Tuning", "Text Generation",
+                "Document AI", "Token Classification", "OCR"]
     analytics_bi: ["Power BI", "Tableau"]
     certifications: ["Databricks Certified Data Engineer Professional (2026)"]
   transferable:
@@ -925,6 +969,9 @@ bio_builder:
     options_trading:
       text: "derivatives pricing and automated trading systems"
       basis: "Deribit options system — Black-Scholes, Greeks, market making"
+    document_ai:
+      text: "document AI and intelligent document processing"
+      basis: "DocBridge — LiLT layout-aware extraction, PaddleOCR, 3 fine-tuned models across EN/ZH/receipt domains"
     data_governance:
       text: "data quality and governance frameworks"
       basis: "GLP — data compliance reporting, Baiquan — cross-source data validation"
