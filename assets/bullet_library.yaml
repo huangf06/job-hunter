@@ -915,8 +915,8 @@ title_options:
 # =============================================================================
 
 bio_constraints:
-  max_years_claim: 13
-  min_years_claim: 8
+  max_years_claim: 8
+  min_years_claim: 5
   years_claim_scope: "working with data"
   banned_phrases:
     - "deep expertise"
