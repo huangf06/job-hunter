@@ -287,19 +287,19 @@ prompts:
         "experiences": [
           {{
             "company": "GLP Technology",
-            "company_note": null,
+            "company_note": "consumer lending fintech",
             "location": "Shanghai, China",
-            "title": "Data Scientist & Team Lead",
+            "title": "Senior Data Engineer",
             "date": "Jul. 2017 - Aug. 2019",
-            "bullets": ["glp_founding_member", "glp_decision_engine", "glp_data_engineer"]
+            "bullets": ["glp_founding_member", "glp_pyspark", "glp_data_quality"]
           }},
           {{
             "company": "Baiquan Investment",
-            "company_note": null,
+            "company_note": "quantitative hedge fund",
             "location": "Beijing, China",
             "title": "Quantitative Researcher",
             "date": "Jul. 2015 - Jun. 2017",
-            "bullets": ["bq_factor_research", "bq_de_factor_engine"]
+            "bullets": ["bq_de_pipeline", "bq_de_factor_engine", "bq_futures_strategy"]
           }},
           {{
             "company": "Ele.me",
@@ -307,7 +307,7 @@ prompts:
             "location": "Shanghai, China",
             "title": "Data Analyst",
             "date": "Sep. 2013 - Jul. 2015",
-            "bullets": ["eleme_ab_testing"]
+            "bullets": ["eleme_fraud_detection", "eleme_ab_testing"]
           }}
         ],
         "projects": [
@@ -358,8 +358,12 @@ prompts:
     {title_context}
 
     ### COMPANY_NOTE
+    Company notes appear after the company name on the resume and establish credibility for non-Dutch companies:
+    - GLP Technology: ALWAYS set company_note to "consumer lending fintech"
+    - Baiquan Investment: ALWAYS set company_note to "quantitative hedge fund"
     - Ele.me: ALWAYS set company_note to "acquired by Alibaba"
-    - Other companies: set to null
+    - Henan Energy: set company_note to "Fortune Global 500" (only when Henan Energy is included)
+    - Other companies/projects: set to null
 
     ### BULLET PRIORITY
     Follow the recommended_sequences defined in each company/project section of the bullet library.

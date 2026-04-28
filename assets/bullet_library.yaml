@@ -146,6 +146,7 @@ work_experience:
   # ---------------------------------------------------------------------------
   glp_technology:
     company: "GLP Technology"
+    company_note: "consumer lending fintech"
     location: "Shanghai, China"
     period: "Jul. 2017 - Aug. 2019"
 
