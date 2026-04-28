@@ -9,13 +9,6 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-try:
-    import openai as _openai  # noqa: F401
-    _has_openai = True
-except ImportError:
-    _has_openai = False
-
-
 def _make_analyzer(provider='claude_code'):
     """Create a bare AIAnalyzer without __init__ side effects."""
     from src.ai_analyzer import AIAnalyzer
@@ -152,7 +145,6 @@ class TestCallModel:
         assert result == '{"ok": true}'
         mock_run.assert_called_once()
 
-    @pytest.mark.skipif(not _has_openai, reason="openai not installed")
     @patch.dict("os.environ", {"DEEPSEEK_API_KEY": "sk-test"})
     @patch("openai.OpenAI")
     def test_routes_to_deepseek(self, mock_openai_cls):
@@ -167,7 +159,6 @@ class TestCallModel:
         assert result == '{"ok": true}'
         mock_client.chat.completions.create.assert_called_once()
 
-    @pytest.mark.skipif(not _has_openai, reason="openai not installed")
     def test_deepseek_no_api_key_returns_none(self):
         analyzer = _make_analyzer(provider='deepseek')
         with patch.dict("os.environ", {}, clear=True):

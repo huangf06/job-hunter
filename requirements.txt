@@ -9,8 +9,9 @@ jinja2==3.1.6
 # PDF generation
 playwright==1.58.0
 
-# AI (Claude API)
+# AI (Claude API — used by CI; DeepSeek via OpenAI SDK)
 anthropic==0.77.1
+openai>=1.82.0
 
 # HTTP client (Google Calendar API)
 requests==2.32.5
