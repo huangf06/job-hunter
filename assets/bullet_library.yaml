@@ -44,7 +44,6 @@
 
 personal_info:
   # Contact details: single source of truth is config/ai_config.yaml → resume.candidate
-  # Only languages are defined here (used by resume template)
   languages:
     - language: "English"
       level: "Fluent"
@@ -52,6 +51,19 @@ personal_info:
       level: "Native"
     - language: "Dutch"
       level: "Conversational"
+    - language: "German"
+      level: "A2"
+
+  interests: "Philosophy (Kant, existentialism), Dostoevsky, strategy games, analytical writing"
+
+  blog:
+    url: "https://feithink.org"
+    display: "feithink.org"
+
+  # Career gap explanation (2019-2023): mutually exclusive with indie_quant_research bullet.
+  # Use career_note when resume omits Independent Researcher section entirely.
+  # Use indie_quant_research when the gap period needs a technical bullet.
+  career_note: "2019-2023 included independent investing, language learning (English, German), and graduate preparation."
 
 # =============================================================================
 # CERTIFICATIONS
