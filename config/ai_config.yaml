@@ -58,6 +58,7 @@ prompt_settings:
     - lifeos
     - job_hunter_automation
     - greenhouse_sensor_pipeline
+    - docbridge
     - evolutionary_robotics_research
     - sequence_analysis
     - deep_learning_fundamentals
@@ -111,8 +112,8 @@ resume:
     github: "https://github.com/huangf06"
     linkedin_display: "linkedin.com/in/huangf06"
     github_display: "github.com/huangf06"
-    blog_url: "https://feithink.substack.com/"
-    blog_display: "feithink.substack.com"
+    blog_url: "https://feithink.org"
+    blog_display: "feithink.org"
 
   # Education details (rendered in template)
   education:
@@ -237,8 +238,9 @@ prompts:
 
     Key Background:
     - Recent M.Sc. AI graduate with thesis on Uncertainty Quantification in Deep RL
-    - Data Scientist & Team Lead at fintech (GLP Technology: credit scoring, PySpark pipelines)
-    - Quantitative Researcher at hedge fund (alpha research, live strategy deployment)
+    - Founding data engineer at fintech startup (GLP Technology: credit scoring infrastructure from scratch, PySpark pipelines)
+    - Quantitative Researcher at hedge fund (alpha research, 14.6% annualized return with real capital)
+    - Built DocBridge document AI platform (94.8% F1, 3 fine-tuned LiLT models on A100 GPUs)
     - Built Financial Data Lakehouse portfolio project (Databricks, Spark, AWS, Delta Lake)
     - Databricks Certified Data Engineer Professional (2026)
     - Skills: Python, PyTorch, Spark/PySpark, SQL, Delta Lake, AWS, Docker, Airflow
@@ -359,20 +361,27 @@ prompts:
     - Ele.me: ALWAYS set company_note to "acquired by Alibaba"
     - Other companies: set to null
 
-    ### BULLET PRIORITY (BASED ON 17 INTERVIEW-WINNING RESUMES)
-    Core bullets (appeared in 10+ of 17 interview resumes) — include in EVERY relevant resume:
-    - glp_founding_member (17/17), glp_pyspark (17/17), bq_de_factor_engine (17/17)
-    - glp_data_quality (14/17), glp_portfolio_monitoring (13/17), bq_de_pipeline (13/17), bq_de_backtest_infra (10/17)
+    ### BULLET PRIORITY
+    Follow the recommended_sequences defined in each company/project section of the bullet library.
+    These sequences have been optimized (v7.3) to front-load the strongest signals — results,
+    findings, and concrete outcomes appear first. When in doubt, use the sequence order as-is.
 
-    Frequent bullets (5-9 interviews):
-    - bq_data_quality (9/17), eleme_ab_testing (8/17), eleme_kmeans (8/17)
-    - bq_factor_research (7/17), eleme_sql_simple (6/17)
+    High-impact bullets (include whenever the company appears on the resume):
+    - glp_founding_member — "founding data engineer, built from scratch" (identity hook)
+    - bq_futures_strategy — "14.6% annualized return with real capital" (strongest outcome in library)
+    - eleme_fraud_detection — "51,000+ suspicious clusters across 2.2M+ users" (scale hook)
+    - glp_pyspark — PySpark ETL (universal DE keyword anchor)
+    - bq_de_factor_engine — high-performance computation (universal MLE keyword anchor)
 
-    Occasional bullets (1-4 interviews):
-    - bq_futures_strategy (4/17), glp_data_compliance (3/17)
+    Result-bearing bullets (prefer over process-only bullets when space is limited):
+    - eleme_sql_optimization — "Cut scan volume 5x" (concrete before/after)
+    - eleme_ab_testing — "Doubled churned-user reactivation rate" (measurable outcome)
+    - thesis_uq_framework — "Established distributional learning as strongest approach" (research finding)
+    - docbridge_pipeline — "94.8% F1 on receipt extraction" (ML metric)
+    - greenhouse_aggregations — "72M rows/day across 1,000 sensors" (scale)
 
-    Never used in interview resumes (deprioritize):
-    - glp_decision_engine (0/17) — do NOT include unless the JD specifically requires rule engines
+    Deprioritize:
+    - glp_decision_engine — only if JD specifically requires credit risk rule engines
 
     ### BULLET DISTRIBUTION (GUIDANCE, NOT HARD LIMITS)
     Include bullets based on JD relevance. Typical ranges:
@@ -405,6 +414,7 @@ prompts:
     - For Data Engineer roles: prioritize Financial Data Lakehouse
     - For ML/DS roles: prioritize Thesis or Expedia
     - For NLP/AI roles: prioritize NLP Projects or Thesis
+    - For ML Engineer / AI Engineer / Document AI roles: prioritize DocBridge (94.8% F1, 3 fine-tuned models on A100 GPUs)
     - Include a third project only if it adds clearly different skills
     - THESIS RULE: When including thesis_uq_rl, ALWAYS include thesis_noise_paradox (the original discovery) — do NOT only include thesis_uq_framework (measurement-only looks weak)
 
