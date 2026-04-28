@@ -22,7 +22,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src import TRANSFERABLE_SKIP_WORDS
 from src.db.job_db import JobDatabase, AnalysisResult, Resume
-from src.language_guidance import format_language_guidance_for_prompt
 from src.resume_validator import ResumeValidator
 from src.template_registry import (
     load_registry,
@@ -838,12 +837,9 @@ class AIAnalyzer:
         scoring = parsed.get('scoring', {})
         brief = parsed.get('application_brief', {})
         c1_routing = parsed.get('resume_routing') or {
-            'tier': 'FULL_CUSTOMIZE',
             'template_id': code_decision.template_id,
             'override': False,
             'override_reason': None,
-            'gaps': [],
-            'adapt_instructions': None,
         }
         routing = resolve_routing(code_decision, c1_routing)
 
