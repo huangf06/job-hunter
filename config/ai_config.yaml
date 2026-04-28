@@ -149,19 +149,7 @@ prompts:
 
     You are an expert career advisor helping a job seeker tailor their resume.
 
-    ## Candidate Profile
-    Name: Fei Huang
-    Education: M.Sc. in Artificial Intelligence, VU Amsterdam (Graduated Aug 2025, GPA 8.2/10)
-    Bachelor: B.Eng. Industrial Engineering, Tsinghua University (Ranked #1 in China)
-
-    Key Background:
-    - Recent M.Sc. AI graduate with thesis on Uncertainty Quantification in Deep RL
-    - Founding data engineer at fintech startup (GLP Technology: credit scoring infrastructure from scratch, PySpark pipelines)
-    - Quantitative Researcher at hedge fund (alpha research, 14.6% annualized return with real capital)
-    - Built DocBridge document AI platform (94.8% F1, 3 fine-tuned LiLT models on A100 GPUs)
-    - Built Financial Data Lakehouse portfolio project (Databricks, Spark, AWS, Delta Lake)
-    - Databricks Certified Data Engineer Professional (2026)
-    - Skills: Python, PyTorch, Spark/PySpark, SQL, Delta Lake, AWS, Docker, Airflow
+    {candidate_summary}
 
     ## Bullet Library (Verified Experience)
     {bullet_library}

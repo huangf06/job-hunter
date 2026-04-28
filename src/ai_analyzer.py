@@ -344,6 +344,43 @@ class AIAnalyzer:
 
         return '\n'.join(lines)
 
+    def _build_candidate_summary(self) -> str:
+        """Generate candidate summary from bullet_library data (replaces hardcoded profile)."""
+        edu = self._parsed_bullets.get('education', {})
+        master = edu.get('master', {})
+        cert = edu.get('certification', '')
+
+        lines = ["## Candidate Profile"]
+        lines.append(f"Education: {master.get('degree', 'M.Sc.')} from {master.get('school', 'VU Amsterdam')}")
+        if master.get('thesis'):
+            lines.append(f"Thesis: {master['thesis']}")
+        if cert:
+            lines.append(f"Certification: {cert}")
+
+        active = self._parsed_bullets.get('active_sections', {})
+        exp_keys = active.get('experience_keys', self.DEFAULT_EXPERIENCE_KEYS)
+        work_exp = self._parsed_bullets.get('work_experience', {})
+        exp_lines = []
+        for key in exp_keys:
+            data = work_exp.get(key, {})
+            if not isinstance(data, dict):
+                continue
+            company = data.get('company', data.get('display_name', key))
+            title = data.get('titles', {}).get('default', '')
+            if company and title:
+                exp_lines.append(f"{title} at {company}")
+        if exp_lines:
+            lines.append(f"Experience: {'; '.join(exp_lines)}")
+
+        verified = self._parsed_bullets.get('skill_tiers', {}).get('verified', {})
+        core_skills = []
+        for category in ['languages', 'data_engineering', 'cloud', 'ml']:
+            core_skills.extend(verified.get(category, [])[:3])
+        if core_skills:
+            lines.append(f"Key Skills: {', '.join(core_skills[:12])}")
+
+        return '\n'.join(lines)
+
     def _resolve_bullet_ids(self, tailored: Dict, job_id: str = None) -> tuple:
         """Resolve bullet IDs to verified text from library.
 
@@ -730,6 +767,9 @@ class AIAnalyzer:
         except (json.JSONDecodeError, TypeError):
             pass
 
+        # Build candidate summary
+        candidate_summary = self._build_candidate_summary()
+
         # Escape braces
         jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
         job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
@@ -738,9 +778,11 @@ class AIAnalyzer:
         skill_ctx_safe = skill_context.replace('{', '{{').replace('}', '}}')
         title_ctx_safe = title_context.replace('{', '{{').replace('}', '}}')
         bio_cstr_safe = bio_constraints.replace('{', '{{').replace('}', '}}')
+        candidate_summary_safe = candidate_summary.replace('{', '{{').replace('}', '}}')
 
         prompt_body = prompt_template.format(
             bullet_library=bullet_lib_safe,
+            candidate_summary=candidate_summary_safe,
             job_title=job_title,
             job_company=job_company,
             job_description=jd_safe,

@@ -405,6 +405,55 @@ class TestTitleContextPerSection:
         assert "most relevant title" in context.lower()
 
 
+class TestCandidateSummary:
+    """C2 candidate summary is generated from bullet_library, not hardcoded."""
+
+    def test_summary_includes_education_and_core_skills(self):
+        from src.ai_analyzer import AIAnalyzer
+        analyzer = AIAnalyzer.__new__(AIAnalyzer)
+        analyzer._parsed_bullets = {
+            'education': {
+                'master': {
+                    'degree': 'M.Sc. in Artificial Intelligence',
+                    'school': 'VU Amsterdam',
+                    'thesis': 'Uncertainty Quantification in Deep RL',
+                },
+                'certification': 'Databricks Certified Data Engineer Professional (2026)',
+            },
+            'active_sections': {
+                'experience_keys': ['glp_technology'],
+            },
+            'work_experience': {
+                'glp_technology': {
+                    'company': 'GLP Technology',
+                    'titles': {'default': 'Senior Data Engineer'},
+                    'verified_bullets': [
+                        {'id': 'glp_founding_member', 'content': 'Joined as founding data engineer...', 'status': 'active'},
+                    ],
+                },
+            },
+            'skill_tiers': {
+                'verified': {
+                    'languages': ['Python (Expert)', 'SQL (Expert)', 'Bash'],
+                    'data_engineering': ['PySpark', 'Spark', 'Delta Lake', 'Databricks'],
+                    'cloud': ['AWS (Redshift, S3, EC2)', 'Docker', 'Airflow'],
+                    'ml': ['PyTorch', 'XGBoost', 'scikit-learn'],
+                },
+            },
+        }
+
+        summary = analyzer._build_candidate_summary()
+
+        assert 'M.Sc. in Artificial Intelligence' in summary
+        assert 'VU Amsterdam' in summary
+        assert 'Databricks Certified' in summary
+        assert 'GLP Technology' in summary
+        assert 'Senior Data Engineer' in summary
+        assert 'Python' in summary
+        assert 'PySpark' in summary
+        assert 'PyTorch' in summary
+
+
 class TestAnalyzeJobFlow:
     def test_analyze_job_full_customize_runs_c2(self):
         from src.ai_analyzer import AIAnalyzer
