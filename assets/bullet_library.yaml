@@ -458,6 +458,11 @@ projects:
     institution: "VU Amsterdam"
     period: "Feb. 2025 - Aug. 2025"
 
+    recommended_sequences:
+      ml_engineer: ["thesis_noise_paradox", "thesis_uq_framework"]
+      data_scientist: ["thesis_noise_paradox", "thesis_uq_framework"]
+      data_engineer: ["thesis_uq_framework", "thesis_noise_paradox"]
+
     verified_bullets:
 
       - id: thesis_uq_framework
@@ -486,6 +491,10 @@ projects:
     title: "NLP Course Projects"
     institution: "VU Amsterdam"
     period: "Jan. 2024 - Apr. 2024"
+
+    recommended_sequences:
+      ai_engineer: ["nlp_poem_generator", "nlp_dependency_parsing"]
+      ml_engineer: ["nlp_dependency_parsing", "nlp_poem_generator"]
 
     verified_bullets:
 
@@ -528,6 +537,9 @@ projects:
     period: "Jun. 2024"
     team_size: 4
     team_note: "Group project, 10-day sprint"
+
+    recommended_sequences:
+      ml_engineer: ["ml4qs_pipeline", "ml4qs_deep_learning"]
 
     verified_bullets:
 
@@ -590,6 +602,9 @@ projects:
     institution: "VU Amsterdam - Algorithms in Sequence Analysis"
     period: "2025"
 
+    recommended_sequences:
+      ml_engineer: ["bioinfo_alignment", "bioinfo_hmm"]
+
     verified_bullets:
 
       - id: bioinfo_hmm
@@ -634,6 +649,10 @@ projects:
     institution: "Personal Portfolio Project"
     period: "Oct. 2025 - Present"
 
+    recommended_sequences:
+      data_engineer: ["lakehouse_streaming", "lakehouse_quality", "lakehouse_optimization", "lakehouse_orchestration"]
+      ml_engineer: ["lakehouse_streaming", "lakehouse_orchestration"]
+
     verified_bullets:
 
       - id: lakehouse_streaming
@@ -669,6 +688,9 @@ projects:
     period: "2025"
     github: "https://github.com/huangf06/greenhouse-sensor-pipeline"
 
+    recommended_sequences:
+      data_engineer: ["greenhouse_aggregations", "greenhouse_etl_pipeline", "greenhouse_data_quality"]
+
     verified_bullets:
 
       - id: greenhouse_etl_pipeline
@@ -696,6 +718,10 @@ projects:
     title: "Automated Crypto Options Trading System"
     institution: "Personal Project"
     period: "Oct. 2025 - Present"
+
+    recommended_sequences:
+      quant: ["deribit_options_system", "deribit_risk_management"]
+      ml_engineer: ["deribit_options_system"]
 
     verified_bullets:
 
