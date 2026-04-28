@@ -50,6 +50,8 @@ personal_info:
       level: "Fluent"
     - language: "Mandarin"
       level: "Native"
+    - language: "Dutch"
+      level: "Conversational"
 
 # =============================================================================
 # CERTIFICATIONS
@@ -58,7 +60,7 @@ personal_info:
 certifications:
   - name: "Databricks Certified Data Engineer Professional"
     issuer: "Databricks"
-    date: "February 2026"
+    date: "April 2026"
 
 # =============================================================================
 # EDUCATION
@@ -781,7 +783,7 @@ projects:
 work_authorization:
   current_status:
     permit_type: "Orientation Year (Zoekjaar)"
-    valid_until: "November 2026"
+    valid_until: "November 28, 2026"
     work_rights: "Full work authorization in the Netherlands"
   future_requirements:
     visa_type: "Highly Skilled Migrant (Kennismigrant)"
@@ -791,11 +793,6 @@ work_authorization:
     salary_threshold: "€3,122/month (reduced rate for post-Zoekjaar transition)"
     processing_time: "2-4 weeks"
 
-# Common screening question answers
-screening_answers:
-  onsite: "Yes, available for fully onsite work"
-  availability: "Immediately"
-  # salary_strategy: moved to config/private/salary.yaml (gitignored)
 
 # =============================================================================
 # SKILL TIERS — Three-level skill classification for resume generation
@@ -804,25 +801,27 @@ screening_answers:
 skill_tiers:
   verified:
     languages: ["Python (Expert)", "SQL (Expert)", "Bash"]
-    data_engineering: ["PySpark", "Spark", "Delta Lake", "Databricks", "ETL/ELT",
-                       "Auto Loader", "Structured Streaming", "Schema Evolution",
-                       "Medallion Architecture"]
-    cloud: ["AWS", "Docker", "Airflow", "CI/CD", "Git", "FastAPI"]
+    data_engineering: ["PySpark", "Spark", "Spark SQL", "Delta Lake", "Databricks",
+                       "ETL/ELT", "Auto Loader", "Structured Streaming",
+                       "Schema Evolution", "Medallion Architecture",
+                       "Data Modeling", "Data Quality", "Unity Catalog"]
+    cloud: ["AWS (Redshift, S3, EC2)", "Docker", "Docker Compose", "Airflow",
+            "CI/CD", "GitHub Actions", "Git", "FastAPI", "Prometheus"]
     databases: ["PostgreSQL", "MySQL", "Hadoop", "Hive"]
     ml: ["Pandas", "NumPy", "PyTorch", "PyTorch Geometric", "XGBoost", "LightGBM",
-         "scikit-learn", "Statistics", "A/B Testing", "Time-Series Analysis",
-         "LiLT", "PaddleOCR"]
-    research: ["Experiment Design", "Experimental Design", "Statistical Testing",
-               "Benchmarking", "Hyperparameter Tuning", "Bayesian Methods",
-               "Calibration Analysis", "Uncertainty Quantification", "Technical Writing"]
+         "scikit-learn", "MLflow", "Statistics", "A/B Testing",
+         "Time-Series Analysis", "Feature Engineering", "LiLT", "PaddleOCR"]
+    research: ["Experimental Design", "Statistical Testing", "Benchmarking",
+               "Hyperparameter Tuning", "Bayesian Methods",
+               "Uncertainty Quantification", "Technical Writing"]
     quant_methods: ["Factor Modeling", "Fama-MacBeth Regression", "Backtesting",
                     "Walk-Forward Validation", "Alpha Research",
                     "Event-Driven Strategy", "Monte Carlo Simulation"]
     risk_analytics: ["Options Pricing", "Black-Scholes", "Greeks Computation",
                      "IV Solver", "Portfolio Risk Monitoring", "Position Sizing",
                      "Drawdown Control", "Risk Limits"]
-    nlp_genai: ["Hugging Face Transformers", "GPT-2", "LLM APIs", "LLM APIs (Claude)",
-                "Prompt Engineering", "Fine-Tuning", "Text Generation",
+    nlp_genai: ["Transformers", "Hugging Face", "LLM", "Prompt Engineering",
+                "Fine-Tuning", "Model Evaluation", "Text Generation",
                 "Document AI", "Token Classification", "OCR"]
     analytics_bi: ["Power BI", "Tableau"]
     certifications: ["Databricks Certified Data Engineer Professional (2026)"]
@@ -836,6 +835,12 @@ skill_tiers:
     - skill: "Terraform"
       basis: "IaC concepts, Docker/CI/CD experience"
       write_when: "JD mentions IaC or Terraform"
+    - skill: "Snowflake"
+      basis: "Databricks/SQL expert, cloud warehouse concepts"
+      write_when: "JD mentions Snowflake"
+    - skill: "Prefect/Dagster"
+      basis: "Airflow experience, Python-native orchestration"
+      write_when: "JD mentions Prefect or Dagster"
     - skill: "TypeScript"
       basis: "Python strong, JS concepts understood"
       write_when: "JD mentions TypeScript but not as primary"
@@ -851,9 +856,15 @@ skill_tiers:
     - skill: "dbt"
       basis: "SQL expert, data transformation concepts"
       write_when: "JD mentions dbt"
-    - skill: "MLflow"
-      basis: "Databricks certification covers MLflow"
-      write_when: "JD mentions experiment tracking or MLflow"
+    - skill: "R"
+      basis: "Statistics background, used in academic context"
+      write_when: "JD mentions R for statistical analysis"
+    - skill: "MATLAB"
+      basis: "Used at Baiquan Investment for quantitative research"
+      write_when: "JD mentions MATLAB for quant/engineering"
+    - skill: "SAS"
+      basis: "Used at Baiquan Investment"
+      write_when: "JD mentions SAS"
   excluded: ["C/C++", "Java", "Ruby", "Swift", "Kotlin", ".NET/C#",
              "React", "Angular", "Vue", "Flutter", "PHP"]
 
@@ -904,9 +915,9 @@ title_options:
 # =============================================================================
 
 bio_constraints:
-  max_years_claim: 6
-  min_years_claim: 4
-  years_claim_scope: "working with data systems"
+  max_years_claim: 13
+  min_years_claim: 8
+  years_claim_scope: "working with data"
   banned_phrases:
     - "deep expertise"
     - "extensive experience"
@@ -972,6 +983,9 @@ bio_builder:
     document_ai:
       text: "document AI and intelligent document processing"
       basis: "DocBridge — LiLT layout-aware extraction, PaddleOCR, 3 fine-tuned models across EN/ZH/receipt domains"
+    streaming_data:
+      text: "real-time data processing and streaming systems"
+      basis: "Lakehouse — Auto Loader, Structured Streaming, schema evolution, checkpoint-based fault tolerance"
     data_governance:
       text: "data quality and governance frameworks"
       basis: "GLP — data compliance reporting, Baiquan — cross-source data validation"
