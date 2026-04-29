@@ -637,9 +637,10 @@ class AIAnalyzer:
 
         parts = []
 
-        # Opening: "{Role} with {N} years of experience in {domain1} and {domain2}."
+        # Opening: "{Role} with {N} years of experience in {domain1}, {domain2}."
+        # Use comma separator because claim texts often contain "and" internally
         if claim_texts:
-            domain_str = ' and '.join(claim_texts)
+            domain_str = ', '.join(claim_texts)
             parts.append(f"{role_title} with {years} years of experience in {domain_str}.")
         else:
             parts.append(f"{role_title} with {years} years of experience.")

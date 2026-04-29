@@ -217,8 +217,11 @@ Any unrecognized bullet ID will cause the resume to be REJECTED.
 ### OTHER RULES
 1. Use ONLY bullet IDs from the provided bullet library - do not fabricate
 2. MUST include ALL 5 work experiences. Control depth via bullet count:
-   - Most relevant 2-3 companies for the JD: 2-4 bullets each
-   - Less relevant companies: 1 bullet each (use the recommended_sequences[0])
+   - Most relevant 1-2 companies for the JD: 2-3 bullets each
+   - Other companies: 1-2 bullets each (use the recommended_sequences[0..1])
+   - Less relevant companies: 1 bullet each
    - Order: most recent first (GLP → Independent Researcher → BQ → Ele.me → Henan Energy)
+   - PAGE BUDGET: total experience bullets should be 8-12. With 5 experiences, 3+1+3+2+1 = 10 is typical.
+     Going above 12 risks a 3-page resume which looks unprofessional.
 3. Select bullets that best match the JD requirements
-4. Include ALL relevant bullets for a position — do not cut for space
+4. Project bullets: max 5 total across all projects. Prefer 2 projects with 2-3 bullets over 3 projects with many.
