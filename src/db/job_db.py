@@ -596,7 +596,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
     JOIN job_analysis an ON j.id = an.job_id
     JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
     LEFT JOIN applications a ON j.id = a.job_id
-    WHERE a.id IS NULL OR a.status NOT IN ('applied', 'interview', 'offer', 'expired')
+    WHERE a.id IS NULL
     ORDER BY j.scraped_at DESC, an.ai_score DESC;
 
     -- 申请漏斗统计视图
@@ -942,6 +942,8 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         with self._get_conn(sync_before=False) as conn:
             conn.execute("DELETE FROM filter_results WHERE job_id = ?", (job_id,))
             conn.execute("DELETE FROM job_analysis WHERE job_id = ?", (job_id,))
+            conn.execute("DELETE FROM applications WHERE job_id = ?", (job_id,))
+            conn.execute("DELETE FROM resumes WHERE job_id = ?", (job_id,))
 
     def insert_job(self, job_data: Dict, dedup_window_days: int = 0) -> tuple:
         """插入新职位
@@ -1187,7 +1189,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                 WHERE a.ai_score >= ?
                   AND (a.tailored_resume IS NULL OR a.tailored_resume = '{}')
                   AND (a.resume_tier IS NULL OR a.resume_tier IN ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'))
-                  AND (app.job_id IS NULL OR app.status IN ('skipped', 'rejected'))
+                  AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
             params = [min_score]
@@ -1198,11 +1200,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
             return [dict(row) for row in cursor.fetchall()]
 
     def get_jobs_needing_analysis(self, limit: int = None) -> List[Dict]:
-        """Get jobs that passed filter but have no AI analysis yet.
-
-        Includes resurfaced jobs (skipped/rejected) so they get re-evaluated.
-        Only excludes jobs with active application status (applied/interview/offer).
-        """
+        """Get jobs that passed filter but have no AI analysis yet."""
         with self._get_conn() as conn:
             query = """
                 SELECT j.*
@@ -1211,7 +1209,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                 LEFT JOIN job_analysis a ON j.id = a.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE a.id IS NULL
-                  AND (app.job_id IS NULL OR app.status IN ('skipped', 'rejected'))
+                  AND app.job_id IS NULL
                 ORDER BY j.created_at DESC
             """
             params = []
@@ -1238,7 +1236,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                       OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                   )
-                  AND (app.job_id IS NULL OR app.status IN ('skipped', 'rejected'))
+                  AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
             params = [min_ai_score]
