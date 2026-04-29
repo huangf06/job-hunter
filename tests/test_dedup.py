@@ -146,7 +146,7 @@ class TestSemanticDedup:
 
 
 def _make_test_db_with_pipeline_tables() -> JobDatabase:
-    """Create an in-memory JobDatabase with jobs + filter_results + job_analysis tables."""
+    """Create an in-memory JobDatabase with jobs + all pipeline tables."""
     db = _make_test_db()
     db._conn.executescript("""
         CREATE TABLE filter_results (
@@ -162,6 +162,21 @@ def _make_test_db_with_pipeline_tables() -> JobDatabase:
             ai_score REAL DEFAULT 0,
             reasoning TEXT DEFAULT '',
             analyzed_at TEXT DEFAULT ''
+        );
+        CREATE TABLE applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            applied_at TEXT DEFAULT '',
+            updated_at TEXT DEFAULT '',
+            notes TEXT DEFAULT ''
+        );
+        CREATE TABLE resumes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id TEXT NOT NULL,
+            pdf_path TEXT DEFAULT '',
+            template_version TEXT DEFAULT '',
+            submit_dir TEXT DEFAULT ''
         );
     """)
     return db
@@ -356,25 +371,8 @@ class TestResurfaceJob:
 
 
 def _make_test_db_full() -> JobDatabase:
-    """Create an in-memory JobDatabase with full pipeline tables including applications."""
+    """Create an in-memory JobDatabase with full pipeline tables and extra columns for queries."""
     db = _make_test_db_with_pipeline_tables()
-    db._conn.executescript("""
-        CREATE TABLE IF NOT EXISTS applications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
-            applied_at TEXT DEFAULT '',
-            updated_at TEXT DEFAULT '',
-            notes TEXT DEFAULT ''
-        );
-        CREATE TABLE IF NOT EXISTS resumes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id TEXT NOT NULL,
-            pdf_path TEXT DEFAULT '',
-            template_version TEXT DEFAULT '',
-            submit_dir TEXT DEFAULT ''
-        );
-    """)
     # Add missing columns to filter_results/job_analysis that views/queries need
     for col, table, default in [
         ("filter_version", "filter_results", "''"),
@@ -419,23 +417,23 @@ def _setup_job_through_pipeline(db, url, title, company, ai_score=6.0,
 class TestResurfacedJobPipeline:
     """Tests that resurfaced jobs (skipped/rejected) flow through the full pipeline."""
 
-    def test_skipped_job_included_in_needing_analysis(self):
-        """A job with 'skipped' app status but no AI analysis should be picked up."""
+    def test_skipped_job_excluded_from_needing_analysis(self):
+        """A job with 'skipped' app status is excluded — resurface deletes the app record instead."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="skipped",
         )
         jobs = db.get_jobs_needing_analysis()
-        assert any(j["id"] == job_id for j in jobs)
+        assert not any(j["id"] == job_id for j in jobs)
 
-    def test_rejected_job_included_in_needing_analysis(self):
-        """A job with 'rejected' app status but no AI analysis should be picked up."""
+    def test_rejected_job_excluded_from_needing_analysis(self):
+        """A job with 'rejected' app status is excluded — resurface deletes the app record instead."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="rejected",
         )
         jobs = db.get_jobs_needing_analysis()
-        assert any(j["id"] == job_id for j in jobs)
+        assert not any(j["id"] == job_id for j in jobs)
 
     def test_applied_job_excluded_from_needing_analysis(self):
         """A job with 'applied' app status should NOT be picked up for analysis."""
@@ -464,19 +462,18 @@ class TestResurfacedJobPipeline:
         jobs = db.get_jobs_needing_analysis()
         assert any(j["id"] == job_id for j in jobs)
 
-    def test_skipped_job_included_in_needing_tailor(self):
-        """A skipped job with AI score but no tailored resume should be picked up for C2."""
+    def test_skipped_job_excluded_from_needing_tailor(self):
+        """A skipped job is excluded from C2 — resurface deletes the app record instead."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=6.0, app_status="skipped",
         )
-        # Clear tailored_resume to make it eligible for tailoring
         db._conn.execute(
             "UPDATE job_analysis SET tailored_resume = NULL, resume_tier = 'ADAPT_TEMPLATE' WHERE job_id = ?",
             (job_id,),
         )
         jobs = db.get_jobs_needing_tailor(min_score=5.0)
-        assert any(j["id"] == job_id for j in jobs)
+        assert not any(j["id"] == job_id for j in jobs)
 
     def test_applied_job_excluded_from_needing_tailor(self):
         """An applied job should NOT be picked up for C2 tailoring."""
