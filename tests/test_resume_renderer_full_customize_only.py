@@ -136,3 +136,100 @@ def test_build_context_preserves_defaults_without_ai_control():
     assert context['edu_master_coursework'] == 'All courses here'
     assert context['edu_bachelor_thesis'] == 'Some thesis'
     assert context['career_note'] == 'Career Note text'
+
+
+def test_build_context_injects_company_notes_from_library():
+    """Renderer fills company_note from bullet library when AI omits it."""
+    renderer = ResumeRenderer.__new__(ResumeRenderer)
+    renderer.bullet_library = {
+        'work_experience': {
+            'glp_technology': {
+                'company': 'GLP Technology',
+                'company_note': 'fintech startup',
+            },
+            'baiquan_investment': {
+                'company': 'BQ Investment',
+                'company_note': 'quant hedge fund',
+            },
+        },
+        'education': {},
+    }
+    renderer.base_context = {
+        'edu_master_coursework': '',
+        'edu_bachelor_thesis': '',
+        'career_note': '',
+    }
+    renderer.validator = type('V', (), {
+        'validate': lambda self, t, j, tier=None: type('R', (), {
+            'passed': True, 'errors': [], 'warnings': [], 'fixes': {}
+        })()
+    })()
+
+    tailored = {
+        'bio': 'Test bio',
+        'experiences': [
+            {'company': 'GLP Technology', 'bullets': ['b1'], 'title': 'DE', 'date': 'Jul. 2017 - Aug. 2019'},
+            {'company': 'BQ Investment', 'bullets': ['b2'], 'title': 'QR', 'date': 'Jul. 2015 - Jun. 2017'},
+        ],
+        'projects': [{'name': 'P', 'bullets': ['p1']}],
+        'skills': [
+            {'category': 'Languages & Core', 'skills_list': 'Python'},
+            {'category': 'Data Engineering', 'skills_list': 'Spark'},
+            {'category': 'Cloud & DevOps', 'skills_list': 'Docker'},
+        ],
+    }
+
+    context = renderer._build_context(tailored, {'company': 'TestCorp'})
+
+    glp = next(e for e in context['experiences'] if e['company'] == 'GLP Technology')
+    bq = next(e for e in context['experiences'] if e['company'] == 'BQ Investment')
+    assert glp['company_note'] == 'fintech startup'
+    assert bq['company_note'] == 'quant hedge fund'
+
+
+def test_build_context_fills_certification_from_library():
+    """Renderer fills certification date/URL from bullet library when AI truncates."""
+    renderer = ResumeRenderer.__new__(ResumeRenderer)
+    renderer.bullet_library = {
+        'education': {
+            'certification': {
+                'name': 'Databricks Certified Data Engineer Professional',
+                'date': 'Apr. 2026',
+                'url': 'https://credentials.databricks.com/test-id',
+            },
+            'master': {},
+            'bachelor': {},
+        },
+    }
+    renderer.base_context = {
+        'edu_master_coursework': '',
+        'edu_bachelor_thesis': '',
+        'career_note': '',
+        'certification_name': 'Databricks Certified Data Engineer Professional',
+        'certification_date': 'Apr. 2026',
+        'certification_url': 'https://credentials.databricks.com/test-id',
+    }
+    renderer.validator = type('V', (), {
+        'validate': lambda self, t, j, tier=None: type('R', (), {
+            'passed': True, 'errors': [], 'warnings': [], 'fixes': {}
+        })()
+    })()
+
+    tailored = {
+        'bio': 'Test bio',
+        'experiences': [
+            {'company': 'A', 'bullets': ['b1'], 'title': 'T', 'date': 'D'},
+            {'company': 'B', 'bullets': ['b2'], 'title': 'T', 'date': 'D'},
+        ],
+        'projects': [{'name': 'P', 'bullets': ['p1']}],
+        'skills': [
+            {'category': 'Languages & Core', 'skills_list': 'Python'},
+            {'category': 'Data Engineering', 'skills_list': 'Spark'},
+            {'category': 'Cloud & DevOps', 'skills_list': 'Docker'},
+        ],
+    }
+
+    context = renderer._build_context(tailored, {'company': 'TestCorp'})
+
+    assert context['certification_date'] == 'Apr. 2026'
+    assert 'credentials.databricks.com' in context['certification_url']

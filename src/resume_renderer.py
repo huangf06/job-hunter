@@ -343,6 +343,7 @@ class ResumeRenderer:
 
         # Experiences
         experiences = tailored.get('experiences', [])
+        self._inject_company_notes(experiences)
         context['experiences'] = experiences
 
         # Projects
@@ -370,6 +371,26 @@ class ResumeRenderer:
             context['career_note'] = ''
 
         return context
+
+    def _inject_company_notes(self, experiences: list):
+        """Fill company_note from bullet library for known companies."""
+        work_exp = self.bullet_library.get('work_experience', {})
+        note_lookup = {}
+        for key, data in work_exp.items():
+            if isinstance(data, dict):
+                company = data.get('company', '')
+                note = data.get('company_note', '')
+                if company and note:
+                    note_lookup[company.lower()] = note
+                display = data.get('display_name', '')
+                if display and note:
+                    note_lookup[display.lower()] = note
+
+        for exp in experiences:
+            company = (exp.get('company') or '').lower()
+            existing_note = exp.get('company_note') or ''
+            if not existing_note and company in note_lookup:
+                exp['company_note'] = note_lookup[company]
 
     # Skills where the specific version subsumes the generic one.
     # Keep both when they appear — they are distinct ATS keywords.
