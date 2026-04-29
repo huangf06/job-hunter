@@ -1,4 +1,4 @@
-# VERIFIED BULLET LIBRARY v7.4 (2026-04-28)
+# VERIFIED BULLET LIBRARY v7.5 (2026-04-29)
 
 personal_info:
   name: "Fei Huang"
@@ -9,7 +9,7 @@ personal_info:
   github: "https://github.com/huangf06"
   linkedin_display: "linkedin.com/in/huangf06"
   github_display: "github.com/huangf06"
-  blog_url: "https://feithink.org"
+  blog_url: "https://www.feithink.org/"
   blog_display: "feithink.org"
 
 education:
@@ -67,7 +67,6 @@ active_sections:
     - henan_energy
   project_keys:
     - financial_data_lakehouse
-    - deribit_options
     - thesis_uq_rl
     - nlp_projects
     - expedia_recommendation
@@ -78,9 +77,7 @@ active_sections:
     - job_hunter_automation
     - greenhouse_sensor_pipeline
     - docbridge
-    - evolutionary_robotics_research
     - sequence_analysis
-    - deep_learning_fundamentals
 
 work_experience:
 
@@ -321,7 +318,7 @@ projects:
   graphsage_gnn:
     title: "Graph Neural Networks for Protein Interaction Prediction"
     institution: "VU Amsterdam - Deep Learning Course"
-    period: "2025"
+    period: "Dec. 2024 - Jan. 2025"
     verified_bullets:
       - id: graphsage_ppi
         status: active
@@ -372,7 +369,7 @@ projects:
   greenhouse_sensor_pipeline:
     title: "Greenhouse Sensor Data Pipeline (PySpark + Delta Lake)"
     institution: "Personal Project"
-    period: "2025"
+    period: "Feb. 2026 - Mar. 2026"
     github: "https://github.com/huangf06/greenhouse-sensor-pipeline"
     recommended_sequences:
       data_engineer: ["greenhouse_aggregations", "greenhouse_etl_pipeline", "greenhouse_data_quality"]
@@ -389,23 +386,6 @@ projects:
         status: active
         narrative_role: optional
         content: "Processed 72M rows/day across 1,000 sensor sources at 1-minute ingestion resolution; implemented multi-granularity time-series aggregations (15-minute, hourly, daily) with quality-aware filtering that propagates upstream anomaly flags into aggregated results."
-
-  deribit_options:
-    title: "Automated Crypto Options Trading System"
-    institution: "Personal Project"
-    period: "Oct. 2025 - Present"
-    recommended_sequences:
-      quant: ["deribit_options_system", "deribit_risk_management"]
-      ml_engineer: ["deribit_options_system"]
-    verified_bullets:
-      - id: deribit_options_system
-        status: active
-        narrative_role: headline
-        content: "Architected automated options trading system featuring self-implemented Black-Scholes pricing engine (full Greeks, IV solver), edge-based market-making strategy, and multi-layered risk management (position limits, Greeks constraints, drawdown control)."
-      - id: deribit_risk_management
-        status: active
-        narrative_role: optional
-        content: "Designed risk management framework enforcing portfolio-level constraints (delta, gamma, vega limits), per-trade stop-loss, daily loss caps, and maximum drawdown controls; implemented Kelly-inspired position sizing adjusted for implied volatility."
 
   obama_tts:
     title: "Voice Cloning System (XTTS v2)"
