@@ -407,10 +407,10 @@ class ResumeValidator:
         """Validate minimum structural requirements."""
         errors = []
 
-        # At least 2 experiences
+        # All 5 experiences required
         experiences = tailored.get('experiences') or []
-        if len(experiences) < 2:
-            errors.append(f"Need at least 2 experiences, got {len(experiences)}")
+        if len(experiences) < 5:
+            errors.append(f"Need all 5 experiences, got {len(experiences)}")
 
         # At least 3 skill categories
         skills = tailored.get('skills') or []
