@@ -3,7 +3,7 @@
 personal_info:
   name: "Fei Huang"
   email: "huangf06@gmail.com"
-  phone: "+31 645 038 614"
+  phone: "+31 6 4503 8614"
   location: "Amsterdam, Netherlands"
   linkedin: "https://www.linkedin.com/in/huangf06/"
   github: "https://github.com/huangf06"
@@ -344,7 +344,7 @@ projects:
   financial_data_lakehouse:
     title: "Financial Data Lakehouse (Databricks/Spark/AWS)"
     institution: "Personal Portfolio Project"
-    period: "Oct. 2025 - Present"
+    period: "Oct. 2025 - Jan. 2026"
     recommended_sequences:
       data_engineer: ["lakehouse_streaming", "lakehouse_quality", "lakehouse_optimization", "lakehouse_orchestration"]
     verified_bullets:
