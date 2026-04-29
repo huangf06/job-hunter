@@ -31,80 +31,40 @@ If no brief is available, infer the strongest angle from the JD and score.
 
 ## Output Format (JSON)
 
-Respond with ONLY valid JSON (no markdown, no explanation):
+Respond with ONLY valid JSON (no markdown, no explanation).
+This is a **structural template** — field names and nesting only. Choose all content (projects, bullets, skills, ordering) based on the JD:
 
 {{
   "tailored_resume": {{
     "bio": {{
-      "role_title": "Data Engineer",
+      "role_title": "<from allowed titles>",
       "years": 6,
-      "domain_claims": ["data_pipelines", "credit_risk"],
+      "domain_claims": ["<id_1>", "<id_2>"],
       "include_education": true,
       "include_certification": true,
-      "closer_id": "eager_company"
+      "closer_id": "<eager_company|seeking_impact|generic|null>"
     }},
     "experiences": [
       {{
-        "company": "GLP Technology",
-        "company_note": "fintech startup",
-        "location": "Shanghai, China",
-        "title": "Senior Data Engineer",
-        "date": "Jul. 2017 - Aug. 2019",
-        "bullets": ["glp_founding_member", "glp_pyspark", "glp_data_quality"]
-      }},
-      {{
-        "company": "BQ Investment",
-        "company_note": "quant hedge fund",
-        "location": "Beijing, China",
-        "title": "Quantitative Researcher",
-        "date": "Jul. 2015 - Jun. 2017",
-        "bullets": ["bq_de_pipeline", "bq_de_factor_engine", "bq_futures_strategy"]
-      }},
-      {{
-        "company": "Ele.me",
-        "company_note": "acquired by Alibaba",
-        "location": "Shanghai, China",
-        "title": "Data Analyst",
-        "date": "Sep. 2013 - Jul. 2015",
-        "bullets": ["eleme_fraud_detection", "eleme_ab_testing"]
-      }},
-      {{
-        "company": "Independent Quantitative Researcher",
-        "company_note": null,
-        "location": "Shanghai, China",
-        "title": "Independent Quantitative Researcher",
-        "date": "Sep. 2019 - Aug. 2023",
-        "bullets": ["investor_quant_models"]
-      }},
-      {{
-        "company": "Henan Energy",
-        "company_note": "Fortune Global 500",
-        "location": "Henan, China",
-        "title": "IT Engineer",
-        "date": "Jul. 2011 - Aug. 2013",
-        "bullets": ["henan_sql_reporting"]
+        "company": "<company name from library>",
+        "company_note": "<from library or null>",
+        "location": "<from library>",
+        "title": "<from library titles>",
+        "date": "<from library>",
+        "bullets": ["<bullet_id_1>", "<bullet_id_2>"]
       }}
     ],
     "projects": [
       {{
-        "name": "Financial Data Lakehouse (Databricks/Spark/AWS)",
-        "date": "Oct. 2025 - Present",
-        "bullets": ["lakehouse_streaming", "lakehouse_quality"]
-      }},
-      {{
-        "name": "Expedia Hotel Recommendation System",
-        "date": "2024",
-        "bullets": ["expedia_ltr"]
+        "name": "<project title from library>",
+        "date": "<from library>",
+        "bullets": ["<bullet_id_1>", "<bullet_id_2>"]
       }}
     ],
     "skills": [
-      {{"category": "Languages & Core", "skills_list": "Python (Expert), SQL (Expert), Bash"}},
-      {{"category": "Data Engineering", "skills_list": "PySpark, Delta Lake, Databricks, ETL/ELT, Schema Evolution"}},
-      {{"category": "Cloud & DevOps", "skills_list": "AWS (EMR, Glue, S3, Lambda), Docker, CI/CD, Airflow"}},
-      {{"category": "Databases", "skills_list": "PostgreSQL, MySQL, Hadoop, Hive"}},
-      {{"category": "ML/AI Frameworks", "skills_list": "XGBoost, LightGBM, PyTorch, Statistics, A/B Testing"}}
+      {{"category": "<from allowed list>", "skills_list": "<JD-relevant skills from skill_tiers>"}}
     ],
-    "selected_courses": ["deep_learning", "data_mining", "nlp"],
+    "selected_courses": ["<course_id_1>", "<course_id_2>"],
     "show_bachelor_thesis": false,
     "show_career_note": false
   }}
@@ -138,34 +98,18 @@ You fully control: bio (optional), experiences, projects, skills.
 {title_context}
 
 ### COMPANY_NOTE
-Company notes appear after the company name on the resume and establish credibility for non-Dutch companies:
-- GLP Technology: ALWAYS set company_note to "fintech startup"
-- BQ Investment: ALWAYS set company_note to "quant hedge fund"
-- Ele.me: ALWAYS set company_note to "acquired by Alibaba"
-- Henan Energy: set company_note to "Fortune Global 500" (only when Henan Energy is included)
-- Other companies/projects: set to null
+Company notes appear after the company name on the resume and establish credibility for non-Dutch companies.
+Use the company_note values shown in the bullet library header for each company. Set to null for projects.
 
 ### BULLET PRIORITY
-Follow the recommended_sequences defined in each company/project section of the bullet library.
-These sequences have been optimized (v7.3) to front-load the strongest signals — results,
-findings, and concrete outcomes appear first. When in doubt, use the sequence order as-is.
+Selection principles (in priority order):
+1. **JD relevance**: select bullets whose skills and outcomes directly address JD requirements
+2. **Quantified results**: prefer bullets with measurable outcomes (F1 scores, throughput, cost reduction, user scale) over process-only descriptions
+3. **Recommended sequences**: follow the recommended_sequences in the bullet library for the inferred role type — they front-load the strongest signals
+4. **Narrative role**: use `headline` bullets to anchor each section, add `depth_prover` when space allows
+5. **No redundancy**: if multiple bullets prove the same skill, pick the one with the strongest result
 
-High-impact bullets (include whenever the company appears on the resume):
-- glp_founding_member — "founding data engineer, built from scratch" (identity hook)
-- bq_futures_strategy — "14.6% annualized return with real capital" (strongest outcome in library)
-- eleme_fraud_detection — "51,000+ suspicious clusters across 2.2M+ users" (scale hook)
-- glp_pyspark — PySpark ETL (universal DE keyword anchor)
-- bq_de_factor_engine — high-performance computation (universal MLE keyword anchor)
-
-Result-bearing bullets (prefer over process-only bullets when space is limited):
-- eleme_sql_optimization — "Cut scan volume 5x" (concrete before/after)
-- eleme_ab_testing — "Doubled churned-user reactivation rate" (measurable outcome)
-- thesis_uq_framework — "Established distributional learning as strongest approach" (research finding)
-- docbridge_pipeline — "94.8% F1 on receipt extraction" (ML metric)
-- greenhouse_aggregations — "72M rows/day across 1,000 sensors" (scale)
-
-Deprioritize:
-- glp_decision_engine — only if JD specifically requires credit risk rule engines
+Bullet dependency: thesis_noise_paradox is the original discovery that thesis_uq_framework builds on — when including thesis, always include both (framework-only looks like measurement without insight).
 
 ### SKILLS FORMAT
 - Provide 4-6 categories from this ALLOWED list ONLY:
@@ -185,13 +129,11 @@ Do NOT:
 If the JD requires a skill the candidate lacks, simply omit it — do not fake it.
 
 ### PROJECT SELECTION
-- Select 1-3 projects based on JD relevance
-- For Data Engineer roles: prioritize Financial Data Lakehouse
-- For ML/DS roles: prioritize Thesis or Expedia
-- For NLP/AI roles: prioritize NLP Projects or Thesis
-- For ML Engineer / AI Engineer / Document AI roles: DocBridge is MANDATORY as first project (94.8% F1, 3 fine-tuned models on A100 GPUs, production FastAPI deployment) — this is the strongest ML engineering signal in the portfolio
-- Include a third project only if it adds clearly different skills
-- THESIS RULE: When including thesis_uq_rl, ALWAYS include thesis_noise_paradox (the original discovery) — do NOT only include thesis_uq_framework (measurement-only looks weak)
+- Select 1-3 projects whose content directly addresses the JD's key requirements
+- Order projects by JD relevance — the strongest match comes first
+- Match emphasis to role type: model training/evaluation/research projects for ML/AI roles; data infrastructure projects for DE roles
+- Include a third project only if it adds clearly different skills not covered by the first two
+{project_affinity_note}
 
 ### COURSEWORK SELECTION
 - Select master's courses most relevant to the JD (by ID from COURSEWORK section)

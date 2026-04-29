@@ -347,7 +347,6 @@ projects:
     period: "Oct. 2025 - Present"
     recommended_sequences:
       data_engineer: ["lakehouse_streaming", "lakehouse_quality", "lakehouse_optimization", "lakehouse_orchestration"]
-      ml_engineer: ["lakehouse_streaming", "lakehouse_orchestration"]
     verified_bullets:
       - id: lakehouse_streaming
         status: active

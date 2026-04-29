@@ -397,12 +397,34 @@ class JobPipeline:
         jobs = self.db.get_analyzed_jobs_for_resume(
             min_ai_score=threshold, limit=limit)
 
+        # Pre-filter: skip legacy tailored_resume with < 5 experiences
+        import json as _json
+        renderable_jobs = []
+        stale_jobs = []
+        for job in jobs:
+            tailored_json = job.get('tailored_resume', '')
+            if tailored_json:
+                try:
+                    tailored = _json.loads(tailored_json)
+                    if len(tailored.get('experiences') or []) >= 5:
+                        renderable_jobs.append(job)
+                    else:
+                        stale_jobs.append(job)
+                except (ValueError, TypeError):
+                    stale_jobs.append(job)
+            else:
+                stale_jobs.append(job)
+
+        if stale_jobs:
+            print(f"  Skipping {len(stale_jobs)} jobs with legacy resume data (< 5 experiences).")
+            print(f"  Fix: python scripts/job_pipeline.py --ai-tailor --limit {len(stale_jobs)}")
+
         results = {"success": [], "failed": []}
 
-        if jobs:
-            print(f"\nGenerating materials for {len(jobs)} jobs...")
+        if renderable_jobs:
+            print(f"\nGenerating materials for {len(renderable_jobs)} jobs...")
 
-            for job in jobs:
+            for job in renderable_jobs:
                 job_id = job['id']
                 company = job.get('company', 'Unknown')
                 title = job.get('title', 'Unknown')

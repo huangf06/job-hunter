@@ -13,6 +13,10 @@ import re
 import sys
 import time
 from pathlib import Path
+
+
+def _safe_print_str(s: str) -> str:
+    return s.encode('ascii', 'replace').decode()
 from typing import Dict, List, Optional
 
 import yaml
@@ -127,11 +131,15 @@ class AIAnalyzer:
                     continue
 
                 company = exp_data.get('company', key)
+                company_note = exp_data.get('company_note', '')
                 location = exp_data.get('location', '')
                 period = exp_data.get('period', '')
                 title = exp_data.get('titles', {}).get('default', '')
 
-                sections.append(f"\n### {company}")
+                header = f"\n### {company}"
+                if company_note:
+                    header += f" ({company_note})"
+                sections.append(header)
                 sections.append(f"Location: {location} | Period: {period} | Title: {title}")
 
                 # Recommended sequences (if defined)
@@ -168,6 +176,16 @@ class AIAnalyzer:
 
                 sections.append(f"\n### {title}")
                 sections.append(f"Period: {period}")
+
+                rec_seqs = proj_data.get('recommended_sequences', {})
+                if rec_seqs:
+                    seq_lines = []
+                    for role_type, seq in rec_seqs.items():
+                        short_ids = [s.split('_', 1)[-1] if '_' in s else s for s in seq]
+                        seq_lines.append(f"  {role_type}: {' → '.join(short_ids)}")
+                    sections.append("Recommended bullet sequences (follow ordering when applicable):")
+                    sections.extend(seq_lines)
+
                 sections.append("Available bullets:")
 
                 for bullet in proj_data.get('verified_bullets', []):
@@ -204,6 +222,112 @@ class AIAnalyzer:
             import traceback
             traceback.print_exc()
             raise RuntimeError(f"Cannot start AI Analyzer: bullet library failed to load: {e}") from e
+
+    def _build_project_affinity_note(self, job_title: str) -> str:
+        """Generate a note highlighting which projects match the inferred role type."""
+        title_lower = job_title.lower()
+
+        role_types = []
+        if any(kw in title_lower for kw in ['machine learning', 'ml engineer', 'ml/', 'ml ']):
+            role_types.append('ml_engineer')
+        if any(kw in title_lower for kw in ['ai engineer', 'artificial intelligence', 'ai/']):
+            role_types.append('ai_engineer')
+        if 'data engineer' in title_lower or 'analytics engineer' in title_lower:
+            role_types.append('data_engineer')
+        if 'data scientist' in title_lower or 'research scientist' in title_lower:
+            role_types.append('data_scientist')
+
+        if not role_types:
+            return ''
+
+        projects_data = self._parsed_bullets.get('projects', {})
+        active_keys = self._parsed_bullets.get('active_sections', {}).get(
+            'project_keys', self.DEFAULT_PROJECT_KEYS)
+
+        matches = []
+        for key in active_keys:
+            proj = projects_data.get(key, {})
+            if not isinstance(proj, dict):
+                continue
+            rec_seqs = proj.get('recommended_sequences', {})
+            for rt in role_types:
+                if rt in rec_seqs:
+                    title = proj.get('title', key)
+                    seq = rec_seqs[rt]
+                    short_ids = [s.split('_', 1)[-1] if '_' in s else s for s in seq]
+                    matches.append(f"- **{title}** has `{rt}` sequence: {' -> '.join(short_ids)}")
+
+        if not matches:
+            return ''
+
+        return ("**Projects with role affinity for this JD (LEAD WITH THESE):**\n"
+                + '\n'.join(matches))
+
+    def _reorder_projects_by_affinity(self, library_text: str, job_title: str) -> str:
+        """Reorder PROJECTS section so role-affinity matches appear first."""
+        title_lower = job_title.lower()
+
+        role_types = []
+        if any(kw in title_lower for kw in ['machine learning', 'ml engineer', 'ml/', 'ml ']):
+            role_types.append('ml_engineer')
+        if any(kw in title_lower for kw in ['ai engineer', 'artificial intelligence', 'ai/']):
+            role_types.append('ai_engineer')
+        if 'data engineer' in title_lower or 'analytics engineer' in title_lower:
+            role_types.append('data_engineer')
+        if 'data scientist' in title_lower or 'research scientist' in title_lower:
+            role_types.append('data_scientist')
+
+        if not role_types:
+            return library_text
+
+        projects_data = self._parsed_bullets.get('projects', {})
+        active_keys = self._parsed_bullets.get('active_sections', {}).get(
+            'project_keys', self.DEFAULT_PROJECT_KEYS)
+
+        matching_titles = set()
+        for key in active_keys:
+            proj = projects_data.get(key, {})
+            if not isinstance(proj, dict):
+                continue
+            if any(rt in proj.get('recommended_sequences', {}) for rt in role_types):
+                matching_titles.add(proj.get('title', key))
+
+        if not matching_titles:
+            return library_text
+
+        import re
+        pattern = r'(\n## PROJECTS[^\n]*\n)'
+        m = re.search(pattern, library_text)
+        if not m:
+            return library_text
+
+        header_start = m.start()
+        header_end = m.end()
+        section_header = m.group(1)
+
+        remaining = library_text[header_end:]
+        next_h2 = re.search(r'\n## ', remaining)
+        if next_h2:
+            proj_body = remaining[:next_h2.start()]
+            rest = remaining[next_h2.start():]
+        else:
+            proj_body = remaining
+            rest = ''
+
+        blocks = re.split(r'(?=\n### )', proj_body)
+        blocks = [b for b in blocks if b.strip()]
+
+        matched = []
+        other = []
+        for block in blocks:
+            if any(title in block for title in matching_titles):
+                matched.append(block)
+            else:
+                other.append(block)
+
+        before = library_text[:header_start]
+        reordered = section_header + ''.join(matched + other)
+        return before + reordered + rest
 
     def _extract_valid_bullets(self) -> set:
         """Extract all valid bullets from parsed bullet library YAML (configured keys only)."""
@@ -809,15 +933,23 @@ class AIAnalyzer:
         # Build candidate summary
         candidate_summary = self._build_candidate_summary()
 
+        # Build project affinity note (dynamic, based on job title)
+        raw_title = job.get('title', '')
+        project_affinity = self._build_project_affinity_note(raw_title)
+
+        # Reorder projects by role affinity before escaping
+        library_text = self._reorder_projects_by_affinity(self.bullet_library, raw_title)
+
         # Escape braces
         jd_safe = jd_text.replace('{', '{{').replace('}', '}}')
-        job_title = job.get('title', '').replace('{', '{{').replace('}', '}}')
+        job_title = raw_title.replace('{', '{{').replace('}', '}}')
         job_company = job.get('company', '').replace('{', '{{').replace('}', '}}')
-        bullet_lib_safe = self.bullet_library.replace('{', '{{').replace('}', '}}')
+        bullet_lib_safe = library_text.replace('{', '{{').replace('}', '}}')
         skill_ctx_safe = skill_context.replace('{', '{{').replace('}', '}}')
         title_ctx_safe = title_context.replace('{', '{{').replace('}', '}}')
         bio_cstr_safe = bio_constraints.replace('{', '{{').replace('}', '}}')
         candidate_summary_safe = candidate_summary.replace('{', '{{').replace('}', '}}')
+        affinity_safe = project_affinity.replace('{', '{{').replace('}', '}}')
 
         prompt_body = prompt_template.format(
             bullet_library=bullet_lib_safe,
@@ -837,6 +969,7 @@ class AIAnalyzer:
             bio_allowed_titles_list=bio_titles_str,
             bio_domain_claims_list=domain_claims_str,
             allowed_skill_categories_list=cat_str,
+            project_affinity_note=affinity_safe,
         )
         return prompt_body
 
@@ -959,8 +1092,8 @@ class AIAnalyzer:
         count = 0
         with self.db.batch_mode():
             for i, job in enumerate(jobs):
-                title = job.get('title', '')[:45]
-                company = job.get('company', '')[:20]
+                title = _safe_print_str(job.get('title', '')[:45])
+                company = _safe_print_str(job.get('company', '')[:20])
                 print(f"  [{i+1}/{len(jobs)}] {title} @ {company}...", end=' ')
                 try:
                     result = self.evaluate_job(job)
@@ -1012,8 +1145,8 @@ class AIAnalyzer:
         count = 0
         with self.db.batch_mode():
             for i, job in enumerate(jobs):
-                title = job.get('title', '')[:45]
-                company = job.get('company', '')[:20]
+                title = _safe_print_str(job.get('title', '')[:45])
+                company = _safe_print_str(job.get('company', '')[:20])
                 score = job.get('ai_score', 0)
                 print(f"  [{i+1}/{len(jobs)}] {title} @ {company} ({score:.1f})...", end=' ')
                 try:
@@ -1282,8 +1415,8 @@ class AIAnalyzer:
 
         with self.db.batch_mode():
             for i, job in enumerate(jobs):
-                title = job.get('title', '')[:45]
-                company = job.get('company', '')[:20]
+                title = _safe_print_str(job.get('title', '')[:45])
+                company = _safe_print_str(job.get('company', '')[:20])
                 print(f"  [{i+1}/{len(jobs)}] {title} @ {company}...", end=' ')
 
                 try:
