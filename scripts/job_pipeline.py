@@ -373,7 +373,7 @@ class JobPipeline:
         else:
             print("[Repair] No unusable resume records found — PDFs and submit dirs are usable")
 
-    def cmd_prepare(self, min_ai_score: float = None, limit: int = None):
+    def cmd_prepare(self, min_ai_score: float = None, limit: int = None, since: str = None):
         """One-command: generate all materials + launch checklist server."""
         from src.checklist_server import generate_checklist, start_server
         from src.resume_renderer import ResumeRenderer
@@ -422,8 +422,13 @@ class JobPipeline:
         else:
             print("No new jobs need resume generation.")
 
-        # Step 3: Collect ALL ready-to-apply jobs (new + existing)
+        # Step 3: Collect ready-to-apply jobs
         all_ready = self.db.get_ready_to_apply()
+
+        if since:
+            before = len(all_ready)
+            all_ready = [j for j in all_ready if (j.get('scraped_at') or '') >= since]
+            print(f"  Filtered by --since {since}: {before} -> {len(all_ready)} jobs")
 
         # Step 3.1: Restore submit_dirs cleaned by previous --finalize
         candidate_name = renderer._safe_filename(
@@ -960,6 +965,8 @@ def main():
     # Local workflow commands
     parser.add_argument('--prepare', action='store_true',
                         help='Generate all application materials and launch checklist')
+    parser.add_argument('--since', type=str, metavar='YYYY-MM-DD',
+                        help='Only include jobs scraped on or after this date (use with --prepare)')
     parser.add_argument('--finalize', action='store_true',
                         help='Archive applied jobs, clean up skipped, sync to cloud')
     parser.add_argument('--repair', action='store_true',
@@ -1052,7 +1059,7 @@ def main():
 
         pipeline = JobPipeline()
         if args.prepare:
-            pipeline.cmd_prepare(min_ai_score=args.min_score, limit=args.limit)
+            pipeline.cmd_prepare(min_ai_score=args.min_score, limit=args.limit, since=args.since)
         elif args.finalize:
             pipeline.cmd_finalize()
         elif args.repair:

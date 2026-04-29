@@ -2,7 +2,7 @@
 .env
 config/linkedin_cookies.json
 # config/credentials.json
-# config/private/
+config/private/
 config/todoist_config.json
 
 # Data (DB + scrape dumps)
@@ -11,6 +11,7 @@ data/jobs.db-*
 job-hunter-*.turso.io
 job-hunter-*.turso.io-*
 data/*.json
+data/*.txt
 data/leads/
 data/archive/
 data/inbox/
@@ -21,6 +22,13 @@ data/history/
 # Output (generated resumes)
 output/
 ready_to_send/
+templates/pdf/
+docs/interview_winning_resumes/
+docs/work_evidence/
+docs/personal-brand-optimization*.md
+docs/career-strategy-*.md
+docs/interview_strategy_*.md
+docs/ml_resume_*_review.md
 
 # Python
 __pycache__/
@@ -43,8 +51,9 @@ Thumbs.db
 nul
 
 # Personal files
-# materials/
-# interview_prep/
+materials/
+interview_prep/
+aon_query_results.txt
 
 # Temp files
 _tmp_*

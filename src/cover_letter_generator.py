@@ -47,6 +47,7 @@ class CoverLetterGenerator:
 
     def __init__(self, config_path: Path = None, model_override: str = None):
         self.config = self._load_config(config_path)
+        self.active_provider = self.config.get('active_provider', 'claude_code')
         self.db = JobDatabase()
         from src.template_registry import load_registry
         self.registry = load_registry()
@@ -199,11 +200,53 @@ class CoverLetterGenerator:
         return relevant
 
     # =========================================================================
-    # Claude Code CLI integration
+    # LLM call (provider-routed)
     # =========================================================================
 
+    def _call_model(self, prompt: str) -> Optional[str]:
+        """Route to the active provider and return raw text."""
+        if self.active_provider == 'claude_code':
+            return self._call_claude_code(prompt)
+        return self._call_deepseek(prompt)
+
+    def _call_deepseek(self, prompt: str) -> Optional[str]:
+        """Call DeepSeek API via OpenAI-compatible SDK."""
+        from openai import OpenAI, APIError, APITimeoutError
+
+        api_key = os.environ.get('DEEPSEEK_API_KEY')
+        if not api_key:
+            print("    [DEEPSEEK] DEEPSEEK_API_KEY not set in environment")
+            return None
+
+        model_config = self.config.get('models', {}).get('deepseek', {})
+        api_base = model_config.get('api_base', 'https://api.deepseek.com')
+        model = model_config.get('model', 'deepseek-v4-pro')
+        max_tokens = model_config.get('max_tokens', 8192)
+        temperature = model_config.get('temperature', 0.1)
+        timeout = model_config.get('timeout', 180)
+
+        thinking = model_config.get('thinking', False)
+        client = OpenAI(api_key=api_key, base_url=api_base, timeout=timeout)
+        try:
+            extra = {} if thinking else {"extra_body": {"thinking": {"type": "disabled"}}}
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+                **extra,
+            )
+            text = response.choices[0].message.content
+            return text.strip() if text else None
+        except APITimeoutError:
+            print(f"    [DEEPSEEK] API timed out after {timeout}s")
+            return None
+        except APIError as e:
+            print(f"    [DEEPSEEK] API error: {e}")
+            return None
+
     def _call_claude_code(self, prompt: str) -> Optional[str]:
-        """Call Claude Code CLI with prompt and return text output."""
+        """Call Claude Code CLI (flat subscription, no API key needed)."""
         import shutil
         import subprocess
 
@@ -603,12 +646,11 @@ Return ONLY the JSON object, no other text."""
         # Build prompt
         prompt = self._build_prompt(job, analysis, custom_requirements)
 
-        # AI call via Claude Code CLI (same pattern as AIAnalyzer)
-        raw_text = self._call_claude_code(prompt)
+        raw_text = self._call_model(prompt)
         if not raw_text:
-            print(f"[CoverLetter] Failed to get response from Claude Code CLI")
+            print(f"[CoverLetter] Failed to get response from LLM ({self.active_provider})")
             return None
-        tokens_used = 0  # CLI doesn't report token usage
+        tokens_used = 0
 
         # Parse JSON
         spec = self._parse_json_response(raw_text)

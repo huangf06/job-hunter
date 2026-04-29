@@ -586,7 +586,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
     CREATE VIEW IF NOT EXISTS v_ready_to_apply AS
     SELECT
         j.id, j.title, j.company, j.location, j.url,
-        j.posted_date,
+        j.posted_date, j.scraped_at,
         an.ai_score as score, an.recommendation,
         an.resume_tier, an.template_id_final,
         r.pdf_path as resume_path,
@@ -596,8 +596,8 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
     JOIN job_analysis an ON j.id = an.job_id
     JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
     LEFT JOIN applications a ON j.id = a.job_id
-    WHERE a.id IS NULL OR a.status IN ('skipped', 'rejected')
-    ORDER BY j.posted_date DESC, an.ai_score DESC;
+    WHERE a.id IS NULL OR a.status NOT IN ('applied', 'interview', 'offer', 'expired')
+    ORDER BY j.scraped_at DESC, an.ai_score DESC;
 
     -- 申请漏斗统计视图
     CREATE VIEW IF NOT EXISTS v_funnel_stats AS
@@ -1372,7 +1372,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
 
     def update_application_status(self, job_id: str, status: str, **kwargs):
         """更新申请状态"""
-        VALID_STATUSES = {'pending', 'applied', 'skipped', 'rejected', 'interview', 'offer'}
+        VALID_STATUSES = {'pending', 'applied', 'skipped', 'rejected', 'interview', 'offer', 'expired'}
         if status not in VALID_STATUSES:
             raise ValueError(f"Invalid status '{status}', must be one of {sorted(VALID_STATUSES)}")
         ALLOWED_COLS = ('applied_at', 'response_at', 'interview_at', 'outcome', 'notes')
