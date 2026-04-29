@@ -1,4 +1,4 @@
-# VERIFIED BULLET LIBRARY v7.5 (2026-04-29)
+# VERIFIED BULLET LIBRARY v7.6 (2026-04-29)
 
 personal_info:
   name: "Fei Huang"
@@ -146,7 +146,7 @@ work_experience:
       - id: indie_quant_research
         status: active
         narrative_role: headline
-        content: "Built end-to-end proprietary trading system covering 3,600+ equities; engineered predictive features using statistical and machine learning methods for momentum signal detection, with custom Python backtesting framework and live execution hedged with index futures."
+        content: "Built proprietary trading system covering 3,600+ equities from data ingestion to live execution; engineered predictive features using statistical and machine learning methods for momentum signal detection, with custom Python backtesting framework and portfolio hedged with index futures."
 
   baiquan_investment:
     company: "BQ Investment"
@@ -169,7 +169,7 @@ work_experience:
       - id: bq_de_pipeline
         status: active
         narrative_role: headline
-        content: "Built end-to-end market data ingestion pipeline at a 5-person hedge fund, processing 3,000+ equities and 5+ years of tick-level data from multiple vendor feeds; implemented corporate action handling and deduplication logic ensuring data integrity for all downstream research and live trading."
+        content: "Designed and built market data ingestion pipeline at a 5-person hedge fund, processing 3,000+ equities and 5+ years of tick-level data from multiple vendor feeds; implemented corporate action handling and deduplication logic ensuring data integrity for all downstream research and live trading."
       - id: bq_de_factor_engine
         status: active
         narrative_role: headline
@@ -377,7 +377,7 @@ projects:
       - id: greenhouse_etl_pipeline
         status: active
         narrative_role: headline
-        content: "Built ETL pipeline ingesting JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and implemented SHA-256 file-level hashing for idempotent reprocessing; 58 tests, CI via GitHub Actions."
+        content: "Built ETL pipeline ingesting JSON sensor snapshots (21 variables per reading) through Bronze/Silver/Gold Medallion Architecture using PySpark and Delta Lake; designed Entity-Attribute-Value model for schema-free sensor extensibility and SHA-256 file-level hashing for idempotent reprocessing."
       - id: greenhouse_data_quality
         status: active
         narrative_role: optional
@@ -430,7 +430,7 @@ projects:
       - id: docbridge_pipeline
         status: active
         narrative_role: headline
-        content: "Built end-to-end document AI platform for CN-EU trade documents, achieving 94.8% F1 on receipt extraction and 75.5% F1 on form understanding; integrated PaddleOCR text extraction, LiLT layout-aware token classification, spatial post-processing for key-value pairing, and FastAPI REST API with PostgreSQL persistence."
+        content: "Engineered document AI platform for CN-EU trade documents, achieving 94.8% F1 on receipt extraction and 75.5% F1 on form understanding; integrated PaddleOCR text extraction, LiLT layout-aware token classification, spatial post-processing for key-value pairing, and FastAPI REST API with PostgreSQL persistence."
       - id: docbridge_training
         status: active
         narrative_role: depth_prover
