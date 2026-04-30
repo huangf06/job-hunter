@@ -40,9 +40,6 @@ def generate_checklist(jobs: list[dict], ready_dir: Path) -> Path:
             "rejection_rejected_at": job.get("rejection_rejected_at", ""),
             "prev_app_status": job.get("prev_app_status", ""),
             "prev_app_date": job.get("prev_app_date", ""),
-            "resume_tier": job.get("resume_tier", ""),
-            "template_id_final": job.get("template_id_final", ""),
-            "template_version": job.get("template_version", ""),
         }
 
     state_path = ready_dir / "state.json"
@@ -88,12 +85,6 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
             color = "#9333ea" if prev_status == "skipped" else "#ea580c" if prev_status == "rejected" else "#2563eb"
             prev_badge = f' <span style="color:{color};font-weight:bold" title="Previously {label} on {_esc(prev_date)}">PREV:{label}</span>'
 
-        # Resume generation pathway badge
-        resume_tier = info.get("resume_tier", "")
-        tpl_id = info.get("template_id_final", "")
-        tpl_ver = info.get("template_version", "")
-        resume_badge = _resume_badge(resume_tier, tpl_id, tpl_ver)
-
         esc_id = _esc(job_id)
 
         status = info.get("status", "pending")
@@ -113,7 +104,6 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
           <td><code class="job-id" onclick="copyJobId(this)" title="Click to copy">{_esc(job_id[:12])}</code></td>
           <td>{_esc(info['company'])}{repost_badge}{rejected_badge}{prev_badge}</td>
           <td>{_esc(info['title'])}</td>
-          <td>{resume_badge}</td>
           <td>
             <button class="btn" data-path="{_esc(abs_path)}" onclick="openFolder(this.dataset.path)">Open Folder</button>
             <button class="btn" data-path="{_esc(abs_path)}" onclick="copyPath(this.dataset.path, this)">Copy Path</button>
@@ -151,10 +141,6 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
   .job-id {{ font-size: 0.75rem; color: #64748b; cursor: pointer; padding: 2px 4px; border-radius: 3px; }}
   .job-id:hover {{ background: #e2e8f0; }}
   .job-id.copied {{ background: #22c55e; color: white; }}
-  .badge {{ padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }}
-  .badge-adapt {{ background: #dbeafe; color: #1d4ed8; }}
-  .badge-copy {{ background: #f3f4f6; color: #6b7280; }}
-  .badge-full {{ background: #dcfce7; color: #15803d; }}
   .ef-btn {{ padding: 3px 8px; border: 1px solid #cbd5e1; border-radius: 4px; background: white; cursor: pointer; font-size: 0.75rem; font-weight: 500; color: #64748b; }}
   .ef-btn:hover {{ opacity: 0.85; }}
   .ef-btn.active {{ background: #2563eb; color: white; border-color: #2563eb; }}
@@ -168,7 +154,7 @@ def _build_checklist_html(state: dict, ready_dir: Path) -> str:
 <p class="meta">Generated: {generated} | Total: {len(jobs_sorted)} jobs</p>
 <table>
   <thead>
-    <tr><th></th><th></th><th>Score</th><th>ID</th><th>Company</th><th>Title</th><th>Resume</th><th>Actions</th><th>Link</th></tr>
+    <tr><th></th><th></th><th>Score</th><th>ID</th><th>Company</th><th>Title</th><th>Actions</th><th>Link</th></tr>
   </thead>
   <tbody>
     {''.join(rows)}
@@ -202,7 +188,22 @@ function saveState() {{
     method: 'POST',
     headers: {{'Content-Type': 'application/json'}},
     body: JSON.stringify(state)
-  }});
+  }}).then(r => {{
+    if (!r.ok) showSaveError('Server returned ' + r.status);
+  }}).catch(e => showSaveError(e.message));
+}}
+
+function showSaveError(msg) {{
+  let el = document.getElementById('save-error');
+  if (!el) {{
+    el = document.createElement('div');
+    el.id = 'save-error';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:10px;background:#dc2626;color:white;text-align:center;font-weight:bold;z-index:9999;';
+    document.body.prepend(el);
+  }}
+  el.textContent = 'Save failed: ' + msg;
+  el.style.display = 'block';
+  setTimeout(() => {{ el.style.display = 'none'; }}, 5000);
 }}
 
 function toggleEffort(btn) {{
@@ -309,23 +310,6 @@ def _esc(text: str) -> str:
             .replace(">", "&gt;").replace('"', "&quot;").replace("'", "&#39;"))
 
 
-def _resume_badge(tier: str, tpl_id: str, tpl_ver: str) -> str:
-    """Build a colored badge showing the resume generation pathway."""
-    tpl_label = tpl_id or "?"
-    if tier == "ADAPT_TEMPLATE":
-        return (f'<span class="badge badge-adapt" title="Zone-based adapted template">'
-                f'ADAPT/{tpl_label}</span>')
-    elif tier == "USE_TEMPLATE":
-        return (f'<span class="badge badge-copy" title="Template PDF copy">'
-                f'COPY/{tpl_label}</span>')
-    elif tier == "FULL_CUSTOMIZE":
-        return (f'<span class="badge badge-full" title="Fully customized resume">'
-                f'FULL/{tpl_label}</span>')
-    elif tpl_ver == "template_v1":
-        return (f'<span class="badge badge-copy" title="Fallback to template copy">'
-                f'COPY/{tpl_label}</span>')
-    return f'<span class="badge">{_esc(tpl_ver or "?")}</span>'
-
 
 def start_server(ready_dir: Path, port: int = 8234):
     """Start checklist HTTP server and open browser.
@@ -375,7 +359,7 @@ def start_server(ready_dir: Path, port: int = 8234):
                     # Only allow opening directories within ready_dir
                     if (folder and folder_path.is_dir()
                             and folder_path.is_relative_to(ready_dir.resolve())):
-                        os.startfile(folder)
+                        os.startfile(str(folder_path))
                     self.send_response(200)
                 except Exception:
                     self.send_response(400)

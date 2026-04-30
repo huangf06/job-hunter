@@ -428,7 +428,10 @@ class JobPipeline:
                 job_id = job['id']
                 company = job.get('company', 'Unknown')
                 title = job.get('title', 'Unknown')
-                label = f"{company} - {title}"
+                app_status = job.get('application_status')
+                app_date = (job.get('application_date') or '')[:10]
+                status_tag = f" [{app_status.upper()} {app_date}]" if app_status else ""
+                label = f"{company} - {title}{status_tag}"
 
                 # Resume
                 try:

@@ -537,7 +537,10 @@ class ResumeRenderer:
             title = job.get('title', '')[:45]
             company = job.get('company', '')[:20]
             ai_score = job.get('ai_score', 0)
-            print(f"  [{i+1}/{len(jobs)}] [{ai_score:.1f}] {title} @ {company}")
+            app_status = job.get('application_status')
+            app_date = (job.get('application_date') or '')[:10]
+            status_tag = f" [{app_status.upper()} {app_date}]" if app_status else ""
+            print(f"  [{i+1}/{len(jobs)}] [{ai_score:.1f}] {title} @ {company}{status_tag}")
 
             result = self.render_resume(job['id'])
             if result:

@@ -588,15 +588,14 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         j.id, j.title, j.company, j.location, j.url,
         j.posted_date, j.scraped_at,
         an.ai_score as score, an.recommendation,
-        an.resume_tier, an.template_id_final,
         r.pdf_path as resume_path,
-        r.template_version,
-        r.submit_dir
+        r.submit_dir,
+        a.status as application_status,
+        a.applied_at as application_date
     FROM jobs j
     JOIN job_analysis an ON j.id = an.job_id
     JOIN resumes r ON j.id = r.job_id AND r.pdf_path IS NOT NULL AND r.pdf_path != ''
     LEFT JOIN applications a ON j.id = a.job_id
-    WHERE a.id IS NULL
     ORDER BY j.scraped_at DESC, an.ai_score DESC;
 
     -- 申请漏斗统计视图
@@ -1182,14 +1181,15 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         """Get jobs with C1 evaluation but no C2 tailored resume yet."""
         with self._get_conn() as conn:
             query = """
-                SELECT j.*, a.ai_score, a.recommendation, a.reasoning
+                SELECT j.*, a.ai_score, a.recommendation, a.reasoning,
+                       app.status as application_status,
+                       app.applied_at as application_date
                 FROM jobs j
                 JOIN job_analysis a ON j.id = a.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE a.ai_score >= ?
                   AND (a.tailored_resume IS NULL OR a.tailored_resume = '{}')
                   AND (a.resume_tier IS NULL OR a.resume_tier IN ('ADAPT_TEMPLATE', 'FULL_CUSTOMIZE'))
-                  AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
             params = [min_score]
@@ -1203,13 +1203,13 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         """Get jobs that passed filter but have no AI analysis yet."""
         with self._get_conn() as conn:
             query = """
-                SELECT j.*
+                SELECT j.*, app.status as application_status,
+                       app.applied_at as application_date
                 FROM jobs j
                 JOIN filter_results f ON j.id = f.job_id AND f.passed = 1
                 LEFT JOIN job_analysis a ON j.id = a.job_id
                 LEFT JOIN applications app ON j.id = app.job_id
                 WHERE a.id IS NULL
-                  AND app.job_id IS NULL
                 ORDER BY j.created_at DESC
             """
             params = []
@@ -1224,7 +1224,9 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
         with self._get_conn() as conn:
             query = """
                 SELECT j.*, a.ai_score, a.recommendation as ai_recommendation,
-                       a.tailored_resume, a.reasoning
+                       a.tailored_resume, a.reasoning,
+                       app.status as application_status,
+                       app.applied_at as application_date
                 FROM jobs j
                 JOIN job_analysis a ON j.id = a.job_id AND a.ai_score >= ?
                 LEFT JOIN resumes r ON j.id = r.job_id
@@ -1236,7 +1238,6 @@ CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
                       OR (a.resume_tier = 'FULL_CUSTOMIZE' AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                       OR (a.resume_tier IS NULL AND a.tailored_resume IS NOT NULL AND a.tailored_resume != '{}')
                   )
-                  AND app.job_id IS NULL
                 ORDER BY a.ai_score DESC
             """
             params = [min_ai_score]
