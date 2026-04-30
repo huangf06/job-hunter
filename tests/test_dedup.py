@@ -417,41 +417,49 @@ def _setup_job_through_pipeline(db, url, title, company, ai_score=6.0,
 class TestResurfacedJobPipeline:
     """Tests that resurfaced jobs (skipped/rejected) flow through the full pipeline."""
 
-    def test_skipped_job_excluded_from_needing_analysis(self):
-        """A job with 'skipped' app status is excluded — resurface deletes the app record instead."""
+    def test_skipped_job_included_in_needing_analysis(self):
+        """A job with 'skipped' app status is still included, with status as metadata."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="skipped",
         )
         jobs = db.get_jobs_needing_analysis()
-        assert not any(j["id"] == job_id for j in jobs)
+        match = [j for j in jobs if j["id"] == job_id]
+        assert len(match) == 1
+        assert match[0]["application_status"] == "skipped"
 
-    def test_rejected_job_excluded_from_needing_analysis(self):
-        """A job with 'rejected' app status is excluded — resurface deletes the app record instead."""
+    def test_rejected_job_included_in_needing_analysis(self):
+        """A job with 'rejected' app status is still included, with status as metadata."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="rejected",
         )
         jobs = db.get_jobs_needing_analysis()
-        assert not any(j["id"] == job_id for j in jobs)
+        match = [j for j in jobs if j["id"] == job_id]
+        assert len(match) == 1
+        assert match[0]["application_status"] == "rejected"
 
-    def test_applied_job_excluded_from_needing_analysis(self):
-        """A job with 'applied' app status should NOT be picked up for analysis."""
+    def test_applied_job_included_in_needing_analysis(self):
+        """A job with 'applied' app status is still included, with status as metadata."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="applied",
         )
         jobs = db.get_jobs_needing_analysis()
-        assert not any(j["id"] == job_id for j in jobs)
+        match = [j for j in jobs if j["id"] == job_id]
+        assert len(match) == 1
+        assert match[0]["application_status"] == "applied"
 
-    def test_interview_job_excluded_from_needing_analysis(self):
-        """A job with 'interview' app status should NOT be picked up."""
+    def test_interview_job_included_in_needing_analysis(self):
+        """A job with 'interview' app status is still included, with status as metadata."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status="interview",
         )
         jobs = db.get_jobs_needing_analysis()
-        assert not any(j["id"] == job_id for j in jobs)
+        match = [j for j in jobs if j["id"] == job_id]
+        assert len(match) == 1
+        assert match[0]["application_status"] == "interview"
 
     def test_no_app_record_included_in_needing_analysis(self):
         """A job with no application record should be picked up (baseline)."""
@@ -460,10 +468,12 @@ class TestResurfacedJobPipeline:
             db, "http://a.com/1", "Dev", "Co", ai_score=None, app_status=None,
         )
         jobs = db.get_jobs_needing_analysis()
-        assert any(j["id"] == job_id for j in jobs)
+        match = [j for j in jobs if j["id"] == job_id]
+        assert len(match) == 1
+        assert match[0]["application_status"] is None
 
-    def test_skipped_job_excluded_from_needing_tailor(self):
-        """A skipped job is excluded from C2 — resurface deletes the app record instead."""
+    def test_skipped_job_included_in_needing_tailor(self):
+        """A skipped job is still included in C2, with status as metadata."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=6.0, app_status="skipped",
@@ -473,10 +483,12 @@ class TestResurfacedJobPipeline:
             (job_id,),
         )
         jobs = db.get_jobs_needing_tailor(min_score=5.0)
-        assert not any(j["id"] == job_id for j in jobs)
+        match = [j for j in jobs if j["id"] == job_id]
+        assert len(match) == 1
+        assert match[0]["application_status"] == "skipped"
 
-    def test_applied_job_excluded_from_needing_tailor(self):
-        """An applied job should NOT be picked up for C2 tailoring."""
+    def test_applied_job_included_in_needing_tailor(self):
+        """An applied job is still included in C2, with status as metadata."""
         db = _make_test_db_full()
         job_id = _setup_job_through_pipeline(
             db, "http://a.com/1", "Dev", "Co", ai_score=6.0, app_status="applied",
@@ -486,4 +498,6 @@ class TestResurfacedJobPipeline:
             (job_id,),
         )
         jobs = db.get_jobs_needing_tailor(min_score=5.0)
-        assert not any(j["id"] == job_id for j in jobs)
+        match = [j for j in jobs if j["id"] == job_id]
+        assert len(match) == 1
+        assert match[0]["application_status"] == "applied"

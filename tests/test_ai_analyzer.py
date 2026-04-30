@@ -707,7 +707,7 @@ class TestJobAnalysisDB:
         jobs = db.get_jobs_needing_tailor(min_score=4.0)
         assert len(jobs) == 0
 
-    def test_get_jobs_needing_tailor_excludes_applied(self, db):
+    def test_get_jobs_needing_tailor_includes_applied_with_status(self, db):
         db._conn.execute(
             "INSERT INTO jobs (id, title, company, description, location) VALUES (?, ?, ?, ?, ?)",
             ("job-3", "Data Scientist", "SciCorp", "DS job", "Amsterdam")
@@ -723,4 +723,6 @@ class TestJobAnalysisDB:
         )
 
         jobs = db.get_jobs_needing_tailor(min_score=4.0)
-        assert len(jobs) == 0
+        assert len(jobs) == 1
+        assert jobs[0]["application_status"] == "applied"
+        assert jobs[0]["application_date"] == "2026-03-28"
